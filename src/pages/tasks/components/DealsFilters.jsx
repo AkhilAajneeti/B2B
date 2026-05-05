@@ -36,12 +36,19 @@ const DealsFilters = ({
 
     loadData();
   }, []);
-  const statusOptions = status
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
+  // const statusOptions = status
+  //   .filter((item) => item !== "")
+  //   .map((item) => ({
+  //     value: item,
+  //     label: item,
+  //   }));
+  const statusOptions = [
+    { value: "Not Started", label: "Not Started" },
+    { value: "Started", label: "Started" },
+    { value: "Completed", label: "Completed" },
+    { value: "Canceled", label: "Canceled" },
+    { value: "Deferred", label: "Deferred" },
+  ];
   const priorityOptions = [
     { value: "", label: "All Status" },
     { value: "Low", label: "Low" },
@@ -72,7 +79,7 @@ const DealsFilters = ({
       .catch((err) => console.error("User fetch failed", err));
   }, []);
 
-   const ACTIVITY_DATE_FILTERS = [
+  const ACTIVITY_DATE_FILTERS = [
     { label: "Today", value: "today" },
     { label: "Yesterday", value: "yesterday" },
     { label: "Last 7 Days", value: "last7Days" },
@@ -84,7 +91,7 @@ const DealsFilters = ({
     { label: "This Month", value: "currentMonth" },
     { label: "Last Month", value: "lastMonth" },
   ];
- const showDateInputs = ["between", "after", "before"].includes(filters?.dateType);
+  const showDateInputs = ["between", "after", "before"].includes(filters?.dateType);
   const activeFiltersCount = Object.values(filters)?.filter(
     (value) => value !== "" && value !== null && value !== undefined,
   )?.length;

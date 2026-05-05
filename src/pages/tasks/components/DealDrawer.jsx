@@ -5,8 +5,8 @@ import Select from "../../../components/ui/Select";
 import Input from "components/ui/Input";
 import toast from "react-hot-toast";
 import Avatar from "react-avatar";
-import { fetchUser } from "services/user.service";
-import { fetchTeam } from "services/team.service";
+import { useUsers } from "hooks/useUsers";
+import { useTeams } from "hooks/useTeams";
 import { createLeadActivity, fetchLeads } from "services/leads.service";
 import { fetchAccounts } from "services/account.service";
 import { fetchContacts } from "services/contact.service";
@@ -26,8 +26,6 @@ const DealDrawer = ({
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [team, setTeam] = useState([]);
   const [acc, setAcc] = useState([]);
   const [lead, setLead] = useState([]);
   const [contact, setContact] = useState([]);
@@ -35,6 +33,11 @@ const DealDrawer = ({
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
+  const { data: usersData } = useUsers();
+  const { data: teamData } = useTeams();
+
+  const users = usersData?.list || [];
+  const team = teamData?.list || [];
   const [formData, setFormData] = useState({
     name: "",
     assignedUserId: "",
@@ -120,7 +123,6 @@ const DealDrawer = ({
   const Parent_OPTIONS = [
     { value: "Account", label: "Account" },
     { value: "Lead", label: "Lead" },
-    { value: "Contact", label: "Contact" },
   ];
   const SOURCE_OPTIONS = [
     { value: "Low", label: "Low" },
@@ -128,6 +130,30 @@ const DealDrawer = ({
     { value: "High", label: "High" },
     { value: "Urgent", label: "Urgent" },
   ];
+
+  useEffect(() => {
+    const loadParentData = async () => {
+      try {
+        if (formData.parentName === "Account") {
+          const res = await fetchAccounts({ limit: 200, page: 1 });
+          setAcc(res.list || []);
+        }
+
+        if (formData.parentName === "Lead") {
+          const res = await fetchLeads({ limit: 200, page: 1 });
+          setLead(res.list || []);
+        }
+
+      } catch (err) {
+        console.error("Parent fetch failed", err);
+        toast.error("Failed to load parent data");
+      }
+    };
+
+    if (formData.parentName) {
+      loadParentData();
+    }
+  }, [formData.parentName]);
   const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
   // if (!isOpen) return null;
   const canEditDeal = (deal) =>
@@ -369,42 +395,18 @@ const DealDrawer = ({
     }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [usersRes, teamRes, accRes, leadRes, contactRes] =
-          await Promise.all([
-            fetchUser(),
-            fetchTeam(),
-            fetchAccounts(),
-            fetchLeads(),
-            fetchContacts(),
-          ]);
-
-        setUsers(usersRes.list || []);
-        setTeam(teamRes.list || []);
-        setAcc(accRes.list || []);
-        setLead(leadRes.list || []);
-        setContact(contactRes.list || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-
-    loadData();
-  }, []);
 
   const userOptions = users
-    ?.filter((u) => u?.isActive) // ✅ only active users
+    ?.filter((u) => u?.isActive)
     ?.map((u) => ({
-      value: u.id,
-      label: u.name || u.userName,
+      value: u.id || u.userId,
+      label: u.name || u.userName || u.fullName,
     }));
-  const teamOptions = team?.map((t) => ({
-    value: t.id,
-    label: t.name,
-  }));
 
+  const teamOptions = team?.map((t) => ({
+    value: t.id || t.teamId,
+    label: t.name || t.teamName,
+  }));
   const showForm = mode === "add" || isEditing;
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
@@ -434,12 +436,6 @@ const DealDrawer = ({
         return lead.map((item) => ({
           value: item.id,
           label: item.name,
-        }));
-
-      case "Contact":
-        return contact.map((item) => ({
-          value: item.id,
-          label: item.accountName,
         }));
 
       default:

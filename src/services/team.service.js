@@ -19,8 +19,6 @@ export const fetchTeam = async () => {
   return await res.json();
 }
 
-
-
 export const fetchTeamById = async (id) => {
   const token = localStorage.getItem("auth_token");
   console.log("AUTH TOKEN:", token); // 🔍 debug

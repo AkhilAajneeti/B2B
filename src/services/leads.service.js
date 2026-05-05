@@ -118,26 +118,31 @@ export const fetchLeadsCount = async (filters = []) => {
   return total;
 };
 
-export const fetchLeads = async ({ limit, page }) => {
+export const fetchLeads = async ({ limit = 100, page = 1 }) => {
   const token = localStorage.getItem("auth_token");
-  const user = JSON.parse(localStorage.getItem("login_object"));
 
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${page}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      token: token, // ✅ backend expects this
-    },
-  });
+  const offset = (page - 1) * limit; // ✅ FIX
+
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        token,
+      },
+    }
+  );
+
   if (!res.ok) {
     console.log("STATUS:", res.status);
     if (res.status === 401 || res.status === 403) {
       localStorage.clear();
       window.location.href = "/login";
     }
-    throw new Error("Failed to fetch accounts");
+    throw new Error("Failed to fetch leads");
   }
+
   return await res.json();
 };
 export const fetchNewLeads = async ({ limit, page, filters = {} }) => {

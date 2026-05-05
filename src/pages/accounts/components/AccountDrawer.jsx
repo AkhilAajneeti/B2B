@@ -319,18 +319,76 @@ const AccountDrawer = ({
     value: t.id,
     label: t.name,
   }));
-  const IndustryOptions = industry
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
-  const accountType = accType
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
+  // const IndustryOptions = industry
+  //   .filter((item) => item !== "")
+  //   .map((item) => ({
+  //     value: item,
+  //     label: item,
+  //   }));
+  const IndustryOptions = [
+    { value: "Advertising", label: "Advertising" },
+    { value: "Aerospace", label: "Aerospace" },
+    { value: "Agriculture", label: "Agriculture" },
+    { value: "Apparel & Accessories", label: "Apparel & Accessories" },
+    { value: "Architecture", label: "Architecture" },
+    { value: "Automotive", label: "Automotive" },
+    { value: "Banking", label: "Banking" },
+    { value: "Biotechnology", label: "Biotechnology" },
+    { value: "Building Materials & Equipment", label: "Building Materials & Equipment" },
+    { value: "Chemical", label: "Chemical" },
+    { value: "Computer", label: "Computer" },
+    { value: "Construction", label: "Construction" },
+    { value: "Consulting", label: "Consulting" },
+    { value: "Creative", label: "Creative" },
+    { value: "Culture", label: "Culture" },
+    { value: "Defense", label: "Defense" },
+    { value: "Education", label: "Education" },
+    { value: "Electric Power", label: "Electric Power" },
+    { value: "Electronics", label: "Electronics" },
+    { value: "Energy", label: "Energy" },
+    { value: "Entertainment & Leisure", label: "Entertainment & Leisure" },
+    { value: "Finance", label: "Finance" },
+    { value: "Food & Beverage", label: "Food & Beverage" },
+    { value: "Grocery", label: "Grocery" },
+    { value: "Healthcare", label: "Healthcare" },
+    { value: "Hospitality", label: "Hospitality" },
+    { value: "Insurance", label: "Insurance" },
+    { value: "Manufacturing", label: "Manufacturing" },
+    { value: "Marketing", label: "Marketing" },
+    { value: "Mass Media", label: "Mass Media" },
+    { value: "Mining", label: "Mining" },
+    { value: "Music", label: "Music" },
+    { value: "Petroleum", label: "Petroleum" },
+    { value: "Publishing", label: "Publishing" },
+    { value: "Real Estate", label: "Real Estate" },
+    { value: "Retail", label: "Retail" },
+    { value: "Service", label: "Service" },
+    { value: "Shipping", label: "Shipping" },
+    { value: "Software", label: "Software" },
+    { value: "Sports", label: "Sports" },
+    { value: "Support", label: "Support" },
+    { value: "Technology", label: "Technology" },
+    { value: "Telecommunications", label: "Telecommunications" },
+    { value: "Television", label: "Television" },
+    { value: "Testing, Inspection & Certification", label: "Testing, Inspection & Certification" },
+    { value: "Transportation", label: "Transportation" },
+    { value: "Travel", label: "Travel" },
+    { value: "Venture Capital", label: "Venture Capital" },
+    { value: "Water", label: "Water" },
+    { value: "Wholesale", label: "Wholesale" },
+  ];
+  // const accountType = accType
+  //   .filter((item) => item !== "")
+  //   .map((item) => ({
+  //     value: item,
+  //     label: item,
+  //   }));
+    const accountType = [
+  { value: "Customer", label: "Customer" },
+  { value: "Investor", label: "Investor" },
+  { value: "Partner", label: "Partner" },
+  { value: "Reseller", label: "Reseller" },
+];
 
   const handleUpdate = async () => {
     if (!validateForm()) return;
@@ -679,11 +737,10 @@ const AccountDrawer = ({
                     onClick={() => setActiveTab(tab.id)}
                     className={`
           flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors
-          ${
-            activeTab === tab.id
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }
+          ${activeTab === tab.id
+                        ? "border-primary text-primary"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                      }
         `}
                   >
                     <Icon name={tab.icon} size={16} />
@@ -1807,11 +1864,10 @@ const AccountDrawer = ({
 
                       {/* EXPANDED CONTENT */}
                       <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                          isOpen
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen
                             ? "max-h-[500px] opacity-100 mt-4"
                             : "max-h-0 opacity-0"
-                        }`}
+                          }`}
                       >
                         <div className="border-t pt-4 grid grid-cols-2 gap-4 text-sm">
                           <div>

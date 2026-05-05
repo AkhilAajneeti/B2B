@@ -15,9 +15,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { canEditRecord } from "utils/permission";
 
 const DealDrawer = ({
-  status,
-  source,
-  industry,
   deal,
   isOpen,
   onClose,
@@ -52,7 +49,7 @@ const DealDrawer = ({
     status: "",
     source: "",
     description: "",
-    industry: "",
+    cSiteVisitAt: "",
   });
   const queryClient = useQueryClient();
   const { data: usersData } = useUsers();
@@ -81,7 +78,7 @@ const DealDrawer = ({
         status: "New",
         source: "",
         description: "",
-        industry: "",
+        cSiteVisitAt: "",
       });
       setIsEditing(true); // form open
     } else if (deal && mode === "view") {
@@ -248,6 +245,7 @@ const DealDrawer = ({
       ...formData,
       name: fullName,
       cNextContactAt: toEspoDateTime(formData.cNextContactAt),
+      cSiteVisitAt: toEspoDateTime(formData.cSiteVisitAt),
     };
     try {
       if (mode === "add") {
@@ -360,24 +358,55 @@ const DealDrawer = ({
     value: t.id,
     label: t.name,
   }));
-  const sourceOptions = source
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
-  const statusOptions = status
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
-  const industryOptions = industry
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
+  // const sourceOptions = source
+  //   .filter((item) => item !== "")
+  //   .map((item) => ({
+  //     value: item,
+  //     label: item,
+  //   }));
+  const sourceOptions = [
+    { value: "Call", label: "Call" },
+    { value: "Email", label: "Email" },
+    { value: "Existing Customer", label: "Existing Customer" },
+    { value: "Partner", label: "Partner" },
+    { value: "Public Relations", label: "Public Relations" },
+    { value: "Web Site", label: "Web Site" },
+    { value: "Campaign", label: "Campaign" },
+    { value: "Other", label: "Other" },
+    { value: "ACL", label: "ACL" },
+  ];
+  const statusOptions = [
+    { value: "Broker", label: "Broker" },
+    { value: "Call Later", label: "Call Later" },
+    { value: "Call Not Connecting", label: "Call Not Connecting" },
+    { value: "Call Not Picked", label: "Call Not Picked" },
+    { value: "Converted", label: "Converted" },
+    { value: "Dead", label: "Dead" },
+    { value: "Deal Closed", label: "Deal Closed" },
+    { value: "Fake Lead", label: "Fake Lead" },
+    { value: "Follow up", label: "Follow up" },
+    { value: "Interested", label: "Interested" },
+    { value: "Invalid Number", label: "Invalid Number" },
+    { value: "Irrelevant Lead", label: "Irrelevant Lead" },
+    { value: "Low Budget", label: "Low Budget" },
+    { value: "Low Interest", label: "Low Interest" },
+    { value: "New", label: "New" },
+    { value: "Not Interested", label: "Not Interested" },
+    { value: "Other Location", label: "Other Location" },
+    { value: "Proposal Shared", label: "Proposal Shared" },
+  ];
+  // const statusOptions = status
+  //   .filter((item) => item !== "")
+  //   .map((item) => ({
+  //     value: item,
+  //     label: item,
+  //   }));
+  // const industryOptions = industry
+  //   .filter((item) => item !== "")
+  //   .map((item) => ({
+  //     value: item,
+  //     label: item,
+  //   }));
 
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
@@ -572,15 +601,16 @@ const DealDrawer = ({
                       />
                     </div>
                     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                      <Select
-                        label="Industry"
-                        value={formData.industry || ""}
-                        options={industryOptions} // 👉 later API se teams
-                        onChange={(value) =>
-                          handleSelectChange("industry", value)
+                      <Input
+                        type="datetime-local"
+                        label="Site Visit At"
+                        value={formData.cSiteVisitAt || ""}
+                        onChange={(e) =>
+                          handleChange("cSiteVisitAt", e.target.value)
                         }
                       />
                     </div>
+
                   </div>
 
                   {/* ================= Assigned User ================= */}
@@ -868,10 +898,13 @@ const DealDrawer = ({
                           {/* Source */}
                           <div>
                             <p className="text-sm text-muted-foreground">
-                              Industry
+                              Site Visit
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.industry || "—"}
+
+                              {deal?.cSiteVisitAt
+                                ? formatDateTime(deal.cSiteVisitAt)
+                                : "None"}
                             </p>
                           </div>
 
