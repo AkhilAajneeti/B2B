@@ -326,12 +326,12 @@ const ProjectsPage = () => {
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All
                 </Button>
-                {canCreate('CProjects') && (
-                  <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
-                    <Icon name="Plus" size={16} className="mr-2" />
-                    New Project
-                  </Button>
-                )}
+
+                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
+                  <Icon name="Plus" size={16} className="mr-2" />
+                  New Project
+                </Button>
+
               </div>
             </div>
 

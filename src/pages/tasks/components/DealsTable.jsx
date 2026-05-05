@@ -234,7 +234,7 @@ const DealsTable = ({
               <tr>
                 <td colSpan="8">
                   <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
-                    No leads available
+                    No task available
                   </div>
                 </td>
               </tr>

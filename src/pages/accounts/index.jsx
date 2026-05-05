@@ -331,10 +331,10 @@ const AccountsPage = () => {
                 <Icon name="Upload" size={16} className="mr-2" />
                 Import
               </Button>
-              {canCreateAccount && (<Button onClick={handleAccountButton} className="linearbg-1">
+              <Button onClick={handleAccountButton} className="linearbg-1">
                 <Icon name="Plus" size={16} className="mr-2" />
                 Add Account
-              </Button>)}
+              </Button>
             </div>
           </div>
 

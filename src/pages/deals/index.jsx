@@ -360,13 +360,13 @@ const DealsPage = () => {
                   Export All
                 </Button>
 
-                {canCreateLead && (<Button
+                <Button
                   onClick={handleAddLeads}
                   className="linearbg-1 text-white hover:text-white"
                 >
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Lead
-                </Button>)}
+                </Button>
               </div>
             </div>
 

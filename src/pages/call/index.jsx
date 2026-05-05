@@ -299,12 +299,12 @@ const CallPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                {canCreateCall && (
+               
                   <Button onClick={handleAddMeeting} className="linearbg-1 text-white hover:text-white">
                     <Icon name="Plus" size={16} className="mr-2" />
                     New Training
                   </Button>
-                )}
+                
               </div>
             </div>
 

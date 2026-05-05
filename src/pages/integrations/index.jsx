@@ -338,20 +338,20 @@ const IntegrationsPage = () => {
                 >
                   Refresh All
                 </Button>
-                {canCreate('LeadCapture') && (
-                  <Button
-                    variant="default" className="linearbg-1 text-white hover:text-white"
-                    iconName="Plus"
-                    iconPosition="left"
-                    onClick={() => {
-                      setSelectedIntegration(null);
-                      setDrawerMode("add");
-                      setIsOpen(true);
-                    }}
-                  >
-                    Create Entry Point
-                  </Button>
-                )}
+
+                <Button
+                  variant="default" className="linearbg-1 text-white hover:text-white"
+                  iconName="Plus"
+                  iconPosition="left"
+                  onClick={() => {
+                    setSelectedIntegration(null);
+                    setDrawerMode("add");
+                    setIsOpen(true);
+                  }}
+                >
+                  Create Entry Point
+                </Button>
+
               </div>
             </div>
           </div>
