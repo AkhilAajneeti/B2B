@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
-
-const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total,limit,page }) => {
+import Input from "../../../components/ui/Input";
+const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total, limit, page }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activityDateFilter, setActivityDateFilter] = useState("last_7_days");
   const industryOptions = [
@@ -33,17 +33,22 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total,li
   const ACTIVITY_DATE_FILTERS = [
     { label: "Today", value: "today" },
     { label: "Yesterday", value: "yesterday" },
-    { label: "Last 7 Days", value: "last_7_days" },
-    { label: "Current Month", value: "current_month" },
-    { label: "Last Month", value: "last_month" },
-  ];
+    { label: "Last 7 Days", value: "lastSevenDays" },
 
+    { label: "Before", value: "before" },
+    { label: "After", value: "after" },
+
+    { label: "Between", value: "between" },
+    { label: "This Month", value: "currentMonth" },
+    { label: "Last Month", value: "lastMonth" },
+  ];
+  const showDateInputs = ["between", "after", "before"].includes(activeFilters?.dateType);
   const handleDateFilterChange = (value) => {
     setActivityDateFilter(value);
 
     onFiltersChange({
       ...activeFilters,
-      activityDate: value,
+      dateType: value,
     });
   };
   const handleFilterChange = (filterType, value) => {
@@ -56,8 +61,11 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total,li
   const clearAllFilters = () => {
     onFiltersChange({
       industry: "",
+      search: "",
       type: "",
-      activityDate: "",
+      dateType: "",
+      startDate: "",
+      endDate: "",
     });
   };
 
@@ -70,15 +78,24 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total,li
 
 
   // add ranges 
-  const start=total===0?0:(page-1)*(limit+1)
-  const end=Math.min(page*limit,total)
+  const start = total === 0 ? 0 : (page - 1) * (limit + 1)
+  const end = Math.min(page * limit, total)
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-3 flex-1">
-          <div className="hidden sm:grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+          <div className="hidden sm:grid grid-cols-1 sm:grid-cols-4 gap-3 flex-1">
+            <Input
+              type="search"
+              placeholder="Search by account name..."
+              value={activeFilters?.search || ""}
+              onChange={(e) =>
+                handleFilterChange("search", e.target.value)
+              }
+              className="border px-3 py-2 rounded-md w-full"
+            />
             <Select
               options={industryOptions}
               value={activeFilters?.industry || ""}
@@ -97,11 +114,33 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total,li
 
             <Select
               options={ACTIVITY_DATE_FILTERS}
-              value={activeFilters?.activityDate || ""}
+              value={activeFilters?.dateType || ""}
               onChange={handleDateFilterChange}
               placeholder="Filter by date"
               className="min-w-0"
             />
+            {/* Date Range Inputs */}
+            {showDateInputs && (
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={activeFilters?.startDate || ""}
+                  onChange={(e) =>
+                    handleFilterChange("startDate", e.target.value)
+                  }
+                />
+
+                {activeFilters?.dateType === "between" && (
+                  <Input
+                    type="date"
+                    value={activeFilters?.endDate || ""}
+                    onChange={(e) =>
+                      handleFilterChange("endDate", e.target.value)
+                    }
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Mobile Filter Toggle */}
@@ -123,7 +162,7 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total,li
         {/* Results and Actions */}
         <div className="flex items-center justify-between sm:justify-end gap-4">
           <div className="text-sm text-muted-foreground">
-            {start}-{end}/{ total} {resultCount === 1 ? "account" : "accounts"} found
+            {start}-{end}/{total} {resultCount === 1 ? "account" : "accounts"} found
           </div>
 
           <div className="flex items-center gap-2">
@@ -219,9 +258,9 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total,li
               placeholder="Filter by revenue"
             />
 
-             <Select
+            <Select
               options={ACTIVITY_DATE_FILTERS}
-              value={activeFilters?.activityDate || ""}
+              value={activeFilters?.dateType || ""}
               onChange={handleDateFilterChange}
               placeholder="Filter by date"
               className="min-w-0"

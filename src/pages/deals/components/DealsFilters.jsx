@@ -20,7 +20,7 @@ const DealsFilters = ({
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
   const [status, setStatus] = useState([]);
-  
+
   const [source, setSource] = useState([]);
 
   const bulkActions = [
@@ -58,12 +58,45 @@ const DealsFilters = ({
       value: item,
       label: item,
     }));
+     const ACTIVITY_DATE_FILTERS = [
+    { label: "Today", value: "today" },
+    { label: "Last 7 Days", value: "lastSevenDays" },
+    { label: "Current Month", value: "currentMonth" },
+    { label: "Last Month", value: "lastMonth" },
+    // { label: "Next Month", value: "nextMonth" },
+    { label: "Current Quarter", value: "currentQuarter" },
+    { label: "Last Quarter", value: "lastQuarter" },
+    { label: "Current Year", value: "currentYear" },
+    { label: "Last Year", value: "lastYear" },
+    { label: "Past", value: "past" },
+    { label: "Future", value: "future" },
+    { label: "Ever", value: "ever" },
+    { label: "Is Empty", value: "isEmpty" },
 
+    // special
+    { label: "On", value: "on" },
+    { label: "Before", value: "before" },
+    { label: "After", value: "after" },
+    { label: "Between", value: "between" },
+    { label: "Last X Days", value: "lastXDays" },
+    // { label: "After X Days", value: "afterXDays" },
+  ];
+  const showDateInputs = ["on", "before", "after", "between"].includes(filters?.dateType);
+  const showXDaysInput = ["lastXDays", "afterXDays"].includes(filters?.dateType);
   const handleFilterChange = (key, value) => {
-    onFiltersChange({
+    let updated = {
       ...filters,
       [key]: value,
-    });
+    };
+
+    // 🔥 reset dependent fields when dateType changes
+    if (key === "dateType") {
+      updated.closeDateFrom = "";
+      updated.closeDateTo = "";
+      updated.xDays = "";
+    }
+
+    onFiltersChange(updated);
   };
 
   useEffect(() => {
@@ -193,11 +226,11 @@ const DealsFilters = ({
           onChange={(value) => handleFilterChange("status", value)}
         />
 
-        <Input
+        {/* <Input
           placeholder="Project Name"
           value={filters?.projectName || ""}
           onChange={(e) => handleFilterChange("projectName", e.target.value)}
-        />
+        /> */}
 
         <Select
           placeholder="Source"
@@ -211,33 +244,59 @@ const DealsFilters = ({
           value={filters?.assignUser || ""}
           onChange={(value) => handleFilterChange("assignUser", value)}
         />
+        {/* Date Type Select */}
+        <Select
+          className="min-w-0"
+          placeholder="Filter by date"
+          options={ACTIVITY_DATE_FILTERS}
+          value={filters?.dateType || ""}
+          onChange={(value) => handleFilterChange("dateType", value)}
+        />
+
+        {/* X Days Input */}
+        {showXDaysInput && (
+          <Input
+            type="number"
+            placeholder="Enter days"
+            value={filters?.xDays || ""}
+            onChange={(e) =>
+              handleFilterChange("xDays", e.target.value)
+            }
+          />
+        )}
+
+        {/* Date Range Inputs */}
+        {showDateInputs && (
+          <div className="flex gap-2">
+            <Input
+              type="date"
+              value={filters?.closeDateFrom || ""}
+              onChange={(e) =>
+                handleFilterChange("closeDateFrom", e.target.value)
+              }
+            />
+
+            {filters?.dateType === "between" && (
+              <Input
+                type="date"
+                value={filters?.closeDateTo || ""}
+                onChange={(e) =>
+                  handleFilterChange("closeDateTo", e.target.value)
+                }
+              />
+            )}
+          </div>
+        )}
       </div>
       {/* Advanced Filters Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 pt-4 border-t border-border gap-3">
-        <div className="flex flex-col sm:flex-row gap-3 w-full">
-          <Input
-            type="date"
-            placeholder="Close date from"
-            value={filters?.closeDateFrom || ""}
-            onChange={(e) =>
-              handleFilterChange("closeDateFrom", e?.target?.value)
-            }
-          />
-          <Input
-            type="date"
-            placeholder="Close date to"
-            value={filters?.closeDateTo || ""}
-            onChange={(e) =>
-              handleFilterChange("closeDateTo", e?.target?.value)
-            }
-          />
-        </div>
-        <RoleGuard allowedRoles={["admin", "manager"]}>
+        
+        {/* <RoleGuard allowedRoles={["admin", "manager"]}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
             <Icon name="Plus" size={16} className="mr-2" />
             Anaylze By Chart
           </Button>
-        </RoleGuard>
+        </RoleGuard> */}
       </div>
     </div>
   );

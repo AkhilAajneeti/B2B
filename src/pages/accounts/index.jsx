@@ -17,6 +17,7 @@ import ImportModel from "./components/ImportModel";
 import { useAccounts } from "hooks/useAccounts";
 import { useMetaData } from "hooks/useMetaData";
 import { useQueryClient } from "@tanstack/react-query";
+import { canCreate, canDelete, canEdit } from "utils/permission";
 
 const AccountsPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -27,16 +28,20 @@ const AccountsPage = () => {
   const [activities, setActivities] = useState([]);
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(1);
-
+  const canEditAccount = canEdit("Account");
+  const canDeleteAccount = canDelete("Account");
   const [selectedAccountIds, setSelectedAccountIds] = useState([]);
 
   const [filters, setFilters] = useState({
     industry: "",
+    search: "",
     type: "",
-    activityDate: "",
+    dateType: "",
+    startDate: "",
+    endDate: "",
   });
 
-  const { data, isLoading } = useAccounts({ limit, page });
+  const { data, isLoading } = useAccounts({ limit, page, filters });
   const { data: meta } = useMetaData();
   const queryClient = useQueryClient();
   const mockAccounts = data?.list || [];
@@ -91,35 +96,8 @@ const AccountsPage = () => {
 
     return { startDate: start, endDate: end };
   };
-  const filteredAccounts = useMemo(() => {
-    return mockAccounts?.filter((account) => {
-      // Industry
-      if (
-        filters.industry &&
-        account?.industry?.toLowerCase() !== filters.industry
-      ) {
-        return false;
-      }
+  const canCreateAccount = canCreate("Account");
 
-      // Type
-      if (filters.type && account?.type?.toLowerCase() !== filters.type) {
-        return false;
-      }
-
-      // Date filter (Created At)
-      if (filters.activityDate) {
-        const range = getDateRangeByFilter(filters.activityDate);
-        if (!range) return true;
-
-        const createdAt = new Date(account.createdAt);
-        if (createdAt < range.startDate || createdAt > range.endDate) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [mockAccounts, filters]);
 
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -210,9 +188,8 @@ const AccountsPage = () => {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = `accounts_export_${
-        new Date().toISOString().split("T")[0]
-      }.csv`;
+      link.download = `accounts_export_${new Date().toISOString().split("T")[0]
+        }.csv`;
 
       document.body.appendChild(link);
       link.click();
@@ -354,10 +331,10 @@ const AccountsPage = () => {
                 <Icon name="Upload" size={16} className="mr-2" />
                 Import
               </Button>
-              <Button onClick={handleAccountButton} className="linearbg-1">
+              {canCreateAccount && (<Button onClick={handleAccountButton} className="linearbg-1">
                 <Icon name="Plus" size={16} className="mr-2" />
                 Add Account
-              </Button>
+              </Button>)}
             </div>
           </div>
 
@@ -365,7 +342,7 @@ const AccountsPage = () => {
           <AccountsFilters
             onFiltersChange={handleFiltersChange}
             activeFilters={filters}
-            resultCount={filteredAccounts?.length}
+            resultCount={mockAccounts?.length}
             total={total}
             limit={limit}
             page={page}
@@ -373,7 +350,7 @@ const AccountsPage = () => {
 
           {/* Accounts Table */}
           <AccountsTable
-            accounts={filteredAccounts}
+            accounts={mockAccounts}
             onRowClick={handleRowClick}
             onBulkAction={handleBulkAction}
             onSelectionChange={setSelectedAccountIds}
@@ -383,6 +360,8 @@ const AccountsPage = () => {
             total={total}
             limit={limit}
             setLimit={setLimit}
+            canEdit={canEditAccount}
+            canDelete={canDeleteAccount}
           />
         </div>
       </main>

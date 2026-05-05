@@ -1,3 +1,176 @@
+// fetch all
+const toLocalISOString = (date) => {
+  const tzOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date - tzOffset).toISOString().slice(0, -1);
+};
+
+const getDateRange = (type) => {
+  const now = new Date();
+  let start = new Date();
+  let end = new Date();
+
+  switch (type) {
+    case "today":
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+
+    case "yesterday":
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(start);
+      end.setHours(23, 59, 59, 999);
+      break;
+
+    case "last7Days":
+      start.setDate(start.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+      break;
+
+    case "currentMonth":
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end.setHours(23, 59, 59, 999);
+      break;
+
+    case "lastMonth":
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      break;
+
+    default:
+      return null;
+  }
+
+  return {
+    start: toLocalISOString(start),
+    end: toLocalISOString(end),
+  };
+};
+
+export const fetchAllTasks = async ({ limit, page, filters = {} }) => {
+  const token = localStorage.getItem("auth_token");
+  const offset = (page - 1) * limit;
+
+  const where = [];
+
+  // 🔍 SEARCH
+  if (filters.search?.trim()) {
+    where.push({
+      type: "like",
+      attribute: "name",
+      value: `%${filters.search.trim()}%`,
+    });
+  }
+
+  // 👤 ASSIGNED USER
+  if (filters.assignUser) {
+    where.push({
+      type: "equals",
+      attribute: "assignedUserId",
+      value: filters.assignUser,
+    });
+  }
+
+  // 📌 STATUS
+  if (filters.status) {
+    where.push({
+      type: "equals",
+      attribute: "status",
+      value: filters.status,
+    });
+  }
+
+  // ⚡ PRIORITY
+  if (filters.priority) {
+    where.push({
+      type: "equals",
+      attribute: "priority",
+      value: filters.priority,
+    });
+  }
+
+  // 📅 DATE FILTER
+  if (filters.dateType) {
+    let condition = null;
+
+    if (filters.dateType === "between") {
+      if (filters.startDate && filters.endDate) {
+        condition = {
+          type: "between",
+          attribute: "createdAt",
+          value: [filters.startDate, filters.endDate],
+        };
+      }
+    } else if (filters.dateType === "before") {
+      if (filters.startDate) {
+        condition = {
+          type: "lessThan",
+          attribute: "createdAt",
+          value: filters.startDate,
+        };
+      }
+    } else if (filters.dateType === "after") {
+      if (filters.startDate) {
+        condition = {
+          type: "greaterThan",
+          attribute: "createdAt",
+          value: filters.startDate,
+        };
+      }
+    } else {
+      const range = getDateRange(filters.dateType);
+
+      if (range) {
+        condition = {
+          type: "between",
+          attribute: "createdAt",
+          value: [range.start, range.end],
+        };
+      }
+    }
+
+    if (condition) where.push(condition);
+  }
+
+  // 🔥 BUILD QUERY (whereGroup)
+  const query = where
+    .map((f, i) => {
+      let q = `whereGroup[${i}][type]=${f.type}&whereGroup[${i}][attribute]=${f.attribute}`;
+
+      if (Array.isArray(f.value)) {
+        f.value.forEach((v) => {
+          q += `&whereGroup[${i}][value][]=${encodeURIComponent(v)}`;
+        });
+      } else {
+        q += `&whereGroup[${i}][value]=${encodeURIComponent(f.value)}`;
+      }
+
+      return q;
+    })
+    .join("&");
+
+  const url = `https://gateway.aajneetiadvertising.com/Task?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc${query ? `&${query}` : ""
+    }`;
+
+  console.log("🔥 TASK API:", url);
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      token: token,
+    },
+  });
+
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    throw new Error("Failed to fetch tasks");
+  }
+
+  return res.json();
+};
+
+
 export const fetchTasks = async () => {
   const token = localStorage.getItem("auth_token");
   console.log("AUTH TOKEN:", token); // 🔍 debug

@@ -11,8 +11,8 @@ const DealsTable = ({
   onDealClick,
   sortConfig,
   onSort,
-  page,
-  setPage,
+ canEdit = true,
+  canDelete = true,
   onDelete,
   isLoading,
 }) => {
@@ -303,23 +303,23 @@ const paginatedDeals = deals;
                         hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
                       }`}
                     >
-                      <Button
+                     {canEdit && ( <Button
                         variant="ghost"
                         size="icon"
                         onClick={(e) => handleQuickAction(e, "edit", deal)}
                         className="h-8 w-8"
                       >
                         <Icon name="Edit" size={14} />
-                      </Button>
+                      </Button>)}
 
-                      <Button
+                      {canDelete && (<Button
                         variant="ghost"
                         size="icon"
                         onClick={(e) => handleDelete(e, deal)}
                         className="h-8 w-8 text-destructive hover:text-destructive"
                       >
                         <Icon name="Trash2" size={14} />
-                      </Button>
+                      </Button>)}
                     </div>
                   </td>
                 </tr>

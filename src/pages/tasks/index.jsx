@@ -18,8 +18,9 @@ import {
   deleteActivity,
 } from "services/tasks.service";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTasks } from "hooks/useTasks";
+import { useTasks, useTasksAll } from "hooks/useTasks";
 import { useTask } from "hooks/useTask";
+import { canCreate, canDelete, canEdit } from "utils/permission";
 const TaskPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
@@ -28,6 +29,11 @@ const TaskPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
+  const [limit, setLimit] = useState(20);
+  const [page, setPage] = useState(1);
+  const canCreateTask = canCreate("Task");
+  const canEditTask = canEdit("Task");
+  const canDeleteTask = canDelete("Task");
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -37,13 +43,15 @@ const TaskPage = () => {
     status: "",
     priority: "",
     assignUser: "",
-    closeDateFrom: "",
-    closeDateTo: "",
+    startDate: "",
+    endDate: "",
+    dateType: "",
   });
   const queryClient = useQueryClient();
-  const { data, isLoading } = useTasks();
+  const { data, isLoading } = useTasksAll({ limit, page, filters });;
 
   const leads = data?.list || [];
+  const total = data?.total || 0;
   const loading = isLoading;
 
   // Mock deals data
@@ -53,77 +61,12 @@ const TaskPage = () => {
     setIsDrawerOpen(true);
   };
   const { data: selectedDealData } = useTask(
-  selectedDeal?.id,
-  isDrawerOpen && !!selectedDeal?.id
-);
+    selectedDeal?.id,
+    isDrawerOpen && !!selectedDeal?.id
+  );
 
-  // Filter and sort deals
-  const filteredAndSortedDeals = useMemo(() => {
-    let filtered = leads?.filter((deal) => {
-      const search = filters?.search?.toLowerCase();
 
-      const matchesSearch =
-        !search ||
-        deal?.name?.toLowerCase()?.includes(search) ||
-        deal?.emailAddress?.toLowerCase()?.includes(search) ||
-        deal?.phoneNumber?.includes(search) ||
-        deal?.accountName?.toLowerCase()?.includes(search);
-
-      const matchesStatus =
-        !filters?.status || deal?.status === filters?.status;
-
-      const matchesPriority =
-        !filters?.priority || deal?.priority === filters?.priority;
-
-      const matchesAssignUser =
-        !filters.assignUser ||
-        String(deal.assignedUserId) === String(filters.assignUser);
-
-      const matchesCreatedFrom =
-        !filters?.closeDateFrom ||
-        new Date(deal?.createdAt) >= new Date(filters?.closeDateFrom);
-
-      const matchesCreatedTo =
-        !filters?.closeDateTo ||
-        new Date(deal?.createdAt) <= new Date(filters?.closeDateTo);
-
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesPriority &&
-        matchesAssignUser &&
-        matchesCreatedFrom &&
-        matchesCreatedTo
-      );
-    });
-
-    // ✅ SAFE SORTING
-    if (sortConfig?.key) {
-      filtered.sort((a, b) => {
-        let aValue = a?.[sortConfig.key];
-        let bValue = b?.[sortConfig.key];
-
-        if (sortConfig.key === "opportunityAmount") {
-          aValue = Number(aValue ?? 0);
-          bValue = Number(bValue ?? 0);
-        } else if (sortConfig.key === "createdAt") {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-        } else if (typeof aValue === "string") {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
-  }, [leads, filters, sortConfig]);
-
-  const totalPages = Math.ceil(filteredAndSortedDeals?.length / itemsPerPage);
+  const totalPages = Math.ceil(total / limit);
 
   const exportLeadsToCSV = (rows, fileName = "leads_export") => {
     if (!rows || rows.length === 0) {
@@ -302,8 +245,9 @@ const TaskPage = () => {
       status: "",
       priority: "",
       assignUser: "",
-      closeDateFrom: "",
-      closeDateTo: "",
+      startDate: "",
+      endDate: "",
+      dateType: "",
     });
     setCurrentPage(1);
   };
@@ -349,6 +293,7 @@ const TaskPage = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setPage(1);
   }, [filters]);
 
   return (
@@ -388,10 +333,10 @@ const TaskPage = () => {
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All
                 </Button>
-                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
+                {canCreateTask && (<Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Tasks
-                </Button>
+                </Button>)}
               </div>
             </div>
 
@@ -400,14 +345,14 @@ const TaskPage = () => {
               filters={filters}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              dealCount={filteredAndSortedDeals?.length}
+              dealCount={total}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
             />
 
             {/* Deals Table */}
             <DealsTable
-              deals={filteredAndSortedDeals}
+              deals={leads}
               selectedDeals={selectedDeals}
               onSelectDeal={handleSelectDeal}
               onSelectAll={handleSelectAll}
@@ -418,16 +363,21 @@ const TaskPage = () => {
               itemsPerPage={itemsPerPage}
               onDelete={handleDeleteLead}
               isLoading={loading}
+              canEdit={canEditTask}
+              canDelete={canDeleteTask}
             />
 
             {/* Pagination */}
             <TablePagination
-              currentPage={currentPage}
+              currentPage={page}
               totalPages={totalPages}
-              totalItems={filteredAndSortedDeals?.length}
+              totalItems={total}
               itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
+              onPageChange={(p) => setPage(p)}
+              onItemsPerPageChange={(newLimit) => {
+                setLimit(newLimit);
+                setPage(1);
+              }}
             />
           </div>
         </main>

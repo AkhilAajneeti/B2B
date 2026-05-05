@@ -4,6 +4,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { Checkbox } from "../../../components/ui/Checkbox";
+import { canEditRecord } from "utils/permission";
 const AccountsTable = ({
   accounts,
   onRowClick,
@@ -15,6 +16,8 @@ const AccountsTable = ({
   total,
   limit,
   setLimit,
+  canEdit = true,
+  canDelete = true,
 }) => {
   // do some changes
 
@@ -52,65 +55,7 @@ const AccountsTable = ({
   ];
 
   // Filter and sort data
-  const filteredAndSortedData = useMemo(() => {
-    let filtered = accounts?.filter((account) => {
-      // Global filter
-      if (globalFilter) {
-        const searchTerm = globalFilter?.toLowerCase();
-        const searchableFields = [
-          account?.company,
-          account?.industry,
-          account?.owner,
-        ];
-        if (
-          !searchableFields?.some((field) =>
-            field?.toLowerCase()?.includes(searchTerm),
-          )
-        ) {
-          return false;
-        }
-      }
 
-      // Column filters
-      for (const [key, value] of Object.entries(columnFilters)) {
-        if (
-          value &&
-          account?.[key] &&
-          !account?.[key]?.toLowerCase()?.includes(value?.toLowerCase())
-        ) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    // Sort data
-    if (sortConfig?.key) {
-      filtered?.sort((a, b) => {
-        let aValue = a?.[sortConfig?.key];
-        let bValue = b?.[sortConfig?.key];
-
-        // Handle different data types
-        if (sortConfig?.key === "revenue" || sortConfig?.key === "dealValue") {
-          aValue = parseFloat(aValue?.replace(/[$,]/g, "")) || 0;
-          bValue = parseFloat(bValue?.replace(/[$,]/g, "")) || 0;
-        } else if (sortConfig?.key === "lastActivity") {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-        } else if (typeof aValue === "string") {
-          aValue = aValue?.toLowerCase();
-          bValue = bValue?.toLowerCase();
-        }
-
-        if (aValue < bValue) return sortConfig?.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig?.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
-  }, [accounts, globalFilter, columnFilters, sortConfig]);
 
   // Pagination
   const totalPages = Math.ceil(total / limit);
@@ -155,7 +100,11 @@ const AccountsTable = ({
   useEffect(() => {
     onSelectionChange(Array.from(selectedRows));
   }, [selectedRows]);
+  const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
 
+  const canEditDeal = (deal) =>
+    canEditRecord("Account", deal) &&
+    deal?.assignedUserId === currentUserId;
   const isAllSelected =
     accounts?.length > 0 && selectedRows?.size === accounts?.length;
   const isIndeterminate =
@@ -207,15 +156,6 @@ const AccountsTable = ({
       {/* Table Header with Search and Filters */}
       <div className="p-4 border-b border-border space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex-1 max-w-md">
-            <Input
-              type="search"
-              placeholder="Search accounts..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e?.target?.value)}
-              className="w-full"
-            />
-          </div>
 
           <div className="flex items-center gap-2">
             {selectedRows?.size > 0 && (
@@ -365,14 +305,22 @@ const AccountsTable = ({
                   {visibleColumns?.actions && (
                     <td className="p-4" onClick={(e) => e?.stopPropagation()}>
                       <div className="flex items-center space-x-1">
-                        <Button
+                        {canEdit && canEditDeal(account) ? (<Button
                           variant="ghost"
                           size="icon"
                           onClick={() => onRowClick(account, "edit")}
                         >
                           <Icon name="Edit" size={16} />
-                        </Button>
-                        <Button
+                        </Button>) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onRowClick(account, "view")}
+                          >
+                            <Icon name="Edit" size={16} />
+                          </Button>
+                        )}
+                        {canDelete && (<Button
                           variant="ghost"
                           size="sm"
                           className="text-destructive hover:bg-red-50"
@@ -381,7 +329,7 @@ const AccountsTable = ({
                           }
                         >
                           <Icon name="Trash2" size={16} />
-                        </Button>
+                        </Button>)}
                       </div>
                     </td>
                   )}
@@ -459,7 +407,7 @@ const AccountsTable = ({
             <Select
               options={pageSizeOptions}
               value={limit}
-              onChange={(val)=>{
+              onChange={(val) => {
                 setLimit(val);
                 setPage(1)
               }}

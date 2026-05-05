@@ -25,6 +25,7 @@ import MultiLineChart from "pages/dashboard/components/MultiLineChart";
 import { useLeads, useNewLeads } from "hooks/useLeads";
 import { useMetaData } from "hooks/useMetaData";
 import { useLeadDetails } from "hooks/useLeadDetails";
+import { canCreate, canDelete, canEdit } from "utils/permission";
 
 const DealsPage = () => {
   const queryClient = useQueryClient();
@@ -40,6 +41,9 @@ const DealsPage = () => {
   const [mode, setMode] = useState("view");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const canCreateLead = canCreate("Lead");
+  const canEditLead = canEdit("Lead");
+  const canDeleteLead = canDelete("Lead");
 
   const { data: metaData } = useMetaData();
   const { data: leadsDetails } = useLeadDetails(selectedDeal?.id, mode);
@@ -51,11 +55,14 @@ const DealsPage = () => {
   const [filters, setFilters] = useState({
     search: "",
     status: "",
+    sector: "",
     projectName: "",
     source: "",
     assignUser: "",
+    dateType: "",
     closeDateFrom: "",
     closeDateTo: "",
+    xDays: ""
   });
   const { data: leadsData, isLoading } = useNewLeads({ limit, page, filters });
   const createLeadMutation = useMutation({
@@ -205,11 +212,14 @@ const DealsPage = () => {
     setFilters({
       search: "",
       status: "",
+      sector: "",
       projectName: "",
       source: "",
       assignUser: "",
+      dateType: "",
       closeDateFrom: "",
       closeDateTo: "",
+      xDays: ""
     });
     setPage(1);
   };
@@ -350,13 +360,13 @@ const DealsPage = () => {
                   Export All
                 </Button>
 
-                <Button
+                {canCreateLead && (<Button
                   onClick={handleAddLeads}
                   className="linearbg-1 text-white hover:text-white"
                 >
                   <Icon name="Plus" size={16} className="mr-2" />
-                  New Deal
-                </Button>
+                  New Lead
+                </Button>)}
               </div>
             </div>
 
@@ -411,6 +421,8 @@ const DealsPage = () => {
               isLoading={isLoading}
               page={page}
               setPage={setPage}
+              canEdit={canEditLead}
+              canDelete={canDeleteLead}
             />
 
             {/* Pagination */}

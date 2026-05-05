@@ -13,15 +13,17 @@ import Button from "components/ui/Button";
 import Icon from "../../components/AppIcon";
 import DealsTable from "./components/DealsTable";
 import { fetchLeads } from "services/leads.service";
+import { useNewLeads } from "hooks/useLeads";
 
 const Reports = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [leads, setLeads] = useState([]);
+
   const [source, setSource] = useState([]);
   const [status, setStatus] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [limit, setLimit] = useState(20);
+  const [page, setPage] = useState(1);
   const [selectedDeals, setSelectedDeals] = useState([]);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [sortConfig, setSortConfig] = useState({
@@ -31,14 +33,14 @@ const Reports = () => {
   const [filters, setFilters] = useState({
     search: "",
     status: "",
-    days: "",
     source: "",
     assignUser: "",
+    dateType: "today",        // 👈 NEW (today, before, between, etc.)
     closeDateFrom: "",
     closeDateTo: "",
   });
 
-    useEffect(() => {
+  useEffect(() => {
     const loadSource = async () => {
       try {
         const data = await fetchSources();
@@ -47,7 +49,7 @@ const Reports = () => {
       } catch (error) {
         console.log("failed to fetch data", error);
       } finally {
-        
+
       }
     };
     loadSource();
@@ -60,7 +62,7 @@ const Reports = () => {
     setFilters({
       search: "",
       status: "",
-      days: "",
+      dateType: "",
       source: "",
       assignUser: "",
       closeDateFrom: "",
@@ -80,13 +82,9 @@ const Reports = () => {
     }
   };
   const handleFiltersChange = (newFilters) => {
-    setIsLoading(true);
+
     setFilters(newFilters);
 
-    // Simulate data loading
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
   };
 
   // Close sidebar on route change or outside click
@@ -116,129 +114,49 @@ const Reports = () => {
     };
     loadStatus();
   }, []);
-  useEffect(() => {
-    const loadContact = async () => {
-      try {
-        const data = await fetchLeads();
-        setLeads(data.list);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadContact();
-  }, []);
 
-  const isWithinSelectedDays = (createdAt, selectedDay) => {
-    if (!selectedDay) return true;
+  const { data: leadsData, isLoading } = useNewLeads({ limit, page, filters });
+  const leads = leadsData?.list || [];
+  const total = leadsData?.total || 0;
+  // const isWithinSelectedDays = (createdAt, selectedDay) => {
+  //   if (!selectedDay) return true;
 
-    const createdDate = new Date(createdAt?.replace(" ", "T"));
-    const today = new Date();
+  //   const createdDate = new Date(createdAt?.replace(" ", "T"));
+  //   const today = new Date();
 
-    // Reset time for accurate comparison
-    today.setHours(0, 0, 0, 0);
+  //   // Reset time for accurate comparison
+  //   today.setHours(0, 0, 0, 0);
 
-    const compareDate = new Date(createdDate);
-    compareDate.setHours(0, 0, 0, 0);
+  //   const compareDate = new Date(createdDate);
+  //   compareDate.setHours(0, 0, 0, 0);
 
-    const diffInDays = (today - compareDate) / (1000 * 60 * 60 * 24);
+  //   const diffInDays = (today - compareDate) / (1000 * 60 * 60 * 24);
 
-    switch (selectedDay) {
-      case "Today":
-        return diffInDays === 0;
+  //   switch (selectedDay) {
+  //     case "Today":
+  //       return diffInDays === 0;
 
-      case "Yesterday":
-        return diffInDays === 1;
+  //     case "Yesterday":
+  //       return diffInDays === 1;
 
-      case "Last 3 Days":
-        return diffInDays >= 0 && diffInDays <= 2;
+  //     case "Last 3 Days":
+  //       return diffInDays >= 0 && diffInDays <= 2;
 
-      case "Last 7 Days":
-        return diffInDays >= 0 && diffInDays <= 6;
+  //     case "Last 7 Days":
+  //       return diffInDays >= 0 && diffInDays <= 6;
 
-      case "Current Month":
-        return (
-          createdDate.getMonth() === today.getMonth() &&
-          createdDate.getFullYear() === today.getFullYear()
-        );
+  //     case "Current Month":
+  //       return (
+  //         createdDate.getMonth() === today.getMonth() &&
+  //         createdDate.getFullYear() === today.getFullYear()
+  //       );
 
-      default:
-        return true;
-    }
-  };
+  //     default:
+  //       return true;
+  //   }
+  // };
 
-  // Filter and sort deals
-  const filteredAndSortedDeals = useMemo(() => {
-    let filtered = leads?.filter((deal) => {
-      const search = filters?.search?.toLowerCase();
 
-      const matchesSearch =
-        !search ||
-        deal?.name?.toLowerCase()?.includes(search) ||
-        deal?.emailAddress?.toLowerCase()?.includes(search) ||
-        deal?.phoneNumber?.includes(search) ||
-        deal?.accountName?.toLowerCase()?.includes(search);
-
-      const matchesStatus =
-        !filters?.status || deal?.status === filters?.status;
-
-      const matchesSource =
-        !filters?.source || deal?.source === filters?.source;
-
-      const matchesDays =
-        !filters?.days || isWithinSelectedDays(deal?.createdAt, filters?.days);
-
-      const matchesAssignUser =
-        !filters?.assignUser || deal?.assignedUserId === filters?.assignUser;
-
-      const matchesCreatedFrom =
-        !filters?.closeDateFrom ||
-        new Date(deal?.createdAt?.replace(" ", "T")) >=
-          new Date(filters?.closeDateFrom);
-
-      const matchesCreatedTo =
-        !filters?.closeDateTo ||
-        new Date(deal?.createdAt?.replace(" ", "T")) <=
-          new Date(filters?.closeDateTo);
-
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesSource &&
-        matchesAssignUser &&
-        matchesCreatedFrom &&
-        matchesCreatedTo &&
-        matchesDays
-      );
-    });
-
-    // ✅ SAFE SORTING
-    if (sortConfig?.key) {
-      filtered.sort((a, b) => {
-        let aValue = a?.[sortConfig.key];
-        let bValue = b?.[sortConfig.key];
-
-        if (sortConfig.key === "opportunityAmount") {
-          aValue = Number(aValue ?? 0);
-          bValue = Number(bValue ?? 0);
-        } else if (sortConfig.key === "createdAt") {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-        } else if (typeof aValue === "string") {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
-  }, [leads, filters, sortConfig]);
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -247,7 +165,7 @@ const Reports = () => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1);
   };
-  const totalPages = Math.ceil(filteredAndSortedDeals?.length / itemsPerPage);
+  const totalPages = Math.ceil(total / limit);
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
       key,
@@ -269,8 +187,8 @@ const Reports = () => {
     };
 
     // 🔥 IMPORTANT CHANGE
-    const currentMonthLeads = filteredAndSortedDeals;
-    const lastMonthLeads = []; // ya same rakhna ho to filteredAndSortedDeals
+    const currentMonthLeads = leads;
+    const lastMonthLeads = []; // ya same rakhna ho to leads
 
     const buildMetric = (title, statusName, icon, iconColor, description) => {
       const current = countByStatus(currentMonthLeads, statusName);
@@ -318,17 +236,17 @@ const Reports = () => {
         "Leads marked as not interested",
       ),
     ];
-  }, [filteredAndSortedDeals]);
+  }, [leads]);
 
   const repConversionData = useMemo(() => {
-    if (!filteredAndSortedDeals?.length) return [];
+    if (!leads?.length) return [];
 
     const WON_STATUSES = ["Converted"];
 
     const weeksToShow = 8;
     const now = new Date();
 
-    // ✅ Proper Monday-based week start (00:00:00 safe)
+
     const getWeekStart = (date) => {
       const d = new Date(date);
       const day = d.getDay();
@@ -338,7 +256,7 @@ const Reports = () => {
       return weekStart;
     };
 
-    // ✅ Generate last 8 weeks properly
+
     const weekStarts = [];
     for (let i = weeksToShow - 1; i >= 0; i--) {
       const date = new Date();
@@ -348,7 +266,7 @@ const Reports = () => {
 
     const grouped = {};
 
-    filteredAndSortedDeals.forEach((lead) => {
+    leads.forEach((lead) => {
       if (!lead.createdAt || !lead.assignedUserId) return;
 
       const leadDate = new Date(lead.createdAt.replace(" ", "T"));
@@ -374,7 +292,7 @@ const Reports = () => {
         weekEnd.setHours(23, 59, 59, 999);
 
         if (leadDate >= weekObj.weekStart && leadDate <= weekEnd) {
-          // ✅ Efficiency Mode (counts ALL leads)
+
           weekObj.deals += 1;
 
           if (WON_STATUSES.includes(lead.status)) {
@@ -392,12 +310,12 @@ const Reports = () => {
           : 0,
       }));
 
-      // ✅ Week-over-week growth (last vs previous)
+
       const last = trend[trend.length - 1]?.value || 0;
       const prev = trend[trend.length - 2]?.value || 0;
       const growth = Number((last - prev).toFixed(1));
 
-      // ✅ 8 week average (better KPI)
+
       const average = trend.reduce((sum, t) => sum + t.value, 0) / trend.length;
 
       return {
@@ -418,10 +336,10 @@ const Reports = () => {
         ][index % 6],
       };
     });
-  }, [filteredAndSortedDeals]);
+  }, [leads]);
 
   const monthlyWinRateData = useMemo(() => {
-    if (!filteredAndSortedDeals?.length) return [];
+    if (!leads?.length) return [];
 
     const months = [
       "Jan",
@@ -451,7 +369,7 @@ const Reports = () => {
     }, {});
 
     // 🔥 Step 2: Fill actual data
-    filteredAndSortedDeals.forEach((lead) => {
+    leads.forEach((lead) => {
       if (!lead.createdAt) return;
 
       const date = new Date(lead.createdAt.replace(" ", "T"));
@@ -479,114 +397,114 @@ const Reports = () => {
           : 0,
       };
     });
-  }, [filteredAndSortedDeals]);
+  }, [leads]);
 
-  const pieData = useMemo(() => {
-    const won = filteredAndSortedDeals.filter(
-      (l) => l.status === "Interested",
-    ).length;
-    const newLead = filteredAndSortedDeals.filter(
-      (l) => l.status === "New",
-    ).length;
-    const Sitevisit = filteredAndSortedDeals.filter(
-      (l) => l.status === "Site Visit Scheduled",
-    ).length;
+  // const pieData = useMemo(() => {
+  //   const won = leads.filter(
+  //     (l) => l.status === "Interested",
+  //   ).length;
+  //   const newLead = leads.filter(
+  //     (l) => l.status === "New",
+  //   ).length;
+  //   const Sitevisit = leads.filter(
+  //     (l) => l.status === "Site Visit Scheduled",
+  //   ).length;
 
-    const lost = leads.filter((l) =>
-      ["Not Interested", "Dead", "Low Budget"].includes(l.status),
-    ).length;
+  //   const lost = leads.filter((l) =>
+  //     ["Not Interested", "Dead", "Low Budget"].includes(l.status),
+  //   ).length;
 
-    return [
-      { name: "Interested", value: won, fill: "#10B981" },
-      { name: "Lost", value: lost, fill: "#EF4444" },
-      { name: "New Leads", value: newLead, fill: "#a3d9a5" },
-      { name: "Site Visit Scheduled", value: Sitevisit, fill: "#06B6D4" },
-    ];
-  }, [filteredAndSortedDeals]);
+  //   return [
+  //     { name: "Interested", value: won, fill: "#10B981" },
+  //     { name: "Lost", value: lost, fill: "#EF4444" },
+  //     { name: "New Leads", value: newLead, fill: "#a3d9a5" },
+  //     { name: "Site Visit Scheduled", value: Sitevisit, fill: "#06B6D4" },
+  //   ];
+  // }, [leads]);
 
-  const monthlyInsights = useMemo(() => {
-    if (!filteredAndSortedDeals?.length) return null;
+  // const monthlyInsights = useMemo(() => {
+  //   if (!leads?.length) return null;
 
-    const WON_STATUSES = ["Converted"];
+  //   const WON_STATUSES = ["Converted"];
 
-    const monthly = {};
+  //   const monthly = {};
 
-    filteredAndSortedDeals.forEach((lead) => {
-      if (!lead.createdAt) return;
+  //   leads.forEach((lead) => {
+  //     if (!lead.createdAt) return;
 
-      const date = new Date(lead.createdAt.replace(" ", "T"));
-      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+  //     const date = new Date(lead.createdAt.replace(" ", "T"));
+  //     const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
 
-      if (!monthly[monthKey]) {
-        monthly[monthKey] = {
-          month: date.toLocaleString("default", {
-            month: "long",
-            year: "numeric",
-          }),
-          total: 0,
-          won: 0,
-        };
-      }
+  //     if (!monthly[monthKey]) {
+  //       monthly[monthKey] = {
+  //         month: date.toLocaleString("default", {
+  //           month: "long",
+  //           year: "numeric",
+  //         }),
+  //         total: 0,
+  //         won: 0,
+  //       };
+  //     }
 
-      monthly[monthKey].total += 1;
+  //     monthly[monthKey].total += 1;
 
-      if (WON_STATUSES.includes(lead.status)) {
-        monthly[monthKey].won += 1;
-      }
-    });
+  //     if (WON_STATUSES.includes(lead.status)) {
+  //       monthly[monthKey].won += 1;
+  //     }
+  //   });
 
-    const results = Object.values(monthly).map((m) => ({
-      ...m,
-      winRate: m.total ? Number(((m.won / m.total) * 100).toFixed(1)) : 0,
-    }));
+  //   const results = Object.values(monthly).map((m) => ({
+  //     ...m,
+  //     winRate: m.total ? Number(((m.won / m.total) * 100).toFixed(1)) : 0,
+  //   }));
 
-    if (!results.length) return null;
+  //   if (!results.length) return null;
 
-    const bestMonth = results.reduce((prev, current) =>
-      current.winRate > prev.winRate ? current : prev,
-    );
+  //   const bestMonth = results.reduce((prev, current) =>
+  //     current.winRate > prev.winRate ? current : prev,
+  //   );
 
-    const totalDeals = results.reduce((sum, m) => sum + m.total, 0);
-    const totalWon = results.reduce((sum, m) => sum + m.won, 0);
+  //   const totalDeals = results.reduce((sum, m) => sum + m.total, 0);
+  //   const totalWon = results.reduce((sum, m) => sum + m.won, 0);
 
-    const overallWinRate = totalDeals
-      ? Number(((totalWon / totalDeals) * 100).toFixed(1))
-      : 0;
+  //   const overallWinRate = totalDeals
+  //     ? Number(((totalWon / totalDeals) * 100).toFixed(1))
+  //     : 0;
 
-    return {
-      bestMonth,
-      overallWinRate,
-      totalDeals,
-    };
-  }, [filteredAndSortedDeals]);
-  const summary = useMemo(() => {
-    if (!monthlyWinRateData?.length) return null;
+  //   return {
+  //     bestMonth,
+  //     overallWinRate,
+  //     totalDeals,
+  //   };
+  // }, [leads]);
+  // const summary = useMemo(() => {
+  //   if (!monthlyWinRateData?.length) return null;
 
-    let totalWon = 0;
-    let totalLost = 0;
+  //   let totalWon = 0;
+  //   let totalLost = 0;
 
-    monthlyWinRateData.forEach((month) => {
-      totalWon += month.won;
-      totalLost += month.lost;
-    });
+  //   monthlyWinRateData.forEach((month) => {
+  //     totalWon += month.won;
+  //     totalLost += month.lost;
+  //   });
 
-    const totalDeals = totalWon + totalLost;
+  //   const totalDeals = totalWon + totalLost;
 
-    const overallWinRate = totalDeals
-      ? Number(((totalWon / totalDeals) * 100).toFixed(1))
-      : 0;
+  //   const overallWinRate = totalDeals
+  //     ? Number(((totalWon / totalDeals) * 100).toFixed(1))
+  //     : 0;
 
-    const bestMonth = monthlyWinRateData.reduce((prev, current) =>
-      current.winRate > prev.winRate ? current : prev,
-    );
+  //   const bestMonth = monthlyWinRateData.reduce((prev, current) =>
+  //     current.winRate > prev.winRate ? current : prev,
+  //   );
 
-    return {
-      totalWon,
-      totalLost,
-      overallWinRate,
-      bestMonth,
-    };
-  }, [monthlyWinRateData]);
+  //   return {
+  //     totalWon,
+  //     totalLost,
+  //     overallWinRate,
+  //     bestMonth,
+  //   };
+  // }, [monthlyWinRateData]);
   return (
     <>
       <Helmet>
@@ -660,13 +578,13 @@ const Reports = () => {
               source={source}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              dealCount={filteredAndSortedDeals?.length}
+              dealCount={leads?.length}
               selectedCount={selectedDeals?.length}
               toggleAnalytics={() => setShowAnalytics((prev) => !prev)}
             />
 
             {/* Charts Grid */}
-            {showAnalytics && (
+            {/* {showAnalytics && (
               <>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold">Report Analytics</h2>
@@ -680,13 +598,13 @@ const Reports = () => {
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-                  {/* Conversion Funnel */}
+                
                   <ConversionFunnelChart
                     data={repConversionData}
                     isLoading={isLoading}
                   />
 
-                  {/* Win Rate Analytics */}
+               
                   <WinRateChart
                     data={monthlyWinRateData}
                     pieData={pieData}
@@ -694,24 +612,27 @@ const Reports = () => {
                   />
                 </div>
               </>
-            )}
+            )} */}
             {/* table */}
             <DealsTable
-              deals={filteredAndSortedDeals}
+              deals={leads}
               sortConfig={sortConfig}
               onSelectDeal={handleSelectDeal}
               onSort={handleSort}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
+              currentPage={page}
+              itemsPerPage={limit}
               isLoading={isLoading}
             />
             <TablePagination
-              currentPage={currentPage}
+              currentPage={page}
               totalPages={totalPages}
-              totalItems={filteredAndSortedDeals?.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
+              totalItems={total}
+              itemsPerPage={limit}
+              onPageChange={(p) => setPage(p)}
+              onItemsPerPageChange={(val) => {
+                setLimit(val);
+                setPage(1);
+              }}
             />
 
             {/* Revenue Forecasting - Full Width */}
@@ -734,9 +655,9 @@ const Reports = () => {
                 Key Insights
               </h3>
 
-              {monthlyInsights && (
+              {/* {monthlyInsights && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* ✅ Best Month */}
+      
                   <div className="space-y-2">
                     <h4 className="font-medium text-foreground">
                       Top Performing Month
@@ -748,7 +669,7 @@ const Reports = () => {
                     </p>
                   </div>
 
-                  {/* ✅ Overall Win Rate */}
+          
                   <div className="space-y-2">
                     <h4 className="font-medium text-foreground">
                       Overall Conversion Rate
@@ -759,7 +680,7 @@ const Reports = () => {
                     </p>
                   </div>
 
-                  {/* ✅ Improvement Suggestion */}
+             
                   <div className="space-y-2">
                     <h4 className="font-medium text-foreground">
                       Conversion Opportunity
@@ -770,7 +691,7 @@ const Reports = () => {
                     </p>
                   </div>
                 </div>
-              )}
+              )} */}
             </motion.div>
           </div>
         </main>

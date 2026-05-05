@@ -71,7 +71,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
       setNotifications(data.list || []);
     }
   };
-  const { data } = useNotificationCount();
+  const { data } = useNotificationCount(!open);
   const count = data || 0;
   return (
     <>
@@ -137,7 +137,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                   </span>
                 )}
               </Button>
-              <NotificationDropdown />
+              {open && <NotificationDropdown />}
             </div>
             {/* User Dropdown */}
             <div className="relative">

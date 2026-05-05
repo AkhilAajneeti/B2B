@@ -90,6 +90,7 @@ const LoginForm = () => {
         secret: data.secret,
         type: user.type,
         roles: Object.values(user.rolesNames || {}),
+        acl: data.acl || null,
       };
 
       // 🔐 Step 3: stringify + base64 encode
@@ -100,6 +101,9 @@ const LoginForm = () => {
       localStorage.setItem("auth_token", myToken); // MAIN TOKEN
       localStorage.setItem("login_object", jsonString); // optional (debug/use)
       localStorage.setItem("isAuthenticated", "true");
+      if (data.acl) {
+        localStorage.setItem("acl", JSON.stringify(data.acl));
+      }
 
       navigate("/dashboard");
     } catch (err) {

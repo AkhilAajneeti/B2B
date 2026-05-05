@@ -10,7 +10,8 @@ import { fetchTeam } from "services/team.service";
 import { createLeadActivity, fetchLeads } from "services/leads.service";
 import { fetchAccounts } from "services/account.service";
 import { fetchContacts } from "services/contact.service";
-import { TaskActivitesById, taskStreamById } from "services/tasks.service";
+import { taskStreamById } from "services/tasks.service";
+import { canEditRecord } from "utils/permission";
 
 const DealDrawer = ({
   deal,
@@ -108,7 +109,7 @@ const DealDrawer = ({
   }, [isOpen, deal?.id]);
 
   // mockactivities
- 
+
   const STATUS_OPTIONS = [
     { value: "Not Started", label: "Not Started" },
     { value: "Started", label: "Started" },
@@ -127,9 +128,11 @@ const DealDrawer = ({
     { value: "High", label: "High" },
     { value: "Urgent", label: "Urgent" },
   ];
-
+  const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
   // if (!isOpen) return null;
-
+  const canEditDeal = (deal) =>
+    canEditRecord("Task", deal) &&
+    deal?.assignedUserId === currentUserId;
   const formatDate = (date) => {
     if (!date) return "—";
 
@@ -161,7 +164,7 @@ const DealDrawer = ({
         return "bg-gray-100 text-gray-700";
     }
   };
-    const getStageColor = (stage) => {
+  const getStageColor = (stage) => {
     const colors = {
       New: "bg-blue-100 text-blue-800",
       Interested: "bg-sky-100 text-sky-800",
@@ -179,7 +182,7 @@ const DealDrawer = ({
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
     { id: "stream", label: "Stream", icon: "Calendar" },
-   
+
   ];
 
   const getActivityIcon = (type) => {
@@ -234,7 +237,7 @@ const DealDrawer = ({
       return "Task updated";
     }
 
-     if (activity._scope === "Call") {
+    if (activity._scope === "Call") {
       return `${activity.direction || "Call"} call scheduled`;
     }
 
@@ -479,7 +482,7 @@ const DealDrawer = ({
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              {!isMassUpdate && (
+              {!isMassUpdate && canEditDeal(deal) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -633,11 +636,10 @@ const DealDrawer = ({
                       onClick={() => setActiveTab(tab?.id)}
                       className={`
                   flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-smooth
-                  ${
-                    activeTab === tab?.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }
+                  ${activeTab === tab?.id
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }
                 `}
                     >
                       <Icon name={tab?.icon} size={16} />
@@ -954,9 +956,9 @@ const DealDrawer = ({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    // onClick={(e) =>
-                                    //   handleQuickAction(e, "edit", deal)
-                                    // }
+                                    onClick={(e) =>
+                                      handleQuickAction(e, "edit", deal)
+                                    }
                                     className="h-8 w-8"
                                   >
                                     <Icon name="Edit" size={14} />

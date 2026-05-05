@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
+import { canEditRecord } from "utils/permission";
 
 const DealsTable = ({
   deals,
@@ -15,6 +16,8 @@ const DealsTable = ({
   itemsPerPage,
   onDelete,
   isLoading,
+  canEdit = true,
+  canDelete = true,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -30,7 +33,11 @@ const DealsTable = ({
       year: "numeric",
     })?.format(new Date(date));
   };
+  const currentUser = JSON.parse(localStorage.getItem("login_object"));
 
+  const canEditDeal = (deal) =>
+    canEditRecord("Task", deal) &&
+    deal?.assignedUserId === currentUser;
   const getStageColor = (stage) => {
     const colors = {
       Started: "bg-blue-100 text-blue-800",
@@ -137,7 +144,7 @@ const DealsTable = ({
       <td className="p-4">
         <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
       </td>
-      
+
       {/* Actions */}
       <td className="p-4">
         <div className="flex space-x-2">
@@ -231,7 +238,7 @@ const DealsTable = ({
                   </div>
                 </td>
               </tr>
-            ) :(paginatedDeals?.map((deal) => (
+            ) : (paginatedDeals?.map((deal) => (
               <tr
                 key={deal?.id}
                 onMouseEnter={() => setHoveredRow(deal?.id)}
@@ -296,27 +303,26 @@ const DealsTable = ({
 
                 <td className="px-4 py-4">
                   <div
-                    className={`flex items-center space-x-1 transition-opacity ${
-                      hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
-                    }`}
+                    className={`flex items-center space-x-1 transition-opacity ${hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
+                      }`}
                   >
-                    <Button
+                    {canEdit && (<Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => handleQuickAction(e, "edit", deal)}
+                      onClick={(e) => handleQuickAction(e, "view", deal)}
                       className="h-8 w-8"
                     >
                       <Icon name="Edit" size={14} />
-                    </Button>
+                    </Button>)}
 
-                    <Button
+                    {canDelete && (<Button
                       variant="ghost"
                       size="icon"
                       onClick={(e) => handleDelete(e, deal)}
                       className="h-8 w-8 text-destructive hover:text-destructive"
                     >
                       <Icon name="Trash2" size={14} />
-                    </Button>
+                    </Button>)}
                   </div>
                 </td>
               </tr>

@@ -22,11 +22,15 @@ const FilterControls = ({
   const [assignUser, setAssignUser] = useState([]);
 
   const daysOptions = [
-    { value: "Today", label: "Today" },
-    { value: "Yesterday", label: "Yesterday" },
-    { value: "Last 3 Days", label: "Last 3 Days" },
-    { value: "Last & Days", label: "Last 7 Days" },
-    { value: "Current Month", label: "Current Month" },
+    { label: "Today", value: "today" },
+    // 🔥 we keep yesterday in UI but handle it smartly
+    { label: "Last 7 Days", value: "lastSevenDays" },
+    { label: "Current Month", value: "currentMonth" },
+    { label: "Last Month", value: "lastMonth" },
+    { label: "On", value: "on" },
+    { label: "Before", value: "before" },
+    { label: "After", value: "after" },
+    { label: "Between", value: "between" },
   ];
 
   const handleFilterChange = (key, value) => {
@@ -46,6 +50,12 @@ const FilterControls = ({
     onBulkAction(action);
     setShowBulkActions(false);
   };
+  const showDateInputs = [
+    "between",
+    "after",
+    "before",
+    "on"
+  ].includes(filters?.dateType);
 
   const activeFiltersCount = Object.values(filters)?.filter(
     (value) => value !== "" && value !== null && value !== undefined,
@@ -162,7 +172,7 @@ const FilterControls = ({
       >
         <Input
           type="search"
-          placeholder="Search deals..."
+          placeholder="Search leads..."
           value={filters?.search || ""}
           onChange={(e) => handleFilterChange("search", e?.target?.value)}
           className="lg:col-span-2"
@@ -178,8 +188,8 @@ const FilterControls = ({
         <Select
           placeholder="Filter By Days"
           options={daysOptions}
-          value={filters?.days || ""}
-          onChange={(value) => handleFilterChange("days", value)}
+          value={filters?.dateType || ""}
+          onChange={(value) => handleFilterChange("dateType", value)}
         />
 
         <Select
@@ -198,22 +208,26 @@ const FilterControls = ({
       {/* Advanced Filters Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mt-4 pt-4 border-t border-border">
         <div className="flex flex-col sm:flex-row gap-3 w-full">
-          <Input
-            type="date"
-            placeholder="Close date from"
-            value={filters?.closeDateFrom || ""}
-            onChange={(e) =>
-              handleFilterChange("closeDateFrom", e?.target?.value)
-            }
-          />
-          <Input
-            type="date"
-            placeholder="Close date to"
-            value={filters?.closeDateTo || ""}
-            onChange={(e) =>
-              handleFilterChange("closeDateTo", e?.target?.value)
-            }
-          />
+          {showDateInputs && (
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={filters?.closeDateFrom || ""}
+                onChange={(e) =>
+                  handleFilterChange("closeDateFrom", e.target.value)
+                }
+              />
+              {filters?.dateType === "between" && (
+                <Input
+                  type="date"
+                  value={filters?.closeDateTo || ""}
+                  onChange={(e) =>
+                    handleFilterChange("closeDateTo", e.target.value)
+                  }
+                />
+              )}
+            </div>
+          )}
         </div>
         <RoleGuard allowedRoles={["admin", "manager"]}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">Anaylze By Chart</Button>

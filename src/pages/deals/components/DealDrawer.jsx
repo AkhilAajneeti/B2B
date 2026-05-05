@@ -12,6 +12,7 @@ import { useUsers } from "hooks/useUsers";
 import { useLeadStream } from "hooks/useLeadStream";
 import { useLeadActivity } from "hooks/useLeadActivity";
 import { useQueryClient } from "@tanstack/react-query";
+import { canEditRecord } from "utils/permission";
 
 const DealDrawer = ({
   status,
@@ -421,6 +422,10 @@ const DealDrawer = ({
   //   }
   // }, [isOpen]);
   const leadData = leadsDetails || deal;
+  const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
+  const canEditDeal = (deal) =>
+    canEditRecord("Lead", deal) &&
+    deal?.assignedUserId === currentUserId;
   return (
     <>
       {/* Backdrop */}
@@ -457,7 +462,7 @@ const DealDrawer = ({
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              {mode == "view" && (
+              {mode == "view" && canEditDeal(deal) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -708,11 +713,10 @@ const DealDrawer = ({
                       onClick={() => setActiveTab(tab?.id)}
                       className={`
                   flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-smooth
-                  ${
-                    activeTab === tab?.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }
+                  ${activeTab === tab?.id
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }
                 `}
                     >
                       <Icon name={tab?.icon} size={16} />
@@ -1126,11 +1130,10 @@ const DealDrawer = ({
                           <div
                             key={activity.id}
                             onClick={() => toggleActivity(activity.id)}
-                            className={`cursor-pointer rounded-lg p-4 transition-all duration-300${
-                              expandedActivityId === activity.id
-                                ? "bg-muted shadow-sm"
-                                : "bg-muted/30 hover:bg-muted"
-                            }`}
+                            className={`cursor-pointer rounded-lg p-4 transition-all duration-300${expandedActivityId === activity.id
+                              ? "bg-muted shadow-sm"
+                              : "bg-muted/30 hover:bg-muted"
+                              }`}
                           >
                             {/*  */}
                             <div className="flex space-x-3">
@@ -1187,11 +1190,10 @@ const DealDrawer = ({
 
                             {/*  */}
                             <div
-                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                expandedActivityId === activity.id
-                                  ? "max-h-[600px] opacity-100 mt-4"
-                                  : "max-h-0 opacity-0"
-                              }`}
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedActivityId === activity.id
+                                ? "max-h-[600px] opacity-100 mt-4"
+                                : "max-h-0 opacity-0"
+                                }`}
                             >
                               <div className="border-t pt-4 text-sm text-muted-foreground">
                                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
