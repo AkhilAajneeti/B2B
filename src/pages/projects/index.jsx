@@ -68,10 +68,10 @@ const ProjectsPage = () => {
   const totalItems = data?.total || 0;
 
   // KEEP ACL permission filtering (MANDATORY)
-  const visibleProjects = projects.filter(project =>
-    canEntityRecord('CProjects', 'read', project) ||
-    project.collaboratorsIds?.includes(currentUser.id)
-  );
+  // const visibleProjects = projects.filter(project =>
+  //   canEntityRecord('CProjects', 'read', project) ||
+  //   project.collaboratorsIds?.includes(currentUser.id)
+  // );
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -210,10 +210,10 @@ const ProjectsPage = () => {
 
   const handleSelectAll = (isSelected) => {
     if (isSelected) {
-      const currentPageDeals = visibleProjects.map((deal) => deal.id);
+      const currentPageDeals = projects.map((deal) => deal.id);
       setSelectedDeals([...new Set([...selectedDeals, ...currentPageDeals])]);
     } else {
-      const currentPageDeals = visibleProjects
+      const currentPageDeals = projects
         ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
         ?.map((deal) => deal?.id);
       setSelectedDeals(
@@ -257,7 +257,7 @@ const ProjectsPage = () => {
         return;
       }
 
-      const selectedRows = visibleProjects.filter((deal) =>
+      const selectedRows = projects.filter((deal) =>
         selectedDeals.includes(deal.id),
       );
 
@@ -320,7 +320,7 @@ const ProjectsPage = () => {
                 <Button
                   variant="outline" className="linearbg-1 text-white hover:text-white"
                   onClick={() =>
-                    exportLeadsToCSV(visibleProjects, "all_leads")
+                    exportLeadsToCSV(projects, "all_leads")
                   }
                 >
                   <Icon name="Download" size={16} className="mr-2" />
@@ -340,14 +340,14 @@ const ProjectsPage = () => {
               filters={filters}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              dealCount={visibleProjects?.length}
+              dealCount={projects?.length}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
             />
 
             {/* Deals Table */}
             <DealsTable
-              deals={visibleProjects}
+              deals={projects}
               selectedDeals={selectedDeals}
               onSelectDeal={handleSelectDeal}
               onSelectAll={handleSelectAll}
