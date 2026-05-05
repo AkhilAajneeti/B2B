@@ -7,8 +7,6 @@ import toast from "react-hot-toast";
 import ReactSelect from "react-select";
 import { fetchUser } from "services/user.service";
 import { fetchTeam } from "services/team.service";
-import { createLeadActivity, fetchLeads } from "services/leads.service";
-import { fetchAccounts } from "services/account.service";
 import { fetchContacts } from "services/contact.service";
 import makeAnimated from "react-select/animated";
 const DealDrawer = ({
@@ -26,8 +24,8 @@ const DealDrawer = ({
   const [isEditing, setIsEditing] = useState(false);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
-  const [acc, setAcc] = useState([]);
-  const [lead, setLead] = useState([]);
+
+
   const [contact, setContact] = useState([]);
   const [mockStream, setmockStream] = useState([]);
   const [showActivityForm, setActivityForm] = useState(false);
@@ -178,19 +176,18 @@ const DealDrawer = ({
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [usersRes, teamRes, accRes, leadRes, contactRes] =
+        const [usersRes, teamRes, contactRes] =
           await Promise.all([
             fetchUser(),
             fetchTeam(),
-            fetchAccounts(),
-            fetchLeads(),
+
+
             fetchContacts(),
           ]);
 
         setUsers(usersRes.list || []);
         setTeam(teamRes.list || []);
-        setAcc(accRes.list || []);
-        setLead(leadRes.list || []);
+
         setContact(contactRes.list || []);
       } catch (err) {
         console.error("Failed to load data", err);
@@ -399,11 +396,10 @@ const DealDrawer = ({
                       onClick={() => setActiveTab(tab?.id)}
                       className={`
                   flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-smooth
-                  ${
-                    activeTab === tab?.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }
+                  ${activeTab === tab?.id
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }
                 `}
                     >
                       <Icon name={tab?.icon} size={16} />

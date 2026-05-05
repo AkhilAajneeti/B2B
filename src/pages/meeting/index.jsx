@@ -21,6 +21,7 @@ import {
   updateMeeting,
 } from "services/meeting.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
+import { canCreate, canDelete, canEdit } from "utils/permission";
 
 const MeetingPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -38,14 +39,18 @@ const MeetingPage = () => {
     key: "name",
     direction: "asc",
   });
-
+  const canCreateMeeting = canCreate("Meeting");
+  const canEditMeeting = canEdit("Meeting");
+  const canDeleteMeeting = canDelete("Meeting");
 
   const [filters, setFilters] = useState({
     search: "",
     status: "",
+    priority: "",
     assignUser: "",
-    closeDateFrom: "",
-    closeDateTo: "",
+    startDate: "",
+    endDate: "",
+    dateType: "",
   });
   const { data, isLoading } = useAllMeetings({ limit, page, filters });
   const leads = data?.list || [];
@@ -74,6 +79,7 @@ const MeetingPage = () => {
   };
 
   const handleAddMeeting = () => {
+    if (!canCreateMeeting) return;
     setSelectedDeal(null);
     setMode("add");
     setIsDrawerOpen(true);
@@ -86,6 +92,7 @@ const MeetingPage = () => {
   };
 
   const handleCreateMeeting = async (payload) => {
+    if (!canCreateMeeting) return;
     try {
       await createMeeting(payload); // API
       queryClient.invalidateQueries({ queryKey: ["meetings"], exact: false });
@@ -165,12 +172,12 @@ const MeetingPage = () => {
   const handleClearFilters = () => {
     setFilters({
       search: "",
-      stage: "",
-      owner: "",
-      minValue: "",
-      maxValue: "",
-      closeDateFrom: "",
-      closeDateTo: "",
+      status: "",
+      priority: "",
+      assignUser: "",
+      startDate: "",
+      endDate: "",
+      dateType: "",
     });
     setCurrentPage(1);
   };
@@ -278,10 +285,10 @@ const MeetingPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Button onClick={handleAddMeeting} className="linearbg-1 text-white hover:text-white">
+                {canCreateMeeting && (<Button onClick={handleAddMeeting} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Meeting
-                </Button>
+                </Button>)}
               </div>
             </div>
 
@@ -308,6 +315,8 @@ const MeetingPage = () => {
               itemsPerPage={limit}
               onDelete={handleDeleteMeeting}
               isLoading={loading}
+             
+              canDelete={canDeleteMeeting}
             />
 
             {/* Pagination */}
@@ -336,6 +345,7 @@ const MeetingPage = () => {
           onClose={handleDrawerClose}
           onDelete={handleDeleteActivity}
           onBulkUpdate={handleBulkUpdateMeet}
+           canEdit={canEditMeeting}
         />
         <ConfirmDeleteModal
           open={showDeleteConfirm}

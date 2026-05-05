@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { isOwnRecord, getStoredUser } from "../../../utils/permission.js";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
@@ -250,23 +251,27 @@ const DealsTable = ({
                 <td className="px-4 py-4">
                   <div
                     className={`flex items-center space-x-1 transition-opacity`} >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleQuickAction(e, "edit", deal)}
-                      className="h-8 w-8"
-                    >
-                      <Icon name="Edit" size={14} />
-                    </Button>
+                    {isOwnRecord(deal, getStoredUser()) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleQuickAction(e, "edit", deal)}
+                        className="h-8 w-8"
+                      >
+                        <Icon name="Edit" size={14} />
+                      </Button>
+                    )}
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDelete(e, deal)}
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                    >
-                      <Icon name="Trash2" size={14} />
-                    </Button>
+                    {isAdminOrManager() && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleDelete(e, deal)}
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                      >
+                        <Icon name="Trash2" size={14} />
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -21,8 +21,17 @@ const DealsFilters = ({
     { value: "Held", label: "Held" },
     { value: "Not Held", label: "Not Held" }
   ];
-
-
+  const ACTIVITY_DATE_FILTERS = [
+    { label: "Today", value: "today" },
+    { label: "Yesterday", value: "yesterday" },
+    { label: "Last 7 Days", value: "last7Days" },
+    { label: "Before", value: "before" },
+    { label: "After", value: "after" },
+    { label: "Between", value: "between" },
+    { label: "This Month", value: "currentMonth" },
+    { label: "Last Month", value: "lastMonth" },
+  ];
+  const showDateInputs = ["between", "after", "before"].includes(filters?.dateType);
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "User" },
     { value: "delete", label: "Delete Selected", icon: "Trash2" },
@@ -56,7 +65,7 @@ const DealsFilters = ({
       {/* Header Row */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
         <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-foreground">
+<h2 className="text-lg font-semibold text-foreground">
             Training ({dealCount?.toLocaleString()})
           </h2>
           {activeFiltersCount > 0 && (
@@ -147,7 +156,7 @@ const DealsFilters = ({
       >
         <Input
           type="search"
-          placeholder="Search deals..."
+          placeholder="Search training..."
           value={filters?.search || ""}
           onChange={(e) => handleFilterChange("search", e?.target?.value)}
           className="lg:col-span-2"
@@ -166,28 +175,39 @@ const DealsFilters = ({
           value={filters?.assignUser || ""}
           onChange={(value) => handleFilterChange("assignUser", value)}
         />
+        <Select
+          options={ACTIVITY_DATE_FILTERS}
+          value={filters?.dateType || ""}
+          onChange={(value) =>
+            handleFilterChange("dateType", value)}
+          placeholder="Filter by date"
+          className="min-w-0"
+        />
+        {/* Date Range Inputs */}
+        {showDateInputs && (
+          <div className="flex gap-2">
+            <Input
+              type="date"
+              value={filters?.closeDateFrom || ""}
+              onChange={(e) =>
+                handleFilterChange("closeDateFrom", e.target.value)
+              }
+            />
+
+            {filters?.dateType === "between" && (
+              <Input
+                type="date"
+                value={filters?.closeDateTo || ""}
+                onChange={(e) =>
+                  handleFilterChange("closeDateTo", e.target.value)
+                }
+              />
+            )}
+          </div>
+        )}
       </div>
       {/* Advanced Filters Toggle */}
-      <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">
-        <div className="flex items-center space-x-4">
-          <Input
-            type="date"
-            placeholder="Close date from"
-            value={filters?.closeDateFrom || ""}
-            onChange={(e) =>
-              handleFilterChange("closeDateFrom", e?.target?.value)
-            }
-          />
-          <Input
-            type="date"
-            placeholder="Close date to"
-            value={filters?.closeDateTo || ""}
-            onChange={(e) =>
-              handleFilterChange("closeDateTo", e?.target?.value)
-            }
-          />
-        </div>
-      </div>
+
     </div>
   );
 };

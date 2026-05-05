@@ -17,6 +17,7 @@ import { useMetaData } from "hooks/useMetaData";
 import { useTeams } from "hooks/useTeams";
 import { useLeads } from "hooks/useLeads";
 import { useAccounts } from "hooks/useAccounts";
+import { canEditRecord } from "utils/permission";
 
 
 const DealDrawer = ({
@@ -29,6 +30,7 @@ const DealDrawer = ({
   onUpdate,
   onBulkUpdate,
   onDelete,
+  canEdit = true,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
@@ -143,7 +145,11 @@ const DealDrawer = ({
     { value: "3h", label: "3h" },
     { value: "1d", label: "1d" },
   ];
+  const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
 
+  const canEditDeal = (deal) =>
+    canEditRecord("Meeting", deal) &&
+    deal?.assignedUserId === currentUserId;
   const formatDate = (date) => {
     if (!date) return "—";
 
@@ -253,7 +259,7 @@ const DealDrawer = ({
     e.preventDefault();
 
     if (!formData.name?.trim()) {
-      toast.error("Task name is required");
+      toast.error("Meeting name is required");
       return;
     }
     const allUserIds = [
@@ -292,7 +298,7 @@ const DealDrawer = ({
       attendeesLeadsIds: formData.attendeeLeads || [],
     };
 
-    console.log("FINAL TASK PAYLOAD 👉", payload);
+    console.log("FINAL Meeting PAYLOAD 👉", payload);
 
     try {
       if (mode === "add") {
@@ -307,8 +313,8 @@ const DealDrawer = ({
 
       onClose();
     } catch (err) {
-      console.error("Task creation failed", err);
-      toast.error("Task is not created");
+      console.error("Meeting creation failed", err);
+      toast.error("Meeting is not created");
     }
   };
   const handleBulkUpdate = async (e) => {
@@ -458,11 +464,11 @@ const DealDrawer = ({
             <div className="flex items-center space-x-3">
               <h2 className="text-xl font-semibold text-foreground">
                 {isMassUpdate
-                  ? "Mass Update Tasks"
+                  ? "Mass Update Meeting"
                   : mode === "add"
-                    ? "Add Task"
+                    ? "Add Meeting"
                     : isEditing
-                      ? "Edit Task"
+                      ? "Edit Meeting"
                       : deal?.name}
               </h2>
               <span
@@ -474,7 +480,7 @@ const DealDrawer = ({
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              {!isMassUpdate && (
+              {!isMassUpdate && canEditDeal(deal) && canEdit && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1176,7 +1182,7 @@ const DealDrawer = ({
             {isMassUpdate && (
               <>
                 <p className="text-sm text-muted-foreground text-center pt-4 fw-bold">
-                  Updating {selectedIds.length} selected tasks
+                  Updating {selectedIds.length} selected Meeting
                 </p>
                 <form className="space-y-6 p-6" onSubmit={handleBulkUpdate}>
                   <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -1252,7 +1258,7 @@ const DealDrawer = ({
                       Cancel
                     </Button>
                     <Button type="submit">
-                      Update {selectedIds.length} Tasks
+                      Update {selectedIds.length} Meeting
                     </Button>
                   </div>
                 </form>

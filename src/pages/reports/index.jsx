@@ -230,7 +230,7 @@ const Reports = () => {
       ),
       buildMetric(
         "Not Interested",
-        "Not Interested",
+        "Not interested",
         "XCircle",
         "bg-red-400",
         "Leads marked as not interested",
@@ -645,7 +645,7 @@ const Reports = () => {
             {/* <ExportControls /> */}
 
             {/* Additional Insights */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
@@ -655,7 +655,7 @@ const Reports = () => {
                 Key Insights
               </h3>
 
-              {/* {monthlyInsights && (
+              {monthlyInsights && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       
                   <div className="space-y-2">
@@ -691,8 +691,8 @@ const Reports = () => {
                     </p>
                   </div>
                 </div>
-              )} */}
-            </motion.div>
+              )}
+            </motion.div> */}
           </div>
         </main>
       </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { isAdminOrManager } from "../../../utils/permission.js";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
@@ -17,19 +18,30 @@ const DealsFilters = ({
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
 
+  const isAdminManager = isAdminOrManager();
   const bulkActions = [
     { value: "massupdate", label: "Mass Update", icon: "Update" },
     { value: "export", label: "Export Selected", icon: "Download" },
-    { value: "delete", label: "Delete Selected", icon: "Trash2" },
+    ...(isAdminManager ? [{ value: "delete", label: "Delete Selected", icon: "Trash2" }] : []),
   ];
-
+  const ACTIVITY_DATE_FILTERS = [
+    { label: "Today", value: "today" },
+    { label: "Last 7 Days", value: "lastSevenDays" },
+    { label: "Current Month", value: "currentMonth" },
+    { label: "Last Month", value: "lastMonth" },
+    // special
+    { label: "On", value: "on" },
+    { label: "Before", value: "before" },
+    { label: "After", value: "after" },
+    // { label: "After X Days", value: "afterXDays" },
+  ];
   const handleFilterChange = (key, value) => {
     onFiltersChange({
       ...filters,
       [key]: value,
     });
   };
-
+  const showDateInputs = ["on", "before", "after"].includes(filters?.dateType);
   const handleBulkActionSelect = (action) => {
     onBulkAction(action);
     setShowBulkActions(false);
@@ -143,7 +155,7 @@ const DealsFilters = ({
       >
         <Input
           type="search"
-          placeholder="Search deals..."
+          placeholder="Search Projects..."
           value={filters?.search || ""}
           onChange={(e) => handleFilterChange("search", e?.target?.value)}
           className="lg:col-span-2"
@@ -156,26 +168,40 @@ const DealsFilters = ({
           onChange={(value) => handleFilterChange("assignUser", value)}
         />
 
-         <Input
-            type="date"
-            placeholder="Close date from"
-            value={filters?.closeDateFrom || ""}
-            onChange={(e) =>
-              handleFilterChange("closeDateFrom", e?.target?.value)
-            }
-          />
-          <Input
-            type="date"
-            placeholder="Close date to"
-            value={filters?.closeDateTo || ""}
-            onChange={(e) =>
-              handleFilterChange("closeDateTo", e?.target?.value)
-            }
-          />
-          <Button variant="outline" size="sm" className="linearbg-1 text-white hover:text-white">
-            <Icon name="Download" size={16} className="mr-1" />
-            Export All
-          </Button>
+        <Select
+          className="min-w-0"
+          placeholder="Filter by date"
+          options={ACTIVITY_DATE_FILTERS}
+          value={filters?.dateType || ""}
+          onChange={(value) => handleFilterChange("dateType", value)}
+        />
+
+        {/* Date Range Inputs */}
+        {showDateInputs && (
+          <div className="flex gap-2">
+            <Input
+              type="date"
+              value={filters?.closeDateFrom || ""}
+              onChange={(e) =>
+                handleFilterChange("closeDateFrom", e.target.value)
+              }
+            />
+
+            {filters?.dateType === "between" && (
+              <Input
+                type="date"
+                value={filters?.closeDateTo || ""}
+                onChange={(e) =>
+                  handleFilterChange("closeDateTo", e.target.value)
+                }
+              />
+            )}
+          </div>
+        )}
+        <Button variant="outline" size="sm" className="linearbg-1 text-white hover:text-white">
+          <Icon name="Download" size={16} className="mr-1" />
+          Export All
+        </Button>
       </div>
     </div>
   );

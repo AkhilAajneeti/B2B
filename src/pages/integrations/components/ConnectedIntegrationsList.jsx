@@ -1,4 +1,5 @@
 import React from "react";
+import { canEntityRecord } from "../../../utils/permission";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Image from "../../../components/AppImage";
@@ -25,7 +26,7 @@ const ConnectedIntegrationsList = ({
           No Connected Integrations
         </h3>
         <p className="text-muted-foreground">
-          Connect your first integration to start syncing data with CRMPro.
+          Connect your first integration to start syncing data with CRM.
         </p>
       </div>
     );
@@ -123,11 +124,10 @@ const ConnectedIntegrationsList = ({
                             }
                           />
                           <span
-                            className={`text-xs ${
-                              integration?.isActive
+                            className={`text-xs ${integration?.isActive
                                 ? "text-success"
                                 : "text-error"
-                            }`}
+                              }`}
                           >
                             {integration?.statusText}
                           </span>
@@ -143,21 +143,25 @@ const ConnectedIntegrationsList = ({
                   </div>
 
                   <div className="flex items-center space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onRowClick(integration, "edit")}
-                    >
-                      <Icon name="Edit" size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:bg-red-50"
-                      onClick={() => onDelete(integration)}
-                    >
-                      <Icon name="Trash2" size={16} />
-                    </Button>
+                    {canEntityRecord('LeadCapture', 'edit', integration) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onRowClick(integration, "edit")}
+                      >
+                        <Icon name="Edit" size={16} />
+                      </Button>
+                    )}
+                    {canEntityRecord('LeadCapture', 'delete', integration) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-red-50"
+                        onClick={() => onDelete(integration)}
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

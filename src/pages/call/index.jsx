@@ -16,22 +16,23 @@ import {
   bulkDeleteCall,
   createCall,
   deleteCall,
-  fetchCall,
   fetchCallById,
   updateCall,
 } from "../../services/call.services";
+import { useAllCalls } from "../../hooks/useCalls";
+import { useQueryClient } from "@tanstack/react-query";
+import { canCreate, canEntityRecord } from "../../utils/permission";
 
 const CallPage = () => {
+  const queryClient = useQueryClient();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedDeals, setSelectedDeals] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [mode, setMode] = useState("view");
-  const[loading,setLoading]=useState(true);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -42,98 +43,41 @@ const CallPage = () => {
     assignUser: "",
     closeDateFrom: "",
     closeDateTo: "",
+    dateType: "",
   });
 
-  useEffect(() => {
-    const loadCall = async () => {
-      try {
-        const data = await fetchCall();
-        setLeads(data.list);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadCall();
-  }, []);
+  const { data, isLoading: loading } = useAllCalls({ limit, page, filters });
+  const calls = data?.list || [];
+  const total = data?.total || 0;
+
+  const visibleCalls = calls.filter(call => canEntityRecord("Call", "read", call));
+
+  const canCreateCall = canCreate("Call");
+
+
   // Mock deals data
-  const handleDealClick = async (deal) => {
-    try {
-      setMode("view");
-      setIsDrawerOpen(true);
-
-      // 🔥 fetch task detail by ID
-      const data = await fetchCallById(deal.id);
-
-      // ✅ pass fetched task to drawer
-      setSelectedDeal(data);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load Call details");
-    }
+  const handleDealClick = (deal) => {
+    setSelectedDeal(deal);
+    setMode("view");
+    setIsDrawerOpen(true);
   };
-  // Filter and sort deals
-  const filteredAndSortedDeals = useMemo(() => {
-    let filtered = leads?.filter((deal) => {
-      const search = filters?.search?.toLowerCase();
+  const totalPages = Math.ceil(total / limit);
 
-      const matchesSearch =
-        !search ||
-        deal?.name?.toLowerCase()?.includes(search) ||
-        deal?.parentName?.toLowerCase()?.includes(search);
-
-      const matchesStatus =
-        !filters?.status || deal?.status === filters?.status;
-      const matchesAssignUser =
-        !filters.assignUser ||
-        String(deal.assignedUserId) === String(filters.assignUser);
-
-      const matchesCreatedFrom =
-        !filters?.closeDateFrom ||
-        new Date(deal?.createdAt) >= new Date(filters?.closeDateFrom);
-
-      const matchesCreatedTo =
-        !filters?.closeDateTo ||
-        new Date(deal?.createdAt) <= new Date(filters?.closeDateTo);
-
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesAssignUser &&
-        matchesCreatedFrom &&
-        matchesCreatedTo
-      );
-    });
-
-    // ✅ SAFE SORTING
-    if (sortConfig?.key) {
-      filtered.sort((a, b) => {
-        let aValue = a?.[sortConfig.key];
-        let bValue = b?.[sortConfig.key];
-
-        if (sortConfig.key === "opportunityAmount") {
-          aValue = Number(aValue ?? 0);
-          bValue = Number(bValue ?? 0);
-        } else if (sortConfig.key === "createdAt") {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-        } else if (typeof aValue === "string") {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
-  }, [leads, filters, sortConfig]);
-
-  const totalPages = Math.ceil(filteredAndSortedDeals?.length / itemsPerPage);
+  // const handleSelectAll = (isSelected) => {
+  //   if (isSelected) {
+  //     const currentPageCalls = visibleCalls
+  //       ?.slice((page - 1) * limit, page * limit)
+  //       ?.map((call) => call?.id);
+  //     setSelectedDeals([...new Set([...selectedDeals, ...currentPageCalls])]);
+  //   } else {
+  //     const currentPageCalls = visibleCalls
+  //       ?.slice((page - 1) * limit, page * limit)
+  //       ?.map((call) => call?.id);
+  //     setSelectedDeals(
+  //       selectedDeals?.filter((id) => !currentPageCalls?.includes(id)),
+  //     );
+  //   }
+  // };
 
   const handleMenuToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -155,17 +99,19 @@ const CallPage = () => {
     // setIsEditing(false);
   };
 
-  const handleCreateMeeting = async (payload) => {
+  const handleCreateCall = async (payload) => {
     try {
-      await createCall(payload); // API
+      await createCall(payload);
+      queryClient.invalidateQueries({ queryKey: ["calls"], exact: false });
       toast.success("Call created successfully");
     } catch (err) {
-      console.error("Call creationd failed", err);
+      console.error("Call creation failed", err);
     }
   };
 
-  const handleUpdateMeeting = async (id, payload) => {
+  const handleUpdateCall = async (id, payload) => {
     await updateCall(id, payload);
+    queryClient.invalidateQueries(["calls"]);
   };
 
   const handleDeleteMeeting = async (id) => {
@@ -228,20 +174,19 @@ const CallPage = () => {
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
-    setCurrentPage(1);
+    setPage(1);
   };
 
   const handleClearFilters = () => {
     setFilters({
       search: "",
-      stage: "",
-      owner: "",
-      minValue: "",
-      maxValue: "",
+      status: "",
+      assignUser: "",
       closeDateFrom: "",
       closeDateTo: "",
+      dateType: "",
     });
-    setCurrentPage(1);
+    setPage(1);
   };
 
   const handleBulkAction = (action) => {
@@ -325,7 +270,7 @@ const CallPage = () => {
 
   // Reset page when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setPage(1);
   }, [filters]);
 
   return (
@@ -354,10 +299,12 @@ const CallPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Button onClick={handleAddMeeting} className="linearbg-1 text-white hover:text-white">
-                  <Icon name="Plus" size={16} className="mr-2" />
-                  New Trainig
-                </Button>
+                {canCreateCall && (
+                  <Button onClick={handleAddMeeting} className="linearbg-1 text-white hover:text-white">
+                    <Icon name="Plus" size={16} className="mr-2" />
+                    New Training
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -366,34 +313,36 @@ const CallPage = () => {
               filters={filters}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              dealCount={filteredAndSortedDeals?.length}
+              dealCount={total}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
             />
 
             {/* Deals Table */}
             <DealsTable
-              deals={filteredAndSortedDeals}
+              deals={visibleCalls}
               selectedDeals={selectedDeals}
               onSelectDeal={handleSelectDeal}
               onSelectAll={handleSelectAll}
               onDealClick={handleDealClick}
               sortConfig={sortConfig}
               onSort={handleSort}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
+              currentPage={page}
+              itemsPerPage={limit}
               onDelete={handleDeleteMeeting}
               isLoading={loading}
+              canEditRecord={(call) => canEntityRecord("Call", "edit", call)}
+              canDeleteRecord={(call) => canEntityRecord("Call", "delete", call)}
             />
 
             {/* Pagination */}
             <TablePagination
-              currentPage={currentPage}
+              currentPage={page}
               totalPages={totalPages}
-              totalItems={filteredAndSortedDeals?.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
+              totalItems={total}
+              itemsPerPage={limit}
+              onPageChange={setPage}
+              onItemsPerPageChange={setLimit}
             />
           </div>
         </main>
@@ -404,11 +353,12 @@ const CallPage = () => {
           selectedIds={selectedDeals}
           mode={mode}
           isOpen={isDrawerOpen}
-          onCreate={handleCreateMeeting}
-          onUpdate={handleUpdateMeeting}
+          onCreate={handleCreateCall}
+          onUpdate={handleUpdateCall}
           onClose={handleDrawerClose}
           onDelete={handleDeleteActivity}
           onBulkUpdate={handleBulkUpdateMeet}
+          canCreate={canCreateCall}
         />
         <ConfirmDeleteModal
           open={showDeleteConfirm}

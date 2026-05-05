@@ -16,6 +16,8 @@ const DealsTable = ({
   itemsPerPage,
   onDelete,
   isLoading,
+  canEdit = true,
+  canDelete = true,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -281,14 +283,14 @@ const DealsTable = ({
                         <Icon name="Edit" size={14} />
                       </Button>
 
-                      <Button
+                      {canDelete && (<Button
                         variant="ghost"
                         size="icon"
                         onClick={(e) => handleDelete(e, deal)}
                         className="h-8 w-8 text-destructive hover:text-destructive"
                       >
                         <Icon name="Trash2" size={14} />
-                      </Button>
+                      </Button>)}
                     </div>
                   </td>
                 </tr>

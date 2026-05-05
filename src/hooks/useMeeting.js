@@ -3,7 +3,7 @@ import { fetchMeetingById } from "services/meeting.service";
 
 export const useMeeting = (id, enabled) => {
   return useQuery({
-    queryKey: ["meeting", id],
+    queryKey: ["meetingId", id],
     queryFn: () => fetchMeetingById(id),
     enabled,
   });

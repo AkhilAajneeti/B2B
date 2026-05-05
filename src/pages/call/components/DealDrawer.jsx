@@ -27,6 +27,7 @@ const DealDrawer = ({
   onUpdate,
   onBulkUpdate,
   onDelete,
+  canCreate,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
@@ -274,7 +275,7 @@ const DealDrawer = ({
     e.preventDefault();
 
     if (!formData.name?.trim()) {
-      toast.error("Task name is required");
+      toast.error("Training name is required");
       return;
     }
 
@@ -395,8 +396,8 @@ const DealDrawer = ({
           await Promise.all([
             fetchUser(),
             fetchTeam(),
-            fetchAccounts(),
-            fetchLeads(),
+            fetchAccounts({ page: 1, limit: 50 }),
+            fetchLeads({ page: 1, limit: 50 }),
             fetchContacts(),
           ]);
 
@@ -509,11 +510,11 @@ const DealDrawer = ({
             <div className="flex items-center space-x-3">
               <h2 className="text-xl font-semibold text-foreground">
                 {isMassUpdate
-                  ? "Mass Update Tasks"
+                  ? "Mass Update Training"
                   : mode === "add"
-                    ? "Add Task"
+                    ? "Add Training"
                     : isEditing
-                      ? "Edit Task"
+                      ? "Edit Training"
                       : deal?.name}
               </h2>
               <span
@@ -547,9 +548,9 @@ const DealDrawer = ({
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {showForm && (
+{canCreate && showForm && (
               <div className="p-6">
-                {/* Lead Form Here */}
+                {/* Call Form Here */}
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* ================= Overview ================= */}
                   <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -563,7 +564,7 @@ const DealDrawer = ({
                       <Select
                         label="Direction"
                         value={formData.direction || ""}
-                        options={Direction} // 👉 later API se users
+                        options={Direction}
                         onChange={(value) =>
                           handleSelectChange("direction", value)
                         }
@@ -1133,7 +1134,7 @@ const DealDrawer = ({
             {isMassUpdate && (
               <>
                 <p className="text-sm text-muted-foreground text-center pt-4 fw-bold">
-                  Updating {selectedIds.length} selected tasks
+                  Updating {selectedIds.length} selected training
                 </p>
                 <form className="space-y-6 p-6" onSubmit={handleBulkUpdate}>
                   <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -1209,7 +1210,7 @@ const DealDrawer = ({
                       Cancel
                     </Button>
                     <Button type="submit">
-                      Update {selectedIds.length} Tasks
+                      Update {selectedIds.length} Training
                     </Button>
                   </div>
                 </form>

@@ -3,7 +3,7 @@ import { fetchAllMeeting, fetchMeeting } from "services/meeting.service";
 
 export const useMeetings = () => {
   return useQuery({
-    queryKey: ["meetings"],
+    queryKey: ["meeting"],
     queryFn: fetchMeeting,
     staleTime: 1000 * 60 * 5,
   });

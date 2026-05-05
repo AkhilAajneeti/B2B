@@ -15,6 +15,8 @@ const DealsTable = ({
   itemsPerPage,
   onDelete,
   isLoading,
+  canEditRecord,
+  canDeleteRecord,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -272,23 +274,27 @@ const DealsTable = ({
                         hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
                       }`}
                     >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleQuickAction(e, "edit", deal)}
-                        className="h-8 w-8"
-                      >
-                        <Icon name="Edit" size={14} />
-                      </Button>
+                      {canEditRecord && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleQuickAction(e, "edit", deal)}
+                          className="h-8 w-8"
+                        >
+                          <Icon name="Edit" size={14} />
+                        </Button>
+                      )}
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleDelete(e, deal)}
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                      >
-                        <Icon name="Trash2" size={14} />
-                      </Button>
+                      {canDeleteRecord && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDelete(e, deal)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Icon name="Trash2" size={14} />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>

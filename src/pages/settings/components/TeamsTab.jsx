@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { canCreate, canEntityRecord } from "../../../utils/permission.js";
 import Icon from "../../../components/AppIcon";
 import Image from "../../../components/AppImage";
 import Button from "../../../components/ui/Button";
@@ -287,6 +288,7 @@ const TeamsTab = () => {
               </p>
             </div>
           </div>
+{canCreate('Team') && (
           <Button
             variant="default"
             onClick={() => setIsInviteModalOpen(true)}
@@ -295,6 +297,7 @@ const TeamsTab = () => {
           >
             Create Team
           </Button>
+        )}
         </div>
 
         {/* Team Stats */}
@@ -379,25 +382,29 @@ const TeamsTab = () => {
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(member)}
-                          aria-label="Edit member"
-                        >
-                          <Icon name="Edit" size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedUserId(member?.id);
-                            setIsDeleteModalOpen(true);
-                          }}
-                          aria-label="Remove member"
-                        >
-                          <Icon name="Trash2" size={16} />
-                        </Button>
+{canEntityRecord('Team', 'edit', member) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(member)}
+                            aria-label="Edit member"
+                          >
+                            <Icon name="Edit" size={16} />
+                          </Button>
+                        )}
+{canEntityRecord('Team', 'delete', member) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedUserId(member?.id);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            aria-label="Remove member"
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

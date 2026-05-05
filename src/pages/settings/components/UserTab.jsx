@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { canCreate, canDelete, canEntityRecord, getStoredUser } from "../../../utils/permission.js";
 import Icon from "../../../components/AppIcon";
 import Image from "../../../components/AppImage";
 import Button from "../../../components/ui/Button";
@@ -388,14 +389,16 @@ const UserTab = () => {
               </p>
             </div>
           </div>
-          <Button
-            variant="default"
-            onClick={() => setIsInviteModalOpen(true)}
-            iconName="UserPlus"
-            iconPosition="left" className="linearbg-1 text-white hover:text-white"
-          >
-            Create User
-          </Button>
+          {canCreate('User') && (
+            <Button
+              variant="default"
+              onClick={() => setIsInviteModalOpen(true)}
+              iconName="UserPlus"
+              iconPosition="left" className="linearbg-1 text-white hover:text-white"
+            >
+              Create User
+            </Button>
+          )}
         </div>
 
         {/* Team Stats */}
@@ -486,7 +489,7 @@ const UserTab = () => {
                 <tr>
                   <td colSpan="4">
                     <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
-                      No leads available
+                      No User Available
                     </div>
                   </td>
                 </tr>
@@ -551,25 +554,38 @@ const UserTab = () => {
                     </td>
                     <td className="py-4 px-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(member)}
-                          aria-label="Edit member"
-                        >
-                          <Icon name="Edit" size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedUserId(member?.id);
-                            setIsDeleteModalOpen(true);
-                          }}
-                          aria-label="Remove member"
-                        >
-                          <Icon name="Trash2" size={16} />
-                        </Button>
+                        {canEntityRecord('User', 'edit', member) ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(member)}
+                            aria-label="Edit member"
+                          >
+                            <Icon name="Edit" size={16} />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => fetchuserById(member)}
+                            aria-label="Edit member"
+                          >
+                            <Icon name="Edit" size={16} />
+                          </Button>
+                        )}
+                        {canEntityRecord('User', 'delete', member) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedUserId(member?.id);
+                              setIsDeleteModalOpen(true);
+                            }}
+                            aria-label="Remove member"
+                          >
+                            <Icon name="Trash2" size={16} />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -591,307 +607,313 @@ const UserTab = () => {
       </div>
       {/* Invite Modal */}
 
-      {isInviteModalOpen && (
-        <>
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black/50 z-50"
-            onClick={() => setIsInviteModalOpen(false)}
-          />
-
-          {/* Modal Wrapper */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Modal Box */}
+      {
+        isInviteModalOpen && (
+          <>
+            {/* Overlay */}
             <div
-              className="relative bg-card border border-border rounded-xl w-full max-w-4xl
+              className="fixed inset-0 bg-black/50 z-50"
+              onClick={() => setIsInviteModalOpen(false)}
+            />
+
+            {/* Modal Wrapper */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              {/* Modal Box */}
+              <div
+                className="relative bg-card border border-border rounded-xl w-full max-w-4xl
                       max-h-[90vh] overflow-hidden shadow-xl"
-            >
-              {/* Header (Sticky) */}
-              <div className="sticky top-0 bg-card z-10 flex items-center justify-between p-6 border-b border-border">
-                <h3 className="text-lg font-semibold text-card-foreground">
-                  {isEdit ? "Update User" : "Create User"}
-                </h3>
+              >
+                {/* Header (Sticky) */}
+                <div className="sticky top-0 bg-card z-10 flex items-center justify-between p-6 border-b border-border">
+                  <h3 className="text-lg font-semibold text-card-foreground">
+                    {isEdit ? "Update User" : "Create User"}
+                  </h3>
 
-                <button
-                  onClick={() => setIsInviteModalOpen(false)}
-                  className="p-2 rounded-lg hover:bg-muted transition"
-                >
-                  <Icon name="X" size={20} />
-                </button>
-              </div>
+                  <button
+                    onClick={() => setIsInviteModalOpen(false)}
+                    className="p-2 rounded-lg hover:bg-muted transition"
+                  >
+                    <Icon name="X" size={20} />
+                  </button>
+                </div>
 
-              {/* Scrollable Body */}
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-                <form onSubmit={handleSubmit}>
-                  <div className="space-y-4">
-                    {/* userName's  && Title*/}
-                    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          label="User Name"
-                          type="text"
-                          value={inviteData?.userName}
-                          onChange={(e) =>
-                            handleInviteChange("userName", e?.target?.value)
-                          }
-                          placeholder="colleague@company.com"
-                          required
-                        />
-                        <Input
-                          label="Title"
-                          type="text"
-                          value={inviteData?.title}
-                          onChange={(e) =>
-                            handleInviteChange("title", e?.target?.value)
-                          }
-                          placeholder="title"
-                          required
-                        />
-                      </div>
-                      {/* First Name's  && Last Name*/}
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          label="First Name"
-                          type="text"
-                          value={inviteData?.firstName}
-                          onChange={(e) =>
-                            handleInviteChange("firstName", e?.target?.value)
-                          }
-                          placeholder="colleague@company.com"
-                          required
-                        />
-                        <Input
-                          label="Last Name"
-                          type="text"
-                          value={inviteData?.lastName}
-                          onChange={(e) =>
-                            handleInviteChange("lastName", e?.target?.value)
-                          }
-                          placeholder="colleague@company.com"
-                          required
-                        />
-                      </div>
-
-                      {/* email & phone number */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          label="Email Address"
-                          type="email"
-                          value={inviteData?.emailAddress}
-                          onChange={(e) =>
-                            handleInviteChange("emailAddress", e?.target?.value)
-                          }
-                          placeholder="colleague@company.com"
-                          required
-                        />
-                        <Input
-                          label="Phone Number"
-                          type="tel"
-                          value={inviteData?.phoneNumber}
-                          onChange={(e) =>
-                            handleInviteChange("phoneNumber", e?.target?.value)
-                          }
-                          placeholder="colleague@company.com"
-                          required
-                        />
-                      </div>
-
-                      {/* gender & phone number */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <Select
-                          label="Gender"
-                          options={GenderOptions}
-                          value={inviteData?.gender}
-                          onChange={(value) =>
-                            handleInviteChange("gender", value)
-                          }
-                        />
-                      </div>
-                    </div>
-                    {/* Team Access Control */}
-                    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                      {/* Teams And Roles */}
-                      <label htmlFor="">Team And Access control</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Select
-                          label="Team"
-                          options={teamOptions}
-                          value={inviteData?.teamId}
-                          onChange={(value) =>
-                            handleInviteChange("teamId", value)
-                          }
-                        />
-                        <Select
-                          label="Role"
-                          options={roleOptions}
-                          value={inviteData?.role}
-                          onChange={(value) =>
-                            handleInviteChange("role", value)
-                          }
-                        />
-                      </div>
-                      {/* Regular And Is Active */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <Select
-                          label="Type"
-                          options={typeOptions}
-                          value={inviteData?.type}
-                          onChange={(value) =>
-                            handleInviteChange("type", value)
-                          }
-                        />
-                        <Select
-                          label="IsActive"
-                          options={ActiveOptions}
-                          value={inviteData?.isActive}
-                          onChange={(value) =>
-                            handleInviteChange("isActive", value)
-                          }
-                        />
-                      </div>
-                    </div>
-                    {/* password and generate password */}
-                    <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="relative">
+                {/* Scrollable Body */}
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+                  <form onSubmit={handleSubmit}>
+                    <div className="space-y-4">
+                      {/* userName's  && Title*/}
+                      <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                        <div className="grid grid-cols-2 gap-2">
                           <Input
-                            label="Password"
-                            type={showPassword ? "text" : "password"}
-                            value={inviteData?.password}
+                            label="User Name"
+                            type="text"
+                            value={inviteData?.userName}
                             onChange={(e) =>
-                              handleInviteChange("password", e?.target?.value)
+                              handleInviteChange("userName", e?.target?.value)
                             }
+                            placeholder="colleague@company.com"
                             required
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
-                          >
-                            <Icon
-                              name={showPassword ? "EyeOff" : "Eye"}
-                              size={18}
-                            />
-                          </button>
-                        </div>
-                        <div className="relative">
                           <Input
-                            label="Confirm Password"
-                            type={showConfirmPassword ? "text" : "password"}
-                            value={inviteData?.confirmPassword}
+                            label="Title"
+                            type="text"
+                            value={inviteData?.title}
                             onChange={(e) =>
-                              handleInviteChange(
-                                "confirmPassword",
-                                e?.target?.value,
-                              )
+                              handleInviteChange("title", e?.target?.value)
                             }
+                            placeholder="title"
                             required
                           />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
-                            className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
-                          >
-                            <Icon
-                              name={showConfirmPassword ? "EyeOff" : "Eye"}
-                              size={18}
-                            />
-                          </button>
                         </div>
+                        {/* First Name's  && Last Name*/}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            label="First Name"
+                            type="text"
+                            value={inviteData?.firstName}
+                            onChange={(e) =>
+                              handleInviteChange("firstName", e?.target?.value)
+                            }
+                            placeholder="colleague@company.com"
+                            required
+                          />
+                          <Input
+                            label="Last Name"
+                            type="text"
+                            value={inviteData?.lastName}
+                            onChange={(e) =>
+                              handleInviteChange("lastName", e?.target?.value)
+                            }
+                            placeholder="colleague@company.com"
+                            required
+                          />
+                        </div>
+
+                        {/* email & phone number */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            label="Email Address"
+                            type="email"
+                            value={inviteData?.emailAddress}
+                            onChange={(e) =>
+                              handleInviteChange("emailAddress", e?.target?.value)
+                            }
+                            placeholder="colleague@company.com"
+                            required
+                          />
+                          <Input
+                            label="Phone Number"
+                            type="tel"
+                            value={inviteData?.phoneNumber}
+                            onChange={(e) =>
+                              handleInviteChange("phoneNumber", e?.target?.value)
+                            }
+                            placeholder="colleague@company.com"
+                            required
+                          />
+                        </div>
+
+                        {/* gender & phone number */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Select
+                            label="Gender"
+                            options={GenderOptions}
+                            value={inviteData?.gender}
+                            onChange={(value) =>
+                              handleInviteChange("gender", value)
+                            }
+                          />
+                        </div>
+                      </div>
+                      {/* Team Access Control */}
+                      <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                        {/* Teams And Roles */}
+                        <label htmlFor="">Team And Access control</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Select
+                            label="Team"
+                            options={teamOptions}
+                            value={inviteData?.teamId}
+                            onChange={(value) =>
+                              handleInviteChange("teamId", value)
+                            }
+                          />
+                          <Select
+                            label="Role"
+                            options={roleOptions}
+                            value={inviteData?.role}
+                            onChange={(value) =>
+                              handleInviteChange("role", value)
+                            }
+                          />
+                        </div>
+                        {/* Regular And Is Active */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Select
+                            label="Type"
+                            options={typeOptions}
+                            value={inviteData?.type}
+                            onChange={(value) =>
+                              handleInviteChange("type", value)
+                            }
+                          />
+                          <Select
+                            label="IsActive"
+                            options={ActiveOptions}
+                            value={inviteData?.isActive}
+                            onChange={(value) =>
+                              handleInviteChange("isActive", value)
+                            }
+                          />
+                        </div>
+                      </div>
+                      {/* password and generate password */}
+                      <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="relative">
+                            <Input
+                              label="Password"
+                              type={showPassword ? "text" : "password"}
+                              value={inviteData?.password}
+                              onChange={(e) =>
+                                handleInviteChange("password", e?.target?.value)
+                              }
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
+                            >
+                              <Icon
+                                name={showPassword ? "EyeOff" : "Eye"}
+                                size={18}
+                              />
+                            </button>
+                          </div>
+                          <div className="relative">
+                            <Input
+                              label="Confirm Password"
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={inviteData?.confirmPassword}
+                              onChange={(e) =>
+                                handleInviteChange(
+                                  "confirmPassword",
+                                  e?.target?.value,
+                                )
+                              }
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowConfirmPassword(!showConfirmPassword)
+                              }
+                              className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
+                            >
+                              <Icon
+                                name={showConfirmPassword ? "EyeOff" : "Eye"}
+                                size={18}
+                              />
+                            </button>
+                          </div>
+                          <Button
+                            className="col-span-2"
+                            variant="default"
+                            onClick={handleGeneratePassword}
+                            loading={isLoading}
+                            iconName="Send"
+                            iconPosition="left"
+                            fullWidth
+                            type="button"
+                          >
+                            Generate Password
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex space-x-3 pt-4">
                         <Button
-                          className="col-span-2"
+                          variant="outline"
+                          onClick={() => setIsInviteModalOpen(false)}
+                          fullWidth
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
                           variant="default"
-                          onClick={handleGeneratePassword}
                           loading={isLoading}
                           iconName="Send"
                           iconPosition="left"
                           fullWidth
-                          type="button"
                         >
-                          Generate Password
+                          {isEdit ? "Update User" : "Create User"}
                         </Button>
                       </div>
                     </div>
-                    <div className="flex space-x-3 pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsInviteModalOpen(false)}
-                        fullWidth
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        variant="default"
-                        loading={isLoading}
-                        iconName="Send"
-                        iconPosition="left"
-                        fullWidth
-                      >
-                        {isEdit ? "Update User" : "Create User"}
-                      </Button>
-                    </div>
-                  </div>
-                </form>
+                  </form>
+                </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
-      {isShowDetails && selectedUser && (
-        <UserDetailsModal
-          user={selectedUser}
-          onClose={() => setIsShowDetails(false)}
-          getStatusBadge={getStatusBadge}
-        />
-      )}
-
-      {isDeleteModalOpen && (
-        <>
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black/50 z-50"
-            onClick={() => setIsDeleteModalOpen(false)}
+          </>
+        )
+      }
+      {
+        isShowDetails && selectedUser && (
+          <UserDetailsModal
+            user={selectedUser}
+            onClose={() => setIsShowDetails(false)}
+            getStatusBadge={getStatusBadge}
           />
+        )
+      }
 
-          {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-card border border-border rounded-xl w-full max-w-md shadow-xl p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <Icon name="AlertTriangle" size={24} className="text-error" />
-                <h3 className="text-lg font-semibold text-card-foreground">
-                  Confirm Delete
-                </h3>
-              </div>
+      {
+        isDeleteModalOpen && (
+          <>
+            {/* Overlay */}
+            <div
+              className="fixed inset-0 bg-black/50 z-50"
+              onClick={() => setIsDeleteModalOpen(false)}
+            />
 
-              <p className="text-sm text-muted-foreground mb-6">
-                Are you sure you want to delete this user? This action cannot be
-                undone.
-              </p>
+            {/* Modal */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="bg-card border border-border rounded-xl w-full max-w-md shadow-xl p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <Icon name="AlertTriangle" size={24} className="text-error" />
+                  <h3 className="text-lg font-semibold text-card-foreground">
+                    Confirm Delete
+                  </h3>
+                </div>
 
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDeleteModalOpen(false)}
-                >
-                  Cancel
-                </Button>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Are you sure you want to delete this user? This action cannot be
+                  undone.
+                </p>
 
-                <Button
-                  variant="destructive"
-                  onClick={handleRemoveUser}
-                  loading={isLoading}
-                >
-                  Delete
-                </Button>
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    onClick={handleRemoveUser}
+                    loading={isLoading}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
-    </div>
+          </>
+        )
+      }
+    </div >
   );
 };
 

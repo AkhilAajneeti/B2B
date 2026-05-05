@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { canCreate, canEntityRecord, canRead, getStoredAcl, getStoredUser, isOwnRecord } from "../../utils/permission.js";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import Header from "../../components/ui/Header";
@@ -30,26 +31,30 @@ const ProjectsPage = () => {
   const [mode, setMode] = useState("view");
 
   const [sortConfig, setSortConfig] = useState({
-    key: "name",
-    direction: "asc",
+    key: "createdAt",
+    direction: "desc",
   });
 
-  const { data, isLoading } = useProjects();
+  const [filters, setFilters] = useState({
+    search: "",
+    assignUser: "",
+    dateType: "",
+    closeDateFrom: "",
+    closeDateTo: "",
+  });
   const queryClient = useQueryClient();
-  const leads = data?.list || [];
+  const { data, isLoading } = useProjects({
+    page: currentPage,
+    limit: itemsPerPage,
+    filters,
+    orderBy: sortConfig?.key || "createdAt",
+    order: sortConfig?.direction || "desc"
+  });
   const loading = isLoading;
   const { data: selectedDealData } = useProject(
     selectedDeal?.id,
     isDrawerOpen && !!selectedDeal?.id,
   );
-  const [filters, setFilters] = useState({
-    search: "",
-    status: "",
-    priority: "",
-    assignUser: "",
-    closeDateFrom: "",
-    closeDateTo: "",
-  });
 
   const handleDealClick = async (deal) => {
     setSelectedDeal(deal); // only store basic info (id)
@@ -57,90 +62,31 @@ const ProjectsPage = () => {
     setIsDrawerOpen(true);
   };
 
-  // Filter and sort deals
-  const filteredAndSortedDeals = useMemo(() => {
-    let filtered = leads?.filter((deal) => {
-      const search = filters?.search?.toLowerCase();
+  const currentUser = getStoredUser();
 
-      const matchesSearch =
-        !search ||
-        deal?.name?.toLowerCase()?.includes(search) ||
-        deal?.emailAddress?.toLowerCase()?.includes(search) ||
-        deal?.phoneNumber?.includes(search) ||
-        deal?.accountName?.toLowerCase()?.includes(search);
+  const projects = data?.list || [];
+  const totalItems = data?.total || 0;
 
-      const matchesStatus =
-        !filters?.status || deal?.status === filters?.status;
+  // KEEP ACL permission filtering (MANDATORY)
+  const visibleProjects = projects.filter(project =>
+    canEntityRecord('CProjects', 'read', project) ||
+    project.collaboratorsIds?.includes(currentUser.id)
+  );
 
-      const matchesPriority =
-        !filters?.priority || deal?.priority === filters?.priority;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-      const matchesAssignUser =
-        !filters.assignUser ||
-        String(deal.assignedUserId) === String(filters.assignUser);
-
-      const matchesCreatedFrom =
-        !filters?.closeDateFrom ||
-        new Date(deal?.createdAt) >= new Date(filters?.closeDateFrom);
-
-      const matchesCreatedTo =
-        !filters?.closeDateTo ||
-        new Date(deal?.createdAt) <= new Date(filters?.closeDateTo);
-
-      return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesPriority &&
-        matchesAssignUser &&
-        matchesCreatedFrom &&
-        matchesCreatedTo
-      );
-    });
-
-    // ✅ SAFE SORTING
-    if (sortConfig?.key) {
-      filtered.sort((a, b) => {
-        let aValue = a?.[sortConfig.key];
-        let bValue = b?.[sortConfig.key];
-
-        if (sortConfig.key === "opportunityAmount") {
-          aValue = Number(aValue ?? 0);
-          bValue = Number(bValue ?? 0);
-        } else if (sortConfig.key === "createdAt") {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-        } else if (typeof aValue === "string") {
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-        }
-
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return filtered;
-  }, [leads, filters, sortConfig]);
-
-  const totalPages = Math.ceil(filteredAndSortedDeals?.length / itemsPerPage);
-
-  const exportLeadsToCSV = (rows, fileName = "leads_export") => {
+  const exportLeadsToCSV = (rows, fileName = "projects_export") => {
     if (!rows || rows.length === 0) {
       toast.error("No data to export");
       return;
     }
 
-    const exportData = rows.map((lead) => ({
-      Name: lead?.name || "",
-      Email: lead?.emailAddress || "",
-      Phone: lead?.phoneNumber || "",
-      Status: lead?.status || "",
-      Source: lead?.source || "",
-      "Project Name": lead?.cProjectName || "",
-      "Assigned User": lead?.assignedUserName || "",
-      "Next Contact": lead?.cNextContact || "",
-      "Created At": lead?.createdAt || "",
+    const exportData = rows.map((project) => ({
+      Name: project?.name || "",
+      Status: project?.status || "",
+      Priority: project?.priority || "",
+      "Assigned User": project?.assignedUserName || "",
+      "Created At": project?.createdAt || "",
     }));
 
     const csv = Papa.unparse(exportData);
@@ -240,9 +186,9 @@ const ProjectsPage = () => {
     try {
       toast.loading("Deleting projects...", { id: "bulk-delete" });
       await bulkDeleteProject(selectedDeals);
-  
+
       queryClient.invalidateQueries(["projects"]);
-  
+
       setSelectedDeals([]);
       toast.success("Project deleted successfully", {
         id: "bulk-delete",
@@ -264,12 +210,10 @@ const ProjectsPage = () => {
 
   const handleSelectAll = (isSelected) => {
     if (isSelected) {
-      const currentPageDeals = filteredAndSortedDeals
-        ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-        ?.map((deal) => deal?.id);
+      const currentPageDeals = visibleProjects.map((deal) => deal.id);
       setSelectedDeals([...new Set([...selectedDeals, ...currentPageDeals])]);
     } else {
-      const currentPageDeals = filteredAndSortedDeals
+      const currentPageDeals = visibleProjects
         ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
         ?.map((deal) => deal?.id);
       setSelectedDeals(
@@ -278,27 +222,24 @@ const ProjectsPage = () => {
     }
   };
 
-  const handleSort = (key) => {
-    setSortConfig((prevConfig) => ({
-      key,
-      direction:
-        prevConfig?.key === key && prevConfig?.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
-  };
-
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
+    setCurrentPage(1);
+  };
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc"
+    }));
     setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
     setFilters({
       search: "",
-      status: "",
-      priority: "",
       assignUser: "",
+      dateType: "",
       closeDateFrom: "",
       closeDateTo: "",
     });
@@ -316,7 +257,7 @@ const ProjectsPage = () => {
         return;
       }
 
-      const selectedRows = filteredAndSortedDeals.filter((deal) =>
+      const selectedRows = visibleProjects.filter((deal) =>
         selectedDeals.includes(deal.id),
       );
 
@@ -379,16 +320,18 @@ const ProjectsPage = () => {
                 <Button
                   variant="outline" className="linearbg-1 text-white hover:text-white"
                   onClick={() =>
-                    exportLeadsToCSV(filteredAndSortedDeals, "all_leads")
+                    exportLeadsToCSV(visibleProjects, "all_leads")
                   }
                 >
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All
                 </Button>
-                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
-                  <Icon name="Plus" size={16} className="mr-2" />
-                  New Project
-                </Button>
+                {canCreate('CProjects') && (
+                  <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
+                    <Icon name="Plus" size={16} className="mr-2" />
+                    New Project
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -397,14 +340,14 @@ const ProjectsPage = () => {
               filters={filters}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              dealCount={filteredAndSortedDeals?.length}
+              dealCount={visibleProjects?.length}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
             />
 
             {/* Deals Table */}
             <DealsTable
-              deals={filteredAndSortedDeals}
+              deals={visibleProjects}
               selectedDeals={selectedDeals}
               onSelectDeal={handleSelectDeal}
               onSelectAll={handleSelectAll}
@@ -421,7 +364,7 @@ const ProjectsPage = () => {
             <TablePagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={filteredAndSortedDeals?.length}
+              totalItems={totalItems}
               itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}

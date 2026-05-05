@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
 import Icon from "../../components/AppIcon";
@@ -14,6 +14,7 @@ import {
 } from "services/intergration.service";
 import DealDrawer from "./components/DealDrawer";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
+import { canCreate, canEntityRecord } from "utils/permission";
 
 const IntegrationsPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -21,7 +22,10 @@ const IntegrationsPage = () => {
   const [selectedIntegration, setSelectedIntegration] = useState(null);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [integrationsAcc, setIntegrationAcc] = useState([""]);
+  const [integrationsAcc, setIntegrationAcc] = useState([]);
+  const visibleIntegrations = useMemo(() =>
+    integrationsAcc.filter(integration => canEntityRecord('LeadCapture', 'read', integration))
+    , [integrationsAcc]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [drawerMode, setDrawerMode] = useState("view"); // add | edit
@@ -36,7 +40,7 @@ const IntegrationsPage = () => {
         setIntegrationAcc(data.list);
       } catch (error) {
         console.log("failed to fetch data", error);
-      }finally{
+      } finally {
         setLoading(false);
       }
     };
@@ -45,7 +49,7 @@ const IntegrationsPage = () => {
   }, []);
 
   const categories = [
-    { id: "all", name: "All Integrations", count: integrationsAcc.length },
+    { id: "all", name: "All Integrations", count: visibleIntegrations.length },
   ];
 
   const integrations = [
@@ -265,8 +269,14 @@ const IntegrationsPage = () => {
   };
 
   const handleConfirmDelete = async () => {
+    const recordToDelete = integrationsAcc.find(acc => acc.id === deleteId);
+    if (!canEntityRecord('LeadCapture', 'delete', recordToDelete)) {
+      toast.error('No permission to delete this integration');
+      return;
+    }
+
     try {
-      await deleteIntegration(deleteId); // 👈 apni delete API call karo
+      await deleteIntegration(deleteId);
       setIsDeleteOpen(false);
       setDeleteId(null);
 
@@ -276,7 +286,7 @@ const IntegrationsPage = () => {
       toast.success("Integration Deleted Successfully");
     } catch (error) {
       console.log("Delete failed", error);
-      toast.success("Integration Deletion Failed");
+      toast.error("Integration Deletion Failed");
     }
   };
 
@@ -328,18 +338,20 @@ const IntegrationsPage = () => {
                 >
                   Refresh All
                 </Button>
-                <Button
-                  variant="default"className="linearbg-1 text-white hover:text-white"
-                  iconName="Plus"
-                  iconPosition="left"
-                  onClick={() => {
-                    setSelectedIntegration(null);
-                    setDrawerMode("add");
-                    setIsOpen(true);
-                  }}
-                >
-                  Create Entry Point
-                </Button>
+                {canCreate('LeadCapture') && (
+                  <Button
+                    variant="default" className="linearbg-1 text-white hover:text-white"
+                    iconName="Plus"
+                    iconPosition="left"
+                    onClick={() => {
+                      setSelectedIntegration(null);
+                      setDrawerMode("add");
+                      setIsOpen(true);
+                    }}
+                  >
+                    Create Entry Point
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -374,61 +386,19 @@ const IntegrationsPage = () => {
           {/* Connected Integrations Summary */}
           <div className="mb-8">
             <ConnectedIntegrationsList
-              integrations={integrationsAcc}
+              integrations={visibleIntegrations}
               onRowClick={handleRowClick}
               onDelete={handleDeleteClick}
               isLoading={loading}
             />
           </div>
 
-          {/* Help Section */}
-          <div className="bg-card border border-border rounded-lg p-6">
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                <Icon name="HelpCircle" size={24} className="text-accent" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-card-foreground mb-2">
-                  Need Help with Integrations?
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Our integration guides and support team are here to help you
-                  connect your tools seamlessly.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    iconName="Book"
-                    iconPosition="left"
-                  >
-                    View Documentation
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    iconName="MessageCircle"
-                    iconPosition="left"
-                  >
-                    Contact Support
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    iconName="Video"
-                    iconPosition="left"
-                  >
-                    Watch Tutorials
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+
         </div>
       </main>
 
       <DealDrawer
-        integrations={integrationsAcc}
+        integrations={visibleIntegrations}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         mode={drawerMode}
