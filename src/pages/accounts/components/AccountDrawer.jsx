@@ -383,12 +383,12 @@ const AccountDrawer = ({
   //     value: item,
   //     label: item,
   //   }));
-    const accountType = [
-  { value: "Customer", label: "Customer" },
-  { value: "Investor", label: "Investor" },
-  { value: "Partner", label: "Partner" },
-  { value: "Reseller", label: "Reseller" },
-];
+  const accountType = [
+    { value: "Customer", label: "Customer" },
+    { value: "Investor", label: "Investor" },
+    { value: "Partner", label: "Partner" },
+    { value: "Reseller", label: "Reseller" },
+  ];
 
   const handleUpdate = async () => {
     if (!validateForm()) return;
@@ -417,7 +417,12 @@ const AccountDrawer = ({
 
     try {
       setIsLoading(true);
-      if (formData.phoneNumber.length !== 10) {
+      const digits = formData.phoneNumber.replace(/\D/g, ""); // remove +, spaces
+
+      // remove country code (91)
+      const number = digits.startsWith("91") ? digits.slice(2) : digits;
+
+      if (number.length !== 10) {
         toast.error("Phone number must be 10 digits");
         return;
       }
@@ -1865,8 +1870,8 @@ const AccountDrawer = ({
                       {/* EXPANDED CONTENT */}
                       <div
                         className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen
-                            ? "max-h-[500px] opacity-100 mt-4"
-                            : "max-h-0 opacity-0"
+                          ? "max-h-[500px] opacity-100 mt-4"
+                          : "max-h-0 opacity-0"
                           }`}
                       >
                         <div className="border-t pt-4 grid grid-cols-2 gap-4 text-sm">
