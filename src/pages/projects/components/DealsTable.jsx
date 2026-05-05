@@ -98,7 +98,7 @@ const DealsTable = ({
   const isIndeterminate =
     selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
 
-     const SkeletonRow = () => (
+  const SkeletonRow = () => (
     <tr className="animate-pulse border-t border-border">
       {/* Checkbox */}
       <td className="p-4">
@@ -130,7 +130,7 @@ const DealsTable = ({
       <td className="p-4">
         <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
       </td>
-      
+
 
       {/* Actions */}
       <td className="p-4">
@@ -226,7 +226,7 @@ const DealsTable = ({
                     {deal?.name}
                   </div>
                 </td>
-                
+
                 <td className="px-4 py-4">
                   <div
                     className={`text-sm font-medium ${getProbabilityColor(
@@ -262,7 +262,7 @@ const DealsTable = ({
                       </Button>
                     )}
 
-                    {isAdminOrManager() && (
+                    {isOwnRecord(deal, getStoredUser()) && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -307,7 +307,7 @@ const DealsTable = ({
                     {deal?.name}
                   </h3>
 
-                 
+
                 </div>
 
                 {/* Project Name */}
