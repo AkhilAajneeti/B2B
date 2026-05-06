@@ -55,12 +55,10 @@ const DealDrawer = ({
   const { data: usersData } = useUsers();
   const { data: teamData } = useTeams();
   const { data: streamData } = useLeadStream(deal?.id, isOpen);
-  const { data: activityData } = useLeadActivity(deal?.id, isOpen);
 
   const users = usersData?.list || [];
   const team = teamData?.list || [];
   const streams = streamData?.list || [];
-  const activities = activityData?.list || [];
   useEffect(() => {
     if (mode === "add") {
       setFormData({
@@ -162,7 +160,6 @@ const DealDrawer = ({
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
     { id: "Stream", label: "Stream", icon: "Calendar" },
-    { id: "Activity", label: "Activity", icon: "FileText" },
   ];
 
   const getActivityIcon = (type) => {
@@ -426,30 +423,7 @@ const DealDrawer = ({
     return value.replace("T", " ") + ":00";
   };
 
-  // fetching lead stream from id
-  // useEffect(() => {
-  //   if (!isOpen || !deal?.id) return;
 
-  //   const loadActivity = async () => {
-  //     try {
-  //       const id = deal?.id;
-  //       const res = await leadActivitesById(id);
-  //       console.log("LEAD DETAIL RESPONSE:", res);
-  //       setActivities(res.list || []);
-  //     } catch (err) {
-  //       console.error("Failed to fetch streams", err);
-  //       toast.error("Failed to load activity");
-  //     }
-  //   };
-
-  //   loadActivity();
-  // }, [isOpen, deal?.id]);
-
-  // useEffect(() => {
-  //   if (!isOpen) {
-  //     setmockStream([]);
-  //   }
-  // }, [isOpen]);
   const leadData = leadsDetails || deal;
   const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
   const canEditDeal = (deal) =>
@@ -1156,147 +1130,7 @@ const DealDrawer = ({
                     </div>
                   )}
 
-                  {activeTab === "Activity" && (
-                    <div className="space-y-4">
-                      {activities?.length > 0 ? (
-                        activities.map((activity) => (
-                          <div
-                            key={activity.id}
-                            onClick={() => toggleActivity(activity.id)}
-                            className={`cursor-pointer rounded-lg p-4 transition-all duration-300${expandedActivityId === activity.id
-                              ? "bg-muted shadow-sm"
-                              : "bg-muted/30 hover:bg-muted"
-                              }`}
-                          >
-                            {/*  */}
-                            <div className="flex space-x-3">
-                              <Avatar
-                                name={activity.name || "System"}
-                                size="36"
-                                round
-                                textSizeRatio={2}
-                              />
 
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <h4 className="font-medium text-foreground">
-                                    {activity.name || "Activity"}
-                                  </h4>
-
-                                  <span className="text-xs text-muted-foreground">
-                                    {activity._scope}
-                                  </span>
-
-                                  {activity.status && (
-                                    <span
-                                      className={`px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                                        activity.status,
-                                      )}`}
-                                    >
-                                      {activity.status}
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <Icon name="Clock" size={12} />
-                                    {formatDate(activity.dateStart)}
-                                  </span>
-
-                                  {activity.duration && (
-                                    <span className="flex items-center gap-1">
-                                      <Icon name="Timer" size={12} />
-                                      {Math.round(activity.duration / 60)} min
-                                    </span>
-                                  )}
-
-                                  {activity.parentType && (
-                                    <span className="flex items-center gap-1">
-                                      <Icon name="Link" size={12} />
-                                      {activity.parentType}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/*  */}
-                            <div
-                              className={`overflow-hidden transition-all duration-300 ease-in-out ${expandedActivityId === activity.id
-                                ? "max-h-[600px] opacity-100 mt-4"
-                                : "max-h-0 opacity-0"
-                                }`}
-                            >
-                              <div className="border-t pt-4 text-sm text-muted-foreground">
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                  <div>
-                                    <p className="text-xs">Direction</p>
-                                    <p className="font-medium text-foreground">
-                                      {activity.direction}
-                                    </p>
-                                  </div>
-
-                                  <div>
-                                    <p className="text-xs">Assigned User</p>
-                                    <p className="font-medium text-foreground">
-                                      {activity.assignedUserName}
-                                    </p>
-                                  </div>
-
-                                  <div>
-                                    <p className="text-xs">Date Start</p>
-                                    <p className="font-medium text-foreground">
-                                      {formatDateTime(activity.dateStart)}
-                                    </p>
-                                  </div>
-
-                                  <div>
-                                    <p className="text-xs">Date End</p>
-                                    <p className="font-medium text-foreground">
-                                      {formatDateTime(activity.dateEnd)}
-                                    </p>
-                                  </div>
-
-                                  <div>
-                                    <p className="text-xs">Duration</p>
-                                    <p className="font-medium text-foreground">
-                                      {Math.round(activity.duration / 60)} min
-                                    </p>
-                                  </div>
-
-                                  <div>
-                                    <p className="text-xs">Parent</p>
-                                    <p className="font-medium text-primary">
-                                      {activity.parentType}
-                                    </p>
-                                  </div>
-
-                                  <div>
-                                    <p className="text-xs">Created</p>
-                                    <p className="font-medium text-foreground">
-                                      {formatDate(activity.createdAt)}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-10 text-center">
-                          <img
-                            src="/assets/images/no-content.png"
-                            alt="No Activities"
-                            className="w-40 opacity-80"
-                          />
-                          <p className="mt-3 text-sm text-muted-foreground">
-                            Currently you don't have any activities
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </>
             )}
