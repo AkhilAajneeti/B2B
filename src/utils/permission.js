@@ -39,60 +39,6 @@ export const canCreate = (entity) => canEntity(entity, "create");
 export const canEdit = (entity) => canEntity(entity, "edit");
 export const canDelete = (entity) => canEntity(entity, "delete");
 
-// export I want to implement permission-based control in my **Project (CProjects)** module on the frontend.
-
-// Currently, there is no proper ACL defined for Projects. The only available config is:
-
-// CProjects:
-
-// * links:
-
-//   * collaborators:
-
-//     * readOnly: true
-
-// This only controls the collaborators relationship and does not define create/edit/delete permissions.
-
-// ---
-
-// ### Requirements:
-
-// 1. **Project Visibility (Read):**
-
-//    * Admin and Manager users should be able to see all projects.
-//    * Other users should only see projects where:
-
-//      ```js
-//      project.assignedUserId === currentUserId
-//      ```
-
-// 2. **Edit Permission:**
-
-//    * A user should be allowed to edit a project only if:
-
-//      ```js
-//      project.assignedUserId === currentUserId
-//      ```
-
-// 3. **Create/Delete (Temporary Rule):**
-
-//    * Since ACL is not defined:
-
-//      * Only Admin/Manager can create or delete projects (frontend-controlled).
-
-// 4. **UI Behavior:**
-
-//    * Hide Edit button if user is not assigned to the project.
-//    * Hide Create/Delete buttons if user is not Admin/Manager.
-//    * Do not just disable buttons — completely hide them.
-
-// ---
-
-// ### Note:
-
-// * This is a temporary frontend-based control.
-// * Backend ACL for Projects is not yet implemented.
-// * This logic should follow the same pattern used in other modules where permissions are applied.
 export const getStoredUser = () => {
   try {
     const storedUser = localStorage.getItem("login_object");
