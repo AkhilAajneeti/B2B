@@ -76,7 +76,7 @@ const DealDrawer = ({
       setFormData({
         name: deal.name || "",
         assignedUserId: deal.assignedUserId || "",
-        teamId: deal.teamId || "",
+        teamId: deal.teamId?.[0] || "",
         status: deal.status || "",
         priority: deal.priority || "",
         startDate: deal.dateStart
@@ -121,10 +121,7 @@ const DealDrawer = ({
   const { data: meta } = useMetaData();
   const { data: teamData } = useTeams();
   const { data: accountData } = useAccounts({ limit, page });
-  const { data: leadsData } = useLeads({
-    limit: 100,
-    page: 0,
-  });
+  const { data: leadsData } = useLeads({ limit:100, page:1 });
   const team = teamData?.list || [];
   const acc = accountData?.list || [];
   const lead = leadsData?.list || [];

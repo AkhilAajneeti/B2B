@@ -325,7 +325,7 @@ const AccountsTable = ({
                           size="sm"
                           className="text-destructive hover:bg-red-50"
                           onClick={() =>
-                            onBulkAction("delete", Array.from(selectedRows))
+                            onBulkAction("delete", [account.id])
                           }
                         >
                           <Icon name="Trash2" size={16} />

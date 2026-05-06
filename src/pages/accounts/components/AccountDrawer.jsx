@@ -398,10 +398,7 @@ const AccountDrawer = ({
 
       const payload = { ...formData };
 
-      console.log("UPDATE ACCOUNT PAYLOAD", payload);
-      console.log("UPDATE versionNumber", account?.versionNumber);
-
-      await updateAccount(account.id, payload, account?.versionNumber);
+      await updateAccount(account.id, payloa);
 
       onSuccess(); // refresh table
       onClose(); // close drawer

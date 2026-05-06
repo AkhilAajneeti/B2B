@@ -4,7 +4,7 @@ import { fetchLeads, fetchLeadsCount, fetchNewLeads } from "services/leads.servi
 export const useLeads = ({ limit, page }) => {
     return useQuery({
         queryKey: ["leads", limit, page],
-        queryFn: () => fetchLeads({ limit: 1000, page: 0 }),
+        queryFn: () => fetchLeads({ limit, page }),
         placeholderData: keepPreviousData,
     })
 }

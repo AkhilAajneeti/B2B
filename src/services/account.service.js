@@ -155,7 +155,7 @@ export const fetchAccounts = async ({ limit, page, filters = {} }) => {
     throw new Error("Failed to fetch accounts");
   }
 
-  return res.json();
+  return await res.json();
 };
 
 /* CREATE */
@@ -178,13 +178,12 @@ export const createAccount = async (payload) => {
   //   throw new Error("account is not created");
   // }
 
-  return text ? JSON.parse(text) : null;
+  return await res.json();
 };
 
 /* UPDATE */
-export const updateAccount = async (id, payload, versionNumber) => {
+export const updateAccount = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
-  console.log(id, payload, versionNumber);
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Account/${id}`,
     {
@@ -192,7 +191,7 @@ export const updateAccount = async (id, payload, versionNumber) => {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        // "X-Version-Number": String(versionNumber||1),
+        
         token: token,
       },
       body: JSON.stringify(payload),
@@ -205,7 +204,7 @@ export const updateAccount = async (id, payload, versionNumber) => {
     throw new Error(text || "Account update failed");
   }
 
-  return text ? JSON.parse(text) : null;
+  return await res.json();
 };
 
 /* DELETE */
@@ -218,7 +217,7 @@ export const deleteAccount = async (id) => {
       headers: { "Content-Type": "application/json", token: token },
     },
   );
-  return res.json();
+  return await res.json();
 };
 
 //
@@ -240,7 +239,7 @@ export const fetchAccStreamById = async (id) => {
     },
   );
 
-  console.log(res);
+  
   if (!res.ok) {
     console.log("STATUS:", res.status);
     if (res.status === 401 || res.status === 403) {

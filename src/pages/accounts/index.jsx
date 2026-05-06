@@ -9,6 +9,7 @@ import AccountsFilters from "./components/AccountsFilters";
 import AccountDrawer from "./components/AccountDrawer";
 import {
   createAccount,
+  deleteAccount,
   fetchAccounts,
   updateAccount,
 } from "services/account.service";
@@ -119,7 +120,50 @@ const AccountsPage = () => {
     setDrawerMode("view");
   };
 
-  const handleBulkAction = (action, ids) => {
+  const handleBulkAction = async (action, ids) => {
+    if (action === "delete") {
+      if (!ids?.length) {
+        toast.error("Select at least one account");
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Are you sure you want to delete ${ids.length} account(s)?`
+      );
+
+      if (!confirmed) return;
+
+      try {
+        toast.loading("Deleting account(s)...", {
+          id: "delete-accounts",
+        });
+
+        // bulk delete safely
+        await Promise.all(ids.map((id) => deleteAccount(id)));
+
+        toast.success(`${ids.length} account(s) deleted`, {
+          id: "delete-accounts",
+        });
+
+        // refresh table
+        queryClient.invalidateQueries(["accounts"]);
+
+        // clear selected
+        setSelectedAccountIds([]);
+      } catch (error) {
+        console.error("Delete failed:", error);
+
+        toast.error(
+          error?.message || "Failed to delete account(s)",
+          {
+            id: "delete-accounts",
+          }
+        );
+      }
+
+      return;
+    }
+
     if (action === "mass-update") {
       if (!ids.length) {
         alert("Select at least one account");
@@ -132,8 +176,8 @@ const AccountsPage = () => {
       setSelectedAccountIds(ids);
       return;
     }
+
     if (action === "export") {
-      // 1️⃣ Agar kuch selected hai → sirf wahi export
       const accountsToExport =
         ids && ids.length > 0
           ? filteredAccounts.filter((acc) => ids.includes(acc.id))
