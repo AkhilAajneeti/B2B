@@ -158,7 +158,10 @@ const ActivityTimeline = ({ activities, onEdit, onComplete, onReschedule }) => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => onComplete(activity.id)}
+                        onClick={() => onComplete({
+                          parentId: activity.parentId,
+                          parentType: activity.parentType,
+                        })}
                         className="h-8 w-8 text-green-600 hover:bg-green-50"
                         title="Mark as completed"
                       >

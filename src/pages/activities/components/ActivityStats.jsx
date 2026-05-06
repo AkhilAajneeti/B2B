@@ -1,66 +1,21 @@
 import React, { useMemo } from "react";
 import Icon from "../../../components/AppIcon";
 
-const ActivityStats = ({ activities = [] }) => {
+const ActivityStats = ({ activities = [],total }) => {
   /* =========================
-     STATUS HELPERS
+     HELPERS
   ========================= */
-  const ACTIONABLE_TYPES = ["Task", "Meeting"];
 
-  const isActionable = (activity) => {
-    return ["Task", "Meeting"].includes(activity.parentType);
-  };
-  const getActivityStatus = (activity) => {
-    if (activity.type === "Create") {
-      return activity.data?.statusValue || null;
-    }
-    if (activity.type === "Update") {
-      return activity.data?.value || null;
-    }
-    if (activity.type === "Post") {
-      return activity.data?.value || null;
-    }
-
-    return null;
-  };
-
-  const getEndDate = (activity) => {
-    return activity.data?.attributes?.became?.dateEnd || null;
-  };
-
-  const isCompleted = (activity) => {
-    if (!isActionable(activity)) return false;
-
-    const status = getActivityStatus(activity);
-    return ["Completed", "Held"].includes(status);
-  };
-
-  // ✅ TODAY logic
-  const isToday = (activity) => {
-    if (!isActionable(activity) || isCompleted(activity)) return false;
+  const isToday = (date) => {
+    if (!date) return false;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 1️⃣ Case: has end date → compare with today
-    const endDate = getEndDate(activity);
-    if (endDate) {
-      const due = new Date(endDate);
-      due.setHours(0, 0, 0, 0);
-      return due.getTime() === today.getTime();
-    }
+    const activityDate = new Date(date);
+    activityDate.setHours(0, 0, 0, 0);
 
-    // 2️⃣ Case: NO end date → use createdAt
-    const created = new Date(activity.createdAt);
-    created.setHours(0, 0, 0, 0);
-
-    return created.getTime() === today.getTime();
-  };
-
-  const isPending = (activity) => {
-    if (!isActionable(activity)) return false;
-
-    return !isCompleted(activity) && !isToday(activity);
+    return activityDate.getTime() === today.getTime();
   };
 
   /* =========================
@@ -68,15 +23,25 @@ const ActivityStats = ({ activities = [] }) => {
   ========================= */
 
   const stats = useMemo(() => {
-    const total = activities.length;
+    return {
+      total: activities.length,
 
-    const actionableActivities = activities.filter(isActionable);
+      created: activities.filter(
+        (a) => a.type === "Create"
+      ).length,
 
-    const completed = actionableActivities.filter(isCompleted).length;
-    const today = actionableActivities.filter(isToday).length;
-    const pending = actionableActivities.filter(isPending).length;
+      updates: activities.filter(
+        (a) => a.type === "Update"
+      ).length,
 
-    return { total, completed, pending, today };
+      comments: activities.filter(
+        (a) => a.type === "Post"
+      ).length,
+
+      today: activities.filter(
+        (a) => isToday(a.createdAt)
+      ).length,
+    };
   }, [activities]);
 
   /* =========================
@@ -86,29 +51,29 @@ const ActivityStats = ({ activities = [] }) => {
   const statCards = [
     {
       label: "Total Activities",
-      value: stats.total,
+      value: total,
       icon: "Activity",
       color: "text-blue-600",
       bgColor: "bg-blue-100",
     },
     {
-      label: "Completed",
-      value: stats.completed,
-      icon: "CheckCircle",
+      label: "Created",
+      value: stats.created,
+      icon: "PlusCircle",
       color: "text-green-600",
       bgColor: "bg-green-100",
     },
     {
-      label: "Pending",
-      value: stats.pending,
-      icon: "Clock",
+      label: "Updates",
+      value: stats.updates,
+      icon: "RefreshCw",
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
     },
     {
-      label: "Today",
-      value: stats.today,
-      icon: "Calendar",
+      label: "Comments",
+      value: stats.comments,
+      icon: "MessageSquare",
       color: "text-purple-600",
       bgColor: "bg-purple-100",
     },
@@ -126,13 +91,20 @@ const ActivityStats = ({ activities = [] }) => {
               <p className="text-sm font-medium text-muted-foreground mb-1">
                 {stat.label}
               </p>
-              <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+
+              <p className="text-2xl font-bold text-foreground">
+                {stat.value}
+              </p>
             </div>
 
             <div
               className={`w-12 h-12 rounded-full ${stat.bgColor} flex items-center justify-center`}
             >
-              <Icon name={stat.icon} size={24} className={stat.color} />
+              <Icon
+                name={stat.icon}
+                size={24}
+                className={stat.color}
+              />
             </div>
           </div>
         </div>

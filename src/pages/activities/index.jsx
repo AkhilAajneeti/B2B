@@ -9,81 +9,40 @@ import ActivityFilters from "./components/ActivityFilters";
 import QuickAddActivity from "./components/QuickAddActivity";
 import BulkActions from "./components/BulkActions";
 import ActivityStats from "./components/ActivityStats";
-import { createActivity, fetchActivity } from "services/activity.service";
+import TablePagination from "./components/TablePagination";
+import { createActivity } from "services/activity.service";
 import { deleteActivity } from "services/activity.service";
+import { useActivities } from "hooks/useActivities";
+import { updateTasks } from "services/tasks.service";
+import { updateMeeting } from "services/meeting.service";
+import toast from "react-hot-toast";
 const Activities = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activities, setActivities] = useState([]);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [selectedActivities, setSelectedActivities] = useState([]);
-
-  // operations
-  useEffect(() => {
-    const loadAccount = async () => {
-      try {
-        const data = await fetchActivity();
-        setActivities(data.list);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadAccount();
-  }, []);
-
+  const [limit, setLimit] = useState(20);
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     search: "",
     type: "all",
-    dateFrom: "",
-    dateTo: "",
+    dateType: "",
+    closeDateFrom: "",
+    closeDateTo: "",
+    xDays: ""
   });
+  const { data, isLoading: loading, refetch } = useActivities({ limit, page, filters });
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / limit);
 
-  const filteredActivities = useMemo(() => {
-    return (
-      activities
-        ?.filter((activity) => {
-          // SEARCH
-          if (filters.search) {
-            const term = filters.search.toLowerCase();
-            const matches =
-              activity?.parentType?.toLowerCase()?.includes(term) ||
-              activity?.createdByName?.toLowerCase()?.includes(term) ||
-              activity?.data?.assignedUserName?.toLowerCase()?.includes(term);
+  // operations
+  useEffect(() => {
+    setActivities(data?.list || []);
+  }, [data]);
 
-            if (!matches) return false;
-          }
 
-          // TYPE
-          if (filters.type !== "all") {
-            if (activity.parentType !== filters.type) {
-              return false;
-            }
-          }
 
-          // DATE FROM
-          if (filters.dateFrom) {
-            const activityDate = new Date(activity.createdAt);
-            const fromDate = new Date(filters.dateFrom);
-            if (activityDate < fromDate) return false;
-          }
-
-          // DATE TO
-          if (filters.dateTo) {
-            const activityDate = new Date(activity.createdAt);
-            const toDate = new Date(filters.dateTo);
-            toDate.setHours(23, 59, 59, 999);
-            if (activityDate > toDate) return false;
-          }
-
-          return true;
-        })
-        // SAFE SORT
-        ?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    );
-  }, [activities, filters]);
+  const filteredActivities = activities;
 
   const handleMenuToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -98,18 +57,19 @@ const Activities = () => {
       ...prev,
       [field]: value,
     }));
+    setPage(1);
   };
 
   const handleClearFilters = () => {
     setFilters({
       search: "",
       type: "all",
-      status: "all",
-      owner: "all",
-      priority: "all",
-      dateFrom: "",
-      dateTo: "",
+      dateType: "",
+      closeDateFrom: "",
+      closeDateTo: "",
+      xDays: ""
     });
+    setPage(1);
   };
 
   const handleAddActivity = async (payload) => {
@@ -130,14 +90,29 @@ const Activities = () => {
     console.log("Edit activity:", activity);
   };
 
-  const handleCompleteActivity = (activityId) => {
-    setActivities((prev) =>
-      prev?.map((activity) =>
-        activity?.id === activityId
-          ? { ...activity, completed: true }
-          : activity,
-      ),
-    );
+  const handleCompleteActivity = async ({
+    parentId,
+    parentType,
+  }) => {
+    try {
+      if (parentType === "Task") {
+        await updateTasks(parentId, {
+          status: "Completed",
+        });
+      }
+
+      if (parentType === "Meeting") {
+        await updateMeeting(parentId, {
+          status: "Held",
+        });
+      }
+
+      // refresh activities after update
+      await refetch();
+      toast.success("Activity marked as completed");
+    } catch (error) {
+      console.error("Failed to complete activity:", error);
+    }
   };
 
   const handleRescheduleActivity = (activity) => {
@@ -161,15 +136,39 @@ const Activities = () => {
     }
   };
 
-  const handleBulkComplete = () => {
-    setActivities((prev) =>
-      prev?.map((activity) =>
-        selectedActivities?.includes(activity?.id)
-          ? { ...activity, completed: true }
-          : activity,
-      ),
-    );
-    setSelectedActivities([]);
+  const handleBulkComplete = async () => {
+    try {
+      const selectedItems = activities.filter((activity) =>
+        selectedActivities.includes(activity.id)
+      );
+
+      const taskUpdates = selectedItems
+        .filter((a) => a.parentType === "Task")
+        .map((a) =>
+          updateTasks(a.parentId, {
+            status: "Completed",
+          })
+        );
+
+      const meetingUpdates = selectedItems
+        .filter((a) => a.parentType === "Meeting")
+        .map((a) =>
+          updateMeeting(a.parentId, {
+            status: "Held",
+          })
+        );
+
+      await Promise.all([
+        ...taskUpdates,
+        ...meetingUpdates,
+      ]);
+
+      await refetch();
+      toast.success("Activity marked as completed");
+      setSelectedActivities([]);
+    } catch (error) {
+      console.error("Bulk complete failed:", error);
+    }
   };
 
   const handleBulkReassign = (newOwner) => {
@@ -242,7 +241,7 @@ const Activities = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">
-                Activities
+                {total} Activities
               </h1>
               <p className="text-muted-foreground">
                 Track and manage your sales activities, tasks, and follow-ups
@@ -260,14 +259,14 @@ const Activities = () => {
           </div>
 
           {/* Activity Stats */}
-          <ActivityStats activities={activities} />
+          {/* <ActivityStats activities={activities} total={total} /> */}
 
           {/* Activity Filters */}
           <ActivityFilters
             filters={filters}
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
-            totalCount={activities?.length}
+            totalCount={total}
             filteredCount={filteredActivities?.length}
           />
 
@@ -299,7 +298,12 @@ const Activities = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" iconName="RefreshCw">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  iconName="RefreshCw"
+                  onClick={() => refetch()}
+                >
                   Refresh
                 </Button>
               </div>
@@ -365,6 +369,17 @@ const Activities = () => {
                 </div>
               )}
             </div>
+            <TablePagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={total}
+              itemsPerPage={limit}
+              onPageChange={(p) => setPage(p)}
+              onItemsPerPageChange={(val) => {
+                setLimit(val);
+                setPage(1);
+              }}
+            />
           </div>
         </div>
       </main>

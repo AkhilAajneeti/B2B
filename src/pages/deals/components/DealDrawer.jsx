@@ -50,6 +50,7 @@ const DealDrawer = ({
     source: "",
     description: "",
     cSiteVisitAt: "",
+    industry: ""
   });
   const queryClient = useQueryClient();
   const { data: usersData } = useUsers();
@@ -77,6 +78,7 @@ const DealDrawer = ({
         source: "",
         description: "",
         cSiteVisitAt: "",
+        industry: ""
       });
       setIsEditing(true); // form open
     } else if (deal && mode === "view") {
@@ -422,7 +424,58 @@ const DealDrawer = ({
     // from datetime-local input
     return value.replace("T", " ") + ":00";
   };
-
+  const IndustryOptions = [
+    { value: "Advertising", label: "Advertising" },
+    { value: "Aerospace", label: "Aerospace" },
+    { value: "Agriculture", label: "Agriculture" },
+    { value: "Apparel & Accessories", label: "Apparel & Accessories" },
+    { value: "Architecture", label: "Architecture" },
+    { value: "Automotive", label: "Automotive" },
+    { value: "Banking", label: "Banking" },
+    { value: "Biotechnology", label: "Biotechnology" },
+    { value: "Building Materials & Equipment", label: "Building Materials & Equipment" },
+    { value: "Chemical", label: "Chemical" },
+    { value: "Computer", label: "Computer" },
+    { value: "Construction", label: "Construction" },
+    { value: "Consulting", label: "Consulting" },
+    { value: "Creative", label: "Creative" },
+    { value: "Culture", label: "Culture" },
+    { value: "Defense", label: "Defense" },
+    { value: "Education", label: "Education" },
+    { value: "Electric Power", label: "Electric Power" },
+    { value: "Electronics", label: "Electronics" },
+    { value: "Energy", label: "Energy" },
+    { value: "Entertainment & Leisure", label: "Entertainment & Leisure" },
+    { value: "Finance", label: "Finance" },
+    { value: "Food & Beverage", label: "Food & Beverage" },
+    { value: "Grocery", label: "Grocery" },
+    { value: "Healthcare", label: "Healthcare" },
+    { value: "Hospitality", label: "Hospitality" },
+    { value: "Insurance", label: "Insurance" },
+    { value: "Manufacturing", label: "Manufacturing" },
+    { value: "Marketing", label: "Marketing" },
+    { value: "Mass Media", label: "Mass Media" },
+    { value: "Mining", label: "Mining" },
+    { value: "Music", label: "Music" },
+    { value: "Petroleum", label: "Petroleum" },
+    { value: "Publishing", label: "Publishing" },
+    { value: "Real Estate", label: "Real Estate" },
+    { value: "Retail", label: "Retail" },
+    { value: "Service", label: "Service" },
+    { value: "Shipping", label: "Shipping" },
+    { value: "Software", label: "Software" },
+    { value: "Sports", label: "Sports" },
+    { value: "Support", label: "Support" },
+    { value: "Technology", label: "Technology" },
+    { value: "Telecommunications", label: "Telecommunications" },
+    { value: "Television", label: "Television" },
+    { value: "Testing, Inspection & Certification", label: "Testing, Inspection & Certification" },
+    { value: "Transportation", label: "Transportation" },
+    { value: "Travel", label: "Travel" },
+    { value: "Venture Capital", label: "Venture Capital" },
+    { value: "Water", label: "Water" },
+    { value: "Wholesale", label: "Wholesale" },
+  ];
 
   const leadData = leadsDetails || deal;
   const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
@@ -627,6 +680,12 @@ const DealDrawer = ({
                         value={formData.source || ""}
                         options={sourceOptions}
                         onChange={(value) => handleChange("source", value)}
+                      />
+                      <Select
+                        label="Industry"
+                        value={formData.industry || ""}
+                        options={IndustryOptions}
+                        onChange={(value) => handleChange("industry", value)}
                       />
                     </div>
                     <div className="col-span-2">

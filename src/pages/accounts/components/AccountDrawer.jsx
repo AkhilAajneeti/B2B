@@ -10,9 +10,8 @@ import {
   createAccount,
   createAccStream,
   deleteAccStream,
-  fetchContactByAccount,
+
   fetchTaskByAccount,
-  unlinkContactFromAccount,
   updateAccount,
 } from "services/account.service";
 import { fetchUser } from "services/user.service";
@@ -21,8 +20,7 @@ import { fetchTeam } from "services/team.service";
 import { fetchAccStreamById } from "services/account.service";
 import { deleteTasks } from "services/tasks.service";
 const AccountDrawer = ({
-  accType,
-  industry,
+
   account,
   isOpen,
   onClose,
@@ -45,9 +43,9 @@ const AccountDrawer = ({
   const [activityLoading, setActivityLoading] = useState(false);
   const [expandedActivityId, setExpandedActivityId] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const [contacts, setContacts] = useState([]);
+
   const [taskLoading, setTaskLoading] = useState(false);
-  const [contactLoading, setContactLoading] = useState(false);
+
 
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
@@ -140,7 +138,7 @@ const AccountDrawer = ({
       try {
         setStreamLoading(true);
         const res = await fetchAccStreamById(account.id);
-        console.log("ACCOUNT STREAM:", res);
+
         setStreams(res.list || []);
       } catch (err) {
         console.error("Failed to load account stream", err);
@@ -242,7 +240,6 @@ const AccountDrawer = ({
   };
   const tabs = [
     { id: "overview", label: "Overview", icon: "Building2" },
-    { id: "contacts", label: "Contacts", icon: "Users" },
     { id: "task", label: "Task", icon: "Target" },
     { id: "stream", label: "Stream", icon: "FileText" },
     { id: "activities", label: "Activities", icon: "Calendar" },
@@ -291,23 +288,6 @@ const AccountDrawer = ({
     loadTasks();
   }, [isOpen, account?.id, activeTab]);
 
-  useEffect(() => {
-    if (!isOpen || !account?.id || activeTab !== "contacts") return;
-
-    const loadContacts = async () => {
-      try {
-        setContactLoading(true);
-        const res = await fetchContactByAccount(account.id);
-        setContacts(res?.list || []);
-      } catch (err) {
-        console.error("Failed to load contacts", err);
-      } finally {
-        setContactLoading(false);
-      }
-    };
-
-    loadContacts();
-  }, [isOpen, account?.id, activeTab]);
 
   const userOptions = users
     ?.filter((u) => u?.isActive) // ✅ only active users
@@ -398,7 +378,7 @@ const AccountDrawer = ({
 
       const payload = { ...formData };
 
-      await updateAccount(account.id, payloa);
+      await updateAccount(account.id, payload);
 
       onSuccess(); // refresh table
       onClose(); // close drawer
@@ -648,19 +628,7 @@ const AccountDrawer = ({
     onBulkUpdate(selectedIds, payload);
     onClose();
   };
-  const handleUnlinkContact = async (contact) => {
-    try {
-      await unlinkContactFromAccount(contact.id);
 
-      toast.success("Contact unlinked from account");
-
-      // remove contact from UI list
-      setContacts((prev) => prev.filter((c) => c.id !== contact.id));
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to unlink contact");
-    }
-  };
   const handleDeleteTask = async (task) => {
     try {
       await deleteTasks(task.id);
@@ -1509,97 +1477,6 @@ const AccountDrawer = ({
                   </div>
                 </div>
               )}
-
-            {activeTab === "contacts" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Contacts
-                  </h3>
-                </div>
-
-                <div className="space-y-3">
-                  {contacts?.map((contact) => (
-                    <div
-                      key={contact.id}
-                      className="rounded-xl p-4 border border-[#7BC47F] shadow-sm hover:shadow-md transition bg-background"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        {/* LEFT */}
-                        <div className="flex gap-3">
-                          {/* Avatar */}
-                          <Avatar
-                            name={contact.name}
-                            size="44"
-                            round
-                            textSizeRatio={2}
-                          />
-
-                          {/* INFO */}
-                          <div className="space-y-1">
-                            {/* Name */}
-                            <p className="font-semibold text-foreground leading-tight">
-                              {contact.name}
-                            </p>
-
-                            {/* Email */}
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Icon name="Mail" size={14} />
-                              <span className="break-all">
-                                {contact.emailAddress}
-                              </span>
-                            </div>
-
-                            {/* Account */}
-                            {contact.accountName && (
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Icon name="Building2" size={14} />
-                                <span>{contact.accountName}</span>
-                              </div>
-                            )}
-
-                            {/* Owner */}
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Icon name="User" size={13} />
-                              <span>
-                                Owner:{" "}
-                                <span className="font-medium text-foreground">
-                                  {contact.assignedUserName || "Unassigned"}
-                                </span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* RIGHT ACTIONS */}
-                        <div className="flex items-center gap-1">
-                          {/* Call */}
-                          {contact.phoneNumber && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hover:bg-green-50"
-                            >
-                              <Icon name="Phone" size={16} />
-                            </Button>
-                          )}
-
-                          {/* Delete */}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:bg-red-50"
-                            onClick={() => handleUnlinkContact(contact)}
-                          >
-                            <Icon name="Trash2" size={16} />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {activeTab === "task" && (
               <div className="space-y-4">

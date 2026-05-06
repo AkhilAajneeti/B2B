@@ -15,18 +15,32 @@ const ActivityFilters = ({
     { value: "all", label: "All Types" },
     { value: "Account", label: "Account" },
     { value: "Task", label: "Task" },
-    { value: "Call", label: "Call" },
+    // { value: "Call", label: "Training" },
     { value: "Meeting", label: "Meeting" },
-    { value: "Update", label: "Update" },
-    { value: "Assign", label: "Assign" },
+    { value: "Lead", label: "Lead" },
+    { value: "Contact", label: "Contact" },
   ];
-
+  const ACTIVITY_DATE_FILTERS = [
+    { label: "Today", value: "today" },
+    { label: "Last 7 Days", value: "lastSevenDays" },
+    { label: "Current Month", value: "currentMonth" },
+    { label: "Last Month", value: "lastMonth" },
+    // special
+    { label: "On", value: "on" },
+    { label: "Before", value: "before" },
+    { label: "After", value: "after" },
+    { label: "Between", value: "between" },
+  ];
+  const showDateInputs = ["on", "before", "after", "between"].includes(filters?.dateType);
+  const showXDaysInput = ["lastXDays", "afterXDays"].includes(filters?.dateType);
   const hasActiveFilters = () => {
     return (
       filters?.type !== "all" ||
-      filters?.dateFrom ||
-      filters?.dateTo ||
-      filters?.search
+      filters?.search ||
+      filters?.dateType ||
+      filters?.closeDateFrom ||
+      filters?.closeDateTo ||
+      filters?.xDays
     );
   };
 
@@ -60,17 +74,51 @@ const ActivityFilters = ({
         />
         {/* Date Range Filters */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            type="date"
-            // label="From Date"
-            value={filters?.dateFrom}
-            onChange={(e) => onFilterChange("dateFrom", e?.target?.value)} />
 
-          <Input
-            type="date"
-            // label="To Date"
-            value={filters?.dateTo}
-            onChange={(e) => onFilterChange("dateTo", e?.target?.value)} />
+
+          {/* Date Type Select */}
+          <Select
+            className="min-w-0"
+            placeholder="Filter by date"
+            options={ACTIVITY_DATE_FILTERS}
+            value={filters?.dateType || ""}
+            onChange={(value) => onFilterChange("dateType", value)}
+          />
+
+          {/* X Days Input */}
+          {showXDaysInput && (
+            <Input
+              type="number"
+              placeholder="Enter days"
+              value={filters?.xDays || ""}
+              onChange={(e) =>
+                onFilterChange("xDays", e.target.value)
+              }
+            />
+          )}
+
+          {/* Date Range Inputs */}
+          {showDateInputs && (
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={filters?.closeDateFrom || ""}
+                onChange={(e) =>
+                  onFilterChange("closeDateFrom", e.target.value)
+                }
+              />
+
+              {filters?.dateType === "between" && (
+                <Input
+                  type="date"
+                  value={filters?.closeDateTo || ""}
+                  onChange={(e) =>
+                    onFilterChange("closeDateTo", e.target.value)
+                  }
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div className="flex items-center space-x-4 mt-3">

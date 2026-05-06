@@ -46,18 +46,49 @@ const DealsFilters = ({
 
     loadData();
   }, []);
-  const sourceOptions = source
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
-  const statusOptions = status
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
+  // const sourceOptions = source
+  //   .filter((item) => item !== "")
+  //   .map((item) => ({
+  //     value: item,
+  //     label: item,
+  //   }));
+  // const statusOptions = status
+  //   .filter((item) => item !== "")
+  //   .map((item) => ({
+  //     value: item,
+  //     label: item,
+  //   }));
+      const sourceOptions = [
+    { value: "Call", label: "Call" },
+    { value: "Email", label: "Email" },
+    { value: "Existing Customer", label: "Existing Customer" },
+    { value: "Partner", label: "Partner" },
+    { value: "Public Relations", label: "Public Relations" },
+    { value: "Web Site", label: "Web Site" },
+    { value: "Campaign", label: "Campaign" },
+    { value: "Other", label: "Other" },
+    { value: "ACL", label: "ACL" },
+  ];
+  const statusOptions = [
+    { value: "Broker", label: "Broker" },
+    { value: "Call Later", label: "Call Later" },
+    { value: "Call Not Connecting", label: "Call Not Connecting" },
+    { value: "Call Not Picked", label: "Call Not Picked" },
+    { value: "Converted", label: "Converted" },
+    { value: "Dead", label: "Dead" },
+    { value: "Deal Closed", label: "Deal Closed" },
+    { value: "Fake Lead", label: "Fake Lead" },
+    { value: "Follow up", label: "Follow up" },
+    { value: "Interested", label: "Interested" },
+    { value: "Invalid Number", label: "Invalid Number" },
+    { value: "Irrelevant Lead", label: "Irrelevant Lead" },
+    { value: "Low Budget", label: "Low Budget" },
+    { value: "Low Interest", label: "Low Interest" },
+    { value: "New", label: "New" },
+    { value: "Not Interested", label: "Not Interested" },
+    { value: "Other Location", label: "Other Location" },
+    { value: "Proposal Shared", label: "Proposal Shared" },
+  ];
      const ACTIVITY_DATE_FILTERS = [
     { label: "Today", value: "today" },
     { label: "Last 7 Days", value: "lastSevenDays" },
