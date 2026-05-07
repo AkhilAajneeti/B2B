@@ -31,6 +31,7 @@ const UserTab = () => {
   const [isShowDetails, setIsShowDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [detailsLoadingId, setDetailsLoadingId] = useState(null);
   const [inviteData, setInviteData] = useState({
     userName: "",
     title: "",
@@ -133,7 +134,7 @@ const UserTab = () => {
     } catch (err) {
       toast.error("Failed to create user ❌");
     } finally {
-      setIsLoading(false);
+      setDetailsLoadingId(null);
     }
   };
   const fetchuserById = async (member) => {
@@ -569,8 +570,9 @@ const UserTab = () => {
                             size="icon"
                             onClick={() => fetchuserById(member)}
                             aria-label="Edit member"
+                            loading={detailsLoadingId === member.id}
                           >
-                            <Icon name="Edit" size={16} />
+                            <Icon name="Eye" size={16} />
                           </Button>
                         )}
                         {canEntityRecord('User', 'delete', member) && (

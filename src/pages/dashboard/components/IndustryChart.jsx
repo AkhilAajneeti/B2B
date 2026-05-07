@@ -44,7 +44,7 @@ const IndustryChart = () => {
     const baseFilters = buildDateFilter(filtersState);
 
     const IMPORTANT_SECTORS = [
-      "RealEstate",
+      "Real Estate",
       "Contact form",
       "B2B",
       "AppDev",
@@ -87,7 +87,7 @@ const IndustryChart = () => {
           ...baseFilters,
           {
             type: "equals",
-            attribute: "cSector",
+            attribute: "industry",
             value: sector,
           },
         ])
