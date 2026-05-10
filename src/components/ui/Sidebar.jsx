@@ -16,12 +16,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: "LayoutDashboard",
       badge: null,
     },
-    {
-      label: "Accounts",
-      path: "/accounts",
-      icon: "Building2",
-      badge: null,
-    },
+    // {
+    //   label: "Accounts",
+    //   path: "/accounts",
+    //   icon: "Building2",
+    //   badge: null,
+    // },
     // {
     //   label: "Sales Team",
     //   path: "/sales-team",
@@ -52,12 +52,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: "Projector",
 
     },
-    {
-      label: "Training",
-      path: "/call",
-      icon: "Phone",
+    // {
+    //   label: "Training",
+    //   path: "/call",
+    //   icon: "Phone",
 
-    },
+    // },
     {
       label: "Activities",
       path: "/activities",
@@ -82,19 +82,19 @@ const Sidebar = ({ isOpen = false, onClose }) => {
     //   icon: "Filter",
     //   badge: null,
     // },
-    {
-      label: "Integrations",
-      path: "/integrations",
-      icon: "Puzzle",
-      badge: null,
-    },
+    // {  
+    //   label: "Integrations",
+    //   path: "/integrations",
+    //   icon: "Puzzle",
+    //   badge: null,
+    // },
   ];
 
   const handleNavigation = (path) => {
     navigate(path);
     if (onClose) {
       onClose();
-    }
+    } 
   };
 
   const handleUpgradeClick = () => {

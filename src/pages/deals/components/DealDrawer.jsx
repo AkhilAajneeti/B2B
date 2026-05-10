@@ -10,10 +10,14 @@ import { createLeadActivity, updateStream } from "services/leads.service";
 import { useTeams } from "hooks/useTeams";
 import { useUsers } from "hooks/useUsers";
 import { useLeadStream } from "hooks/useLeadStream";
-import { useLeadActivity } from "hooks/useLeadActivity";
+import { useLeadActivity, useLeadTask } from "hooks/useLeadActivity";
 import { useQueryClient } from "@tanstack/react-query";
 import { canEditRecord } from "utils/permission";
-
+import ActivityDrawer from "components/ActivityDrawer";
+import { createTasks } from "services/tasks.service";
+import { useNavigate } from "react-router-dom";
+import { useLeadMeeting } from "hooks/useMeeting";
+import { createLeadMeeting, createMeeting } from "services/meeting.service";
 const DealDrawer = ({
   deal,
   isOpen,
@@ -28,12 +32,14 @@ const DealDrawer = ({
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
-
+  const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
+  const [meetingDrawerOpen, setMeetingDrawerOpen] = useState(false);
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
   const [expandedActivityId, setExpandedActivityId] = useState(null);
   const [editingActivityId, setEditingActivityId] = useState(null);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -42,21 +48,25 @@ const DealDrawer = ({
     whatsapp: "",
     addressCity: "",
     cProjectName: "",
-    cNextContactAt: "",
-    cQuestion: "",
+    cNextContact: "",
+    cPreference: "",
     assignedUserId: "",
     teamId: "",
     status: "",
     source: "",
     description: "",
     cSiteVisitAt: "",
-    industry: ""
+    industry: "",
   });
   const queryClient = useQueryClient();
   const { data: usersData } = useUsers();
   const { data: teamData } = useTeams();
   const { data: streamData } = useLeadStream(deal?.id, isOpen);
+  const { data: taskData } = useLeadTask(deal?.id, isOpen);
+  const { data: meetData } = useLeadMeeting(deal?.id, isOpen);
 
+  const meeting = meetData?.list || [];
+  const task = taskData?.list || [];
   const users = usersData?.list || [];
   const team = teamData?.list || [];
   const streams = streamData?.list || [];
@@ -70,15 +80,15 @@ const DealDrawer = ({
         whatsapp: "",
         addressCity: "",
         cProjectName: "",
-        cNextContactAt: "",
-        cQuestion: "",
+        cNextContact: "",
+        cPreference: "",
         assignedUserId: "",
         teamId: "",
         status: "New",
         source: "",
         description: "",
         cSiteVisitAt: "",
-        industry: ""
+        industry: "",
       });
       setIsEditing(true); // form open
     } else if (deal && mode === "view") {
@@ -92,7 +102,7 @@ const DealDrawer = ({
     status: false,
     source: false,
     teamId: false,
-    cNextContactAt: false,
+    cNextContact: false,
   });
 
   const toggleMassField = (field) => {
@@ -162,6 +172,8 @@ const DealDrawer = ({
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
     { id: "Stream", label: "Stream", icon: "Calendar" },
+    { id: "Task", label: "Task", icon: "ListChecks" },
+    { id: "Meeting", label: "Meeting", icon: "Projector" },
   ];
 
   const getActivityIcon = (type) => {
@@ -243,14 +255,16 @@ const DealDrawer = ({
     const payload = {
       ...formData,
       name: fullName,
-      cNextContactAt: toEspoDateTime(formData.cNextContactAt),
+      cNextContact: toEspoDateTime(formData.cNextContact),
       cSiteVisitAt: toEspoDateTime(formData.cSiteVisitAt),
     };
     try {
       if (mode === "add") {
         await onCreate(payload);
+        toast.success("Task is  created");
       } else {
         await onUpdate(deal.id, payload);
+        toast.success("Task is not Updated");
       }
 
       setIsEditing(false);
@@ -267,8 +281,8 @@ const DealDrawer = ({
     if (massFields.assignedUserId)
       payload.assignedUserId = formData.assignedUserId;
 
-    if (massFields.cNextContactAt)
-      payload.cNextContactAt = toEspoDateTime(formData.cNextContactAt);
+    if (massFields.cNextContact)
+      payload.cNextContact = toEspoDateTime(formData.cNextContact);
 
     if (massFields.status) payload.status = formData.status;
 
@@ -433,7 +447,10 @@ const DealDrawer = ({
     { value: "Automotive", label: "Automotive" },
     { value: "Banking", label: "Banking" },
     { value: "Biotechnology", label: "Biotechnology" },
-    { value: "Building Materials & Equipment", label: "Building Materials & Equipment" },
+    {
+      value: "Building Materials & Equipment",
+      label: "Building Materials & Equipment",
+    },
     { value: "Chemical", label: "Chemical" },
     { value: "Computer", label: "Computer" },
     { value: "Construction", label: "Construction" },
@@ -469,7 +486,10 @@ const DealDrawer = ({
     { value: "Technology", label: "Technology" },
     { value: "Telecommunications", label: "Telecommunications" },
     { value: "Television", label: "Television" },
-    { value: "Testing, Inspection & Certification", label: "Testing, Inspection & Certification" },
+    {
+      value: "Testing, Inspection & Certification",
+      label: "Testing, Inspection & Certification",
+    },
     { value: "Transportation", label: "Transportation" },
     { value: "Travel", label: "Travel" },
     { value: "Venture Capital", label: "Venture Capital" },
@@ -480,8 +500,7 @@ const DealDrawer = ({
   const leadData = leadsDetails || deal;
   const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
   const canEditDeal = (deal) =>
-    canEditRecord("Lead", deal) &&
-    deal?.assignedUserId === currentUserId;
+    canEditRecord("Lead", deal) && deal?.assignedUserId === currentUserId;
   return (
     <>
       {/* Backdrop */}
@@ -610,9 +629,9 @@ const DealDrawer = ({
                       <Input
                         type="datetime-local"
                         label="Next Contact"
-                        value={formData.cNextContactAt || ""}
+                        value={formData.cNextContact || ""}
                         onChange={(e) =>
-                          handleChange("cNextContactAt", e.target.value)
+                          handleChange("cNextContact", e.target.value)
                         }
                       />
                     </div>
@@ -621,9 +640,9 @@ const DealDrawer = ({
                     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
                       <Input
                         label="Preference"
-                        value={formData.cQuestion || ""}
+                        value={formData.cPreference || ""}
                         onChange={(e) =>
-                          handleChange("cQuestion", e.target.value)
+                          handleChange("cPreference", e.target.value)
                         }
                       />
                     </div>
@@ -637,7 +656,6 @@ const DealDrawer = ({
                         }
                       />
                     </div>
-
                   </div>
 
                   {/* ================= Assigned User ================= */}
@@ -650,6 +668,7 @@ const DealDrawer = ({
                         onChange={(value) =>
                           handleSelectChange("assignedUserId", value)
                         }
+                        searchable
                       />
                     </div>
                     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -675,12 +694,22 @@ const DealDrawer = ({
                         options={statusOptions}
                         onChange={(value) => handleChange("status", value)}
                       />
-                      <Select
-                        label="Source"
-                        value={formData.source || ""}
-                        options={sourceOptions}
-                        onChange={(value) => handleChange("source", value)}
-                      />
+                      {mode === "add" ? (
+                        <Select
+                          label="Source"
+                          value={formData.source || ""}
+                          options={sourceOptions}
+                          onChange={(value) => handleChange("source", value)}
+                        />
+                      ) : (
+                        <Select
+                          label="Source"
+                          value={formData.source || ""}
+                          options={sourceOptions}
+                          onChange={(value) => handleChange("source", value)}
+                          disabled
+                        />
+                      )}
                       <Select
                         label="Industry"
                         value={formData.industry || ""}
@@ -733,6 +762,7 @@ const DealDrawer = ({
                       options={userOptions}
                       disabled={!massFields.assignedUserId}
                       onChange={(v) => handleChange("assignedUserId", v)}
+                      searchable
                     />
                   </div>
                 </div>
@@ -874,8 +904,8 @@ const DealDrawer = ({
                               Next Contact
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cNextContactAt
-                                ? formatDateTime(deal.cNextContactAt)
+                              {deal?.cNextContact
+                                ? formatDateTime(deal.cNextContact)
                                 : "—"}
                             </p>
                           </div>
@@ -896,7 +926,7 @@ const DealDrawer = ({
                               Preference
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cQuestion || "—"}
+                              {deal?.cPreference || "—"}
                             </p>
                           </div>
                         </div>
@@ -934,7 +964,6 @@ const DealDrawer = ({
                               Site Visit
                             </p>
                             <p className="text-foreground font-medium">
-
                               {deal?.cSiteVisitAt
                                 ? formatDateTime(deal.cSiteVisitAt)
                                 : "None"}
@@ -1022,7 +1051,7 @@ const DealDrawer = ({
                           >
                             {/* AVATAR */}
                             <Avatar
-                              name={activity.createdByName || "System"}
+                              name={activity.name}
                               size="36"
                               round
                               textSizeRatio={2}
@@ -1189,12 +1218,231 @@ const DealDrawer = ({
                     </div>
                   )}
 
+                  {activeTab === "Task" && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium text-foreground">
+                          Recent Task
+                        </h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTaskDrawerOpen(true)}
+                        >
+                          <Icon name="Plus" size={16} className="mr-1" />
+                          Add Task
+                        </Button>
+                      </div>
+                      <div className="space-y-4">
+                        {task?.map((activity) => (
+                          <div
+                            key={activity.id}
+                            className="flex space-x-3 p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition"
+                            onClick={() =>
+                              navigate("/tasks", {
+                                state: {
+                                  taskId: activity.id,
+                                },
+                              })
+                            }
+                          >
+                            {/* AVATAR */}
+                            <Avatar
+                              name={activity.name}
+                              size="36"
+                              round
+                              textSizeRatio={2}
+                              color={
+                                activity.createdById === "system"
+                                  ? "#9CA3AF"
+                                  : undefined
+                              }
+                            />
 
+                            {/* CONTENT */}
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <h4 className="font-medium text-foreground">
+                                    {activity.name}
+                                  </h4>
+
+                                  <Icon
+                                    name={getActivityIcon(activity.type)}
+                                    size={14}
+                                    className={getActivityIconColor(
+                                      activity.type,
+                                    )}
+                                  />
+
+                                  <span className="text-xs text-muted-foreground">
+                                    {activity.type}
+                                  </span>
+                                </div>
+
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDate(activity.createdAt)}
+                                </span>
+                                <div
+                                  className={`flex items-center space-x-1 transition-opacity`}
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleEditActivity(activity)}
+                                    className="h-8 w-8 hidden"
+                                  >
+                                    <Icon name="Edit" size={14} />
+                                  </Button>
+
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => handleDelete(e, activity)}
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                  >
+                                    <Icon name="Trash2" size={14} />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* MESSAGE */}
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {getActivityMessage(activity)}
+                              </p>
+
+                              {/* STATUS BADGE */}
+                              {activity?.data?.value && (
+                                <span
+                                  className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStageColor(
+                                    activity.data.value,
+                                  )}`}
+                                >
+                                  {activity.data.value}
+                                </span>
+                              )}
+
+                              {activity?.data?.statusValue && (
+                                <span
+                                  className={`inline-block mt-2 px-2 py-0.5 text-xs rounded-full ${getStageColor(
+                                    activity.data.statusValue,
+                                  )}`}
+                                >
+                                  {activity.data.statusValue}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === "Meeting" && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium text-foreground">
+                          Recent Meeting
+                        </h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setMeetingDrawerOpen(true)}
+                        >
+                          <Icon name="Plus" size={16} className="mr-1" />
+                          Add Meeting
+                        </Button>
+                      </div>
+                      <div className="space-y-4">
+                        {meeting?.map((meet) => (
+                          <div
+                            key={meet.id}
+                            onClick={() =>
+                              navigate("/meeting", {
+                                state: { meetingId: meet.id },
+                              })
+                            }
+                            className="flex space-x-3 p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition"
+                          >
+                            {" "}
+                            <Avatar name={meet.name} size="36" round />{" "}
+                            <div className="flex-1">
+                              {" "}
+                              <div className="flex items-center justify-between">
+                                {" "}
+                                <h4 className="font-medium text-foreground">
+                                  {" "}
+                                  {meet.name}{" "}
+                                </h4>{" "}
+                                <span className="text-xs text-muted-foreground">
+                                  {" "}
+                                  {formatDate(meet.dateStart)}{" "}
+                                </span>{" "}
+                              </div>{" "}
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {" "}
+                                {meet.status}{" "}
+                              </p>{" "}
+                            </div>{" "}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
           </div>
         </div>
+        <ActivityDrawer
+          isOpen={taskDrawerOpen}
+          entityType="task"
+          onClose={() => setTaskDrawerOpen(false)}
+          mode="add"
+          deal={{
+            parentType: "Lead",
+            parentId: deal?.id,
+            assignedUserId: deal?.assignedUserId,
+            teamIds: deal?.teamsIds,
+          }}
+          onCreate={async (payload) => {
+            await createTasks(payload);
+
+            queryClient.invalidateQueries({
+              queryKey: ["lead-task", deal?.id],
+            });
+
+            setTaskDrawerOpen(false);
+          }}
+        />
+        <ActivityDrawer
+          isOpen={meetingDrawerOpen}
+          onClose={() => setMeetingDrawerOpen(false)}
+          mode="add"
+          entityType="meeting"
+          deal={{
+            parentType: "Lead",
+            parentId: deal?.id,
+            assignedUserId: deal?.assignedUserId,
+            teamsIds: deal?.teamsIds,
+          }}
+          onCreate={async (payload) => {
+
+            await createMeeting({
+              ...payload,
+              parentId: deal?.id,
+              parentType: "Lead",
+            });
+
+            queryClient.invalidateQueries({
+              queryKey: ["lead-meeting", deal?.id],
+            });
+
+            toast.success("Meeting created");
+
+            setMeetingDrawerOpen(false);
+          }}
+        />
       </div>
     </>
   );

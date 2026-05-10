@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
@@ -17,6 +17,15 @@ const LoginForm = () => {
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    const isAuthenticated =
+      localStorage.getItem("isAuthenticated");
+
+    if (token && isAuthenticated === "true") {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -89,8 +98,23 @@ const LoginForm = () => {
         token: data.token,
         secret: data.secret,
         type: user.type,
-        roles: Object.values(user.rolesNames || {}),
         acl: data.acl || null,
+        roles: Object.values(user.rolesNames || {}),
+        teamsIds:
+          user.teamsIds ||
+          user.teamIds ||
+          [],
+
+        teamId:
+          user.teamId ||
+          user.defaultTeamId ||
+          null,
+
+        // Role
+        role:
+          Object.values(user.rolesNames || {})?.[0] ||
+          "",
+        assignedUserId: user.id,
       };
 
       // 🔐 Step 3: stringify + base64 encode

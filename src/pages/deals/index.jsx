@@ -25,7 +25,12 @@ import MultiLineChart from "pages/dashboard/components/MultiLineChart";
 import { useLeads, useNewLeads } from "hooks/useLeads";
 import { useMetaData } from "hooks/useMetaData";
 import { useLeadDetails } from "hooks/useLeadDetails";
-import { canCreate, canDelete, canEdit } from "utils/permission";
+// import { canCreate, canDelete, canEdit } from "utils/permission";
+import {
+  canCreate,
+  canEditRecord,
+  canDeleteRecord,
+} from "utils/permission";
 
 const DealsPage = () => {
   const queryClient = useQueryClient();
@@ -41,9 +46,10 @@ const DealsPage = () => {
   const [mode, setMode] = useState("view");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  // const canCreateLead = canCreate("Lead");
+  // const canEditLead = canEdit("Lead");
+  // const canDeleteLead = canDelete("Lead");
   const canCreateLead = canCreate("Lead");
-  const canEditLead = canEdit("Lead");
-  const canDeleteLead = canDelete("Lead");
 
   const { data: metaData } = useMetaData();
   const { data: leadsDetails } = useLeadDetails(selectedDeal?.id, mode);
@@ -421,8 +427,12 @@ const DealsPage = () => {
               isLoading={isLoading}
               page={page}
               setPage={setPage}
-              canEdit={canEditLead}
-              canDelete={canDeleteLead}
+              canEdit={(deal) =>
+                canEditRecord("Lead", deal)
+              }
+              canDelete={(deal) =>
+                canDeleteRecord("Lead", deal)
+              }
             />
 
             {/* Pagination */}

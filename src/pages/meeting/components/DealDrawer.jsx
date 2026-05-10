@@ -18,6 +18,7 @@ import { useTeams } from "hooks/useTeams";
 import { useLeads } from "hooks/useLeads";
 import { useAccounts } from "hooks/useAccounts";
 import { canEditRecord } from "utils/permission";
+import { ParentSelectorModal } from "components/ParentSelectorModal";
 
 
 const DealDrawer = ({
@@ -37,8 +38,10 @@ const DealDrawer = ({
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
-  const [limit, setLimit] = useState(20);
+  const [showParentModal, setShowParentModal] = useState(false);
+  const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
+  const [modalType, setModalType] = useState("parent");
   const [formData, setFormData] = useState({
     name: "",
     assignedUserId: "",
@@ -55,6 +58,10 @@ const DealDrawer = ({
   });
   const queryClient = useQueryClient();
   const animatedComponents = makeAnimated();
+  const { data: meta } = useMetaData();
+  const { data: teamData } = useTeams();
+  // const { data: accountData } = useAccounts({ limit, page });
+  const { data: leadsData } = useLeads({ limit: 10, page: 1 });
   useEffect(() => {
     if (mode === "add") {
       setFormData({
@@ -118,12 +125,9 @@ const DealDrawer = ({
     setMassFields((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const { data: meta } = useMetaData();
-  const { data: teamData } = useTeams();
-  const { data: accountData } = useAccounts({ limit, page });
-  const { data: leadsData } = useLeads({ limit:100, page:1 });
+
   const team = teamData?.list || [];
-  const acc = accountData?.list || [];
+  // const acc = accountData?.list || [];
   const lead = leadsData?.list || [];
   const STATUS_OPTIONS = [
     { value: "Planned", label: "Planned" },
@@ -131,7 +135,7 @@ const DealDrawer = ({
     { value: "Not Held", label: "Not Held" },
   ];
   const Parent_OPTIONS = [
-    { value: "Account", label: "Account" },
+    // { value: "Account", label: "Account" },
     { value: "Lead", label: "Lead" },
   ];
   const DURATION_OPTIONS = [
@@ -419,22 +423,41 @@ const DealDrawer = ({
   };
 
   const getParentTypeOptions = () => {
-    switch (formData.parentName) {
-      case "Account":
-        return acc.map((item) => ({
-          value: item.id,
-          label: item.name,
-        }));
+    let options = [];
 
-      case "Lead":
-        return lead.map((item) => ({
-          value: item.id,
-          label: item.name,
-        }));
-      default:
-        return [];
+    if (formData.parentName === "Lead") {
+      options = lead?.map((item) => ({
+        value: item.id,
+        label: item.name,
+      })) || [];
+
+      // 🔥 add load more
+      if (hasMoreLeads) {
+        options.push({
+          value: "__load_more__",
+          label: "🔍 Load More Leads...",
+        });
+      }
     }
+    return options;
   };
+  const getAttendeeLeadOptions = () => {
+    let options =
+      lead?.map((item) => ({
+        value: item.id,
+        label: item.name,
+      })) || [];
+
+    if (hasMoreLeads) {
+      options.push({
+        value: "__load_more_attendees__",
+        label: "🔍 Load More Leads...",
+      });
+    }
+
+    return options;
+  };
+  const hasMoreLeads = lead?.length >= limit;
   useEffect(() => {
     if (!isOpen) {
       setIsEditing(false);
@@ -525,6 +548,7 @@ const DealDrawer = ({
                         onChange={(value) =>
                           handleSelectChange("assignedUserId", value)
                         }
+                        searchable
                       />
                     </div>
                     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -596,7 +620,14 @@ const DealDrawer = ({
                         value={formData.parentType || ""}
                         options={getParentTypeOptions()}
                         disabled={!formData.parentName}
-                        onChange={(value) => handleChange("parentType", value)}
+                        onChange={(value) => {
+                          if (value === "__load_more__") {
+                            setModalType("parent");
+                            setShowParentModal(true); // 🔥 open modal
+                          } else {
+                            handleChange("parentType", value);
+                          }
+                        }}
                       />
                     </div>
 
@@ -676,14 +707,18 @@ const DealDrawer = ({
                       <Select
                         label="Leads"
                         value={formData.attendeeLeads}
-                        options={leadOptions}
-                        isMulti
-                        isSearchable
+                        options={getAttendeeLeadOptions()}
                         placeholder="Search leads..."
-                        onChange={(value) =>
-                          handleChange("attendeeLeads", value)
-                        }
+                        onChange={(value) => {
+                          if (value === "__load_more_attendees__") {
+                            setModalType("attendee");
+                            setShowParentModal(true); // 🔥 open modal
+                          } else {
+                            handleChange("attendeeLeads", value);
+                          }
+                        }}
                       />
+
                     </div>
                   </div>
 
@@ -1263,6 +1298,18 @@ const DealDrawer = ({
             )}
           </div>
         </div>
+        <ParentSelectorModal
+          open={showParentModal}
+          type={formData.parentName}
+          onClose={() => setShowParentModal(false)}
+          onSelect={(item) => {
+            if (modalType === "parent") {
+              handleChange("parentType", item.id);
+            } else {
+              handleChange("attendeeLeads", item.id);
+            }
+          }}
+        />
       </div>
     </>
   );

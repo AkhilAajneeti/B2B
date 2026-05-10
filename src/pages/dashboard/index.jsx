@@ -166,12 +166,17 @@ const Dashboard = () => {
     setIsSidebarOpen(false);
   };
 
-  const meetings = meetingsList.filter(
-    (m) =>
-      m.status === "Held" &&
+  const meetings = meetingsList.filter((m) => {
+    const createdToday =
+      m.createdAt &&
+      isToday(m.createdAt.replace(" ", "T"));
+
+    const scheduledToday =
       m.dateStart &&
-      isToday(m.dateStart.replace(" ", "T")),
-  ).length;
+      isToday(m.dateStart.replace(" ", "T"));
+
+    return createdToday || scheduledToday;
+  }).length;
 
   const proposals = leads.filter(
     (l) => l.status === "Proposal Shared" && isToday(l.modifiedAt),
@@ -284,12 +289,37 @@ const Dashboard = () => {
                   {/* Meetings Held */}
                   <div
                     onClick={() => {
-                      const filtered = meetingsList.filter(
-                        (m) =>
-                          m.status === "Held" &&
-                          m.dateStart &&
-                          isToday(m.dateStart.replace(" ", "T")),
-                      );
+                      const filtered = meetingsList
+                        .filter((m) => {
+                          const createdToday =
+                            m.createdAt &&
+                            isToday(m.createdAt.replace(" ", "T"));
+
+                          const scheduledToday =
+                            m.dateStart &&
+                            isToday(m.dateStart.replace(" ", "T"));
+
+                          return createdToday || scheduledToday;
+                        })
+                        .map((m) => {
+                          const createdToday =
+                            m.createdAt &&
+                            isToday(m.createdAt.replace(" ", "T"));
+
+                          const scheduledToday =
+                            m.dateStart &&
+                            isToday(m.dateStart.replace(" ", "T"));
+
+                          return {
+                            ...m,
+                            insightType:
+                              createdToday && scheduledToday
+                                ? "Created & Scheduled Today"
+                                : createdToday
+                                  ? "Created Today"
+                                  : "Scheduled Today",
+                          };
+                        });
 
                       setInsightData(filtered);
                       setActiveInsight("meetings");
@@ -421,7 +451,7 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
                   {/* Header */}
                   <div className="flex justify-between items-center px-6 py-4 border-b border-border bg-muted/40">
                     <h3 className="text-base font-semibold text-foreground">
-                      {activeInsight === "meetings" && "Today's Held Meetings"}
+                      {activeInsight === "meetings" && "Today's Meetings"}
                       {activeInsight === "proposals" && "Proposal Shared Leads"}
                       {activeInsight === "visits" && "Site Visits"}
                       {activeInsight === "deals" && "Closed Deals"}
@@ -459,6 +489,9 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
                                 </th>
                                 <th className="text-left px-6 py-3 text-sm font-medium">
                                   End
+                                </th>
+                                <th className="text-left px-6 py-3 text-sm font-medium">
+                                  Type
                                 </th>
                               </>
                             ) : (
@@ -527,6 +560,16 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
 
                                   <td className="px-6 py-4 text-sm">
                                     {formatTime(item.dateEnd)}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs font-medium ${item.insightType === "Created Today"
+                                        ? "bg-blue-100 text-blue-700"
+                                        : "bg-green-100 text-green-700"
+                                        }`}
+                                    >
+                                      {item.insightType}
+                                    </span>
                                   </td>
                                 </>
                               ) : (

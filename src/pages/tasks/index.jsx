@@ -9,6 +9,7 @@ import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
+import { useLocation } from "react-router-dom";
 import TablePagination from "./components/TablePagination";
 import {
   createTasks,
@@ -34,6 +35,9 @@ const TaskPage = () => {
   const canCreateTask = canCreate("Task");
   const canEditTask = canEdit("Task");
   const canDeleteTask = canDelete("Task");
+  const location = useLocation();
+
+  const taskIdFromState = location.state?.taskId;
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -47,6 +51,7 @@ const TaskPage = () => {
     endDate: "",
     dateType: "",
   });
+
   const queryClient = useQueryClient();
   const { data, isLoading } = useTasksAll({ limit, page, filters });;
 
@@ -295,7 +300,19 @@ const TaskPage = () => {
     setCurrentPage(1);
     setPage(1);
   }, [filters]);
+  useEffect(() => {
+    if (!taskIdFromState || !leads?.length) return;
 
+    const foundTask = leads.find(
+      (item) => item.id === taskIdFromState
+    );
+
+    if (foundTask) {
+      setSelectedDeal(foundTask);
+      setMode("view");
+      setIsDrawerOpen(true);
+    }
+  }, [taskIdFromState, leads]);
   return (
     <>
       <Helmet>

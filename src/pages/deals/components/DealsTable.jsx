@@ -11,8 +11,8 @@ const DealsTable = ({
   onDealClick,
   sortConfig,
   onSort,
- canEdit = true,
-  canDelete = true,
+  canEdit = () => true,
+  canDelete = () => true,
   onDelete,
   isLoading,
 }) => {
@@ -84,7 +84,7 @@ const DealsTable = ({
   //   const startIndex = (page - 1) * setPage;
   //   return deals?.slice(startIndex, startIndex + setPage);
   // }, [deals, page, setPage]);
-const paginatedDeals = deals;
+  const paginatedDeals = deals;
   const isAllSelected =
     selectedDeals?.length === paginatedDeals?.length &&
     paginatedDeals?.length > 0;
@@ -258,7 +258,7 @@ const paginatedDeals = deals;
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-foreground">{deal?.cProject}</div>
+                    <div className="text-foreground">{deal?.cProjectName}</div>
                     {/* <div className="text-foreground">{deal?.cProjectName }</div> */}
                   </td>
                   <td className="px-4 py-4">
@@ -281,7 +281,7 @@ const paginatedDeals = deals;
                     <span
                       className={`inline-flex px-1 py-1 text-xs font-medium rounded-full`}
                     >
-                      {formatDate(deal?.cNextContactAt)}
+                      {formatDate(deal?.cNextContact)}
                     </span>
                   </td>
                   <td className="px-4 py-4">
@@ -300,11 +300,10 @@ const paginatedDeals = deals;
                   </td>
                   <td className="px-4 py-4">
                     <div
-                      className={`flex items-center space-x-1 transition-opacity ${
-                        hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
-                      }`}
+                      className={`flex items-center space-x-1 transition-opacity ${hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
+                        }`}
                     >
-                     {canEdit && ( <Button
+                      {canEdit(deal) && (<Button
                         variant="ghost"
                         size="icon"
                         onClick={(e) => handleQuickAction(e, "edit", deal)}
@@ -313,7 +312,7 @@ const paginatedDeals = deals;
                         <Icon name="Edit" size={14} />
                       </Button>)}
 
-                      {canDelete && (<Button
+                      {canDelete(deal) && (<Button
                         variant="ghost"
                         size="icon"
                         onClick={(e) => handleDelete(e, deal)}

@@ -194,7 +194,7 @@ export const fetchAllMeeting = async ({ limit, page, filters }) => {
     })
     .join("&");
 
- 
+
 
   const baseUrl = `https://gateway.aajneetiadvertising.com/Meeting?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc`;
 
@@ -223,7 +223,7 @@ export const fetchAllMeeting = async ({ limit, page, filters }) => {
 
 export const fetchMeeting = async () => {
   const token = localStorage.getItem("auth_token");
- 
+
   const res = await fetch("https://gateway.aajneetiadvertising.com/Meeting", {
     method: "GET",
     headers: {
@@ -243,7 +243,7 @@ export const fetchMeeting = async () => {
 };
 export const fetchMeetingById = async (id) => {
   const token = localStorage.getItem("auth_token");
-  
+
   const res = await fetch(`https://gateway.aajneetiadvertising.com/Meeting/${id}`, {
     method: "GET",
     headers: {
@@ -328,7 +328,7 @@ export const bulkDeleteMeeting = async (ids = []) => {
 export const meetingStreamById = async (id) => {
 
   const token = localStorage.getItem("auth_token");
- 
+
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Meeting/${id}/stream`,
     {
@@ -341,7 +341,7 @@ export const meetingStreamById = async (id) => {
     },
   );
 
- 
+
   if (!res.ok) {
     console.log("STATUS:", res.status);
     if (res.status === 401 || res.status === 403) {
@@ -371,7 +371,7 @@ export const deleteActivity = async (id) => {
 
 //create strean
 export const createMeetingStream = async (payload) => {
- 
+
   const token = localStorage.getItem("auth_token");
   const res = await fetch("https://gateway.aajneetiadvertising.com/Note", {
     method: "POST",
@@ -393,7 +393,7 @@ export const createMeetingStream = async (payload) => {
 export const leadActivitesById = async (id) => {
 
   const token = localStorage.getItem("auth_token");
- 
+
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Activities/Lead/${id}/activities`,
     {
@@ -415,5 +415,56 @@ export const leadActivitesById = async (id) => {
     }
     throw new Error("Failed to fetch User's Activties");
   }
+  return await res.json();
+};
+
+
+// fetch task by lead id
+export const fetchLeadMeeting = async (leadId) => {
+  const token = localStorage.getItem("auth_token");
+
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Activities/Lead/${leadId}/activities/list/Meeting`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        token,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch lead meetings");
+  }
+
+  return await res.json();
+};
+export const createLeadMeeting = async (id, payload) => {
+  const token = localStorage.getItem("auth_token");
+
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Activities/Lead/${id}/activities/list/Meeting`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        token,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+
+    throw new Error("Failed to create meeting");
+  }
+
   return await res.json();
 };

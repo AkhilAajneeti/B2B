@@ -22,6 +22,7 @@ import {
 } from "services/meeting.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 import { canCreate, canDelete, canEdit } from "utils/permission";
+import { useLocation } from "react-router-dom";
 
 const MeetingPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -35,6 +36,7 @@ const MeetingPage = () => {
   const [mode, setMode] = useState("view");
   const [limit, setLimit] = useState(20);
   const [page, setPage] = useState(1);
+  const location = useLocation();
   const [sortConfig, setSortConfig] = useState({
     key: "name",
     direction: "asc",
@@ -68,7 +70,6 @@ const MeetingPage = () => {
   };
   // Filter and sort deals
   const totalPages = data?.total || 0;
-
 
   const handleMenuToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -258,7 +259,18 @@ const MeetingPage = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [filters]);
-
+  const meetingIdFromState = location.state?.meetingId;
+  useEffect(() => {
+    if (!meetingIdFromState || !leads?.length) return;
+    const foundMeeting = leads.find(
+      (item) => item.id === meetingIdFromState,
+    );
+    if (foundMeeting) {
+      setSelectedDeal(foundMeeting);
+      setMode("view");
+      setIsDrawerOpen(true);
+    }
+  }, [meetingIdFromState, leads]);
   return (
     <>
       <Helmet>
@@ -285,7 +297,10 @@ const MeetingPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Button onClick={handleAddMeeting} className="linearbg-1 text-white hover:text-white">
+                <Button
+                  onClick={handleAddMeeting}
+                  className="linearbg-1 text-white hover:text-white"
+                >
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Meeting
                 </Button>
@@ -315,7 +330,6 @@ const MeetingPage = () => {
               itemsPerPage={limit}
               onDelete={handleDeleteMeeting}
               isLoading={loading}
-             
               canDelete={canDeleteMeeting}
             />
 
@@ -345,7 +359,7 @@ const MeetingPage = () => {
           onClose={handleDrawerClose}
           onDelete={handleDeleteActivity}
           onBulkUpdate={handleBulkUpdateMeet}
-           canEdit={canEditMeeting}
+          canEdit={canEditMeeting}
         />
         <ConfirmDeleteModal
           open={showDeleteConfirm}

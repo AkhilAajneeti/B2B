@@ -274,6 +274,7 @@ const DealsFilters = ({
           options={assignUserOptions}
           value={filters?.assignUser || ""}
           onChange={(value) => handleFilterChange("assignUser", value)}
+          searchable
         />
         {/* Date Type Select */}
         <Select

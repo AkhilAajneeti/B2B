@@ -515,3 +515,60 @@ export const leadActivitesById = async (id) => {
   }
   return await res.json();
 };
+
+
+// fetch task by lead id
+export const fetchLeadTask = async (id) => {
+  console.log(id);
+  const token = localStorage.getItem("auth_token");
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Lead/${id}/tasks`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        token: token,
+      },
+    }
+  );
+
+  console.log(res);
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch task for this lead");
+  }
+  return await res.json();
+};
+export const createLeadTask = async (id) => {
+  console.log(id);
+  const token = localStorage.getItem("auth_token");
+  console.log("AUTH TOKEN:", token); // 🔍 debug
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Lead/${id}/tasks`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        token: token,
+      },
+    }
+  );
+
+  console.log(res);
+  if (!res.ok) {
+    console.log("STATUS:", res.status);
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to fetch task for this lead");
+  }
+  return await res.json();
+};

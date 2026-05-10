@@ -9,9 +9,9 @@ import { useUsers } from "hooks/useUsers";
 import { useTeams } from "hooks/useTeams";
 import { createLeadActivity, fetchLeads } from "services/leads.service";
 import { fetchAccounts } from "services/account.service";
-import { fetchContacts } from "services/contact.service";
 import { taskStreamById } from "services/tasks.service";
 import { canEditRecord } from "utils/permission";
+import { ParentSelectorModal } from "components/ParentSelectorModal";
 
 const DealDrawer = ({
   deal,
@@ -26,6 +26,7 @@ const DealDrawer = ({
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
+  const [showParentModal, setShowParentModal] = useState(false);
   const [acc, setAcc] = useState([]);
   const [lead, setLead] = useState([]);
   const [contact, setContact] = useState([]);
@@ -36,6 +37,7 @@ const DealDrawer = ({
   const { data: usersData } = useUsers();
   const { data: teamData } = useTeams();
 
+  const limit = 10;
   const users = usersData?.list || [];
   const team = teamData?.list || [];
   const [formData, setFormData] = useState({
@@ -100,7 +102,6 @@ const DealDrawer = ({
       try {
         const id = deal?.id;
         const res = await taskStreamById(id);
-        console.log("LEAD DETAIL RESPONSE:", res);
         setmockStream(res.list || []);
       } catch (err) {
         console.error("Failed to fetch streams", err);
@@ -121,7 +122,7 @@ const DealDrawer = ({
     { value: "Deferred", label: "Deferred" },
   ];
   const Parent_OPTIONS = [
-    { value: "Account", label: "Account" },
+    // { value: "Account", label: "Account" },
     { value: "Lead", label: "Lead" },
   ];
   const SOURCE_OPTIONS = [
@@ -140,7 +141,7 @@ const DealDrawer = ({
         }
 
         if (formData.parentName === "Lead") {
-          const res = await fetchLeads({ limit: 200, page: 1 });
+          const res = await fetchLeads({ limit: 10, page: 1 });
           setLead(res.list || []);
         }
 
@@ -311,15 +312,16 @@ const DealDrawer = ({
       reminders: [],
     };
 
-    console.log("FINAL TASK PAYLOAD 👉", payload);
 
     try {
       if (mode === "add") {
         // ✅ CREATE
         await onCreate(payload);
+        toast.success("Task is  created");
       } else {
         // ✅ UPDATE (id MUST be passed)
         await onUpdate(deal.id, payload);
+        toast.success("Task is  Updated");
       }
 
       onClose();
@@ -424,24 +426,29 @@ const DealDrawer = ({
     }
   }, [isOpen]);
 
+
   const getParentTypeOptions = () => {
-    switch (formData.parentName) {
-      case "Account":
-        return acc.map((item) => ({
-          value: item.id,
-          label: item.name,
-        }));
+    let options = [];
 
-      case "Lead":
-        return lead.map((item) => ({
-          value: item.id,
-          label: item.name,
-        }));
+    if (formData.parentName === "Lead") {
+      options = lead?.map((item) => ({
+        value: item.id,
+        label: item.name,
+      })) || [];
 
-      default:
-        return [];
+      // 🔥 add load more
+      if (hasMoreLeads) {
+        options.push({
+          value: "__load_more__",
+          label: "🔍 Load More Leads...",
+        });
+      }
     }
+    return options;
   };
+
+  const hasMoreLeads = lead?.length >= limit;
+
   return (
     <>
       {/* Backdrop */}
@@ -526,6 +533,7 @@ const DealDrawer = ({
                         onChange={(value) =>
                           handleSelectChange("assignedUserId", value)
                         }
+                        searchable
                       />
                     </div>
                     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -597,7 +605,13 @@ const DealDrawer = ({
                         value={formData.parentType || ""}
                         options={getParentTypeOptions()}
                         disabled={!formData.parentName}
-                        onChange={(value) => handleChange("parentType", value)}
+                        onChange={(value) => {
+                          if (value === "__load_more__") {
+                            setShowParentModal(true); // 🔥 open modal
+                          } else {
+                            handleChange("parentType", value);
+                          }
+                        }}
                       />
                     </div>
 
@@ -1059,6 +1073,7 @@ const DealDrawer = ({
                           options={userOptions}
                           disabled={!massFields.assignedUserId}
                           onChange={(v) => handleChange("assignedUserId", v)}
+                          searchable
                         />
                       </div>
                     </div>
@@ -1096,6 +1111,22 @@ const DealDrawer = ({
             )}
           </div>
         </div>
+        <ParentSelectorModal
+          open={showParentModal}
+          type={formData.parentName}
+          onClose={() => setShowParentModal(false)}
+          onSelect={(item) => {
+            setLead((prev) => {
+              const exists = prev.find((i) => i.id === item.id);
+
+              if (exists) return prev;
+
+              return [item, ...prev];
+            });
+
+            handleChange("parentType", item.id);
+          }}
+        />
       </div>
     </>
   );

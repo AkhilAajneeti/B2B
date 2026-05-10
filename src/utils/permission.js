@@ -70,16 +70,22 @@ export const isOwnRecord = (record, user) => {
 };
 
 const isTeamRecord = (record, user) => {
-  const userTeamIds = user?.teamsIds || [];
-  const recordTeamIds = record?.teamsIds || (record?.teamId ? [record.teamId] : []);
+  const userTeamIds = (user?.teamsIds || []).map(String);
 
-  return recordTeamIds.some((teamId) => userTeamIds.includes(teamId));
+  const recordTeamIds = (
+    record?.teamsIds ||
+    (record?.teamId ? [record.teamId] : [])
+  ).map(String);
+
+  return recordTeamIds.some((teamId) =>
+    userTeamIds.includes(teamId)
+  );
 };
 
 export const canEntityRecord = (entity, action, record) => {
   const rawAccess = getEntityActionValue(entity, action);
   const access = typeof rawAccess === "string" ? rawAccess.toLowerCase() : rawAccess;
-  if (access == null) return true;
+  if (access == null) return false;
   if (access === true || access === "yes" || access === "all") return true;
   if (access === false || access === "no") return false;
 
