@@ -498,9 +498,8 @@ const DealDrawer = ({
   ];
 
   const leadData = leadsDetails || deal;
-  const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
   const canEditDeal = (deal) =>
-    canEditRecord("Lead", deal) && deal?.assignedUserId === currentUserId;
+    canEditRecord("Lead", deal);
   return (
     <>
       {/* Backdrop */}
