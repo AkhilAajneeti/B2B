@@ -830,7 +830,7 @@ const DealDrawer = ({
                               Name
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.name || "—"}
+                              {deal?.name || "None"}
                             </p>
                           </div>
 
@@ -847,7 +847,7 @@ const DealDrawer = ({
                                 {deal.phoneNumber}
                               </a>
                             ) : (
-                              <p className="text-foreground">—</p>
+                              <p className="text-foreground">None</p>
                             )}
                           </div>
 
@@ -864,7 +864,7 @@ const DealDrawer = ({
                                 {deal.emailAddress}
                               </a>
                             ) : (
-                              <p className="text-foreground">—</p>
+                              <p className="text-foreground">None</p>
                             )}
                           </div>
 
@@ -883,7 +883,7 @@ const DealDrawer = ({
                                 wa.me/{deal.phoneNumber.replace(/\D/g, "")}
                               </a>
                             ) : (
-                              <p className="text-foreground">—</p>
+                              <p className="text-foreground">None</p>
                             )}
                           </div>
 
@@ -893,7 +893,7 @@ const DealDrawer = ({
                               City
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.addressCity || "—"}
+                              {deal?.addressCity || "None"}
                             </p>
                           </div>
 
@@ -903,9 +903,9 @@ const DealDrawer = ({
                               Next Contact
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cNextContact
-                                ? formatDateTime(deal.cNextContact)
-                                : "—"}
+                              {deal?.cNextContactAt
+                                ? formatDateTime(deal.cNextContactAt)
+                                : "None"}
                             </p>
                           </div>
 
@@ -915,7 +915,7 @@ const DealDrawer = ({
                               Project Name
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cProjectName || "—"}
+                              {deal?.cProject || "None"}
                             </p>
                           </div>
 
@@ -925,7 +925,7 @@ const DealDrawer = ({
                               Preference
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cPreference || "—"}
+                              {deal?.cPreference || "None"}
                             </p>
                           </div>
                         </div>
@@ -944,7 +944,7 @@ const DealDrawer = ({
                               Status
                             </p>
                             <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
-                              {deal?.status || "—"}
+                              {deal?.status || "None"}
                             </span>
                           </div>
 
@@ -954,7 +954,7 @@ const DealDrawer = ({
                               Source
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.source || "—"}
+                              {deal?.source || "None"}
                             </p>
                           </div>
                           {/* Source */}
@@ -975,7 +975,7 @@ const DealDrawer = ({
                               Description
                             </p>
                             <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.description || "—"}
+                              {deal?.description || "None"}
                             </p>
                           </div>
                         </div>

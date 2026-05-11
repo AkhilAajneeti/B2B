@@ -258,7 +258,7 @@ const DealsTable = ({
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-foreground">{deal?.cProjectName}</div>
+                    <div className="text-foreground">{deal?.cProject}</div>
                     {/* <div className="text-foreground">{deal?.cProjectName }</div> */}
                   </td>
                   <td className="px-4 py-4">
