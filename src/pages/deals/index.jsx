@@ -10,7 +10,7 @@ import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createLead,
   deleteActivity,
@@ -25,11 +25,14 @@ import MultiLineChart from "pages/dashboard/components/MultiLineChart";
 import { useLeads, useNewLeads } from "hooks/useLeads";
 import { useMetaData } from "hooks/useMetaData";
 import { useLeadDetails } from "hooks/useLeadDetails";
+import { useUsers } from "hooks/useUsers";
+import { fetchTeamUser } from "services/team.service";
 // import { canCreate, canDelete, canEdit } from "utils/permission";
 import {
   canCreate,
   canEditRecord,
   canDeleteRecord,
+  getStoredUser,
 } from "utils/permission";
 
 const DealsPage = () => {
@@ -53,6 +56,28 @@ const DealsPage = () => {
 
   const { data: metaData } = useMetaData();
   const { data: leadsDetails } = useLeadDetails(selectedDeal?.id, mode);
+  const { data: usersData } = useUsers();
+  const currentUser = getStoredUser();
+  const currentTeamIds = useMemo(
+    () => [...new Set([
+      ...(currentUser?.teamsIds || []),
+      ...(currentUser?.teamIds || []),
+      currentUser?.teamId,
+      currentUser?.defaultTeamId,
+    ].filter(Boolean))],
+    [currentUser?.defaultTeamId, currentUser?.teamId, currentUser?.teamIds, currentUser?.teamsIds],
+  );
+  const { data: teamUsersData } = useQuery({
+    queryKey: ["team-users", currentTeamIds],
+    queryFn: async () => {
+      const responses = await Promise.all(currentTeamIds.map((id) => fetchTeamUser(id)));
+      return {
+        list: responses.flatMap((response) => response?.list || []),
+      };
+    },
+    enabled: currentTeamIds.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
 
   const [sortConfig, setSortConfig] = useState({
     key: "createdAt",
@@ -88,6 +113,46 @@ const DealsPage = () => {
   // fetch leads
   const allLeads = leadsData?.list || [];
   const leads = allLeads;
+  const usersById = useMemo(() => {
+    const combinedUsers = [
+      ...(usersData?.list || []),
+      ...(teamUsersData?.list || []),
+    ];
+
+    return combinedUsers.reduce((acc, user) => {
+      acc[user.id] = user;
+      return acc;
+    }, {});
+  }, [teamUsersData, usersData]);
+  const teamUserIds = useMemo(
+    () => new Set((teamUsersData?.list || []).map((user) => user.id)),
+    [teamUsersData],
+  );
+
+  const getPermissionRecord = (lead) => {
+    const assignedUser = usersById[lead?.assignedUserId];
+    const isAssignedToCurrentTeam = teamUserIds.has(lead?.assignedUserId);
+
+    if (!assignedUser) return lead;
+
+    return {
+      ...lead,
+      teamsIds:
+        lead?.teamsIds?.length
+          ? lead.teamsIds
+          : assignedUser.teamsIds?.length
+            ? assignedUser.teamsIds
+            : assignedUser.teamIds?.length
+              ? assignedUser.teamIds
+              : assignedUser.defaultTeamId
+                ? [assignedUser.defaultTeamId]
+                : isAssignedToCurrentTeam
+                  ? currentTeamIds
+                : lead?.teamsIds,
+      teamId: lead?.teamId || assignedUser.defaultTeamId || assignedUser.teamId || (isAssignedToCurrentTeam ? currentTeamIds[0] : null),
+    };
+  };
+
   const selectedLeadRecords = useMemo(
     () => leads.filter((lead) => selectedDeals.includes(lead.id)),
     [leads, selectedDeals],
@@ -168,7 +233,7 @@ const DealsPage = () => {
       ? selectedDeal
       : leads.find((lead) => lead.id === id);
 
-    if (record && !canEditRecord("Lead", record)) {
+    if (record && !canEditRecord("Lead", getPermissionRecord(record))) {
       toast.error("You do not have permission to edit this lead");
       return;
     }
@@ -179,7 +244,7 @@ const DealsPage = () => {
   const handleDeleteLead = async (id) => {
     const record = leads.find((lead) => lead.id === id);
 
-    if (record && !canDeleteRecord("Lead", record)) {
+    if (record && !canDeleteRecord("Lead", getPermissionRecord(record))) {
       toast.error("You do not have permission to delete this lead");
       return;
     }
@@ -258,7 +323,7 @@ const DealsPage = () => {
       }
 
       const editableIds = selectedLeadRecords
-        .filter((deal) => canEditRecord("Lead", deal))
+        .filter((deal) => canEditRecord("Lead", getPermissionRecord(deal)))
         .map((deal) => deal.id);
 
       if (!editableIds.length || editableIds.length !== selectedDeals.length) {
@@ -294,7 +359,7 @@ const DealsPage = () => {
       }
 
       const deletableIds = selectedLeadRecords
-        .filter((deal) => canDeleteRecord("Lead", deal))
+        .filter((deal) => canDeleteRecord("Lead", getPermissionRecord(deal)))
         .map((deal) => deal.id);
 
       if (!deletableIds.length || deletableIds.length !== selectedDeals.length) {
@@ -326,7 +391,7 @@ const DealsPage = () => {
     }
 
     const deletableIds = selectedLeadRecords
-      .filter((deal) => canDeleteRecord("Lead", deal))
+      .filter((deal) => canDeleteRecord("Lead", getPermissionRecord(deal)))
       .map((deal) => deal.id);
 
     if (!deletableIds.length || deletableIds.length !== selectedDeals.length) {
@@ -359,7 +424,7 @@ const DealsPage = () => {
   const handleBulkUpdateLeads = async (payload) => {
     try {
       const editableIds = selectedLeadRecords
-        .filter((deal) => canEditRecord("Lead", deal))
+        .filter((deal) => canEditRecord("Lead", getPermissionRecord(deal)))
         .map((deal) => deal.id);
 
       if (!editableIds.length || editableIds.length !== selectedDeals.length) {
@@ -486,10 +551,10 @@ const DealsPage = () => {
               page={page}
               setPage={setPage}
               canEdit={(deal) =>
-                canEditRecord("Lead", deal)
+                canEditRecord("Lead", getPermissionRecord(deal))
               }
               canDelete={(deal) =>
-                canDeleteRecord("Lead", deal)
+                canDeleteRecord("Lead", getPermissionRecord(deal))
               }
             />
 

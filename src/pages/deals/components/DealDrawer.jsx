@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
@@ -11,13 +11,14 @@ import { useTeams } from "hooks/useTeams";
 import { useUsers } from "hooks/useUsers";
 import { useLeadStream } from "hooks/useLeadStream";
 import { useLeadActivity, useLeadTask } from "hooks/useLeadActivity";
-import { useQueryClient } from "@tanstack/react-query";
-import { canEditRecord } from "utils/permission";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { canEditRecord, getStoredUser } from "utils/permission";
 import ActivityDrawer from "components/ActivityDrawer";
 import { createTasks } from "services/tasks.service";
 import { useNavigate } from "react-router-dom";
 import { useLeadMeeting } from "hooks/useMeeting";
 import { createLeadMeeting, createMeeting } from "services/meeting.service";
+import { fetchTeamUser } from "services/team.service";
 const DealDrawer = ({
   deal,
   isOpen,
@@ -64,12 +65,69 @@ const DealDrawer = ({
   const { data: streamData } = useLeadStream(deal?.id, isOpen);
   const { data: taskData } = useLeadTask(deal?.id, isOpen);
   const { data: meetData } = useLeadMeeting(deal?.id, isOpen);
+  const currentUser = getStoredUser();
+  const currentTeamIds = useMemo(
+    () => [...new Set([
+      ...(currentUser?.teamsIds || []),
+      ...(currentUser?.teamIds || []),
+      currentUser?.teamId,
+      currentUser?.defaultTeamId,
+    ].filter(Boolean))],
+    [currentUser?.defaultTeamId, currentUser?.teamId, currentUser?.teamIds, currentUser?.teamsIds],
+  );
+  const { data: teamUsersData } = useQuery({
+    queryKey: ["team-users", currentTeamIds],
+    queryFn: async () => {
+      const responses = await Promise.all(currentTeamIds.map((id) => fetchTeamUser(id)));
+      return {
+        list: responses.flatMap((response) => response?.list || []),
+      };
+    },
+    enabled: isOpen && currentTeamIds.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
 
   const meeting = meetData?.list || [];
   const task = taskData?.list || [];
   const users = usersData?.list || [];
+  const teamUsers = teamUsersData?.list || [];
   const team = teamData?.list || [];
   const streams = streamData?.list || [];
+  const usersById = useMemo(() => {
+    return [...users, ...teamUsers].reduce((acc, user) => {
+      acc[user.id] = user;
+      return acc;
+    }, {});
+  }, [teamUsers, users]);
+  const teamUserIds = useMemo(
+    () => new Set(teamUsers.map((user) => user.id)),
+    [teamUsers],
+  );
+
+  const getPermissionRecord = (record) => {
+    const assignedUser = usersById[record?.assignedUserId];
+    const isAssignedToCurrentTeam = teamUserIds.has(record?.assignedUserId);
+
+    if (!assignedUser) return record;
+
+    return {
+      ...record,
+      teamsIds:
+        record?.teamsIds?.length
+          ? record.teamsIds
+          : assignedUser.teamsIds?.length
+            ? assignedUser.teamsIds
+            : assignedUser.teamIds?.length
+              ? assignedUser.teamIds
+              : assignedUser.defaultTeamId
+                ? [assignedUser.defaultTeamId]
+                : isAssignedToCurrentTeam
+                  ? currentTeamIds
+                : record?.teamsIds,
+      teamId: record?.teamId || assignedUser.defaultTeamId || assignedUser.teamId || (isAssignedToCurrentTeam ? currentTeamIds[0] : null),
+    };
+  };
+
   useEffect(() => {
     if (mode === "add") {
       setFormData({
@@ -264,7 +322,7 @@ const DealDrawer = ({
         await onCreate(payload);
         toast.success("Task is  created");
       } else {
-        if (!canEditRecord("Lead", deal)) {
+        if (!canEditRecord("Lead", getPermissionRecord(deal))) {
           toast.error("You do not have permission to edit this lead");
           return;
         }
@@ -510,7 +568,7 @@ const DealDrawer = ({
 
   const leadData = leadsDetails || deal;
   const canEditDeal = (deal) =>
-    canEditRecord("Lead", deal);
+    canEditRecord("Lead", getPermissionRecord({ ...deal, ...leadsDetails }));
   return (
     <>
       {/* Backdrop */}

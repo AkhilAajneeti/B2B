@@ -72,17 +72,29 @@ export const isOwnRecord = (record, user) => {
 };
 
 const isTeamRecord = (record, user) => {
-  const userTeamIds = (
-    user?.teamsIds ||
-    user?.teamIds ||
-    (user?.teamId ? [user.teamId] : [])
-  ).map(String);
+  const toIdList = (...values) =>
+    values
+      .flatMap((value) => {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        return [value];
+      })
+      .filter(Boolean)
+      .map(String);
 
-  const recordTeamIds = (
-    record?.teamsIds ||
-    record?.teamIds ||
-    (record?.teamId ? [record.teamId] : [])
-  ).map(String);
+  const userTeamIds = toIdList(
+    user?.teamsIds,
+    user?.teamIds,
+    user?.teamId,
+    user?.defaultTeamId,
+  );
+
+  const recordTeamIds = toIdList(
+    record?.teamsIds,
+    record?.teamIds,
+    record?.teamId,
+    record?.defaultTeamId,
+  );
 
   return recordTeamIds.some((teamId) =>
     userTeamIds.includes(teamId)

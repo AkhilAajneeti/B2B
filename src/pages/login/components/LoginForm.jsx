@@ -101,9 +101,13 @@ const LoginForm = () => {
         acl: data.acl || null,
         roles: Object.values(user.rolesNames || {}),
         teamsIds:
-          user.teamsIds ||
-          user.teamIds ||
-          [],
+          user.teamsIds?.length
+            ? user.teamsIds
+            : user.teamIds?.length
+              ? user.teamIds
+              : user.defaultTeamId
+                ? [user.defaultTeamId]
+                : [],
 
         teamId:
           user.teamId ||
