@@ -50,7 +50,7 @@ const DealDrawer = ({
     addressCity: "",
     cProjectName: "",
     cNextContact: "",
-    cLeatReceivedAt: "",
+    cLeatReceivedAt: new Date().toISOString().slice(0, 16),
     cPreference: "",
     assignedUserId: "",
     teamId: "",
@@ -317,6 +317,7 @@ const DealDrawer = ({
       name: fullName,
       cNextContact: toEspoDateTime(formData.cNextContact),
       cSiteVisitAt: toEspoDateTime(formData.cSiteVisitAt),
+      cLeatReceivedAt: toEspoDateTime(formData.cLeatReceivedAt),
       teamsIds: formData.teamId ? [formData.teamId] : formData.teamsIds,
     };
     try {
@@ -330,7 +331,7 @@ const DealDrawer = ({
         }
 
         await onUpdate(deal.id, payload);
-        toast.success("Task is not Updated");
+        toast.success("Task is Updated");
       }
 
       setIsEditing(false);
@@ -396,11 +397,7 @@ const DealDrawer = ({
           post: activityText,
         });
         queryClient.invalidateQueries(["lead-stream", deal.id]);
-        // setmockStream((prev) =>
-        //   prev.map((a) =>
-        //     a.id === editingActivityId ? { ...a, post: activityText } : a,
-        //   ),
-        // );
+
 
         toast.success("Activity updated");
       } else {
@@ -442,12 +439,7 @@ const DealDrawer = ({
     value: t.id,
     label: t.name,
   }));
-  // const sourceOptions = source
-  //   .filter((item) => item !== "")
-  //   .map((item) => ({
-  //     value: item,
-  //     label: item,
-  //   }));
+
   const sourceOptions = [
     { value: "Call", label: "Call" },
     { value: "Email", label: "Email" },
@@ -480,18 +472,7 @@ const DealDrawer = ({
     { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
     { value: "Switch Off", label: "Switch Off" },
   ];
-  // const statusOptions = status
-  //   .filter((item) => item !== "")
-  //   .map((item) => ({
-  //     value: item,
-  //     label: item,
-  //   }));
-  // const industryOptions = industry
-  //   .filter((item) => item !== "")
-  //   .map((item) => ({
-  //     value: item,
-  //     label: item,
-  //   }));
+
 
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
@@ -828,8 +809,7 @@ const DealDrawer = ({
                           type="datetime-local"
                           label="Leat Received At"
                           value={
-                            formData.cLeatReceivedAt ||
-                            new Date().toISOString().slice(0, 16)
+                            formData.cLeatReceivedAt
                           }
                           onChange={(e) =>
                             handleChange("cLeatReceivedAt", e.target.value)
