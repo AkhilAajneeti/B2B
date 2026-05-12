@@ -83,7 +83,7 @@ const DealDrawer = ({
         list: responses.flatMap((response) => response?.list || []),
       };
     },
-    enabled: isOpen && currentTeamIds.length > 0,
+    enabled: currentTeamIds.length > 0,
     staleTime: 1000 * 60 * 5,
   });
 
