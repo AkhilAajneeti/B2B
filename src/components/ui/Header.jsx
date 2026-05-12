@@ -144,7 +144,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
             <div className="relative">
               <button
                 onClick={handleUserDropdownToggle}
-                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted transition-smooth"
+                className="flex items-center space-x-3 p-2 rounded-lg bg-muted hover:bg-muted transition-smooth"
                 aria-label="User account menu"
               >
                 <div className="w-8 h-8 rounded-full flex items-center justify-center">
@@ -156,9 +156,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                   <div className="text-sm font-medium text-foreground">
                     {LogInuser.username}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Aajneeti Connect ltd
-                  </div>
+                 
                 </div>
                 <Icon
                   name="ChevronDown"
