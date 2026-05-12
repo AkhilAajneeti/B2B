@@ -252,7 +252,11 @@ const ProfileTab = () => {
               </div>
               <div>
                 <h4 className="font-medium text-card-foreground">
-                  {[profileData?.salutationName, profileData?.name]
+                  {[
+                    profileData?.salutationName,
+                    profileData?.firstName,
+                    profileData?.lastName,
+                  ]
                     .filter(Boolean)
                     .join(" ")}
                 </h4>
