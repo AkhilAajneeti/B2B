@@ -61,19 +61,26 @@ const getEntityActionValue = (entity, action) => {
 export const isOwnRecord = (record, user) => {
   if (!record || !user?.id) return false;
 
+  const userId = String(user.id);
+
   return [
     record.assignedUserId,
     record.createdById,
     record.ownerId,
     record.userId,
-  ].includes(user.id);
+  ].some((id) => id != null && String(id) === userId);
 };
 
 const isTeamRecord = (record, user) => {
-  const userTeamIds = (user?.teamsIds || []).map(String);
+  const userTeamIds = (
+    user?.teamsIds ||
+    user?.teamIds ||
+    (user?.teamId ? [user.teamId] : [])
+  ).map(String);
 
   const recordTeamIds = (
     record?.teamsIds ||
+    record?.teamIds ||
     (record?.teamId ? [record.teamId] : [])
   ).map(String);
 

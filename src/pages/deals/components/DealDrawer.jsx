@@ -257,12 +257,18 @@ const DealDrawer = ({
       name: fullName,
       cNextContact: toEspoDateTime(formData.cNextContact),
       cSiteVisitAt: toEspoDateTime(formData.cSiteVisitAt),
+      teamsIds: formData.teamId ? [formData.teamId] : formData.teamsIds,
     };
     try {
       if (mode === "add") {
         await onCreate(payload);
         toast.success("Task is  created");
       } else {
+        if (!canEditRecord("Lead", deal)) {
+          toast.error("You do not have permission to edit this lead");
+          return;
+        }
+
         await onUpdate(deal.id, payload);
         toast.success("Task is not Updated");
       }
@@ -287,6 +293,11 @@ const DealDrawer = ({
     if (massFields.status) payload.status = formData.status;
 
     if (massFields.source) payload.source = formData.source;
+
+    if (massFields.teamId) {
+      payload.teamId = formData.teamId;
+      payload.teamsIds = formData.teamId ? [formData.teamId] : [];
+    }
 
     if (!Object.keys(payload).length) {
       toast.error("Select at least one field");

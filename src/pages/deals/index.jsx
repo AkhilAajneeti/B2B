@@ -28,6 +28,7 @@ import { useLeadDetails } from "hooks/useLeadDetails";
 // import { canCreate, canDelete, canEdit } from "utils/permission";
 import {
   canCreate,
+  canEntityRecord,
   canEditRecord,
   canDeleteRecord,
 } from "utils/permission";
@@ -86,7 +87,15 @@ const DealsPage = () => {
     },
   });
   // fetch leads
-  const leads = leadsData?.list || [];
+  const allLeads = leadsData?.list || [];
+  const leads = useMemo(
+    () => allLeads.filter((lead) => canEntityRecord("Lead", "read", lead)),
+    [allLeads],
+  );
+  const selectedLeadRecords = useMemo(
+    () => leads.filter((lead) => selectedDeals.includes(lead.id)),
+    [leads, selectedDeals],
+  );
   const source = metaData?.sources || [];
   const status = metaData?.status || [];
   const industry = metaData?.industries || [];
@@ -159,10 +168,26 @@ const DealsPage = () => {
   };
 
   const handleUpdateLead = async (id, payload) => {
+    const record = selectedDeal?.id === id
+      ? selectedDeal
+      : leads.find((lead) => lead.id === id);
+
+    if (record && !canEditRecord("Lead", record)) {
+      toast.error("You do not have permission to edit this lead");
+      return;
+    }
+
     await updateLead(id, payload);
   };
 
   const handleDeleteLead = async (id) => {
+    const record = leads.find((lead) => lead.id === id);
+
+    if (record && !canDeleteRecord("Lead", record)) {
+      toast.error("You do not have permission to delete this lead");
+      return;
+    }
+
     try {
       toast.loading("Deleting lead...", { id: "delete-lead" });
       deleteLeadMutation.mutate(id);
@@ -233,8 +258,18 @@ const DealsPage = () => {
     if (action === "mass-update") {
       if (!selectedDeals.length) {
         toast.error("Select at least one lead");
-        n;
+        return;
       }
+
+      const editableIds = selectedLeadRecords
+        .filter((deal) => canEditRecord("Lead", deal))
+        .map((deal) => deal.id);
+
+      if (!editableIds.length || editableIds.length !== selectedDeals.length) {
+        toast.error("Select only leads you have permission to edit");
+        return;
+      }
+
       setSelectedDeal(null);
       setMode("mass-update");
       setIsDrawerOpen(true);
@@ -262,6 +297,15 @@ const DealsPage = () => {
         return;
       }
 
+      const deletableIds = selectedLeadRecords
+        .filter((deal) => canDeleteRecord("Lead", deal))
+        .map((deal) => deal.id);
+
+      if (!deletableIds.length || deletableIds.length !== selectedDeals.length) {
+        toast.error("Select only leads you have permission to delete");
+        return;
+      }
+
       setShowDeleteConfirm(true);
       return;
     }
@@ -285,9 +329,18 @@ const DealsPage = () => {
       return;
     }
 
+    const deletableIds = selectedLeadRecords
+      .filter((deal) => canDeleteRecord("Lead", deal))
+      .map((deal) => deal.id);
+
+    if (!deletableIds.length || deletableIds.length !== selectedDeals.length) {
+      toast.error("Select only leads you have permission to delete");
+      return;
+    }
+
     toast.loading("Deleting leads...", { id: "bulk-delete" });
 
-    bulkDeleteMutation.mutate(selectedDeals, {
+    bulkDeleteMutation.mutate(deletableIds, {
       onSuccess: () => {
         toast.success("Selected leads deleted", { id: "bulk-delete" });
         setSelectedDeals([]);
@@ -309,11 +362,20 @@ const DealsPage = () => {
   };
   const handleBulkUpdateLeads = async (payload) => {
     try {
+      const editableIds = selectedLeadRecords
+        .filter((deal) => canEditRecord("Lead", deal))
+        .map((deal) => deal.id);
+
+      if (!editableIds.length || editableIds.length !== selectedDeals.length) {
+        toast.error("Select only leads you have permission to edit");
+        return;
+      }
+
       toast.loading("Updating leads...", { id: "bulk-update" });
 
-      await Promise.all(selectedDeals.map((id) => updateLead(id, payload)));
+      await Promise.all(editableIds.map((id) => updateLead(id, payload)));
 
-      toast.success(`${selectedDeals.length} leads updated`, {
+      toast.success(`${editableIds.length} leads updated`, {
         id: "bulk-update",
       });
 
