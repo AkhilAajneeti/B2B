@@ -230,51 +230,51 @@ const ProfileTab = () => {
         <div className="space-y-6">
           {/* Avatar Section */}
           {canShowAvatar && (
-          <div className="flex items-center space-x-6">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full overflow-hidden bg-muted">
+            <div className="flex items-center space-x-6">
+              <div className="relative">
                 <div className="w-20 h-20 rounded-full overflow-hidden bg-muted">
-                  <Avatar
-                    name={`${profileData?.firstName || ""} ${profileData?.lastName || ""}`}
-                    size="80"
-                    round
-                  />
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-muted">
+                    <Avatar
+                      name={`${profileData?.firstName || ""} ${profileData?.lastName || ""}`}
+                      size="80"
+                      round
+                    />
+                  </div>
                 </div>
+                {canChangeAvatar && (
+                  <button
+                    onClick={() => fileInputRef.current.click()}
+                    className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center"
+                  >
+                    <Icon name="Camera" size={16} />
+                  </button>
+                )}
               </div>
-              {canChangeAvatar && (
-                <button
-                  onClick={() => fileInputRef.current.click()}
-                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center"
-                >
-                  <Icon name="Camera" size={16} />
-                </button>
-              )}
-            </div>
-            <div>
-              <h4 className="font-medium text-card-foreground">
-                Profile Photo
-              </h4>
-              <p className="text-sm text-muted-foreground mb-2">
-                JPG, PNG or GIF. Max size 2MB.
-              </p>
-              {canChangeAvatar && (
-                <label className="cursor-pointer">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                />
+              <div>
+                <h4 className="font-medium text-card-foreground">
+                  {[profileData?.salutationName, profileData?.name]
+                    .filter(Boolean)
+                    .join(" ")}
+                </h4>
 
-                <Button variant="outline" size="sm">
-                  <Icon name="Upload" size={16} className="mr-2" />
-                  Upload New Photo
-                </Button>
-                </label>
-              )}
+                {canChangeAvatar && (
+                  <label className="cursor-pointer">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+
+                    <Button variant="outline" size="sm">
+                      <Icon name="Upload" size={16} className="mr-2" />
+                      Upload New Photo
+                    </Button>
+                  </label>
+                )}
+              </div>
             </div>
-          </div>
           )}
 
           {/* Basic Information */}
