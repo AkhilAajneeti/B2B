@@ -795,7 +795,7 @@ const DealDrawer = ({
                       {mode === "add" ? (
                         <Input
                           type="datetime-local"
-                          label="Leat Received At"
+                          label="Lead Received At"
                           value={
                             formData.cLeatReceivedAt ||
                             new Date().toISOString().slice(0, 16)
@@ -807,7 +807,7 @@ const DealDrawer = ({
                       ) : (
                         <Input
                           type="datetime-local"
-                          label="Leat Received At"
+                          label="Lead Received At"
                           value={
                             formData.cLeatReceivedAt
                           }
