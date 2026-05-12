@@ -230,7 +230,7 @@ const DealsTable = ({
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-foreground">{deal?.cProjectName}</div>
+                    <div className="text-foreground">{deal?.cProject}</div>
                   </td>
                   <td className="px-4 py-4">
                     <div className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getSourceColor(
