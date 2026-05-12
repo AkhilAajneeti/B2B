@@ -22,7 +22,7 @@ const LoginPage = () => {
         <title>Sign In - CRM</title>
         <meta
           name="description"
-          content="Sign in to your CRMPro account to access your sales pipeline, customer data, and CRM tools."
+          content="Sign in to your Aajneeti Crm account to access your sales pipeline, customer data, and CRM tools."
         />
       </Helmet>
       <motion.div
@@ -33,6 +33,14 @@ const LoginPage = () => {
       >
         {/* Left SIDE - VISUAL */}
         <div className="hidden lg:flex relative items-center justify-center overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e3a8a] to-[#312e81] text-white">
+          <motion.img
+            src="/assets/images/aajneeti-logo.png"
+            alt="crm visual"
+            initial={{ opacity: 0, x: -40, y: 40 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="absolute top-4 left-4 w-50 pointer-events-none rounded"
+          />
           {/* 🔲 Grid Pattern */}
           <div className="absolute inset-0 opacity-10 bg-[linear-gradient(#ffffff20_1px,transparent_1px),linear-gradient(90deg,#ffffff20_1px,transparent_1px)] bg-[size:40px_40px]" />
 

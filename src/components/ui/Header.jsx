@@ -94,8 +94,8 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
             {/* Desktop Logo - Always visible on desktop */}
             <div className="hidden lg:flex items-center space-x-3 ml-64">
               <div className="w-8 h-8 bg-mahroon-200 rounded-lg flex items-center justify-center">
-                {/* <Icon name="Zap" size={20} color="white" /> */}
-                <img src="/favicon.ico" alt="" />
+                {/* <Icon name="Building2" size={20} color="white" /> */}
+                <img src="assets/images/aajneeti-favicon.png" alt="" />
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-lg font-semibold text-foreground">
