@@ -28,7 +28,6 @@ import { useLeadDetails } from "hooks/useLeadDetails";
 // import { canCreate, canDelete, canEdit } from "utils/permission";
 import {
   canCreate,
-  canEntityRecord,
   canEditRecord,
   canDeleteRecord,
 } from "utils/permission";
@@ -88,10 +87,7 @@ const DealsPage = () => {
   });
   // fetch leads
   const allLeads = leadsData?.list || [];
-  const leads = useMemo(
-    () => allLeads.filter((lead) => canEntityRecord("Lead", "read", lead)),
-    [allLeads],
-  );
+  const leads = allLeads;
   const selectedLeadRecords = useMemo(
     () => leads.filter((lead) => selectedDeals.includes(lead.id)),
     [leads, selectedDeals],
