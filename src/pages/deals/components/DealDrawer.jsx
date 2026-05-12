@@ -49,7 +49,7 @@ const DealDrawer = ({
     whatsapp: "",
     addressCity: "",
     cProjectName: "",
-    cNextContact: "",
+    cNextContactAt: "",
     cLeatReceivedAt: new Date().toISOString().slice(0, 16),
     cPreference: "",
     assignedUserId: "",
@@ -139,7 +139,7 @@ const DealDrawer = ({
         whatsapp: "",
         addressCity: "",
         cProjectName: "",
-        cNextContact: "",
+        cNextContactAt: "",
         cLeatReceivedAt: "",
         cPreference: "",
         assignedUserId: "",
@@ -162,7 +162,7 @@ const DealDrawer = ({
     status: false,
     source: false,
     teamId: false,
-    cNextContact: false,
+    cNextContactAt: false,
   });
 
   const toggleMassField = (field) => {
@@ -315,7 +315,7 @@ const DealDrawer = ({
     const payload = {
       ...formData,
       name: fullName,
-      cNextContact: toEspoDateTime(formData.cNextContact),
+      cNextContactAt: toEspoDateTime(formData.cNextContactAt),
       cSiteVisitAt: toEspoDateTime(formData.cSiteVisitAt),
       cLeatReceivedAt: toEspoDateTime(formData.cLeatReceivedAt),
       teamsIds: formData.teamId ? [formData.teamId] : formData.teamsIds,
@@ -348,8 +348,8 @@ const DealDrawer = ({
     if (massFields.assignedUserId)
       payload.assignedUserId = formData.assignedUserId;
 
-    if (massFields.cNextContact)
-      payload.cNextContact = toEspoDateTime(formData.cNextContact);
+    if (massFields.cNextContactAt)
+      payload.cNextContactAt = toEspoDateTime(formData.cNextContactAt);
 
     if (massFields.status) payload.status = formData.status;
 
@@ -693,9 +693,9 @@ const DealDrawer = ({
                       <Input
                         type="datetime-local"
                         label="Next Contact"
-                        value={formData.cNextContact || ""}
+                        value={formData.cNextContactAt || ""}
                         onChange={(e) =>
-                          handleChange("cNextContact", e.target.value)
+                          handleChange("cNextContactAt", e.target.value)
                         }
                       />
                     </div>
