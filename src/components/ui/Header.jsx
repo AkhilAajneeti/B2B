@@ -8,6 +8,7 @@ import NotificationDropdown from "components/NotificationDropdown";
 import { useNotification } from "NotificationContext";
 import { useNotificationCount } from "hooks/useNotificationCount";
 import Avatar from "react-avatar";
+import { useQueryClient } from "@tanstack/react-query";
 const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   const LogInuserstr = localStorage.getItem("login_object");
   const LogInuser = LogInuserstr ? JSON.parse(LogInuserstr) : null;
@@ -16,6 +17,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleUserDropdownToggle = () => {
     setIsUserDropdownOpen(!isUserDropdownOpen);
@@ -33,18 +35,17 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   };
 
   const handleLogout = () => {
-    // Implement logout logic
-    console.log("User Logout");
-    // 1️⃣ Clear auth data
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("rememberMe");
-    localStorage.removeItem("auth_token");
 
-    // 2️⃣ Close dropdown
+    // ✅ Clear react-query cache
+    queryClient.clear();
+
+    // ✅ Clear all local storage
+    localStorage.clear();
+
+    // ✅ Close dropdown
     handleDropdownClose();
 
-    // 3️⃣ Redirect to login
+    // ✅ Redirect
     navigate("/login", { replace: true });
   };
 
@@ -165,53 +166,89 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                   className={`transition-transform ${isUserDropdownOpen ? "rotate-180" : ""}`}
                 />
               </button>
-
               {isUserDropdownOpen && (
                 <>
+                  {/* blur overlay */}
                   <div
-                    className="fixed inset-0 z-50"
+                    className="fixed inset-0 z-50 bg-black/10 backdrop-blur-[2px]"
                     onClick={handleDropdownClose}
                   />
-                  <div className="absolute right-0 mt-2 w-64 bg-popover border border-border rounded-lg shadow-elevation-2 z-60">
-                    <div className="p-4 border-b border-border">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-mahroon-400 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary-foreground">
-                            ACL
-                          </span>
+
+                  {/* dropdown */}
+                  <div className="absolute right-0 top-full mt-3 w-72 overflow-hidden rounded-2xl border border-white/20 bg-white/75 backdrop-blur-2xl shadow-[0_12px_40px_rgba(15,23,42,0.12)] z-[60] animate-in fade-in zoom-in-95 duration-200">
+
+                    {/* top user section */}
+                    <div className="p-5">
+                      <div className="flex items-center gap-3">
+
+                        {/* avatar */}
+                        <div className="relative shrink-0">
+                          <Avatar
+                            name={LogInuser.username}
+                            size="46"
+                            round={true}
+                          />
+
+                          <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
                         </div>
-                        <div>
-                          <div className="font-medium text-popover-foreground">
+
+                        {/* user info */}
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-semibold text-slate-900 truncate">
                             {LogInuser.username}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
+                          </h3>
+
+                          <p className="text-xs text-slate-500 truncate mt-0.5">
                             Aajneeti Connect ltd
-                          </div>
+                          </p>
                         </div>
                       </div>
                     </div>
-                    <div className="py-1">
+
+                    {/* divider */}
+                    <div className="h-px bg-slate-200/70" />
+
+                    {/* menu */}
+                    <div className="p-2">
+
+                      {/* profile */}
                       <button
                         onClick={handleProfileClick}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth">
-                        <Icon name="User" size={16} className="mr-3" />
-                        Profile Settings
-                      </button>
-                      {/* <button
-                        onClick={handleSettingsClick}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
+                        className="flex items-center gap-3 w-full rounded-xl px-3 py-3 text-sm text-slate-700 transition-all hover:bg-white/70"
                       >
-                        <Icon name="Settings" size={16} className="mr-3" />
-                        Account Settings
-                      </button> */}
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
+                          <Icon name="User" size={17} />
+                        </div>
 
-                      <div className="border-t border-border my-1" />
+                        <div className="flex-1 text-left">
+                          <div className="font-medium">
+                            Profile Settings
+                          </div>
+
+                          <div className="text-xs text-slate-500">
+                            Manage account
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* logout */}
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
+                        className="flex items-center gap-3 w-full rounded-xl px-3 py-3 text-sm text-red-500 transition-all hover:bg-red-50/80"
                       >
-                        <Icon name="LogOut" size={16} className="mr-3" />
-                        Sign Out
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50">
+                          <Icon name="LogOut" size={17} />
+                        </div>
+
+                        <div className="flex-1 text-left">
+                          <div className="font-medium">
+                            Sign Out
+                          </div>
+
+                          <div className="text-xs text-red-400">
+                            Logout from account
+                          </div>
+                        </div>
                       </button>
                     </div>
                   </div>

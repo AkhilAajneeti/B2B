@@ -1,11 +1,14 @@
 // cache services?
-const CACHE_KEY = "leads_count_cache";
+const getCacheKey = () => {
+  const userId = localStorage.getItem("userId") || "guest";
+  return `leads_count_cache_${userId}`;
+};
 const CACHE_TTL = 1000 * 60 * 10; // 10 min
 const leadsCountCache = new Map();
 // 🔥 helpers
 const getLocalCache = () => {
   try {
-    return JSON.parse(localStorage.getItem(CACHE_KEY)) || {};
+    return JSON.parse(localStorage.getItem(getCacheKey())) || {};
   } catch {
     return {};
   }
@@ -17,7 +20,7 @@ const setLocalCache = (key, value) => {
     value,
     timestamp: Date.now(),
   };
-  localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  localStorage.setItem(getCacheKey(), JSON.stringify(cache));
 };
 
 //industry chart
@@ -296,7 +299,6 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
 
   const url = query ? `${baseUrl}&${query}` : baseUrl;
 
-  console.log("FINAL API:", url);
 
   const res = await fetch(url, {
     headers: {
@@ -314,7 +316,7 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
 };
 export const fetchLeadsById = async (id) => {
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
+
   const res = await fetch(`https://gateway.aajneetiadvertising.com/Lead/${id}`, {
     method: "GET",
     headers: {
@@ -334,7 +336,7 @@ export const fetchLeadsById = async (id) => {
 };
 
 export const createLead = async (payload) => {
-  console.log(payload);
+
   const token = localStorage.getItem("auth_token");
   const res = await fetch("https://gateway.aajneetiadvertising.com/Lead", {
     method: "POST",
@@ -342,18 +344,18 @@ export const createLead = async (payload) => {
 
     body: JSON.stringify(payload),
   });
-  const text = await res.text();
+
   if (!res.ok) {
     console.error("API ERROR:", text);
     throw new Error("Lead is not created", text);
   }
   // EspoCRM returns array
-  return text ? JSON.parse(text) : null;
+  return await res.json();
 };
 
 export const updateLead = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
-  console.log(id, payload);
+
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Lead/${id}`,
     {
@@ -367,13 +369,13 @@ export const updateLead = async (id, payload) => {
     }
   );
 
-  const text = await res.text();
+
   console.log("response from contact.service.js", res);
   if (!res.ok) {
     throw new Error(text || "Lead update failed");
   }
 
-  return text ? JSON.parse(text) : null;
+  return await res.json();
 };
 
 export const deleteLead = async (id) => {
@@ -397,9 +399,9 @@ export const bulkDeleteleads = async (ids = []) => {
 // --------------Stream-----------
 //fetch by Streams
 export const leadStreamById = async (id) => {
-  console.log(id);
+
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
+
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Lead/${id}/stream`,
     {
@@ -412,7 +414,6 @@ export const leadStreamById = async (id) => {
     }
   );
 
-  console.log(res);
   if (!res.ok) {
     console.log("STATUS:", res.status);
     if (res.status === 401 || res.status === 403) {
@@ -424,9 +425,9 @@ export const leadStreamById = async (id) => {
   return await res.json();
 };
 export const updateStream = async (id, payload) => {
-  console.log(id);
+
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
+
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Lead/${id}/stream`,
     {
@@ -439,7 +440,7 @@ export const updateStream = async (id, payload) => {
     }
   );
 
-  console.log(res);
+
   if (!res.ok) {
     console.log("STATUS:", res.status);
     if (res.status === 401 || res.status === 403) {
@@ -469,7 +470,7 @@ export const deleteActivity = async (id) => {
 
 //create strean
 export const createLeadActivity = async (payload) => {
-  console.log(payload);
+
   const token = localStorage.getItem("auth_token");
   const res = await fetch("https://gateway.aajneetiadvertising.com/Note", {
     method: "POST",
@@ -477,21 +478,21 @@ export const createLeadActivity = async (payload) => {
 
     body: JSON.stringify(payload),
   });
-  const text = await res.text();
+
   if (!res.ok) {
     console.error("API ERROR:", text);
     throw new Error("Activity is not created", text);
   }
   // EspoCRM returns array
-  return text ? JSON.parse(text) : null;
+  return await res.json();
 };
 
 // Meet call related Activities
 
 export const leadActivitesById = async (id) => {
-  console.log(id);
+
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
+
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Activities/Lead/${id}/activities`,
     {
@@ -519,9 +520,9 @@ export const leadActivitesById = async (id) => {
 
 // fetch task by lead id
 export const fetchLeadTask = async (id) => {
-  console.log(id);
+
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
+
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Lead/${id}/tasks`,
     {
@@ -534,7 +535,7 @@ export const fetchLeadTask = async (id) => {
     }
   );
 
-  console.log(res);
+
   if (!res.ok) {
     console.log("STATUS:", res.status);
     if (res.status === 401 || res.status === 403) {
@@ -546,9 +547,9 @@ export const fetchLeadTask = async (id) => {
   return await res.json();
 };
 export const createLeadTask = async (id) => {
-  console.log(id);
+
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
+
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/Lead/${id}/tasks`,
     {
@@ -561,7 +562,7 @@ export const createLeadTask = async (id) => {
     }
   );
 
-  console.log(res);
+
   if (!res.ok) {
     console.log("STATUS:", res.status);
     if (res.status === 401 || res.status === 403) {
