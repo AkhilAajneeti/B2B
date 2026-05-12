@@ -303,14 +303,14 @@ const DealsTable = ({
                       className={`flex items-center space-x-1 transition-opacity ${hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
                         }`}
                     >
-                      {canEdit(deal) && (<Button
+                      <Button
                         variant="ghost"
                         size="icon"
                         onClick={(e) => handleQuickAction(e, "edit", deal)}
                         className="h-8 w-8"
                       >
                         <Icon name="Edit" size={14} />
-                      </Button>)}
+                      </Button>
 
                       {canDelete(deal) && (<Button
                         variant="ghost"
