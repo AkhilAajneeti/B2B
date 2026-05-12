@@ -255,7 +255,7 @@ const DealsTable = ({
                   />
                 </td>
                 <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
-                  <div className="font-medium text-foreground">
+                  <div className="font-medium text-foreground truncate max-w-[280px]">
                     {deal?.name}
                   </div>
                 </td>

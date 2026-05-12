@@ -33,19 +33,74 @@ const DealsTable = ({
 
   const getStageColor = (stage) => {
     const colors = {
-      New: "bg-blue-100 text-blue-800",
-      Interested: "bg-sky-100 text-sky-800",
-      "Follow up": "bg-indigo-100 text-indigo-800",
-      Converted: "bg-green-100 text-green-800",
-      "Not interested": "bg-orange-100 text-orange-800",
-      Broker: "bg-purple-100 text-purple-800",
-      "Call Not Picked": "bg-red-100 text-red-800",
-      Invalid: "bg-gray-100 text-gray-700",
+      New: "bg-blue-50 text-blue-700 border border-blue-200",
+      Interested:
+        "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      "Follow up":
+        "bg-indigo-50 text-indigo-700 border border-indigo-200",
+      "Call Later":
+        "bg-amber-50 text-amber-700 border border-amber-200",
+      "Call Not Connecting":
+        "bg-rose-50 text-rose-700 border border-rose-200",
+      "Call Not Picked":
+        "bg-red-50 text-red-700 border border-red-200",
+      Broker:
+        "bg-violet-50 text-violet-700 border border-violet-200",
+      Dead:
+        "bg-slate-100 text-slate-700 border border-slate-300",
+      "Fake Lead":
+        "bg-pink-50 text-pink-700 border border-pink-200",
+      "Invalid Number":
+        "bg-gray-100 text-gray-700 border border-gray-300",
+      "Irrelevant Lead":
+        "bg-orange-50 text-orange-700 border border-orange-200",
+      "Low Budget":
+        "bg-yellow-50 text-yellow-700 border border-yellow-200",
+      "Low Interest":
+        "bg-lime-50 text-lime-700 border border-lime-200",
+      "Not Interested":
+        "bg-red-50 text-red-700 border border-red-200",
+      "Other Location":
+        "bg-cyan-50 text-cyan-700 border border-cyan-200",
+      Purchased:
+        "bg-green-50 text-green-700 border border-green-200 shadow-sm",
+      "Site Visit Done":
+        "bg-teal-50 text-teal-700 border border-teal-200",
+      "Site Visit Scheduled":
+        "bg-sky-50 text-sky-700 border border-sky-200",
+      "Switch Off":
+        "bg-neutral-100 text-neutral-700 border border-neutral-300",
     };
 
-    return colors?.[stage] || "bg-gray-100 text-gray-800";
+    return (
+      colors?.[stage] ||
+      "bg-gray-100 text-gray-700 border border-gray-200"
+    );
   };
-
+  const getSourceColor = (source) => {
+    const colors = {
+      Call: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      Email: "bg-blue-50 text-blue-700 border border-blue-200",
+      "Existing Customer":
+        "bg-violet-50 text-violet-700 border border-violet-200",
+      Partner:
+        "bg-orange-50 text-orange-700 border border-orange-200",
+      "Public Relations":
+        "bg-pink-50 text-pink-700 border border-pink-200",
+      "Web Site":
+        "bg-cyan-50 text-cyan-700 border border-cyan-200",
+      Campaign:
+        "bg-amber-50 text-amber-700 border border-amber-200",
+      Other:
+        "bg-slate-100 text-slate-700 border border-slate-200",
+      ACL:
+        "bg-gradient-to-r from-fuchsia-50 to-violet-50 text-violet-700 border border-violet-200 shadow-sm",
+    };
+    return (
+      colors?.[source] ||
+      "bg-gray-100 text-gray-700 border border-gray-200"
+    );
+  };
   const getProbabilityColor = (probability) => {
     if (probability >= 80) return "text-green-600";
     if (probability >= 60) return "text-yellow-600";
@@ -262,7 +317,7 @@ const DealsTable = ({
                     {/* <div className="text-foreground">{deal?.cProjectName }</div> */}
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-medium text-foreground">
+                    <div className={`font-medium flex justify-center items-center space-x-2 rounded-full ${getSourceColor(deal?.source)}`}>
                       {deal?.source}
                     </div>
                   </td>

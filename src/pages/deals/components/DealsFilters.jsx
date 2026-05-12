@@ -5,7 +5,6 @@ import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
 import RoleGuard from "components/RoleGuard";
-import { fetchSources, fetchStatus } from "services/others.service";
 
 const DealsFilters = ({
   filters,
@@ -19,9 +18,6 @@ const DealsFilters = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
-  const [status, setStatus] = useState([]);
-
-  const [source, setSource] = useState([]);
 
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
@@ -29,36 +25,8 @@ const DealsFilters = ({
     { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [statusRes, sourceRes] = await Promise.all([
-          fetchStatus(),
-          fetchSources(),
-        ]);
 
-        setStatus(statusRes.options || []);
-        setSource(sourceRes.options || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-
-    loadData();
-  }, []);
-  // const sourceOptions = source
-  //   .filter((item) => item !== "")
-  //   .map((item) => ({
-  //     value: item,
-  //     label: item,
-  //   }));
-  // const statusOptions = status
-  //   .filter((item) => item !== "")
-  //   .map((item) => ({
-  //     value: item,
-  //     label: item,
-  //   }));
-      const sourceOptions = [
+  const sourceOptions = [
     { value: "Call", label: "Call" },
     { value: "Email", label: "Email" },
     { value: "Existing Customer", label: "Existing Customer" },
@@ -74,9 +42,7 @@ const DealsFilters = ({
     { value: "Call Later", label: "Call Later" },
     { value: "Call Not Connecting", label: "Call Not Connecting" },
     { value: "Call Not Picked", label: "Call Not Picked" },
-    { value: "Converted", label: "Converted" },
     { value: "Dead", label: "Dead" },
-    { value: "Deal Closed", label: "Deal Closed" },
     { value: "Fake Lead", label: "Fake Lead" },
     { value: "Follow up", label: "Follow up" },
     { value: "Interested", label: "Interested" },
@@ -87,9 +53,12 @@ const DealsFilters = ({
     { value: "New", label: "New" },
     { value: "Not Interested", label: "Not Interested" },
     { value: "Other Location", label: "Other Location" },
-    { value: "Proposal Shared", label: "Proposal Shared" },
+    { value: "Purchased", label: "Purchased" },
+    { value: "Site Visit Done", label: "Site Visit Done" },
+    { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
+    { value: "Switch Off", label: "Switch Off" },
   ];
-     const ACTIVITY_DATE_FILTERS = [
+  const ACTIVITY_DATE_FILTERS = [
     { label: "Today", value: "today" },
     { label: "Last 7 Days", value: "lastSevenDays" },
     { label: "Current Month", value: "currentMonth" },
@@ -322,7 +291,7 @@ const DealsFilters = ({
       </div>
       {/* Advanced Filters Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 pt-4 border-t border-border gap-3">
-        
+
         {/* <RoleGuard allowedRoles={["admin", "manager"]}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
             <Icon name="Plus" size={16} className="mr-2" />

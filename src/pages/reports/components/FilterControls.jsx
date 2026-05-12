@@ -9,8 +9,6 @@ import RoleGuard from "components/RoleGuard";
 const FilterControls = ({
   filters,
   onFiltersChange,
-  source,
-  status,
   onClearFilters,
   dealCount,
   onBulkAction,
@@ -64,18 +62,38 @@ const FilterControls = ({
     value: acc.id, // 👈 important (ID use karo)
     label: acc.name,
   }));
-  const sourceOptions = source
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
-  const statusOptions = status
-    .filter((item) => item !== "")
-    .map((item) => ({
-      value: item,
-      label: item,
-    }));
+  const sourceOptions = [
+    { value: "Call", label: "Call" },
+    { value: "Email", label: "Email" },
+    { value: "Existing Customer", label: "Existing Customer" },
+    { value: "Partner", label: "Partner" },
+    { value: "Public Relations", label: "Public Relations" },
+    { value: "Web Site", label: "Web Site" },
+    { value: "Campaign", label: "Campaign" },
+    { value: "Other", label: "Other" },
+    { value: "ACL", label: "ACL" },
+  ];
+  const statusOptions = [
+    { value: "Broker", label: "Broker" },
+    { value: "Call Later", label: "Call Later" },
+    { value: "Call Not Connecting", label: "Call Not Connecting" },
+    { value: "Call Not Picked", label: "Call Not Picked" },
+    { value: "Dead", label: "Dead" },
+    { value: "Fake Lead", label: "Fake Lead" },
+    { value: "Follow up", label: "Follow up" },
+    { value: "Interested", label: "Interested" },
+    { value: "Invalid Number", label: "Invalid Number" },
+    { value: "Irrelevant Lead", label: "Irrelevant Lead" },
+    { value: "Low Budget", label: "Low Budget" },
+    { value: "Low Interest", label: "Low Interest" },
+    { value: "New", label: "New" },
+    { value: "Not Interested", label: "Not Interested" },
+    { value: "Other Location", label: "Other Location" },
+    { value: "Purchased", label: "Purchased" },
+    { value: "Site Visit Done", label: "Site Visit Done" },
+    { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
+    { value: "Switch Off", label: "Switch Off" },
+  ];
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
       {/* Header Row */}
@@ -203,6 +221,7 @@ const FilterControls = ({
           options={assignUserOptions}
           value={filters?.assignUser || ""}
           onChange={(value) => handleFilterChange("assignUser", value)}
+          searchable
         />
       </div>
       {/* Advanced Filters Toggle */}

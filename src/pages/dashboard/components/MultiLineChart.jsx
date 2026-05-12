@@ -84,19 +84,19 @@ const MultiLineChart = ({ leads = [] }) => {
             return {
               label: start.toLocaleString("default", { month: "short" }),
               facebook: 0,
-              ivr: 0,
+              ACL: 0,
               website: 0,
             };
           }
 
-          const [facebook, ivr, website] = await Promise.all([
+          const [facebook, ACL, website] = await Promise.all([
             fetchLeadsCount([
               { type: "between", attribute: "createdAt", value: [start.toISOString(), end.toISOString()] },
               { type: "in", attribute: "source", value: ["Facebook"] },
             ]),
             fetchLeadsCount([
               { type: "between", attribute: "createdAt", value: [start.toISOString(), end.toISOString()] },
-              { type: "in", attribute: "source", value: ["IVR"] },
+              { type: "in", attribute: "source", value: ["ACL"] },
             ]),
             fetchLeadsCount([
               { type: "between", attribute: "createdAt", value: [start.toISOString(), end.toISOString()] },
@@ -107,7 +107,7 @@ const MultiLineChart = ({ leads = [] }) => {
           return {
             label: start.toLocaleString("default", { month: "short" }),
             facebook,
-            ivr,
+            ACL,
             website,
           };
         })
@@ -148,7 +148,7 @@ const MultiLineChart = ({ leads = [] }) => {
           const end = new Date(year, month, endDay);
           end.setHours(23, 59, 59, 999);
 
-          const [facebook, ivr, website] = await Promise.all([
+          const [facebook, ACL, website] = await Promise.all([
             fetchLeadsCount([
               {
                 type: "between",
@@ -163,7 +163,7 @@ const MultiLineChart = ({ leads = [] }) => {
                 attribute: "createdAt",
                 value: [start.toISOString(), end.toISOString()],
               },
-              { type: "in", attribute: "source", value: ["IVR"] },
+              { type: "in", attribute: "source", value: ["ACL"] },
             ]),
             fetchLeadsCount([
               {
@@ -178,7 +178,7 @@ const MultiLineChart = ({ leads = [] }) => {
           return {
             label: w.label,
             facebook,
-            ivr,
+            ACL,
             website,
           };
         })
@@ -211,7 +211,7 @@ const MultiLineChart = ({ leads = [] }) => {
 
       const batchResults = await Promise.all(
         batch.map(async (d) => {
-          const [facebook, ivr, website] = await Promise.all([
+          const [facebook, ACL, website] = await Promise.all([
             fetchLeadsCount([
               {
                 type: "between",
@@ -226,7 +226,7 @@ const MultiLineChart = ({ leads = [] }) => {
                 attribute: "createdAt",
                 value: [d.start.toISOString(), d.end.toISOString()],
               },
-              { type: "in", attribute: "source", value: ["IVR"] },
+              { type: "in", attribute: "source", value: ["ACL"] },
             ]),
             fetchLeadsCount([
               {
@@ -241,7 +241,7 @@ const MultiLineChart = ({ leads = [] }) => {
           return {
             label: d.date.toLocaleDateString("en-IN", { weekday: "short" }),
             facebook,
-            ivr,
+            ACL,
             website,
           };
         })
@@ -293,9 +293,9 @@ const MultiLineChart = ({ leads = [] }) => {
   })();
 
   const facebookTotal = chartData.reduce((sum, item) => sum + item.facebook, 0);
-  const ivrTotal = chartData.reduce((sum, item) => sum + item.ivr, 0);
+  const ACLTotal = chartData.reduce((sum, item) => sum + item.ACL, 0);
   const websiteTotal = chartData.reduce((sum, item) => sum + item.website, 0);
-  const Total = facebookTotal + ivrTotal + websiteTotal;
+  const Total = facebookTotal + ACLTotal + websiteTotal;
   const isLoading =
     (viewType === "monthly" && loadingMonthly) ||
     (viewType === "weekly" && loadingWeekly) ||
@@ -459,7 +459,7 @@ const MultiLineChart = ({ leads = [] }) => {
 
               <Line
                 type="monotone"
-                dataKey="ivr"
+                dataKey="ACL"
                 stroke="#22c55e"
                 strokeWidth={2}
                 dot={{ r: 4 }}
@@ -487,7 +487,7 @@ const MultiLineChart = ({ leads = [] }) => {
 
           <div className="flex items-center gap-2 min-w-max">
             <div className="w-3 h-3 rounded-full bg-[#22c55e]" />
-            <span>IVR: {ivrTotal}</span>
+            <span>ACL: {ACLTotal}</span>
           </div>
 
           <div className="flex items-center gap-2 min-w-max">
