@@ -313,12 +313,12 @@ const DealsTable = ({
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-foreground">{deal?.cProject}</div>
-                    {/* <div className="text-foreground">{deal?.cProjectName }</div> */}
+                    <div className="text-foreground">{deal?.cProject || deal?.cProjectName || "None"}</div>
+                    
                   </td>
                   <td className="px-4 py-4">
                     <div className={`font-medium flex justify-center items-center space-x-2 rounded-full ${getSourceColor(deal?.source)}`}>
-                      {deal?.source=== "ACL" ? "Aajneeti" :deal?.source}
+                      {deal?.source === "ACL" ? "Aajneeti" : deal?.source}
                     </div>
                   </td>
                   <td className="px-4 py-4">

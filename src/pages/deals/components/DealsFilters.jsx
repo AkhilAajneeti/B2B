@@ -34,8 +34,8 @@ const DealsFilters = ({
     { value: "Public Relations", label: "Public Relations" },
     { value: "Web Site", label: "Web Site" },
     { value: "Campaign", label: "Campaign" },
-    { value: "Other", label: "Other" },
     { value: "ACL", label: "Aajneeti" },
+    { value: "Other", label: "Other" },
   ];
   const statusOptions = [
     { value: "Broker", label: "Broker" },

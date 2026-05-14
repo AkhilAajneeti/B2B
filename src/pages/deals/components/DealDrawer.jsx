@@ -323,7 +323,7 @@ const DealDrawer = ({
     try {
       if (mode === "add") {
         await onCreate(payload);
-        toast.success("Task is  created");
+        // toast.success("Task is  created");
       } else {
         if (!canEditRecord("Lead", getPermissionRecord(deal))) {
           toast.error("You do not have permission to edit this lead");
@@ -331,7 +331,7 @@ const DealDrawer = ({
         }
 
         await onUpdate(deal.id, payload);
-        toast.success("Task is Updated");
+        // toast.success("Task is Updated");
       }
 
       setIsEditing(false);
@@ -448,8 +448,8 @@ const DealDrawer = ({
     { value: "Public Relations", label: "Public Relations" },
     { value: "Web Site", label: "Web Site" },
     { value: "Campaign", label: "Campaign" },
+    { value: "ACL", label: "Aajneeti" },
     { value: "Other", label: "Other" },
-    { value: "ACL", label: "ACL" },
   ];
   const statusOptions = [
     { value: "Broker", label: "Broker" },
