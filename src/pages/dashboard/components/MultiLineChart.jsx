@@ -460,6 +460,7 @@ const MultiLineChart = ({ leads = [] }) => {
               <Line
                 type="monotone"
                 dataKey="ACL"
+                name="Aajneeti"
                 stroke="#22c55e"
                 strokeWidth={2}
                 dot={{ r: 4 }}
