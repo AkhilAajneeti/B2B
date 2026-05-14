@@ -170,7 +170,7 @@ const DealsPage = () => {
     const exportData = rows.map((lead) => ({
       Name: lead?.name || "",
       Email: lead?.emailAddress || "",
-      Phone:  `"${lead?.phoneNumber || ""}"`,
+      Phone: `"${lead?.phoneNumber || ""}"`,
       Status: lead?.status || "",
       Source: lead?.source || "",
       "Project Name": lead?.cProject || lead?.cProjectName,
@@ -225,7 +225,7 @@ const DealsPage = () => {
       createLeadMutation.mutate(payload);
     } catch (err) {
       console.error("Lead creationd failed", err);
-    }
+    } z
   };
 
   const handleUpdateLead = async (id, payload) => {
@@ -239,6 +239,7 @@ const DealsPage = () => {
     }
 
     await updateLead(id, payload);
+    queryClient.invalidateQueries(["leads"]);
   };
 
   const handleDeleteLead = async (id) => {
@@ -416,7 +417,7 @@ const DealsPage = () => {
 
 
   const handleItemsPerPageChange = (newItemsPerPage) => {
-    setFilters(newItemsPerPage);
+    setLimit(newItemsPerPage);
     setPage(1);
   };
   const handleBulkUpdateLeads = async (payload) => {
