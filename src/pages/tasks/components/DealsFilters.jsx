@@ -4,7 +4,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
-import { fetchStatus } from "services/others.service";
+// import { fetchStatus } from "services/others.service";
 
 const DealsFilters = ({
   filters,
@@ -17,25 +17,25 @@ const DealsFilters = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
-  const [status, setStatus] = useState([]);
+  // const [status, setStatus] = useState([]);
 
 
   // 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [statusRes] = await Promise.all([
-          fetchStatus(),
-        ]);
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     try {
+  //       const [statusRes] = await Promise.all([
+  //         fetchStatus(),
+  //       ]);
 
-        setStatus(statusRes.options || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
+  //       setStatus(statusRes.options || []);
+  //     } catch (err) {
+  //       console.error("Failed to load data", err);
+  //     }
+  //   };
 
-    loadData();
-  }, []);
+  //   loadData();
+  // }, []);
   // const statusOptions = status
   //   .filter((item) => item !== "")
   //   .map((item) => ({

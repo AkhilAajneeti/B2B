@@ -87,7 +87,7 @@ const DealsPage = () => {
     search: "",
     status: "",
     sector: "",
-    projectName: "",
+    cProject: "",
     source: "",
     assignUser: "",
     dateType: "",
@@ -148,7 +148,7 @@ const DealsPage = () => {
                 ? [assignedUser.defaultTeamId]
                 : isAssignedToCurrentTeam
                   ? currentTeamIds
-                : lead?.teamsIds,
+                  : lead?.teamsIds,
       teamId: lead?.teamId || assignedUser.defaultTeamId || assignedUser.teamId || (isAssignedToCurrentTeam ? currentTeamIds[0] : null),
     };
   };
@@ -173,7 +173,7 @@ const DealsPage = () => {
       Phone: lead?.phoneNumber || "",
       Status: lead?.status || "",
       Source: lead?.source || "",
-      "Project Name": lead?.cProjectName || "",
+      "Project Name": lead?.ccProject || "",
       "Assigned User": lead?.assignedUserName || "",
       "Next Contact": lead?.cNextContact || "",
       "Created At": lead?.createdAt || "",
@@ -305,7 +305,7 @@ const DealsPage = () => {
       search: "",
       status: "",
       sector: "",
-      projectName: "",
+      cProject: "",
       source: "",
       assignUser: "",
       dateType: "",
@@ -413,9 +413,7 @@ const DealsPage = () => {
     });
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+
 
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setFilters(newItemsPerPage);

@@ -204,7 +204,7 @@ const IndustryChart = () => {
         </div>
 
         <div className="w-full  mt-5 scrollbar-hide">
-          <div className="flex gap-1 w-auto w-full">
+          <div className="flex gap-1 w-auto ">
             <Select
               className="w-full"
               placeholder="Filter by date"

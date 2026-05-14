@@ -4,12 +4,12 @@ import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { Checkbox } from "../../../components/ui/Checkbox";
 import Icon from "../../../components/AppIcon";
-import { fetchStatus } from "services/others.service";
+// import { fetchStatus } from "services/others.service";
 import { fetchUser } from "services/user.service";
 import { fetchTeam } from "services/team.service";
 import { fetchAccounts } from "services/account.service";
 import { fetchLeads } from "services/leads.service";
-import { fetchContacts } from "services/contact.service";
+// import { fetchContacts } from "services/contact.service";
 import { createCall } from "services/call.services";
 import { createMeeting } from "services/meeting.service";
 
@@ -26,18 +26,18 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
     assignedUserId: "",
     teamsIds: [],
     usersIds: [],
-    contactsIds: [],
+    // contactsIds: [],
     isAllDay: false,
     description: "",
   });
 
   const [errors, setErrors] = useState({});
-  const [stats, setStatus] = useState([]);
+  // const [stats, setStatus] = useState([]);
   const [user, setUser] = useState([]);
   const [team, setTeam] = useState([]);
   const [acc, setAcc] = useState([]);
   const [lead, setLead] = useState([]);
-  const [contact, setContact] = useState([]);
+  // const [contact, setContact] = useState([]);
 
   const activityTypeOptions = [
     { value: "none", label: "None" },
@@ -65,7 +65,7 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
   const parentTypeOptions = [
     { value: "Account", label: "Account" },
     { value: "Lead", label: "Lead" },
-    { value: "Contact", label: "Contact" },
+    // { value: "Contact", label: "Contact" },
   ];
 
   const handleInputChange = (field, value) => {
@@ -138,7 +138,7 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
 
       // ✅ Match DealDrawer naming
       attendeesUsersIds: formData.usersIds || [],
-      attendeesContactsIds: formData.contactsIds || [],
+      // attendeesContactsIds: formData.contactsIds || [],
 
       isAllDay: formData.isAllDay,
       description: formData.description || "",
@@ -178,7 +178,7 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
       assignedUserId: "",
 
       usersIds: [],
-      contactsIds: [],
+      // contactsIds: [],
 
       direction: "", // For Call only
       reminders: [], // Optional
@@ -201,21 +201,21 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [statusRes, userRes, teamRes, accRes, leadRes, contactRes] =
+        const [ userRes, teamRes, accRes, leadRes] =
           await Promise.all([
-            fetchStatus(),
+            // fetchStatus(),
             fetchUser(),
             fetchTeam(),
             fetchAccounts(),
             fetchLeads(),
-            fetchContacts(),
+            // fetchContacts(),
           ]);
-        setStatus(statusRes.options || []);
+        // setStatus(statusRes.options || []);
         setUser(userRes.list || []);
         setTeam(teamRes.list || []);
         setAcc(accRes.list || []);
         setLead(leadRes.list || []);
-        setContact(contactRes.list || []);
+        // setContact(contactRes.list || []);
       } catch (err) {
         console.error("Failed to load data", err);
       }
@@ -234,10 +234,10 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
     value: t.id,
     label: t.name,
   }));
-  const contactOptions = contact.map((c) => ({
-    value: c.id,
-    label: c.name || c.accountName,
-  }));
+  // const contactOptions = contact.map((c) => ({
+  //   value: c.id,
+  //   label: c.name || c.accountName,
+  // }));
 
   const getParentTypeOptions = () => {
     switch (formData.parentType) {
@@ -253,11 +253,11 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
           label: item.name,
         }));
 
-      case "Contact":
-        return contact.map((item) => ({
-          value: item.id,
-          label: item.name,
-        }));
+      // case "Contact":
+      //   return contact.map((item) => ({
+      //     value: item.id,
+      //     label: item.name,
+      //   }));
 
       default:
         return [];
@@ -406,13 +406,13 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
               searchable
             />
 
-            <Select
+            {/* <Select
               label="Contacts"
               options={contactOptions}
               value={formData?.contactsIds}
               onChange={(value) => handleInputChange("contactsIds", value)}
               searchable
-            />
+            /> */}
           </div>
 
           {/* Reminder */}

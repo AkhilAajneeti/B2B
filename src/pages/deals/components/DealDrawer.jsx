@@ -791,6 +791,7 @@ const DealDrawer = ({
                         value={formData.industry || ""}
                         options={IndustryOptions}
                         onChange={(value) => handleChange("industry", value)}
+                        searchable
                       />
                       {mode === "add" ? (
                         <Input

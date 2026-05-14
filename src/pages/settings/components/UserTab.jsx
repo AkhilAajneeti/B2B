@@ -139,11 +139,9 @@ const UserTab = () => {
   };
   const fetchuserById = async (member) => {
     try {
-      setIsLoading(true);
+      setDetailsLoadingId(member.id);
 
       const data = await fetchUserById(member.id);
-
-      console.log("Full User Data:", data); // 🔍 debug
 
       setSelectedUser(data); // ✅ SET CORRECT STATE
       setIsShowDetails(true); // ✅ open modal
@@ -151,7 +149,7 @@ const UserTab = () => {
       console.error("failed to fetch data", err);
       toast.error("Failed to load user details");
     } finally {
-      setIsLoading(false);
+      setDetailsLoadingId(null);
     }
   };
 
@@ -569,7 +567,7 @@ const UserTab = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => fetchuserById(member)}
-                            aria-label="Edit member"
+                            aria-label="view member"
                             loading={detailsLoadingId === member.id}
                           >
                             <Icon name="Eye" size={16} />

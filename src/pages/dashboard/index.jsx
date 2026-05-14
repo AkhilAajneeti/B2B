@@ -58,9 +58,26 @@ const Dashboard = () => {
   const lastMonthQuery = useLeadsCount([
     { type: "lastMonth", attribute: "createdAt" }
   ]);
+  // yesterday 
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+
+  const yesterdayStart = new Date(yesterdayDate);
+  yesterdayStart.setHours(0, 0, 0, 0);
+
+  const yesterdayEnd = new Date(yesterdayDate);
+  yesterdayEnd.setHours(23, 59, 59, 999);
 
   const yesterdayQuery = useLeadsCount([
-    { type: "yesterday", attribute: "createdAt" }
+    {
+      type: "between",
+      attribute: "createdAt",
+      value: [
+        yesterdayStart.toISOString(),
+        yesterdayEnd.toISOString(),
+      ],
+      dateTime: true,
+    },
   ]);
 
   const interestedLastMonthQuery = useLeadsCount([
@@ -95,8 +112,15 @@ const Dashboard = () => {
 
   // leads
   const { data, isLoading } = useQuery({
-    queryKey: ["leads"],
-    queryFn: fetchLeads({ limit: 1000, page: 0 })
+    queryKey: ["dashboard-leads"],
+    queryFn: () => fetchLeads({ limit: 200, page: 1 }),
+
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   });
   const leads = data?.list || [];
 

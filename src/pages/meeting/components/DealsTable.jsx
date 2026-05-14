@@ -224,18 +224,14 @@ const DealsTable = ({
                     />
                   </td>
                   <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
-                    <div className="font-medium text-foreground truncate max-w-[280px]">
+                    <div className="font-medium text-foreground truncate max-w-[280px] capitalize">
                       {deal?.name}
                     </div>
                   </td>
                   <td className="px-4 py-4">
                     <div className="text-foreground">{deal?.parentName}</div>
                   </td>
-                  {/* <td className="px-4 py-4">
-                  <div className="font-medium text-foreground">
-                    {deal?.source}
-                  </div>
-                </td> */}
+
                   <td className="px-4 py-4">
                     <div
                       className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
@@ -270,9 +266,8 @@ const DealsTable = ({
                   </td>
                   <td className="px-4 py-4">
                     <div
-                      className={`flex items-center space-x-1 transition-opacity ${
-                        hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
-                      }`}
+                      className={`flex items-center space-x-1 transition-opacity ${hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
+                        }`}
                     >
                       <Button
                         variant="ghost"

@@ -35,7 +35,7 @@ const DealsFilters = ({
     { value: "Web Site", label: "Web Site" },
     { value: "Campaign", label: "Campaign" },
     { value: "Other", label: "Other" },
-    { value: "ACL", label: "ACL" },
+    { value: "ACL", label: "Aajneeti" },
   ];
   const statusOptions = [
     { value: "Broker", label: "Broker" },
@@ -226,11 +226,11 @@ const DealsFilters = ({
           onChange={(value) => handleFilterChange("status", value)}
         />
 
-        {/* <Input
+        <Input
           placeholder="Project Name"
-          value={filters?.projectName || ""}
-          onChange={(e) => handleFilterChange("projectName", e.target.value)}
-        /> */}
+          value={filters?.cProject || ""}
+          onChange={(e) => handleFilterChange("cProject", e.target.value)}
+        />
 
         <Select
           placeholder="Source"

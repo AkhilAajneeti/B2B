@@ -37,6 +37,7 @@ const TeamsTab = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [isShowDetails, setIsShowDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [teamLoading, setTeamLoading] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamUsers, setTeamUsers] = useState([]);
@@ -102,27 +103,10 @@ const TeamsTab = () => {
       setIsLoading(false);
     }
   };
-  const fetchuserById = async (member) => {
-    try {
-      setIsLoading(true);
-
-      const data = await fetchUserById(member.id);
-
-      console.log("Full User Data:", data); // 🔍 debug
-
-      setSelectedUser(data); // ✅ SET CORRECT STATE
-      setIsShowDetails(true); // ✅ open modal
-    } catch (err) {
-      console.error("failed to fetch data", err);
-      toast.error("Failed to load user details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleTeamClick = async (team) => {
     try {
-      setIsLoading(true);
+      setTeamLoading(true);
       setSelectedTeam(team);
 
       const data = await fetchTeamUser(team.id);
@@ -132,7 +116,7 @@ const TeamsTab = () => {
     } catch (err) {
       toast.error("Failed to load team users ❌");
     } finally {
-      setIsLoading(false);
+      setTeamLoading(false);
     }
   };
   useEffect(() => {
@@ -288,16 +272,16 @@ const TeamsTab = () => {
               </p>
             </div>
           </div>
-{canCreate('Team') && (
-          <Button
-            variant="default"
-            onClick={() => setIsInviteModalOpen(true)}
-            iconName="UserPlus"
-            iconPosition="left"
-          >
-            Create Team
-          </Button>
-        )}
+          {canCreate('Team') && (
+            <Button
+              variant="default"
+              onClick={() => setIsInviteModalOpen(true)}
+              iconName="UserPlus"
+              iconPosition="left"
+            >
+              Create Team
+            </Button>
+          )}
         </div>
 
         {/* Team Stats */}
@@ -323,7 +307,7 @@ const TeamsTab = () => {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
+              {isLoading  ? (
                 Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
               ) : !paginatedMembers?.length ? (
                 <tr>
@@ -382,7 +366,7 @@ const TeamsTab = () => {
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-{canEntityRecord('Team', 'edit', member) && (
+                        {canEntityRecord('Team', 'edit', member) ? (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -391,8 +375,17 @@ const TeamsTab = () => {
                           >
                             <Icon name="Edit" size={16} />
                           </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleTeamClick(member)}
+                            aria-label="view member"
+                          >
+                            <Icon name="Eye" size={16} />
+                          </Button>
                         )}
-{canEntityRecord('Team', 'delete', member) && (
+                        {canEntityRecord('Team', 'delete', member) && (
                           <Button
                             variant="ghost"
                             size="icon"

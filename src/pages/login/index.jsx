@@ -56,11 +56,10 @@ const LoginPage = () => {
             className="relative z-10 backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-10 max-w-md text-center"
           >
             <h1 className="text-4xl font-bold mb-4 tracking-tight">
-              Smarter CRM. Better Growth.
+              Manage Leads. Track Teams. Scale Faster.
             </h1>
             <p className="text-sm text-white/80 leading-relaxed">
-              Streamline your workflow, manage customer relationships, and
-              unlock data-driven insights — all in one place.
+              Build your sales pipeline with AAJneeti CRM. Track leads, automate follow-ups, monitor team performance, and access real-time insights - all from one intelligent dashboard.
             </p>
           </motion.div>
 

@@ -6,6 +6,12 @@ export const useLeads = ({ limit, page }) => {
         queryKey: ["leads", limit, page],
         queryFn: () => fetchLeads({ limit, page }),
         placeholderData: keepPreviousData,
+        staleTime: 1000 * 60 * 2,
+        gcTime: 1000 * 60 * 10,
+
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        refetchOnMount: false,
     })
 }
 
@@ -20,8 +26,14 @@ export const useLeadsCount = (filters) => {
 };
 export const useNewLeads = ({ limit, page, filters }) => {
     return useQuery({
-        queryKey: ["leads", limit, page, JSON.stringify(filters)],
+        queryKey: ["leads", limit, page, filters],
         queryFn: () => fetchNewLeads({ limit, page, filters }),
         placeholderData: keepPreviousData,
+        staleTime: 1000 * 60 * 2,
+        gcTime: 1000 * 60 * 10,
+        retry: 1,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        refetchOnMount: false,
     })
 }

@@ -8,11 +8,11 @@ import FilterControls from "./components/FilterControls";
 import ConversionFunnelChart from "./components/ConversionFunnelChart";
 import WinRateChart from "./components/WinRateChart";
 import TablePagination from "./components/TablePagination";
-import { fetchSources, fetchStatus } from "services/others.service";
-import Button from "components/ui/Button";
-import Icon from "../../components/AppIcon";
+// import { fetchSources, fetchStatus } from "services/others.service";
+// import Button from "components/ui/Button";
+// import Icon from "../../components/AppIcon";
 import DealsTable from "./components/DealsTable";
-import { fetchLeads } from "services/leads.service";
+// import { fetchLeads } from "services/leads.service";
 import { useNewLeads } from "hooks/useLeads";
 
 const Reports = () => {
@@ -40,20 +40,20 @@ const Reports = () => {
     closeDateTo: "",
   });
 
-  useEffect(() => {
-    const loadSource = async () => {
-      try {
-        const data = await fetchSources();
-        setSource(data.options || []);
-        // console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
+  // useEffect(() => {
+  //   const loadSource = async () => {
+  //     try {
+  //       const data = await fetchSources();
+  //       setSource(data.options || []);
+  //       // console.log(data.list);
+  //     } catch (error) {
+  //       console.log("failed to fetch data", error);
+  //     } finally {
 
-      }
-    };
-    loadSource();
-  }, []);
+  //     }
+  //   };
+  //   loadSource();
+  // }, []);
 
   const handleSidebarToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -101,19 +101,19 @@ const Reports = () => {
 
 
   // fetch status
-  useEffect(() => {
-    const loadStatus = async () => {
-      try {
-        const data = await fetchStatus();
-        setStatus(data.options || []);
-        console.log(data.list);
-      } catch (error) {
-        console.log("failed to fetch data", error);
-      } finally {
-      }
-    };
-    loadStatus();
-  }, []);
+  // useEffect(() => {
+  //   const loadStatus = async () => {
+  //     try {
+  //       const data = await fetchStatus();
+  //       setStatus(data.options || []);
+  //       console.log(data.list);
+  //     } catch (error) {
+  //       console.log("failed to fetch data", error);
+  //     } finally {
+  //     }
+  //   };
+  //   loadStatus();
+  // }, []);
 
   const { data: leadsData, isLoading } = useNewLeads({ limit, page, filters });
   const leads = leadsData?.list || [];
@@ -157,9 +157,9 @@ const Reports = () => {
   // };
 
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+  // const handlePageChange = (page) => {
+  //   setCurrentPage(page);
+  // };
 
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);

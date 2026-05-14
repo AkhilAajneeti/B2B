@@ -127,7 +127,7 @@ export const fetchLeads = async ({ limit = 100, page = 1 }) => {
   const offset = (page - 1) * limit; // ✅ FIX
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}`,
+    `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc`,
     {
       method: "GET",
       headers: {
@@ -223,6 +223,13 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
       type: "like",
       attribute: "name",
       value: `%${filters.search}%`,
+    });
+  }
+  if (filters.cProject) {
+    where.push({
+      type: "like",
+      attribute: "cProject",
+      value: `%${filters.cProject}%`,
     });
   }
 
