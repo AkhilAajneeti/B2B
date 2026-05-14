@@ -170,10 +170,10 @@ const DealsPage = () => {
     const exportData = rows.map((lead) => ({
       Name: lead?.name || "",
       Email: lead?.emailAddress || "",
-      Phone: lead?.phoneNumber || "",
+      Phone:  `"${lead?.phoneNumber || ""}"`,
       Status: lead?.status || "",
       Source: lead?.source || "",
-      "Project Name": lead?.ccProject || "",
+      "Project Name": lead?.cProject || lead?.cProjectName,
       "Assigned User": lead?.assignedUserName || "",
       "Next Contact": lead?.cNextContact || "",
       "Created At": lead?.createdAt || "",
@@ -344,7 +344,7 @@ const DealsPage = () => {
         return;
       }
 
-      const selectedRows = filteredAndSortedDeals.filter((deal) =>
+      const selectedRows = leads.filter((deal) =>
         selectedDeals.includes(deal.id),
       );
 
@@ -480,7 +480,7 @@ const DealsPage = () => {
                   className="linearbg-1 text-white hover:text-white"
                   variant="outline"
                   onClick={() =>
-                    exportLeadsToCSV(filteredAndSortedDeals, "all_leads")
+                    exportLeadsToCSV(leads, "all_leads")
                   }
                 >
                   <Icon name="Download" size={16} className="mr-2" />

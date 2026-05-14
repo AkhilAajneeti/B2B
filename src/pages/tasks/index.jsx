@@ -82,12 +82,9 @@ const TaskPage = () => {
     const exportData = rows.map((lead) => ({
       Name: lead?.name || "",
       Email: lead?.emailAddress || "",
-      Phone: lead?.phoneNumber || "",
       Status: lead?.status || "",
-      Source: lead?.source || "",
-      "Project Name": lead?.cProjectName || "",
+      "Parent Name": lead?.parentName || "",
       "Assigned User": lead?.assignedUserName || "",
-      "Next Contact": lead?.cNextContact || "",
       "Created At": lead?.createdAt || "",
     }));
 
@@ -215,12 +212,12 @@ const TaskPage = () => {
 
   const handleSelectAll = (isSelected) => {
     if (isSelected) {
-      const currentPageDeals = filteredAndSortedDeals
+      const currentPageDeals = leads
         ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
         ?.map((deal) => deal?.id);
       setSelectedDeals([...new Set([...selectedDeals, ...currentPageDeals])]);
     } else {
-      const currentPageDeals = filteredAndSortedDeals
+      const currentPageDeals = leads
         ?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
         ?.map((deal) => deal?.id);
       setSelectedDeals(
@@ -268,7 +265,7 @@ const TaskPage = () => {
         return;
       }
 
-      const selectedRows = filteredAndSortedDeals.filter((deal) =>
+      const selectedRows = leads.filter((deal) =>
         selectedDeals.includes(deal.id),
       );
 
@@ -344,7 +341,7 @@ const TaskPage = () => {
                 <Button
                   variant="outline"
                   onClick={() =>
-                    exportLeadsToCSV(filteredAndSortedDeals, "all_leads")
+                    exportLeadsToCSV(leads, "all_leads")
                   }
                 >
                   <Icon name="Download" size={16} className="mr-2" />
