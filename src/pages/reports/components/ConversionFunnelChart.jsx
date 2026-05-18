@@ -1,139 +1,475 @@
-import React from "react";
+import React, { memo, useState } from "react";
 import { motion } from "framer-motion";
-import { LineChart, Line, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  FunnelChart,
+  Funnel,
+  LabelList,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts";
+import Icon from "../../../components/AppIcon";
+import Button from "../../../components/ui/Button";
+import {
+  useFunnelAnalytics,
+  FUNNEL_STAGES,
+} from "../hooks/useFunnelAnalytics";
 
-const ConversionFunnelChart = ({ data, isLoading }) => {
-  // Small-multiple sparkline data for different reps/stages
-  const SparklineTooltip = ({ active, payload }) => {
-    if (active && payload?.length) {
-      return (
-        <div className="bg-popover border border-border rounded px-2 py-1 text-xs shadow-sm">
-          <span className="text-popover-foreground">
-            {payload?.[0]?.value}%
+// Resolve the human label for the currently selected month bucket.
+const monthLabelFor = (month) => {
+  const now = new Date();
+  const target =
+    month === "last"
+      ? new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+  return target.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+};
+
+// ---------------------------------------------------------------------------
+// Tooltip for the funnel
+// ---------------------------------------------------------------------------
+
+const FunnelTooltip = ({ active, payload }) => {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  if (!row) return null;
+
+  return (
+    <div className="rounded-xl border border-white/40 bg-white/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-3 text-xs min-w-[200px]">
+      <div className="flex items-center gap-2 mb-2">
+        <span
+          className="w-2.5 h-2.5 rounded-sm"
+          style={{
+            background: `linear-gradient(135deg, ${row.from}, ${row.to})`,
+          }}
+        />
+        <span className="font-semibold text-slate-900">{row.label}</span>
+      </div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-slate-500">Leads</span>
+          <span className="font-semibold text-slate-900 tabular-nums">
+            {row.count}
           </span>
         </div>
-      );
-    }
-    return null;
-  };
-  const emptyTrend = Array.from({ length: 8 }, (_, i) => ({
-    period: `W${i + 1}`,
-    value: 0,
-  }));
-  const SkeletonCard = () => (
-    <div className="bg-muted/20 rounded-lg p-4 animate-pulse">
-      <div className="flex justify-between mb-3">
-        <div className="space-y-2">
-          <div className="h-3 w-24 bg-gray-300/70 rounded"></div>
-          <div className="h-2 w-16 bg-gray-300/50 rounded"></div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-slate-500">% of top stage</span>
+          <span className="font-semibold text-slate-900 tabular-nums">
+            {row.conversion}%
+          </span>
         </div>
-        <div className="space-y-2 text-right">
-          <div className="h-4 w-10 bg-gray-300/70 rounded"></div>
-          <div className="h-2 w-8 bg-gray-300/50 rounded"></div>
-        </div>
-      </div>
-
-      <div className="h-12 bg-gray-300/50 rounded"></div>
-
-      <div className="flex justify-between mt-3">
-        <div className="h-2 w-16 bg-gray-300/50 rounded"></div>
-        <div className="h-2 w-20 bg-gray-300/50 rounded"></div>
+        {row.dropOff > 0 && (
+          <div className="flex items-center justify-between gap-4 pt-1 mt-1 border-t border-slate-200/70">
+            <span className="text-slate-500">Drop-off vs prev.</span>
+            <span className="font-semibold text-rose-600 tabular-nums">
+              −{row.dropOff}%
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
+};
+
+// ---------------------------------------------------------------------------
+// KPI strip above the funnel
+// ---------------------------------------------------------------------------
+
+const KpiTile = ({ icon, iconColor, label, value, accent }) => (
+  <div className="rounded-lg bg-slate-50/80 border border-slate-100 px-3 py-2 min-w-0">
+    <div className="flex items-center gap-1.5 mb-0.5">
+      <Icon name={icon} size={12} className={iconColor} />
+      <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider truncate">
+        {label}
+      </span>
+    </div>
+    <div
+      className={`text-base font-bold tabular-nums truncate ${
+        accent
+          ? "bg-gradient-to-br from-violet-600 to-fuchsia-600 bg-clip-text text-transparent"
+          : "text-slate-900"
+      }`}
+    >
+      {value}
+    </div>
+  </div>
+);
+
+// ---------------------------------------------------------------------------
+// Rep card
+// ---------------------------------------------------------------------------
+
+const initialsOf = (name = "") => name.trim().charAt(0).toUpperCase() || "?";
+
+const SparklineTooltip = ({ active, payload }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-popover border border-border rounded px-2 py-1 text-xs shadow-sm">
+      {payload[0]?.payload?.period}: <strong>{payload[0]?.value}</strong>
+    </div>
+  );
+};
+
+const RepCard = ({ rep, index }) => {
+  const hasTrend = rep.trend.some((t) => t.value > 0);
+  const growthBadge =
+    rep.growthDirection === "up"
+      ? { icon: "ArrowUpRight", className: "text-emerald-700 bg-emerald-50" }
+      : rep.growthDirection === "down"
+        ? { icon: "ArrowDownRight", className: "text-rose-700 bg-rose-50" }
+        : { icon: "Minus", className: "text-slate-500 bg-slate-100" };
+
+  // Width of the active-leads progress bar relative to total.
+  const activePct = rep.total > 0 ? Math.min(100, Math.round((rep.active / rep.total) * 100)) : 0;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="bg-card border border-border rounded-xl p-6"
+      transition={{ duration: 0.25, delay: 0.03 * index }}
+      className="group bg-card border border-border rounded-xl p-3.5 hover:shadow-[0_10px_30px_-10px_rgba(15,23,42,0.18)] hover:-translate-y-0.5 transition-all duration-300"
     >
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-foreground mb-1">
-          Conversion performance
-        </h3>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[400px] overflow-y-auto ">
-        {isLoading ? (
-          Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-        ) : !data?.length ? (
-          <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm col-span-3">
-            No conversion data available
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+            style={{ backgroundColor: rep.color }}
+          >
+            {initialsOf(rep.name)}
           </div>
-        ) : (
-          data?.map((rep, index) => {
-            const hasData = rep?.trend?.some((t) => t.value > 0);
-            return (
-              <motion.div
-                key={rep?.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.05 * index }}
-                className="bg-muted/20 rounded-lg p-4 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {rep?.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{rep?.role}</p>
-                  </div>
-                  <div className="text-right ml-2">
-                    <p className="text-lg font-semibold text-foreground">
-                      {rep?.current}%
-                    </p>
-                    <p
-                      className={`text-xs font-medium ${
-                        rep?.positive ? "text-green-600" : "text-red-500"
-                      }`}
-                    >
-                      {rep?.change}
-                    </p>
-                  </div>
-                </div>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-slate-900 truncate">
+              {rep.name}
+            </div>
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider">
+              {rep.total} leads
+            </div>
+          </div>
+        </div>
+        <span
+          className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${growthBadge.className}`}
+        >
+          <Icon name={growthBadge.icon} size={10} />
+          {rep.growthPct === 0
+            ? "0%"
+            : `${rep.growthPct > 0 ? "+" : ""}${rep.growthPct}%`}
+        </span>
+      </div>
 
-                <div className="h-12 -mx-1">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={hasData ? rep?.trend : emptyTrend}>
-                      <Tooltip content={<SparklineTooltip />} cursor={false} />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke={hasData ? rep?.color : "#d1d5db"}
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{
-                          r: 3,
-                          fill: hasData ? rep?.color : "#d1d5db",
-                          strokeWidth: 0,
-                        }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+      <div className="grid grid-cols-3 gap-1.5 mb-3 text-center">
+        <div className="rounded-md bg-emerald-50 py-1">
+          <div className="text-[9px] uppercase tracking-wider text-emerald-700 font-medium">
+            Won
+          </div>
+          <div className="text-sm font-bold text-emerald-700 tabular-nums">
+            {rep.purchased}
+          </div>
+        </div>
+        <div className="rounded-md bg-blue-50 py-1">
+          <div className="text-[9px] uppercase tracking-wider text-blue-700 font-medium">
+            Active
+          </div>
+          <div className="text-sm font-bold text-blue-700 tabular-nums">
+            {rep.active}
+          </div>
+        </div>
+        <div className="rounded-md bg-violet-50 py-1">
+          <div className="text-[9px] uppercase tracking-wider text-violet-700 font-medium">
+            Conv
+          </div>
+          <div className="text-sm font-bold text-violet-700 tabular-nums">
+            {rep.conversion}%
+          </div>
+        </div>
+      </div>
 
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: rep?.color }}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      8W Trend
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {rep?.trend?.[0]?.value}% →{" "}
-                    {rep?.trend?.[rep?.trend?.length - 1]?.value}%
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })
-        )}
+      {/* Active-share progress bar */}
+      <div className="mb-2">
+        <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+          <span>Active share</span>
+          <span className="font-medium text-slate-700 tabular-nums">{activePct}%</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${activePct}%` }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+          />
+        </div>
+      </div>
+
+      {/* 8-week trend sparkline */}
+      <div className="h-10 -mx-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={rep.trend}>
+            <Tooltip content={<SparklineTooltip />} cursor={false} />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={hasTrend ? rep.color : "#CBD5E1"}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 3, fill: rep.color, strokeWidth: 0 }}
+              animationDuration={600}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500">
+        <span>8-week activity</span>
+        <span>
+          {rep.trend[0]?.value} → {rep.trend[rep.trend.length - 1]?.value}
+        </span>
       </div>
     </motion.div>
   );
 };
 
-export default ConversionFunnelChart;
+// ---------------------------------------------------------------------------
+// Empty state
+// ---------------------------------------------------------------------------
+
+const EmptyState = ({ monthLabel }) => (
+  <div className="flex flex-col items-center justify-center gap-3 text-center px-4 py-10">
+    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center">
+      <Icon name="Filter" size={24} className="text-violet-500" />
+    </div>
+    <div>
+      <p className="text-sm font-semibold text-slate-700">
+        No funnel data for {monthLabel}
+      </p>
+      <p className="text-xs text-slate-500 mt-0.5 max-w-sm">
+        Try the other month, or check back once leads are created and moved through pipeline stages.
+      </p>
+    </div>
+  </div>
+);
+
+// ---------------------------------------------------------------------------
+// Skeleton
+// ---------------------------------------------------------------------------
+
+const Skeleton = () => (
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-3 animate-pulse">
+      {FUNNEL_STAGES.map((_, i) => (
+        <div key={i} className="h-10 bg-slate-200 rounded-lg" style={{ width: `${100 - i * 10}%` }} />
+      ))}
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-pulse">
+      {[1, 2, 3, 4].map((_, i) => (
+        <div key={i} className="h-44 bg-slate-200 rounded-xl" />
+      ))}
+    </div>
+  </div>
+);
+
+// ---------------------------------------------------------------------------
+
+const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
+  const [month, setMonth] = useState("current");
+
+  const {
+    funnel,
+    funnelStats,
+    reps,
+    isEmpty,
+    isLoading,
+    isFetching,
+  } = useFunnelAnalytics({ filters, month, enabled });
+
+  const { highestDropOff, bestConversion, overallConversion, totalLeads } = funnelStats;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="bg-card border border-border rounded-xl p-4 sm:p-6 hover:shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition-shadow duration-500"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5">
+        <div>
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <span className="bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 bg-clip-text text-transparent">
+              Sales Funnel & Rep Insights
+            </span>
+            {isFetching && !isLoading && (
+              <span className="relative inline-flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+            )}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {monthLabelFor(month)} · lead pipeline progression and per-rep performance
+          </p>
+        </div>
+
+        <div
+          className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
+          role="tablist"
+          aria-label="Month"
+        >
+          <Button
+            size="sm"
+            variant={month === "current" ? "default" : "ghost"}
+            onClick={() => setMonth("current")}
+            className="h-7 px-3 text-xs transition-all duration-200"
+            role="tab"
+            aria-selected={month === "current"}
+          >
+            This month
+          </Button>
+          <Button
+            size="sm"
+            variant={month === "last" ? "default" : "ghost"}
+            onClick={() => setMonth("last")}
+            className="h-7 px-3 text-xs transition-all duration-200"
+            role="tab"
+            aria-selected={month === "last"}
+          >
+            Last month
+          </Button>
+        </div>
+      </div>
+
+      {isLoading && isEmpty ? (
+        <Skeleton />
+      ) : isEmpty ? (
+        <EmptyState monthLabel={monthLabelFor(month)} />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Funnel — left 2/5 on wide screens */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="grid grid-cols-3 gap-2">
+              <KpiTile
+                icon="Users"
+                iconColor="text-slate-500"
+                label="In funnel"
+                value={totalLeads}
+              />
+              <KpiTile
+                icon="Target"
+                iconColor="text-violet-600"
+                label="Top → Won"
+                value={`${overallConversion}%`}
+                accent
+              />
+              <KpiTile
+                icon="AlertTriangle"
+                iconColor="text-rose-500"
+                label="Top drop"
+                value={highestDropOff ? `${highestDropOff.dropOff}%` : "—"}
+              />
+            </div>
+
+            <div className="h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <FunnelChart>
+                  <defs>
+                    {FUNNEL_STAGES.map((s, idx) => (
+                      <linearGradient
+                        key={s.key}
+                        id={`fnl-grad-${idx}`}
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="0"
+                      >
+                        <stop offset="0%" stopColor={s.from} stopOpacity={0.95} />
+                        <stop offset="100%" stopColor={s.to} stopOpacity={1} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <Tooltip content={<FunnelTooltip />} />
+                  <Funnel
+                    dataKey="count"
+                    data={funnel}
+                    isAnimationActive
+                    animationDuration={800}
+                    animationEasing="ease-out"
+                  >
+                    {funnel.map((_, idx) => (
+                      <Cell key={`cell-${idx}`} fill={`url(#fnl-grad-${idx})`} />
+                    ))}
+                    <LabelList
+                      position="right"
+                      dataKey="label"
+                      fill="#0F172A"
+                      stroke="none"
+                      fontSize={11}
+                      fontWeight={600}
+                    />
+                    <LabelList
+                      position="center"
+                      dataKey="count"
+                      fill="#FFFFFF"
+                      stroke="none"
+                      fontSize={12}
+                      fontWeight={700}
+                    />
+                  </Funnel>
+                </FunnelChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {bestConversion && (
+                <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                    <Icon name="TrendingUp" size={12} />
+                    Best conversion
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 mt-0.5 truncate">
+                    {bestConversion.label}
+                  </div>
+                </div>
+              )}
+              {highestDropOff && (
+                <div className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-rose-700 font-medium">
+                    <Icon name="AlertTriangle" size={12} />
+                    Highest drop
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 mt-0.5 truncate">
+                    {highestDropOff.label}{" "}
+                    <span className="text-xs font-medium text-rose-600">
+                      −{highestDropOff.dropOff}%
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Rep cards — right 3/5 on wide screens, scroll vertically */}
+          <div className="lg:col-span-3 min-w-0">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-slate-700">Sales Rep Insights</h4>
+              <span className="text-[10px] uppercase tracking-wider text-slate-500">
+                {reps.length} {reps.length === 1 ? "rep" : "reps"}
+              </span>
+            </div>
+            {reps.length === 0 ? (
+              <div className="text-sm text-slate-500 text-center py-10 border border-dashed border-slate-200 rounded-lg">
+                No assigned reps in this period
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                {reps.map((rep, idx) => (
+                  <RepCard key={rep.id} rep={rep} index={idx} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+export default memo(ConversionFunnelChart);

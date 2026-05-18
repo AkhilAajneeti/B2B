@@ -979,12 +979,32 @@ const DealDrawer = ({
                             </p>
                             {deal?.phoneNumber ? (
                               <a
-                                href={`https://wa.me/${deal.phoneNumber.replace(/\D/g, "")}`}
+                                href={`https://api.whatsapp.com/send/?phone=${deal.phoneNumber.replace(
+                                  /\D/g,
+                                  ""
+                                )}&text=${encodeURIComponent(
+                                  `Hello *${deal?.name || "Customer"}*,
+
+Thank you for contacting us for your lead generation requirements.
+
+I'm *${deal?.assignedUserName || "AAJneeti Team"
+                                  }* from *AAJneeti Advertising*.
+
+Let me know when you're available so that we can discuss this in more detail.
+
+*aajneeti.social*`
+                                )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary hover:underline"
+                                className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 hover:underline transition-colors"
                               >
-                                wa.me/{deal.phoneNumber.replace(/\D/g, "")}
+                                <img
+                                  src="/assets/whatsapp-logo.png"
+                                  alt="WhatsApp"
+                                  className="w-4 h-4 object-contain"
+                                />
+
+                                <span>{deal.phoneNumber}</span>
                               </a>
                             ) : (
                               <p className="text-foreground">None</p>

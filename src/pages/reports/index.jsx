@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet";
 import Header from "../../components/ui/Header";
@@ -9,11 +9,12 @@ import ConversionFunnelChart from "./components/ConversionFunnelChart";
 import WinRateChart from "./components/WinRateChart";
 import TablePagination from "./components/TablePagination";
 // import { fetchSources, fetchStatus } from "services/others.service";
-// import Button from "components/ui/Button";
-// import Icon from "../../components/AppIcon";
+import Button from "components/ui/Button";
+import Icon from "../../components/AppIcon";
 import DealsTable from "./components/DealsTable";
 // import { fetchLeads } from "services/leads.service";
 import { useNewLeads } from "hooks/useLeads";
+import { useFilteredMetrics } from "./hooks/useFilteredMetrics";
 
 const Reports = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -118,48 +119,48 @@ const Reports = () => {
   const { data: leadsData, isLoading } = useNewLeads({ limit, page, filters });
   const leads = leadsData?.list || [];
   const total = leadsData?.total || 0;
-  // const isWithinSelectedDays = (createdAt, selectedDay) => {
-  //   if (!selectedDay) return true;
+  const isWithinSelectedDays = (createdAt, selectedDay) => {
+    if (!selectedDay) return true;
 
-  //   const createdDate = new Date(createdAt?.replace(" ", "T"));
-  //   const today = new Date();
+    const createdDate = new Date(createdAt?.replace(" ", "T"));
+    const today = new Date();
 
-  //   // Reset time for accurate comparison
-  //   today.setHours(0, 0, 0, 0);
+    // Reset time for accurate comparison
+    today.setHours(0, 0, 0, 0);
 
-  //   const compareDate = new Date(createdDate);
-  //   compareDate.setHours(0, 0, 0, 0);
+    const compareDate = new Date(createdDate);
+    compareDate.setHours(0, 0, 0, 0);
 
-  //   const diffInDays = (today - compareDate) / (1000 * 60 * 60 * 24);
+    const diffInDays = (today - compareDate) / (1000 * 60 * 60 * 24);
 
-  //   switch (selectedDay) {
-  //     case "Today":
-  //       return diffInDays === 0;
+    switch (selectedDay) {
+      case "Today":
+        return diffInDays === 0;
 
-  //     case "Yesterday":
-  //       return diffInDays === 1;
+      case "Yesterday":
+        return diffInDays === 1;
 
-  //     case "Last 3 Days":
-  //       return diffInDays >= 0 && diffInDays <= 2;
+      case "Last 3 Days":
+        return diffInDays >= 0 && diffInDays <= 2;
 
-  //     case "Last 7 Days":
-  //       return diffInDays >= 0 && diffInDays <= 6;
+      case "Last 7 Days":
+        return diffInDays >= 0 && diffInDays <= 6;
 
-  //     case "Current Month":
-  //       return (
-  //         createdDate.getMonth() === today.getMonth() &&
-  //         createdDate.getFullYear() === today.getFullYear()
-  //       );
+      case "Current Month":
+        return (
+          createdDate.getMonth() === today.getMonth() &&
+          createdDate.getFullYear() === today.getFullYear()
+        );
 
-  //     default:
-  //       return true;
-  //   }
-  // };
+      default:
+        return true;
+    }
+  };
 
 
-  // const handlePageChange = (page) => {
-  //   setCurrentPage(page);
-  // };
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   const handleItemsPerPageChange = (newItemsPerPage) => {
     setItemsPerPage(newItemsPerPage);
@@ -176,335 +177,11 @@ const Reports = () => {
     }));
   };
 
-  const metricsData = useMemo(() => {
-    const countByStatus = (data, statusName) =>
-      data?.filter((deal) => deal?.status === statusName)?.length || 0;
-
-    const calculateGrowth = (current, previous) => {
-      if (!previous) return "0%";
-      const growth = ((current - previous) / previous) * 100;
-      return growth.toFixed(1) + "%";
-    };
-
-    // 🔥 IMPORTANT CHANGE
-    const currentMonthLeads = leads;
-    const lastMonthLeads = []; // ya same rakhna ho to leads
-
-    const buildMetric = (title, statusName, icon, iconColor, description) => {
-      const current = countByStatus(currentMonthLeads, statusName);
-      const previous = countByStatus(lastMonthLeads, statusName);
-      const growth = calculateGrowth(current, previous);
-
-      return {
-        title,
-        value: current,
-        change: growth,
-        changeType: parseFloat(growth) >= 0 ? "positive" : "negative",
-        icon,
-        iconColor,
-        description,
-      };
-    };
-
-    return [
-      buildMetric(
-        "Follow Up",
-        "Follow up",
-        "TrendingUp",
-        "bg-success",
-        "Leads awaiting action",
-      ),
-      buildMetric(
-        "Call Not Picked",
-        "Call Not Picked",
-        "PhoneOff",
-        "bg-primary",
-        "Leads not reachable on call",
-      ),
-      buildMetric(
-        "Call Later",
-        "Call Later",
-        "Clock",
-        "bg-purple-400",
-        "Leads scheduled for future follow-up",
-      ),
-      buildMetric(
-        "Not Interested",
-        "Not interested",
-        "XCircle",
-        "bg-red-400",
-        "Leads marked as not interested",
-      ),
-    ];
-  }, [leads]);
-
-  const repConversionData = useMemo(() => {
-    if (!leads?.length) return [];
-
-    const WON_STATUSES = ["Converted"];
-
-    const weeksToShow = 8;
-    const now = new Date();
+  // Filter-aware metrics — each card runs its own backend count against the
+  // full filtered dataset, so the numbers stay correct beyond page 1.
+  const { metricsData } = useFilteredMetrics({ filters });
 
 
-    const getWeekStart = (date) => {
-      const d = new Date(date);
-      const day = d.getDay();
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-      const weekStart = new Date(d.setDate(diff));
-      weekStart.setHours(0, 0, 0, 0);
-      return weekStart;
-    };
-
-
-    const weekStarts = [];
-    for (let i = weeksToShow - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(now.getDate() - i * 7);
-      weekStarts.push(getWeekStart(date));
-    }
-
-    const grouped = {};
-
-    leads.forEach((lead) => {
-      if (!lead.createdAt || !lead.assignedUserId) return;
-
-      const leadDate = new Date(lead.createdAt.replace(" ", "T"));
-      const repId = lead.assignedUserId;
-      const repName = lead.assignedUserName || "Unknown";
-
-      if (!grouped[repId]) {
-        grouped[repId] = {
-          id: repId,
-          name: repName,
-          role: "Sales Rep",
-          trend: weekStarts.map((weekStart) => ({
-            weekStart,
-            deals: 0,
-            won: 0,
-          })),
-        };
-      }
-
-      grouped[repId].trend.forEach((weekObj) => {
-        const weekEnd = new Date(weekObj.weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 6);
-        weekEnd.setHours(23, 59, 59, 999);
-
-        if (leadDate >= weekObj.weekStart && leadDate <= weekEnd) {
-
-          weekObj.deals += 1;
-
-          if (WON_STATUSES.includes(lead.status)) {
-            weekObj.won += 1;
-          }
-        }
-      });
-    });
-
-    return Object.values(grouped).map((rep, index) => {
-      const trend = rep.trend.map((week, i) => ({
-        period: `W${i + 1}`,
-        value: week.deals
-          ? Number(((week.won / week.deals) * 100).toFixed(1))
-          : 0,
-      }));
-
-
-      const last = trend[trend.length - 1]?.value || 0;
-      const prev = trend[trend.length - 2]?.value || 0;
-      const growth = Number((last - prev).toFixed(1));
-
-
-      const average = trend.reduce((sum, t) => sum + t.value, 0) / trend.length;
-
-      return {
-        id: rep.id,
-        name: rep.name,
-        role: rep.role,
-        trend,
-        current: Number(average.toFixed(1)), // shows 8-week avg
-        change: `${growth >= 0 ? "+" : ""}${growth}%`,
-        positive: growth >= 0,
-        color: [
-          "#10B981",
-          "#8B5CF6",
-          "#06B6D4",
-          "#F59E0B",
-          "#EC4899",
-          "#84CC16",
-        ][index % 6],
-      };
-    });
-  }, [leads]);
-
-  const monthlyWinRateData = useMemo(() => {
-    if (!leads?.length) return [];
-
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    // 🔥 Step 1: Pre-create all 12 months with 0 values
-    const grouped = months.reduce((acc, month) => {
-      acc[month] = {
-        month,
-        deals: 0,
-        won: 0,
-        lost: 0,
-        winRate: 0,
-      };
-      return acc;
-    }, {});
-
-    // 🔥 Step 2: Fill actual data
-    leads.forEach((lead) => {
-      if (!lead.createdAt) return;
-
-      const date = new Date(lead.createdAt.replace(" ", "T"));
-      const monthName = months[date.getMonth()];
-
-      grouped[monthName].deals += 1;
-
-      if (lead.status === "Converted") {
-        grouped[monthName].won += 1;
-      }
-
-      if (["Not Interested", "Dead"].includes(lead.status)) {
-        grouped[monthName].lost += 1;
-      }
-    });
-
-    // 🔥 Step 3: Calculate winRate for ALL months
-    return months.map((month) => {
-      const item = grouped[month];
-
-      return {
-        ...item,
-        winRate: item.deals
-          ? Number(((item.won / item.deals) * 100).toFixed(1))
-          : 0,
-      };
-    });
-  }, [leads]);
-
-  // const pieData = useMemo(() => {
-  //   const won = leads.filter(
-  //     (l) => l.status === "Interested",
-  //   ).length;
-  //   const newLead = leads.filter(
-  //     (l) => l.status === "New",
-  //   ).length;
-  //   const Sitevisit = leads.filter(
-  //     (l) => l.status === "Site Visit Scheduled",
-  //   ).length;
-
-  //   const lost = leads.filter((l) =>
-  //     ["Not Interested", "Dead", "Low Budget"].includes(l.status),
-  //   ).length;
-
-  //   return [
-  //     { name: "Interested", value: won, fill: "#10B981" },
-  //     { name: "Lost", value: lost, fill: "#EF4444" },
-  //     { name: "New Leads", value: newLead, fill: "#a3d9a5" },
-  //     { name: "Site Visit Scheduled", value: Sitevisit, fill: "#06B6D4" },
-  //   ];
-  // }, [leads]);
-
-  // const monthlyInsights = useMemo(() => {
-  //   if (!leads?.length) return null;
-
-  //   const WON_STATUSES = ["Converted"];
-
-  //   const monthly = {};
-
-  //   leads.forEach((lead) => {
-  //     if (!lead.createdAt) return;
-
-  //     const date = new Date(lead.createdAt.replace(" ", "T"));
-  //     const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-
-  //     if (!monthly[monthKey]) {
-  //       monthly[monthKey] = {
-  //         month: date.toLocaleString("default", {
-  //           month: "long",
-  //           year: "numeric",
-  //         }),
-  //         total: 0,
-  //         won: 0,
-  //       };
-  //     }
-
-  //     monthly[monthKey].total += 1;
-
-  //     if (WON_STATUSES.includes(lead.status)) {
-  //       monthly[monthKey].won += 1;
-  //     }
-  //   });
-
-  //   const results = Object.values(monthly).map((m) => ({
-  //     ...m,
-  //     winRate: m.total ? Number(((m.won / m.total) * 100).toFixed(1)) : 0,
-  //   }));
-
-  //   if (!results.length) return null;
-
-  //   const bestMonth = results.reduce((prev, current) =>
-  //     current.winRate > prev.winRate ? current : prev,
-  //   );
-
-  //   const totalDeals = results.reduce((sum, m) => sum + m.total, 0);
-  //   const totalWon = results.reduce((sum, m) => sum + m.won, 0);
-
-  //   const overallWinRate = totalDeals
-  //     ? Number(((totalWon / totalDeals) * 100).toFixed(1))
-  //     : 0;
-
-  //   return {
-  //     bestMonth,
-  //     overallWinRate,
-  //     totalDeals,
-  //   };
-  // }, [leads]);
-  // const summary = useMemo(() => {
-  //   if (!monthlyWinRateData?.length) return null;
-
-  //   let totalWon = 0;
-  //   let totalLost = 0;
-
-  //   monthlyWinRateData.forEach((month) => {
-  //     totalWon += month.won;
-  //     totalLost += month.lost;
-  //   });
-
-  //   const totalDeals = totalWon + totalLost;
-
-  //   const overallWinRate = totalDeals
-  //     ? Number(((totalWon / totalDeals) * 100).toFixed(1))
-  //     : 0;
-
-  //   const bestMonth = monthlyWinRateData.reduce((prev, current) =>
-  //     current.winRate > prev.winRate ? current : prev,
-  //   );
-
-  //   return {
-  //     totalWon,
-  //     totalLost,
-  //     overallWinRate,
-  //     bestMonth,
-  //   };
-  // }, [monthlyWinRateData]);
   return (
     <>
       <Helmet>
@@ -578,13 +255,13 @@ const Reports = () => {
               source={source}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              dealCount={leads?.length}
+              dealCount={total}
               selectedCount={selectedDeals?.length}
               toggleAnalytics={() => setShowAnalytics((prev) => !prev)}
             />
 
             {/* Charts Grid */}
-            {/* {showAnalytics && (
+            {showAnalytics && (
               <>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold">Report Analytics</h2>
@@ -597,22 +274,17 @@ const Reports = () => {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-                
-                  <ConversionFunnelChart
-                    data={repConversionData}
-                    isLoading={isLoading}
-                  />
-
-               
-                  <WinRateChart
-                    data={monthlyWinRateData}
-                    pieData={pieData}
-                    summary={summary}
-                  />
+                {/*
+                  Charts are intentionally NOT given `filters` — they fetch the
+                  full year's dataset independently. The filter bar above drives
+                  the table only. This keeps the two flows fully decoupled.
+                */}
+                <div className="grid grid-cols-1 gap-6 mb-8">
+                  <ConversionFunnelChart enabled={showAnalytics} />
+                  <WinRateChart enabled={showAnalytics} />
                 </div>
               </>
-            )} */}
+            )}
             {/* table */}
             <DealsTable
               deals={leads}

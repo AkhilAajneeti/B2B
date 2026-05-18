@@ -478,7 +478,7 @@ const DealsPage = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Button
-                  className="linearbg-1 text-white hover:text-white"
+                  className="linearbg-1 text-white hover:text-white hidden"
                   variant="outline"
                   onClick={() =>
                     exportLeadsToCSV(leads, "all_leads")
@@ -524,15 +524,15 @@ const DealsPage = () => {
                     <Icon name="X" size={20} />
                   </Button>
                 </div>
-                {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <IndustryChart leads={filteredAndSortedDeals} />
+                <div className="grid grid-cols-1 gap-5">
 
-                  <MultiLineChart leads={filteredAndSortedDeals} />
+                  {/* <StatusChart filters={filters} enabled={showAnalytics} /> */}
 
-                  <StatusChart leads={filteredAndSortedDeals} />
-
-                  <AssignedUserChart leads={filteredAndSortedDeals} />
-                </div> */}
+                  <AssignedUserChart
+                    filters={filters}
+                    enabled={showAnalytics}
+                  />
+                </div>
               </div>
             )}
 

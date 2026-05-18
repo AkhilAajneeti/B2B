@@ -339,6 +339,7 @@ const TaskPage = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Button
+                className="hidden"
                   variant="outline"
                   onClick={() =>
                     exportLeadsToCSV(leads, "all_leads")

@@ -314,7 +314,7 @@ const DealsTable = ({
                   </td>
                   <td className="px-4 py-4">
                     <div className="text-foreground">{deal?.cProject || deal?.cProjectName || "None"}</div>
-                    
+
                   </td>
                   <td className="px-4 py-4">
                     <div className={`font-medium flex justify-center items-center space-x-2 rounded-full ${getSourceColor(deal?.source)}`}>
@@ -355,7 +355,7 @@ const DealsTable = ({
                   </td>
                   <td className="px-4 py-4">
                     <div
-                      className={`flex items-center space-x-1 transition-opacity ${hoveredRow === deal?.id ? "opacity-100" : "opacity-0"
+                      className={`flex items-center space-x-1 transition-opacity ${hoveredRow === deal?.id ? "opacity-100" : "opacity-50"
                         }`}
                     >
                       <Button
@@ -365,6 +365,29 @@ const DealsTable = ({
                         className="h-8 w-8"
                       >
                         <Icon name="Edit" size={14} />
+                      </Button>
+                      {/* whats app button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+
+                          const message = `Hello *${deal?.name || "Customer"}*,Thank you for contacting us for your lead generation requirements.I'm *${deal?.assignedUserName || "AAJneeti Team"}* from *AAJneeti Advertising*.Let me know when you're available so that we can discuss this in more detail.*aajneeti.social*`;
+
+                          const whatsappUrl = `https://api.whatsapp.com/send/?phone=${deal?.phoneNumber}&text=${encodeURIComponent(
+                            message
+                          )}`;
+
+                          window.open(whatsappUrl, "_blank");
+                        }}
+                        className="h-8 w-8 rounded-full hover:bg-green-100 transition-all duration-200"
+                      >
+                        <img
+                          src="/assets/whatsapp-logo.png"
+                          alt="WhatsApp"
+                          className="w-5 h-5 object-contain"
+                        />
                       </Button>
 
                       {canDelete(deal) && (<Button

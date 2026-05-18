@@ -21,7 +21,7 @@ const DealsFilters = ({
 
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
-    { value: "export", label: "Export Selected", icon: "Download" },
+    // { value: "export", label: "Export Selected", icon: "Download" },
     { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
 
@@ -292,12 +292,12 @@ const DealsFilters = ({
       {/* Advanced Filters Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 pt-4 border-t border-border gap-3">
 
-        {/* <RoleGuard allowedRoles={["admin", "manager"]}>
+        <RoleGuard allowedRoles={["admin", "regular"]}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
             <Icon name="Plus" size={16} className="mr-2" />
             Anaylze By Chart
           </Button>
-        </RoleGuard> */}
+        </RoleGuard>
       </div>
     </div>
   );

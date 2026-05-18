@@ -46,6 +46,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: "ListChecks",
 
     },
+        {
+      label: "Pipeline",
+      path: "/pipeline",
+      icon: "Filter",
+      badge: null,
+    },
     {
       label: "Meeting",
       path: "/meeting",
@@ -64,7 +70,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: "Calendar",
       badge: null,
     },
-    {
+    { 
       label: "Reports",
       path: "/reports",
       icon: "BarChart3",
@@ -76,12 +82,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: "Settings",
       badge: null,
     },
-    // {
-    //   label: "Pipeline",
-    //   path: "/pipeline",
-    //   icon: "Filter",
-    //   badge: null,
-    // },
+
     // {  
     //   label: "Integrations",
     //   path: "/integrations",

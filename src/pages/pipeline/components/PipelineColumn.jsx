@@ -1,98 +1,76 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { memo } from "react";
 import Icon from "../../../components/AppIcon";
 import DealCard from "./DealCard";
 import { Draggable } from "@hello-pangea/dnd";
+import { URGENCY_STYLES } from "../utils/pipelineConstants";
+import { formatCurrency } from "../utils/pipelineHelpers";
 
-const PipelineColumn = ({
-  stage,
-  deals,
-  onDealMove,
-  onEditDeal,
-  onDeleteDeal,
-  onCloneDeal,
-  onViewHistory,
-}) => {
-  const [isOver, setIsOver] = useState(false);
-  const getStageColor = (stageName) => {
-    const colors = {
-      New: "bg-blue-100 text-blue-800 border-blue-200",
-      Qualified: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      Proposal: "bg-purple-100 text-purple-800 border-purple-200",
-      Won: "bg-green-100 text-green-800 border-green-200",
-      Lost: "bg-red-100 text-red-800 border-red-200",
-    };
-    return colors?.[stageName] || "bg-gray-100 text-gray-800 border-gray-200";
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsOver(false);
-
-    const dealId = e.dataTransfer.getData("text/plain");
-    if (!dealId) return;
-
-    onDealMove(dealId, stage.id);
-  };
+/**
+ * PipelineColumn - presentation only.
+ *
+ * Renders one kanban column for a category. Colour + header styling come from
+ * the static URGENCY_STYLES map keyed by the column id, so there is no styling
+ * logic computed here.
+ */
+const PipelineColumn = ({ column, deals = [], onDeleteDeal, onViewHistory }) => {
+  const urgency = URGENCY_STYLES[column.id] || {};
+  const totalValue = deals.reduce((sum, deal) => sum + (deal.value || 0), 0);
 
   return (
     <div className="flex flex-col h-full bg-muted/30 rounded-xl border border-border">
-      {/* Column Header */}
+      {/* Column header */}
       <div className="p-4 border-b border-border bg-background/50">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
             <span
-              className={`px-3 py-1.5 text-sm font-semibold rounded-full border ${getStageColor(stage?.name)}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border ${
+                urgency.columnHeader || "bg-gray-100 text-gray-800 border-gray-200"
+              }`}
             >
-              {stage?.name}
+              <Icon name={column.icon} size={14} />
+              {column.name}
             </span>
             <span className="text-sm font-medium text-foreground bg-muted px-2 py-1 rounded-full">
-              {deals?.length} deal{deals?.length !== 1 ? "s" : ""}
+              {deals.length}
             </span>
           </div>
         </div>
+        <p className="text-xs text-muted-foreground">{column.description}</p>
+        {totalValue > 0 && (
+          <p className="text-sm font-semibold text-foreground mt-1">
+            {formatCurrency(totalValue)}
+          </p>
+        )}
       </div>
-      {/* Deals Container */}
-      <div
-        className={`flex-1 p-3 space-y-3 overflow-y-auto max-h-[100vh] transition-all
-        ${isOver ? "bg-primary/10 border-2 border-primary border-dashed" : ""} `}
-        // onDragOver={handleDragOver}
-        // onDragLeave={handleDragLeave}
-        // onDrop={handleDrop}
-      >
-        {deals?.length === 0 ? (
+
+      {/* Deals */}
+      <div className="flex-1 p-3 space-y-3 overflow-y-auto max-h-[100vh] transition-colors">
+        {deals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Icon name="Target" size={28} className="text-muted-foreground" />
+            <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center mb-3">
+              <Icon
+                name={column.icon}
+                size={24}
+                className="text-muted-foreground"
+              />
             </div>
-            <p className="text-base font-medium text-foreground mb-2">
-              No deals in {stage?.name}
+            <p className="text-sm font-medium text-foreground">
+              No leads in {column.name}
             </p>
-            
           </div>
         ) : (
-          deals?.map((deal, index) => (
-            <Draggable key={deal.id} draggableId={deal.id} index={index}>
-              {(provided) => (
+          deals.map((deal, index) => (
+            <Draggable key={deal.id} draggableId={String(deal.id)} index={index}>
+              {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.draggableProps}
                   {...provided.dragHandleProps}
+                  className={snapshot.isDragging ? "opacity-90" : ""}
                 >
                   <DealCard
                     deal={deal}
-                    onEdit={() => onEditDeal(deal)}
-                    onDelete={() => onDeleteDeal(deal.id)}
-                    onClone={() => onCloneDeal(deal)}
+                    onDelete={onDeleteDeal}
                     onViewHistory={onViewHistory}
                   />
                 </div>
@@ -105,4 +83,5 @@ const PipelineColumn = ({
   );
 };
 
-export default PipelineColumn;
+// Memoized: a column re-renders only when its own deals array changes.
+export default memo(PipelineColumn);

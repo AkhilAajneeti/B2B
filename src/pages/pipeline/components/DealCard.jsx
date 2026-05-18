@@ -1,155 +1,145 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
+import { formatShortDate } from "../utils/dateHelpers";
+import { formatCurrency } from "../utils/pipelineHelpers";
 
-const DealCard = ({ deal = {}, onEdit, onDelete, onClone, onViewHistory }) => {
+/**
+ * DealCard - presentation only.
+ *
+ * Receives a fully enriched deal (category, urgency styling, relative date
+ * labels are all pre-computed in the service/helpers layer). The card just
+ * renders them, so there is no business logic here.
+ */
+
+const PRIORITY_STYLES = {
+  High: "bg-red-100 text-red-700",
+  Medium: "bg-amber-100 text-amber-700",
+  Low: "bg-gray-100 text-gray-600",
+};
+
+const getStatusColor = (status = "") => {
+  const value = status.toLowerCase();
+  if (!value) return "bg-gray-100 text-gray-700";
+  if (value.includes("budget") || value.includes("payment"))
+    return "bg-red-100 text-red-700";
+  if (value.includes("interested") || value.includes("qualified"))
+    return "bg-green-100 text-green-700";
+  if (value.includes("follow")) return "bg-yellow-100 text-yellow-700";
+  return "bg-blue-100 text-blue-700";
+};
+
+const DealCard = ({ deal = {}, onDelete, onViewHistory }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "No Date";
-    return new Date(dateString.replace(" ", "T")).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const getStatusColor = (status) => {
-    if (!status) return "bg-gray-100 text-gray-700";
-
-    if (status.toLowerCase().includes("budget"))
-      return "bg-red-100 text-red-700";
-
-    if (status.toLowerCase().includes("interested"))
-      return "bg-green-100 text-green-700";
-
-    if (status.toLowerCase().includes("follow"))
-      return "bg-yellow-100 text-yellow-700";
-
-    return "bg-blue-100 text-blue-700";
-  };
-
-  const handleDragStart = (e) => {
-    setIsDragging(true);
-    e.dataTransfer.setData("text/plain", deal?.id);
-  };
-
-  const handleDragEnd = async (result) => {
-    const { destination, source, draggableId } = result;
-
-    if (!destination) return;
-
-    // SAME COLUMN REORDER
-    if (destination.droppableId === source.droppableId) {
-      const columnDeals = deals.filter(
-        (deal) => deal.stage === source.droppableId,
-      );
-
-      const movedDeal = columnDeals[source.index];
-
-      const newColumnDeals = Array.from(columnDeals);
-      newColumnDeals.splice(source.index, 1);
-      newColumnDeals.splice(destination.index, 0, movedDeal);
-
-      const otherDeals = deals.filter(
-        (deal) => deal.stage !== source.droppableId,
-      );
-
-      setDeals([...otherDeals, ...newColumnDeals]);
-      return;
-    }
-
-    // DIFFERENT COLUMN MOVE
-    setDeals((prev) =>
-      prev.map((deal) =>
-        deal.id === draggableId
-          ? { ...deal, stage: destination.droppableId }
-          : deal,
-      ),
-    );
-
-    toast.success("Stage updated successfully");
-  };
+  const urgency = deal.urgency || {};
 
   return (
     <motion.div
-      className={`relative bg-card border border-border rounded-lg p-4 cursor-move transition-all duration-200 hover:shadow-md ${
-        isDragging ? "opacity-50 scale-105" : ""
-      }`}
-      draggable
-      // onDragStart={handleDragStart}
-      // onDragEnd={handleDragEnd}
+      layout
+      whileHover={{ y: -2 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ y: -2 }}
-      layout
+      className={`relative bg-card border border-border rounded-lg p-4 cursor-grab active:cursor-grabbing transition-shadow duration-200 hover:shadow-md ${
+        urgency.card || ""
+      }`}
     >
-      {/* Action Buttons */}
+      {/* Hover actions */}
       {isHovered && (
         <div className="absolute top-2 right-2 flex space-x-1 bg-white border rounded-md shadow p-1 z-10">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onViewHistory(deal.id)}
+            onClick={() => onViewHistory?.(deal.id)}
+            aria-label="View history"
           >
-            <Icon name="Edit2" size={14} />
+            <Icon name="History" size={14} />
           </Button>
-          {/* <Button variant="ghost" size="icon" onClick={onClone}>
-            <Icon name="Copy" size={14} />
-          </Button> */}
-          <Button variant="ghost" size="icon" onClick={onDelete}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete?.(deal.id)}
+            aria-label="Delete lead"
+          >
             <Icon name="Trash2" size={14} />
           </Button>
         </div>
       )}
 
       <div className="space-y-3">
-        {/* Lead Name */}
-        <div>
-          <h3 className="font-semibold text-base">
-            {deal?.title || deal?.firstName}
+        {/* Lead / company name */}
+        <div className="pr-12">
+          <h3 className="font-semibold text-base text-card-foreground leading-tight">
+            {deal.title}
           </h3>
-          <p className="text-sm text-muted-foreground">
-            {deal?.cProject || "No Project"}
+          <p className="text-sm text-muted-foreground truncate">
+            {deal.company || deal.project || "No Company"}
           </p>
         </div>
 
-        {/* Status Badge */}
-        <div>
+        {/* Urgency + status badges */}
+        <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-              deal?.status,
-            )}`}
+            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${
+              urgency.badge || "bg-gray-100 text-gray-700"
+            }`}
           >
-            {deal?.status}
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${urgency.dot || "bg-gray-400"}`}
+            />
+            {deal.nextContactLabel}
+          </span>
+          {deal.status && (
+            <span
+              className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                deal.status,
+              )}`}
+            >
+              {deal.status}
+            </span>
+          )}
+        </div>
+
+        {/* Next follow-up */}
+        <div className="flex items-center justify-between text-sm">
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <Icon name="CalendarClock" size={14} />
+            Next follow-up
+          </span>
+          <span className={`font-medium ${urgency.text || "text-foreground"}`}>
+            {formatShortDate(deal.nextContactDate)}
           </span>
         </div>
 
-        {/* Source */}
-        <div className="flex items-center space-x-2 text-sm">
-          <Icon name="Globe" size={14} />
-          <span>{deal?.source}</span>
+        {/* Deal value + priority */}
+        <div className="flex items-center justify-between text-sm">
+          
+          <span
+            className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+              PRIORITY_STYLES[deal.priority] || PRIORITY_STYLES.Low
+            }`}
+          >
+            {deal.priority} Priority
+          </span>
         </div>
 
-        {/* Assigned User */}
-        <div className="flex items-center space-x-2 text-sm">
-          <Icon name="User" size={14} />
-          <span>{deal?.owner?.name}</span>
+        {/* Assigned user + last activity */}
+        <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-2">
+          <span className="flex items-center gap-2 truncate">
+            <Icon name="User" size={14} />
+            {deal.owner?.name || "Unassigned"}
+          </span>
+          <span className="flex items-center gap-1 whitespace-nowrap">
+            <Icon name="Clock" size={13} />
+            {deal.lastActivityLabel}
+          </span>
         </div>
 
-        {/* Next Contact */}
-        <div className="flex items-center space-x-2 text-sm">
-          <Icon name="Calendar" size={14} />
-          <span>{formatDate(deal?.cNextContact)}</span>
-        </div>
-
-        {/* Site Visit */}
-        {deal?.cSiteVisitAt && (
-          <div className="flex items-center space-x-2 text-sm text-green-600">
+        {/* Site visit (when present) */}
+        {deal.siteVisitAt && (
+          <div className="flex items-center gap-2 text-sm text-green-600">
             <Icon name="CheckCircle" size={14} />
-            <span>Site Visit: {formatDate(deal?.cSiteVisitAt)}</span>
+            <span>Site Visit: {formatShortDate(deal.siteVisitAt)}</span>
           </div>
         )}
       </div>
@@ -157,4 +147,5 @@ const DealCard = ({ deal = {}, onEdit, onDelete, onClone, onViewHistory }) => {
   );
 };
 
-export default DealCard;
+// Memoized: a card only re-renders when its own deal object changes.
+export default memo(DealCard);
