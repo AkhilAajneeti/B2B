@@ -26,9 +26,11 @@ const SEGMENTS = [
 const ROW_HEIGHT = 48;
 const VISIBLE_ROWS = 7;
 const Y_AXIS_WIDTH = 180;
-// Floor for the chart area — keeps a single-rep bar from collapsing to invisible
-// once X-axis + legend eat into the space.
-const MIN_CHART_HEIGHT = 220;
+// Fixed vertical overhead inside the chart (X-axis + legend + paddings).
+// Used so the chart hugs its content even with a single row.
+const CHART_CHROME = 60;
+// Hard floor — just enough to render one bar, axis ticks, and legend cleanly.
+const MIN_CHART_HEIGHT = 140;
 // Cap on bar segment thickness — prevents a one-rep view from rendering a huge chunky bar.
 const MAX_BAR_SIZE = 36;
 
@@ -293,21 +295,29 @@ const AssignedUserChartComponent = ({ filters = {}, enabled = true }) => {
     [sortedRows],
   );
 
-  const chartHeight = Math.max(sortedRows.length * ROW_HEIGHT, MIN_CHART_HEIGHT);
-  const scrollerStyle = { maxHeight: VISIBLE_ROWS * ROW_HEIGHT + 12 };
+  // Hug the content: rows × ROW_HEIGHT for the bars + fixed CHART_CHROME for
+  // axis & legend. A small MIN_CHART_HEIGHT keeps a single-row view legible.
+  // `chartHeight` is a FLOOR — the chart never gets smaller than this. When the
+  // card is stretched taller by its grid sibling, `min-h-full` on the inner div
+  // lets the chart fill the extra space. When the row count would exceed the
+  // available area, the wrapper's `overflow-y-auto` kicks in.
+  const chartHeight = Math.max(
+    sortedRows.length * ROW_HEIGHT + CHART_CHROME,
+    MIN_CHART_HEIGHT,
+  );
 
   // Re-key the bars on range change so animations replay when the user toggles.
   const chartKey = `${range}:${onDate}:${sortedRows.length}`;
 
   return (
     <motion.div
-      className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-elevation-1 hover:shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition-shadow duration-500"
+      className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-elevation-1 hover:shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition-shadow duration-500 flex flex-col h-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5 shrink-0">
         <div>
           <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
             <span className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
@@ -355,11 +365,11 @@ const AssignedUserChartComponent = ({ filters = {}, enabled = true }) => {
       </div>
 
       {isLoading && sortedRows.length === 0 ? (
-        <div className="h-[320px]">
+        <div className="flex-1 min-h-[200px]">
           <Skeleton />
         </div>
       ) : sortedRows.length === 0 ? (
-        <div className="h-[320px] flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+        <div className="flex-1 min-h-[200px] flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
           <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-2xl">
             {range === "on" && !onDate ? "📅" : "∅"}
           </div>
@@ -374,10 +384,9 @@ const AssignedUserChartComponent = ({ filters = {}, enabled = true }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
-            className="overflow-y-auto pr-1 -mr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full"
-            style={scrollerStyle}
+            className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full"
           >
-            <div style={{ height: chartHeight }}>
+            <div className="min-h-full" style={{ height: chartHeight }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={sortedRows}
@@ -449,8 +458,9 @@ const AssignedUserChartComponent = ({ filters = {}, enabled = true }) => {
             </div>
           </motion.div>
 
-          {/* Footer with stat tiles */}
-          <div className="mt-5 pt-4 border-t border-border grid grid-cols-2 gap-3">
+          {/* Footer with stat tiles — `shrink-0` anchors it at the bottom even
+              when the chart area above flex-grows to fill a stretched card. */}
+          <div className="mt-5 pt-4 border-t border-border grid grid-cols-2 gap-3 shrink-0">
             <div className="rounded-lg bg-slate-50 px-3 py-2">
               <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
                 Active reps

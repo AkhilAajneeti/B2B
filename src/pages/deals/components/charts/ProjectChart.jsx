@@ -129,13 +129,13 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
 
   return (
     <motion.div
-      className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-elevation-1 hover:shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition-shadow duration-500"
+      className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-elevation-1 hover:shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition-shadow duration-500 flex flex-col h-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="flex items-start justify-between gap-3 mb-4 shrink-0">
         <div>
           <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
             <span className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
@@ -154,8 +154,10 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
         </div>
       </div>
 
-      {/* Body */}
-      <div className="h-[300px]">
+      {/* Donut body — flex-1 so it absorbs any extra height when the card is
+          stretched to match a taller sibling card. Minimum keeps a single-data
+          view legible. */}
+      <div className="flex-1 min-h-[260px]">
         {isLoading && isEmpty ? (
           <Skeleton />
         ) : isEmpty ? (
@@ -194,7 +196,7 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
 
       {/* Custom legend (top projects with bars) — more useful than Recharts default */}
       {!isEmpty && (
-        <div className="mt-3 space-y-1.5 max-h-[140px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div className="mt-3 space-y-1.5 max-h-[140px] overflow-y-auto pr-1 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
           {pieData.map((p) => (
             <div key={p.name} className="flex items-center gap-2 text-xs">
               <span
@@ -224,9 +226,10 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
         </div>
       )}
 
-      {/* Footer KPI strip */}
+      {/* Footer KPI strip — pinned to the bottom of the card via flex-col + shrink-0,
+          so it lines up with the AssignedUserChart's footer regardless of card height. */}
       {!isEmpty && (
-        <div className="mt-4 pt-3 border-t border-border grid grid-cols-2 gap-3">
+        <div className="mt-4 pt-3 border-t border-border grid grid-cols-2 gap-3 shrink-0">
           <div className="rounded-lg bg-slate-50 px-3 py-2">
             <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
               Projects
