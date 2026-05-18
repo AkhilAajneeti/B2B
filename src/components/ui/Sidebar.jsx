@@ -82,6 +82,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: "Settings",
       badge: null,
     },
+    {
+      label: "Help Center",
+      path: "/help",
+      icon: "NotebookText",
+      badge: null,
+    },
 
     // {  
     //   label: "Integrations",

@@ -22,6 +22,7 @@ import CallPage from "./pages/call";
 import Pipeline from "pages/pipeline";
 import ProjectsPage from "pages/projects";
 import SalesTeam from "pages/sales-team";
+import HelpPage from "pages/help";
 const Routes = () => {
   return (
     <BrowserRouter>
@@ -158,6 +159,31 @@ const Routes = () => {
             element={
               <ProtectedRoute>
                 <Pipeline />
+              </ProtectedRoute>
+            }
+          />
+          {/* Help Center — three patterns, same component, dispatches via useParams */}
+          <Route
+            path="/help"
+            element={
+              <ProtectedRoute>
+                <HelpPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/help/:categoryId"
+            element={
+              <ProtectedRoute>
+                <HelpPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/help/:categoryId/:articleId"
+            element={
+              <ProtectedRoute>
+                <HelpPage />
               </ProtectedRoute>
             }
           />
