@@ -99,6 +99,33 @@ const filtersToWhereGroup = (filters = {}) => {
   return where;
 };
 
+const dateFilterToWhere = (filters = {}, year) => {
+  if (filters.dateFilter === "on" && filters.date) {
+    return {
+      type: "on",
+      attribute: "createdAt",
+      value: filters.date,
+      dateTime: true,
+    };
+  }
+
+  if (filters.dateFilter === "between" && filters.startDate && filters.endDate) {
+    return {
+      type: "between",
+      attribute: "createdAt",
+      value: [filters.startDate, filters.endDate],
+      dateTime: true,
+    };
+  }
+
+  return {
+    type: "between",
+    attribute: "createdAt",
+    value: [`${year}-01-01 00:00:00`, `${year}-12-31 23:59:59`],
+    dateTime: true,
+  };
+};
+
 // ---------------------------------------------------------------------------
 // localStorage cache (per filters + year)
 // ---------------------------------------------------------------------------
@@ -161,12 +188,7 @@ export const fetchWinRateDataset = async ({ filters = {}, year }) => {
     const baseWhere = filtersToWhereGroup(filters);
     const whereGroup = [
       ...baseWhere,
-      {
-        type: "between",
-        attribute: "createdAt",
-        value: [`${year}-01-01 00:00:00`, `${year}-12-31 23:59:59`],
-        dateTime: true,
-      },
+      dateFilterToWhere(filters, year),
     ];
 
     const query = buildQuery(whereGroup);

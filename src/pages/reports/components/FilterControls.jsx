@@ -249,7 +249,7 @@ const FilterControls = ({
           )}
         </div>
         <RoleGuard allowedRoles={["admin", "regular"]}>
-          <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">Anaylze By Chart</Button>
+          <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">Report Analytics</Button>
         </RoleGuard>
       </div>
     </div>

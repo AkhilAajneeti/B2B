@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import React, { memo, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FunnelChart,
@@ -11,11 +11,33 @@ import {
   Line,
 } from "recharts";
 import Icon from "../../../components/AppIcon";
-import Button from "../../../components/ui/Button";
+import Input from "../../../components/ui/Input";
+import Select from "../../../components/ui/Select";
 import {
   useFunnelAnalytics,
   FUNNEL_STAGES,
 } from "../hooks/useFunnelAnalytics";
+
+const DATE_FILTER_OPTIONS = [
+  { label: "This Month", value: "current" },
+  { label: "Last Month", value: "last" },
+  { label: "On", value: "on" },
+  { label: "Between", value: "between" },
+];
+
+const toDateInputValue = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const currentMonthStart = () => {
+  const now = new Date();
+  return toDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1));
+};
+
+const todayInputValue = () => toDateInputValue(new Date());
 
 // Resolve the human label for the currently selected month bucket.
 const monthLabelFor = (month) => {
@@ -25,6 +47,14 @@ const monthLabelFor = (month) => {
       ? new Date(now.getFullYear(), now.getMonth() - 1, 1)
       : new Date(now.getFullYear(), now.getMonth(), 1);
   return target.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+};
+
+const filterLabelFor = ({ filterType, selectedDate, startDate, endDate }) => {
+  if (filterType === "on") return selectedDate || "Select date";
+  if (filterType === "between") {
+    return startDate && endDate ? `${startDate} to ${endDate}` : "Select date range";
+  }
+  return monthLabelFor(filterType);
 };
 
 // ---------------------------------------------------------------------------
@@ -243,7 +273,7 @@ const EmptyState = ({ monthLabel }) => (
         No funnel data for {monthLabel}
       </p>
       <p className="text-xs text-slate-500 mt-0.5 max-w-sm">
-        Try the other month, or check back once leads are created and moved through pipeline stages.
+        Try another date filter, or check back once leads are created and moved through pipeline stages.
       </p>
     </div>
   </div>
@@ -271,7 +301,43 @@ const Skeleton = () => (
 // ---------------------------------------------------------------------------
 
 const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
-  const [month, setMonth] = useState("current");
+  const [filterType, setFilterType] = useState("current");
+  const [selectedDate, setSelectedDate] = useState(todayInputValue);
+  const [startDate, setStartDate] = useState(currentMonthStart);
+  const [endDate, setEndDate] = useState(todayInputValue);
+
+  const funnelDateFilter = useMemo(() => {
+    if (filterType === "on") {
+      return {
+        month: "current",
+        dateFilter: "on",
+        date: selectedDate,
+      };
+    }
+
+    if (filterType === "between") {
+      return {
+        month: "current",
+        dateFilter: "between",
+        startDate,
+        endDate,
+      };
+    }
+
+    return { month: filterType };
+  }, [filterType, selectedDate, startDate, endDate]);
+
+  const periodLabel = filterLabelFor({
+    filterType,
+    selectedDate,
+    startDate,
+    endDate,
+  });
+
+  const handleStartDateChange = (value) => {
+    setStartDate(value);
+    if (endDate && value > endDate) setEndDate(value);
+  };
 
   const {
     funnel,
@@ -280,7 +346,11 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
     isEmpty,
     isLoading,
     isFetching,
-  } = useFunnelAnalytics({ filters, month, enabled });
+  } = useFunnelAnalytics({
+    filters,
+    ...funnelDateFilter,
+    enabled,
+  });
 
   const { highestDropOff, bestConversion, overallConversion, totalLeads } = funnelStats;
 
@@ -305,42 +375,55 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
             )}
           </h3>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {monthLabelFor(month)} · lead pipeline progression and per-rep performance
+            {periodLabel} · lead pipeline progression and per-rep performance
           </p>
         </div>
 
-        <div
-          className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
-          role="tablist"
-          aria-label="Month"
-        >
-          <Button
-            size="sm"
-            variant={month === "current" ? "default" : "ghost"}
-            onClick={() => setMonth("current")}
-            className="h-7 px-3 text-xs transition-all duration-200"
-            role="tab"
-            aria-selected={month === "current"}
-          >
-            This month
-          </Button>
-          <Button
-            size="sm"
-            variant={month === "last" ? "default" : "ghost"}
-            onClick={() => setMonth("last")}
-            className="h-7 px-3 text-xs transition-all duration-200"
-            role="tab"
-            aria-selected={month === "last"}
-          >
-            Last month
-          </Button>
+        <div className="flex flex-col sm:flex-row sm:items-end gap-2 w-full sm:w-auto">
+          <Select
+            options={DATE_FILTER_OPTIONS}
+            value={filterType}
+            onChange={setFilterType}
+            className="w-full sm:w-40"
+            aria-label="Funnel date filter"
+          />
+
+          {filterType === "on" && (
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(event) => setSelectedDate(event.target.value)}
+              className="h-10 w-full sm:w-40"
+              aria-label="Funnel date"
+            />
+          )}
+
+          {filterType === "between" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(event) => handleStartDateChange(event.target.value)}
+                className="h-10 w-full sm:w-40"
+                aria-label="Funnel start date"
+              />
+              <Input
+                type="date"
+                value={endDate}
+                min={startDate}
+                onChange={(event) => setEndDate(event.target.value)}
+                className="h-10 w-full sm:w-40"
+                aria-label="Funnel end date"
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {isLoading && isEmpty ? (
         <Skeleton />
       ) : isEmpty ? (
-        <EmptyState monthLabel={monthLabelFor(month)} />
+        <EmptyState monthLabel={periodLabel} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Funnel — left 2/5 on wide screens */}

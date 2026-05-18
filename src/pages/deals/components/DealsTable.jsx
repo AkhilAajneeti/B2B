@@ -216,9 +216,9 @@ const DealsTable = ({
               <th className="text-left px-4 py-3">
                 <button
                   onClick={() => onSort("name")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
+                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth max-w-[150px]"
                 >
-                  <span>Name</span>
+                  <span className="truncate">Name</span>
                   {getSortIcon("name")}
                 </button>
               </th>

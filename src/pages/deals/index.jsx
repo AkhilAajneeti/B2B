@@ -21,6 +21,7 @@ import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 import StatusChart from "./components/charts/StatusChart";
 import IndustryChart from "./components/charts/IndustryChart";
 import AssignedUserChart from "./components/charts/AssignedUserChart";
+import ProjectChart from "./components/charts/ProjectChart";
 import MultiLineChart from "pages/dashboard/components/MultiLineChart";
 import { useLeads, useNewLeads } from "hooks/useLeads";
 import { useMetaData } from "hooks/useMetaData";
@@ -34,6 +35,7 @@ import {
   canDeleteRecord,
   getStoredUser,
 } from "utils/permission";
+import { useLocation } from "react-router-dom";
 
 const DealsPage = () => {
   const queryClient = useQueryClient();
@@ -52,6 +54,7 @@ const DealsPage = () => {
   // const canCreateLead = canCreate("Lead");
   // const canEditLead = canEdit("Lead");
   // const canDeleteLead = canDelete("Lead");
+  const location = useLocation();
   const canCreateLead = canCreate("Lead");
 
   const { data: metaData } = useMetaData();
@@ -450,6 +453,27 @@ const DealsPage = () => {
     }
   };
 
+//redirect to perticular lead (from pipeline DealCard / meeting / etc.)
+  const leadIdFromState = location.state?.leadId;
+
+  // Fetch the linked lead BY ID — bypasses pagination & filters so the drawer
+  // opens even when the target lead isn't on the first page of `useNewLeads`.
+  // Shares its queryKey ["leadDetails", id] with the drawer's own detail
+  // fetch, so React Query dedupes — no extra network round-trip.
+  const { data: redirectLeadData } = useLeadDetails(leadIdFromState, "view");
+
+  useEffect(() => {
+    if (!leadIdFromState || !redirectLeadData) return;
+
+    // Safe comparison — protects against number/string id drift between sources.
+    if (String(redirectLeadData.id) === String(leadIdFromState)) {
+      setSelectedDeal(redirectLeadData);
+      setMode("view");
+      setIsDrawerOpen(true);
+    }
+    // location.key changes on every navigation, so clicking the same lead
+    // twice from the pipeline re-opens the drawer instead of being a no-op.
+  }, [leadIdFromState, redirectLeadData, location.key]);
 
   return (
     <>
@@ -524,9 +548,14 @@ const DealsPage = () => {
                     <Icon name="X" size={20} />
                   </Button>
                 </div>
-                <div className="grid grid-cols-1 gap-5">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
                   {/* <StatusChart filters={filters} enabled={showAnalytics} /> */}
+
+                  <ProjectChart
+                    filters={filters}
+                    enabled={showAnalytics}
+                  />
 
                   <AssignedUserChart
                     filters={filters}

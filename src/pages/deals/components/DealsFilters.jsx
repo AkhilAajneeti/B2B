@@ -288,17 +288,16 @@ const DealsFilters = ({
             )}
           </div>
         )}
-      </div>
-      {/* Advanced Filters Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 pt-4 border-t border-border gap-3">
 
-        <RoleGuard allowedRoles={["admin", "regular"]}>
+        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end float-right  ${showDateInputs?"col-span-3":"col-span-4"}`}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
             <Icon name="Plus" size={16} className="mr-2" />
-            Anaylze By Chart
+            Lead Analytics
           </Button>
-        </RoleGuard>
+        </div>
+
       </div>
+
     </div>
   );
 };

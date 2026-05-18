@@ -4,6 +4,8 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { formatShortDate } from "../utils/dateHelpers";
 import { formatCurrency } from "../utils/pipelineHelpers";
+import { useNavigate } from "react-router-dom";
+
 
 /**
  * DealCard - presentation only.
@@ -30,19 +32,18 @@ const getStatusColor = (status = "") => {
   return "bg-blue-100 text-blue-700";
 };
 
-const DealCard = ({ deal = {}, onDelete, onViewHistory }) => {
+const DealCard = ({ deal = {}, onViewHistory }) => {
   const [isHovered, setIsHovered] = useState(false);
   const urgency = deal.urgency || {};
-
+  const navigate = useNavigate();
   return (
     <motion.div
       layout
       whileHover={{ y: -2 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`relative bg-card border border-border rounded-lg p-4 cursor-grab active:cursor-grabbing transition-shadow duration-200 hover:shadow-md ${
-        urgency.card || ""
-      }`}
+      className={`relative bg-card border border-border rounded-lg p-4 cursor-grab active:cursor-grabbing transition-shadow duration-200 hover:shadow-md ${urgency.card || ""
+        }`}
     >
       {/* Hover actions */}
       {isHovered && (
@@ -55,24 +56,33 @@ const DealCard = ({ deal = {}, onDelete, onViewHistory }) => {
           >
             <Icon name="History" size={14} />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete?.(deal.id)}
-            aria-label="Delete lead"
-          >
-            <Icon name="Trash2" size={14} />
-          </Button>
+
         </div>
       )}
 
       <div className="space-y-3">
-        {/* Lead / company name */}
-        <div className="pr-12">
-          <h3 className="font-semibold text-base text-card-foreground leading-tight">
+        {/* Lead / company / project — clicking any of these opens the lead drawer on /leads */}
+        <div
+          role="button"
+          tabIndex={0}
+          className="pr-12 cursor-pointer group/link"
+          onClick={(e) => {
+            // Stop the click from bubbling into the draggable card surface.
+            e.stopPropagation();
+            if (!deal?.id) return;
+            navigate("/leads", { state: { leadId: deal.id } });
+          }}
+          onKeyDown={(e) => {
+            if ((e.key === "Enter" || e.key === " ") && deal?.id) {
+              e.preventDefault();
+              navigate("/leads", { state: { leadId: deal.id } });
+            }
+          }}
+        >
+          <h3 className="font-semibold text-base text-card-foreground leading-tight group-hover/link:text-primary transition-colors">
             {deal.title}
           </h3>
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-sm text-muted-foreground truncate group-hover/link:text-primary/80 transition-colors">
             {deal.company || deal.project || "No Company"}
           </p>
         </div>
@@ -80,9 +90,8 @@ const DealCard = ({ deal = {}, onDelete, onViewHistory }) => {
         {/* Urgency + status badges */}
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${
-              urgency.badge || "bg-gray-100 text-gray-700"
-            }`}
+            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${urgency.badge || "bg-gray-100 text-gray-700"
+              }`}
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${urgency.dot || "bg-gray-400"}`}
@@ -113,11 +122,10 @@ const DealCard = ({ deal = {}, onDelete, onViewHistory }) => {
 
         {/* Deal value + priority */}
         <div className="flex items-center justify-between text-sm">
-          
+
           <span
-            className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-              PRIORITY_STYLES[deal.priority] || PRIORITY_STYLES.Low
-            }`}
+            className={`px-2 py-0.5 text-xs font-medium rounded-full ${PRIORITY_STYLES[deal.priority] || PRIORITY_STYLES.Low
+              }`}
           >
             {deal.priority} Priority
           </span>

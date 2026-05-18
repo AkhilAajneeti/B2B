@@ -17,6 +17,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   fetchLeadsForAnalytics,
   readCachedDataset,
+  fetchProjectDataset,
+  readCachedProjectDataset,
   BUSINESS_STATUSES,
 } from "../services/analyticsService";
 
@@ -165,3 +167,109 @@ export const useStatusTrend = () => ({
   isFetching: false,
   isError: false,
 });
+
+// ---------------------------------------------------------------------------
+// Project Distribution
+// ---------------------------------------------------------------------------
+//
+// Groups the leads dataset (filtered by ALL page-level DealsFilters) by
+// `cProject` and returns top-N + "Others". Drives the donut chart.
+//
+// Uses its own dataset path (`fetchProjectDataset`) so:
+//   - status/date/source/assignUser filters from DealsFilters all apply
+//   - it doesn't share a cache key with the user-breakdown chart (different scope)
+
+const PROJECT_COLORS = [
+  "#6366F1", // indigo
+  "#22C55E", // emerald
+  "#F59E0B", // amber
+  "#EF4444", // rose
+  "#06B6D4", // cyan
+  "#8B5CF6", // violet
+  "#EC4899", // pink
+  "#14B8A6", // teal
+];
+const OTHERS_COLOR = "#94A3B8";
+
+export const useProjectBreakdown = ({ filters, enabled = true, topN = 6 }) => {
+  const { data: list, isLoading, isFetching, isError } = useQuery({
+    queryKey: ["project-distribution-dataset", filters],
+    queryFn: () => fetchProjectDataset({ filters }),
+    enabled,
+    initialData: () => {
+      const cached = readCachedProjectDataset(filters);
+      return cached?.list ?? undefined;
+    },
+    initialDataUpdatedAt: 0,
+    staleTime: FRESH_WINDOW,
+    gcTime: KEEP_IN_MEMORY,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
+  });
+
+  const aggregated = useMemo(() => {
+    const records = list || [];
+    const counts = new Map();
+
+    for (const lead of records) {
+      const raw =
+        (lead?.cProject || lead?.cProjectName || "").toString().trim();
+      const key = raw || "No project";
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+
+    const total = records.length;
+    const sorted = [...counts.entries()]
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+
+    let top = sorted;
+    let othersValue = 0;
+    if (sorted.length > topN) {
+      top = sorted.slice(0, topN);
+      othersValue = sorted.slice(topN).reduce((s, r) => s + r.value, 0);
+    }
+
+    const pieData = top.map((r, i) => ({
+      name: r.name,
+      value: r.value,
+      percent: total ? Math.round((r.value / total) * 1000) / 10 : 0,
+      fill: PROJECT_COLORS[i % PROJECT_COLORS.length],
+    }));
+
+    if (othersValue > 0) {
+      pieData.push({
+        name: "Others",
+        value: othersValue,
+        percent: total ? Math.round((othersValue / total) * 1000) / 10 : 0,
+        fill: OTHERS_COLOR,
+      });
+    }
+
+    const topProject = sorted[0] || null;
+
+    return {
+      pieData,
+      total,
+      projectCount: sorted.length,
+      topProject: topProject
+        ? {
+            name: topProject.name,
+            value: topProject.value,
+            percent: total
+              ? Math.round((topProject.value / total) * 1000) / 10
+              : 0,
+          }
+        : null,
+    };
+  }, [list, topN]);
+
+  return {
+    ...aggregated,
+    isLoading,
+    isFetching,
+    isError,
+    isEmpty: aggregated.total === 0,
+  };
+};

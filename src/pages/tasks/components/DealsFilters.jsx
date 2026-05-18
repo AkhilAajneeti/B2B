@@ -253,13 +253,13 @@ const DealsFilters = ({
         )}
       </div>
       {/* Advanced Filters Toggle */}
-      <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">
+      {/* <div className="hidden lg:flex items-center justify-between mt-4 pt-4 border-t border-border">
 
         <Button variant="outline" size="sm">
           <Icon name="Download" size={16} className="mr-1" />
           Export All
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

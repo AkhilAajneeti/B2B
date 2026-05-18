@@ -334,3 +334,87 @@ export const fetchLeadsForAnalytics = async ({
   writeCachedDataset(filters, range, all, onDate);
   return all;
 };
+
+// ---------------------------------------------------------------------------
+// Project Distribution dataset
+// ---------------------------------------------------------------------------
+// Distinct from `fetchLeadsForAnalytics`:
+//   - honors ALL page-level filters as-is (status, dateType, source, assignUser…)
+//   - separate localStorage cache + queryKey so it never collides with the user-chart fetch
+// Used by ProjectChart in the Lead Analytics section.
+
+const PROJECT_KEY_PREFIX = "lead_project_dataset_v1";
+
+const projectCacheKeyFor = (filters) =>
+  `${PROJECT_KEY_PREFIX}:${stableFiltersKey(filters)}`;
+
+export const readCachedProjectDataset = (filters) => {
+  try {
+    const key = projectCacheKeyFor(filters);
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.timestamp) return null;
+    if (Date.now() - parsed.timestamp > DATASET_GC) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+export const writeCachedProjectDataset = (filters, list) => {
+  try {
+    localStorage.setItem(
+      projectCacheKeyFor(filters),
+      JSON.stringify({ list, timestamp: Date.now() }),
+    );
+  } catch {
+    // localStorage quota / disabled — skip silently.
+  }
+};
+
+export const fetchProjectDataset = async ({ filters = {} }) => {
+  const token = localStorage.getItem("auth_token");
+
+  // Honor EVERY page-level filter as-is, including status + date. That's the
+  // contract the chart promises to its callers.
+  const whereGroup = filtersToWhereGroup(filters, { omitAttributes: [] });
+  const query = buildQuery(whereGroup);
+
+  // Slim payload — we only need the project name (and id for keying).
+  const select = ["id", "cProject", "cProjectName"].join(",");
+
+  const all = [];
+  let offset = 0;
+
+  while (offset < MAX_LEADS) {
+    const url = query
+      ? `${ESPO_BASE}?${query}&select=${select}&maxSize=${PAGE_SIZE}&offset=${offset}&orderBy=createdAt&order=desc`
+      : `${ESPO_BASE}?select=${select}&maxSize=${PAGE_SIZE}&offset=${offset}&orderBy=createdAt&order=desc`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json", token },
+    });
+
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        localStorage.clear();
+        window.location.href = "/login";
+      }
+      throw new Error(`Project dataset fetch failed: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const list = data?.list || [];
+    all.push(...list);
+    if (list.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  writeCachedProjectDataset(filters, all);
+  return all;
+};

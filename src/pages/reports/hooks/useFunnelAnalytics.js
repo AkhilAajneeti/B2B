@@ -103,22 +103,69 @@ const monthRangeFor = (month) => {
   return { start, end };
 };
 
+const parseDateOnly = (value) => {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const rangeForFilter = ({ month, dateFilter, date, startDate, endDate }) => {
+  if (dateFilter === "on") {
+    const start = parseDateOnly(date);
+    if (!start) return monthRangeFor(month);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 1);
+    return { start, end };
+  }
+
+  if (dateFilter === "between") {
+    const start = parseDateOnly(startDate);
+    const end = parseDateOnly(endDate);
+    if (!start || !end) return monthRangeFor(month);
+    const inclusiveEnd = new Date(end);
+    inclusiveEnd.setDate(end.getDate() + 1);
+    return { start, end: inclusiveEnd };
+  }
+
+  return monthRangeFor(month);
+};
+
 export const useFunnelAnalytics = ({
   filters,
   year = new Date().getFullYear(),
   month = "current",
+  dateFilter,
+  date,
+  startDate,
+  endDate,
   enabled = true,
 }) => {
+  const datasetFilters = useMemo(() => {
+    const next = { ...(filters || {}) };
+
+    if (dateFilter === "on" && date) {
+      next.dateFilter = "on";
+      next.date = date;
+    } else if (dateFilter === "between" && startDate && endDate) {
+      next.dateFilter = "between";
+      next.startDate = startDate;
+      next.endDate = endDate;
+    }
+
+    return next;
+  }, [filters, dateFilter, date, startDate, endDate]);
+
   // Share the win-rate query — same key = same network request, single fetch.
   const { data: list, isLoading, isFetching, isError } = useQuery({
-    queryKey: ["win-rate-dataset", filters, year],
-    queryFn: () => fetchWinRateDataset({ filters, year }),
+    queryKey: ["win-rate-dataset", datasetFilters, year],
+    queryFn: () => fetchWinRateDataset({ filters: datasetFilters, year }),
     enabled,
     initialData: () => {
-      const cached = readCachedDataset(filters, year);
+      const cached = readCachedDataset(datasetFilters, year);
       return cached?.list ?? undefined;
     },
     initialDataUpdatedAt: 0,
+    placeholderData: (previous) => previous,
     staleTime: STALE,
     gcTime: GC,
     refetchInterval: STALE,
@@ -128,7 +175,13 @@ export const useFunnelAnalytics = ({
   });
 
   const aggregated = useMemo(() => {
-    const { start: monthStart, end: monthEnd } = monthRangeFor(month);
+    const { start: monthStart, end: monthEnd } = rangeForFilter({
+      month,
+      dateFilter,
+      date,
+      startDate,
+      endDate,
+    });
 
     // Filter the shared yearly dataset down to the selected calendar month.
     // Done in memory — both charts still share one network fetch.
@@ -293,7 +346,7 @@ export const useFunnelAnalytics = ({
       reps,
       isEmpty,
     };
-  }, [list, month]);
+  }, [list, month, dateFilter, date, startDate, endDate]);
 
   return {
     ...aggregated,
