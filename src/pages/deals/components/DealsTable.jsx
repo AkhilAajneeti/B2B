@@ -424,9 +424,16 @@ const DealsTable = ({
             <div
               key={deal?.id}
               onClick={() => onDealClick(deal)}
-              className="p-4 border-b border-border bg-background hover:bg-muted/30 transition"
+              className="
+    mx-3 my-2 p-4 rounded-2xl
+    border border-border/50
+    bg-gradient-to-br from-background to-muted/20
+    hover:shadow-md
+    active:scale-[0.99]
+    transition-all duration-200
+  "
             >
-              <div className="flex items-start gap-3">
+              <div className="flex gap-3">
                 {/* Checkbox */}
                 <Checkbox
                   checked={selectedDeals?.includes(deal?.id)}
@@ -439,41 +446,83 @@ const DealsTable = ({
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  {/* Top Row */}
+                  {/* Top */}
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-foreground truncate">
-                      {deal?.name}
-                    </h3>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-sm text-foreground truncate">
+                        {deal?.name}
+                      </h3>
 
+                      {deal?.cProjectName && (
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {deal?.cProjectName}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Status */}
                     <span
-                      className={`px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                        deal?.status,
-                      )}`}
+                      className={`
+            px-2.5 py-1 rounded-full
+            text-[10px] font-medium
+            whitespace-nowrap
+            ${getStageColor(deal?.status)}
+          `}
                     >
                       {deal?.status}
                     </span>
                   </div>
 
-                  {/* Project Name */}
-                  {deal?.cProjectName && (
-                    <div className="text-sm text-muted-foreground mt-1 truncate">
-                      {deal?.cProjectName}
-                    </div>
-                  )}
+                  {/* Bottom */}
+                  <div className="flex items-end justify-between mt-3 gap-3">
+                    <div className="space-y-1 min-w-0">
+                      {/* Assigned */}
+                      {deal?.assignedUserName && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Icon name="User2" size={12} />
+                          <span className="truncate">
+                            {deal?.assignedUserName}
+                          </span>
+                        </div>
+                      )}
 
-                  {/* Assigned User */}
-                  {deal?.assignedUserName && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                      <Icon name="User" size={12} />
-                      Assigned to{" "}
-                      <span className="truncate">{deal?.assignedUserName}</span>
+                      {/* Date */}
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Icon name="Calendar" size={12} />
+                        <span>{formatDate(deal?.createdAt)}</span>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Created At */}
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                    <Icon name="Calendar" size={12} />
-                    Created: {formatDate(deal?.createdAt)}
+                    {/* WhatsApp */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        const message = `Hello *${deal?.name || "Customer"}*,
+Thank you for contacting us for your lead generation requirements.
+
+I'm *${deal?.assignedUserName || "AAJneeti Team"}* from *AAJneeti Advertising*.`;
+
+                        const whatsappUrl = `https://api.whatsapp.com/send/?phone=${deal?.phoneNumber
+                          }&text=${encodeURIComponent(message)}`;
+
+                        window.open(whatsappUrl, "_blank");
+                      }}
+                      className="
+            h-10 w-10 rounded-xl
+            bg-green-500/10 hover:bg-green-500/20
+            transition-all duration-200
+            flex-shrink-0
+          "
+                    >
+                      <img
+                        src="/assets/whatsapp-logo.png"
+                        alt="WhatsApp"
+                        className="w-5 h-5 object-contain"
+                      />
+                    </Button>
                   </div>
                 </div>
               </div>

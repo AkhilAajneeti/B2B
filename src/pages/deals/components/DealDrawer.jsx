@@ -902,7 +902,7 @@ const DealDrawer = ({
             {!showForm && !isMassUpdate && deal && (
               <>
                 {/* Tabs */}
-                <div className="flex items-center space-x-1 p-4 border-b border-border">
+                <div className="flex items-center space-x-1 p-4 border-b border-border overflow-x-auto whitespace-nowrap scrollbar-hide">
                   {tabs?.map((tab) => (
                     <button
                       key={tab?.id}
