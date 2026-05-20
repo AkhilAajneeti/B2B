@@ -168,7 +168,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 <>
                   {/* blur overlay */}
                   <div
-                    className="fixed inset-0 z-50 bg-black/10 backdrop-blur-[2px]"
+                    className="fixed inset-0 z-[10] bg-black/10 backdrop-blur-[2px]"
                     onClick={handleDropdownClose}
                   />
 
@@ -258,12 +258,12 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
       </header>
 
       {/* Backdrop for mobile dropdowns */}
-      {(isUserDropdownOpen || isHelpDropdownOpen) && (
+      {/* {(isUserDropdownOpen || isHelpDropdownOpen) && (
         <div
           className="fixed inset-0 bg-black/20 z-40 lg:hidden"
           onClick={handleDropdownClose}
         />
-      )}
+      )} */}
     </>
   );
 };
