@@ -109,7 +109,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
             {/* Mobile Logo - Only visible on mobile */}
             <div className="flex items-center space-x-3 lg:hidden">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2" onClick={()=>navigate('/')}>
                 <span className="text-lg font-semibold text-foreground">
                   CRM
                 </span>

@@ -49,3 +49,30 @@ export const fetchUnreadCount = async () => {
 
   return data; // ✅ return actual data
 };
+
+
+// mark all notifications as read for the current user
+export const markAllNotificationsRead = async () => {
+  const token = localStorage.getItem("auth_token");
+
+  const res = await fetch(
+    "https://gateway.aajneetiadvertising.com/Notification/action/markAllRead",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        token: token,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to mark notifications as read");
+  }
+
+  return await res.json();
+};

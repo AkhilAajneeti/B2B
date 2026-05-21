@@ -36,7 +36,7 @@ const Reports = () => {
     status: "",
     source: "",
     assignUser: "",
-    dateType: "today",        // 👈 NEW (today, before, between, etc.)
+    dateType: "",        // 👈 NEW (today, before, between, etc.)
     closeDateFrom: "",
     closeDateTo: "",
   });

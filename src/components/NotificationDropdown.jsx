@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotification } from "NotificationContext";
 import { useState, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { markAllNotificationsRead } from "services/notification.service";
 import Button from "./ui/Button";
 
 const NotificationDropdown = () => {
@@ -8,7 +10,8 @@ const NotificationDropdown = () => {
   const prevCountRef = useRef(0);
   const [activeTab, setActiveTab] = useState("all");
   const [visible, setVisible] = useState(5);
-  const { open, notifications } = useNotification();
+  const { open, notifications, setNotifications } = useNotification();
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (notifications.length > prevCountRef.current) {
       audioRef.current?.play();
@@ -18,51 +21,119 @@ const NotificationDropdown = () => {
 
   if (!open) return null;
 
-
-  const getMessage = (n) => {
-    switch (n.type) {
-      case "EventAttendee":
-        return "invited you";
-      case "LeadUpdate":
-        return "updated lead";
-      case "Task":
-        return "assigned task";
-      case "Comment":
-        return "commented on";
-      case "Like":
-        return "liked";
-      case "Generated":
-        return "is generated";
-      default:
-        return "performed an action";
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      queryClient.setQueryData(["notification-count"], 0);
+    } catch (err) {
+      console.error("Failed to mark all notifications as read", err);
     }
   };
 
+
+  // logged-in user id (used to detect "assigned ... to you")
+  const currentUserId = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("login_object") || "{}")?.id || null;
+    } catch {
+      return null;
+    }
+  })();
+
+  // "Lead" -> "lead", "CAttendanceRequest" -> "attendance request"
+  const entityLabel = (type) => {
+    if (!type) return "record";
+    const map = {
+      Lead: "lead",
+      Task: "task",
+      Meeting: "meeting",
+      Call: "call",
+      Account: "account",
+      Contact: "contact",
+      Case: "case",
+      Project: "project",
+      Opportunity: "deal",
+      CAttendanceRequest: "attendance request",
+    };
+    return map[type] || type.replace(/([A-Z])/g, " $1").trim().toLowerCase();
+  };
+
+  // "dateEnd" -> "date end", "assignedUserId" -> "assigned user"
+  const fieldLabel = (field) =>
+    String(field || "")
+      .replace(/([A-Z])/g, " $1")
+      .replace(/\bId\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+  // build one readable sentence from a notification
   const parseNotification = (n) => {
-    const entityType =
-      n.data?.entityType ||
-      n.entityType ||
-      n.noteData?.parentType ||
-      n.relatedParentType ||
-      n.relatedType ||
-      "";
+    const note = n.noteData || {};
+    const data = note.data || {};
 
-    const title =
-      n.data?.entityName || n.entityName || n.noteData?.parentName || "";
+    const actor = note.createdByName || n.data?.userName || "Someone";
 
-    const subtitle =
-      n.data?.status || n.noteData?.data?.value || n.message || "";
+    const parentType = note.parentType || n.relatedParentType || "";
+    const parentName = note.parentName || n.data?.entityName || "";
+    const entity = entityLabel(parentType);
+    const target = parentName ? `${entity} ${parentName}` : entity;
+
+    const noteType = note.type || n.type;
+
+    let message;
+    switch (noteType) {
+      case "Post":
+        message = note.post
+          ? `commented on ${target}: "${note.post}"`
+          : `commented on ${target}`;
+        break;
+      case "Create":
+        message = `created ${target}`;
+        break;
+      case "CreateRelated":
+        message = `created ${entityLabel(data.entityType)} ${data.entityName || ""}`.trim();
+        break;
+      case "Assign": {
+        const toMe =
+          data.assignedUserId && data.assignedUserId === currentUserId;
+        const who = toMe ? "you" : data.assignedUserName || "someone";
+        message = `assigned ${target} to ${who}`;
+        break;
+      }
+      case "Status":
+        message = `changed ${fieldLabel(data.field) || "status"} of ${target} to ${data.value || ""}`.trim();
+        break;
+      case "Update": {
+        const fields = Array.isArray(data.fields)
+          ? data.fields.map(fieldLabel).filter(Boolean)
+          : [];
+        message = fields.length
+          ? `updated ${fields.join(", ")} of ${target}`
+          : `updated ${target}`;
+        break;
+      }
+      case "Relate":
+        message = `linked ${target}`;
+        break;
+      case "EmailReceived":
+        message = `received a new email on ${target}`;
+        break;
+      case "EmailSent":
+        message = `sent an email on ${target}`;
+        break;
+      default:
+        message = `updated ${target}`;
+    }
 
     return {
-      user: n.userName,
-      action: getMessage(n),
-      title,
-      subtitle,
-      entity: entityType,
+      id: n.id,
+      actor,
+      message,
+      entity: parentType,
       time: n.createdAt,
       read: n.read,
-      id: n.id,
-      type: n.type,
     };
   };
 
@@ -78,18 +149,18 @@ const NotificationDropdown = () => {
     return d.toLocaleDateString();
   };
   const formatEntity = (type) => {
-    switch (type) {
-      case "Meeting":
-        return "📅 Meeting";
-      case "Lead":
-        return "👤 Lead";
-      case "Task":
-        return "✅ Task";
-      case "Note":
-        return "📝 Update";
-      default:
-        return "";
-    }
+    const map = {
+      Meeting: "📅 Meeting",
+      Lead: "👤 Lead",
+      Task: "✅ Task",
+      Call: "📞 Call",
+      Account: "🏢 Account",
+      Contact: "👤 Contact",
+      Case: "📂 Case",
+      Project: "📁 Project",
+      Note: "📝 Update",
+    };
+    return map[type] || "🔔 Notification";
   };
   // notification filter
   const filterNotification =
@@ -114,7 +185,7 @@ const NotificationDropdown = () => {
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <h3 className="font-semibold text-gray-800">Notifications</h3>
 
-            <div className="flex gap-2 text-xs">
+            <div className="flex items-center gap-2 text-xs">
               <button
                 onClick={() => {
                   setActiveTab("all");
@@ -133,6 +204,14 @@ const NotificationDropdown = () => {
               >
                 Unread
               </button>
+              {notifications.some((n) => !n.read) && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="px-2 py-1 rounded-full font-medium text-blue-600 hover:bg-blue-50"
+                >
+                  Mark all read
+                </button>
+              )}
             </div>
           </div>
           {/* Body */}
@@ -163,41 +242,21 @@ const NotificationDropdown = () => {
                     {/* Avatar */}
                     <div className="relative">
                       <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-semibold">
-                        {item.user?.[0]}
+                        {item.actor?.[0]?.toUpperCase()}
                       </div>
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1">
-                      {/* Line 1 */}
-                      <p className="text-sm text-gray-800">
-                        <span className="font-semibold">{item.user}</span>{" "}
-                        <span className="text-gray-600">{item.action}</span>{" "}
+                    <div className="flex-1 min-w-0">
+                      {/* Readable message */}
+                      <p className="text-sm text-gray-800 leading-snug">
+                        <span className="font-semibold">{item.actor}</span>{" "}
+                        <span className="text-gray-600">{item.message}</span>
                       </p>
 
-                      {/* Line 2 */}
-                      {item.entity && (
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                          {formatEntity(item.entity)}
-                        </p>
-                      )}
-                      {/* Title */}
-                      {item.title && (
-                        <p className="text-sm font-medium text-gray-900 mt-1">
-                          {item.title}
-                        </p>
-                      )}
-
-                      {/* Subtitle */}
-                      {item.subtitle && (
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                          {item.subtitle}
-                        </p>
-                      )}
-
-                      {/* Time */}
+                      {/* Entity tag + time */}
                       <p className="text-xs text-gray-400 mt-1">
-                        {formatTime(item.time)}
+                        {formatEntity(item.entity)} · {formatTime(item.time)}
                       </p>
                     </div>
 
