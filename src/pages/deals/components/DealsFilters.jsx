@@ -209,7 +209,7 @@ const DealsFilters = ({
       </div>
       {/* Filters */}
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 ${isExpanded ? "block" : "hidden lg:grid"}`}
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 ${isExpanded ? "" : "hidden lg:grid"}`}
       >
         <Input
           type="search"
@@ -289,7 +289,7 @@ const DealsFilters = ({
           </div>
         )}
 
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end float-right  ${showDateInputs?"col-span-3":"col-span-4"}`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${showDateInputs?"lg:col-span-3":"lg:col-span-4"}`}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
             <Icon name="Plus" size={16} className="mr-2" />
             Lead Analytics

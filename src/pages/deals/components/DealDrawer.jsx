@@ -888,6 +888,44 @@ const DealDrawer = ({
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Status */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={massFields.status}
+                      onChange={() => toggleMassField("status")}
+                    />
+                    <Select
+                      label="Status"
+                      value={formData.status}
+                      options={statusOptions}
+                      disabled={!massFields.status}
+                      onChange={(v) => handleChange("status", v)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Next Contact Date */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={massFields.cNextContactAt}
+                      onChange={() => toggleMassField("cNextContactAt")}
+                    />
+                    <Input
+                      type="datetime-local"
+                      label="Next Contact"
+                      value={formData.cNextContactAt || ""}
+                      disabled={!massFields.cNextContactAt}
+                      onChange={(e) =>
+                        handleChange("cNextContactAt", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-3 pt-4">
                   <Button variant="ghost" onClick={onClose}>
                     Cancel

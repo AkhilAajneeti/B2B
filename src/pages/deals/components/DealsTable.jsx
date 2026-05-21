@@ -423,7 +423,6 @@ const DealsTable = ({
           paginatedDeals?.map((deal) => (
             <div
               key={deal?.id}
-              onClick={() => onDealClick(deal)}
               className="
     mx-3 my-2 p-4 rounded-2xl
     border border-border/50
@@ -445,7 +444,10 @@ const DealsTable = ({
                 />
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => onDealClick(deal)}
+                >
                   {/* Top */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
