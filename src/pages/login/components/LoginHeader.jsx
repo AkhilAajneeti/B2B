@@ -4,7 +4,7 @@ import Icon from "../../../components/AppIcon";
 const LoginHeader = () => {
   return (
     <div className="text-center mb-8">
-      
+
       {/* Welcome Message */}
       <div className="space-y-2">
         <h2 className="text-xl font-semibold text-foreground">

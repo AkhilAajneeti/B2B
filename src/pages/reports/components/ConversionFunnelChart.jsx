@@ -1,10 +1,11 @@
 import React, { memo, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  FunnelChart,
-  Funnel,
-  LabelList,
-  Cell,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
   Tooltip,
   ResponsiveContainer,
   LineChart,
@@ -13,10 +14,7 @@ import {
 import Icon from "../../../components/AppIcon";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
-import {
-  useFunnelAnalytics,
-  FUNNEL_STAGES,
-} from "../hooks/useFunnelAnalytics";
+import { useFunnelAnalytics } from "../hooks/useFunnelAnalytics";
 
 const DATE_FILTER_OPTIONS = [
   { label: "This Month", value: "current" },
@@ -103,8 +101,25 @@ const FunnelTooltip = ({ active, payload }) => {
   );
 };
 
+// Radar vertex dot — colored per pipeline stage (uses the stage's `to` color
+// that each funnel row already carries from FUNNEL_STAGES).
+const renderRadarDot = (props) => {
+  const { cx, cy, payload } = props || {};
+  if (cx == null || cy == null) return null;
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={4}
+      fill={payload?.to || "#8B5CF6"}
+      stroke="#ffffff"
+      strokeWidth={2}
+    />
+  );
+};
+
 // ---------------------------------------------------------------------------
-// KPI strip above the funnel
+// KPI strip above the radar
 // ---------------------------------------------------------------------------
 
 const KpiTile = ({ icon, iconColor, label, value, accent }) => (
@@ -285,10 +300,11 @@ const EmptyState = ({ monthLabel }) => (
 
 const Skeleton = () => (
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div className="space-y-3 animate-pulse">
-      {FUNNEL_STAGES.map((_, i) => (
-        <div key={i} className="h-10 bg-slate-200 rounded-lg" style={{ width: `${100 - i * 10}%` }} />
-      ))}
+    {/* Circular placeholder — mirrors the radar shape */}
+    <div className="flex items-center justify-center py-6 animate-pulse">
+      <div className="w-52 h-52 rounded-full bg-slate-200 flex items-center justify-center">
+        <div className="w-32 h-32 rounded-full bg-slate-100" />
+      </div>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-pulse">
       {[1, 2, 3, 4].map((_, i) => (
@@ -353,6 +369,51 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
   });
 
   const { highestDropOff, bestConversion, overallConversion, totalLeads } = funnelStats;
+
+  // Radar data — adds a shortened axis label so long stage names ("Site Visit
+  // Scheduled") don't overflow the polar axis. Full label stays for the tooltip.
+  const radarData = useMemo(
+    () =>
+      (funnel || []).map((f) => ({
+        ...f,
+        shortLabel: (f.label || "").replace("Site Visit ", "Visit "),
+      })),
+    [funnel],
+  );
+
+  // Polar axis tick — stage name with its lead count underneath, so the radar
+  // surfaces the same numbers the funnel used to print inside each block.
+  const renderAngleTick = ({ x, y, cx, cy, payload }) => {
+    const row = radarData.find((r) => r.shortLabel === payload.value);
+    const dx = x - cx;
+    const anchor = Math.abs(dx) < 12 ? "middle" : dx > 0 ? "start" : "end";
+    return (
+      <g>
+        <text
+          x={x}
+          y={y}
+          textAnchor={anchor}
+          dominantBaseline="middle"
+          fontSize={11}
+          fontWeight={600}
+          fill="#0F172A"
+        >
+          {payload.value}
+        </text>
+        <text
+          x={x}
+          y={y + 13}
+          textAnchor={anchor}
+          dominantBaseline="middle"
+          fontSize={10}
+          fontWeight={600}
+          fill="#8B5CF6"
+        >
+          {row ? `${row.count} leads` : ""}
+        </text>
+      </g>
+    );
+  };
 
   return (
     <motion.div
@@ -452,51 +513,49 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
 
             <div className="h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
-                <FunnelChart>
+                <RadarChart
+                  data={radarData}
+                  outerRadius="68%"
+                  margin={{ top: 18, right: 28, bottom: 18, left: 28 }}
+                >
                   <defs>
-                    {FUNNEL_STAGES.map((s, idx) => (
-                      <linearGradient
-                        key={s.key}
-                        id={`fnl-grad-${idx}`}
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="0"
-                      >
-                        <stop offset="0%" stopColor={s.from} stopOpacity={0.95} />
-                        <stop offset="100%" stopColor={s.to} stopOpacity={1} />
-                      </linearGradient>
-                    ))}
+                    <linearGradient
+                      id="fnl-radar-fill"
+                      x1="0"
+                      y1="0"
+                      x2="1"
+                      y2="1"
+                    >
+                      <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.55} />
+                      <stop offset="100%" stopColor="#EC4899" stopOpacity={0.3} />
+                    </linearGradient>
                   </defs>
-                  <Tooltip content={<FunnelTooltip />} />
-                  <Funnel
+                  <PolarGrid stroke="#E2E8F0" />
+                  <PolarAngleAxis
+                    dataKey="shortLabel"
+                    tick={renderAngleTick}
+                  />
+                  <PolarRadiusAxis
+                    angle={90}
+                    tick={{ fontSize: 10, fill: "#94A3B8" }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Radar
+                    name="Leads"
                     dataKey="count"
-                    data={funnel}
+                    stroke="#7C3AED"
+                    strokeWidth={2}
+                    fill="url(#fnl-radar-fill)"
+                    fillOpacity={1}
+                    dot={renderRadarDot}
                     isAnimationActive
                     animationDuration={800}
                     animationEasing="ease-out"
-                  >
-                    {funnel.map((_, idx) => (
-                      <Cell key={`cell-${idx}`} fill={`url(#fnl-grad-${idx})`} />
-                    ))}
-                    <LabelList
-                      position="right"
-                      dataKey="label"
-                      fill="#0F172A"
-                      stroke="none"
-                      fontSize={11}
-                      fontWeight={600}
-                    />
-                    <LabelList
-                      position="center"
-                      dataKey="count"
-                      fill="#FFFFFF"
-                      stroke="none"
-                      fontSize={12}
-                      fontWeight={700}
-                    />
-                  </Funnel>
-                </FunnelChart>
+                  />
+                  <Tooltip content={<FunnelTooltip />} />
+                </RadarChart>
               </ResponsiveContainer>
             </div>
 

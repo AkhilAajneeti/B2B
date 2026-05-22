@@ -254,15 +254,7 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
           >
             Trend
           </Button>
-          <Button
-            variant={chartType === "pie" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setChartType("pie")}
-            iconName="PieChart"
-            iconPosition="left"
-          >
-            Distribution
-          </Button>
+          
         </div>
       </div>
 
@@ -280,7 +272,7 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
             title="No closed deals yet"
             message="Move a lead to “Purchased” to start the win rate trend. Switch to Distribution to see active and lost leads."
           />
-        ) : chartType === "line" ? (
+        ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={monthlyData} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
               <defs>
@@ -323,37 +315,6 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
                 animationEasing="ease-out"
               />
             </AreaChart>
-          </ResponsiveContainer>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                innerRadius={70}
-                outerRadius={110}
-                paddingAngle={4}
-                dataKey="value"
-                animationDuration={1000}
-                animationEasing="ease-out"
-              >
-                {pieData?.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry?.fill}
-                    stroke="#fff"
-                    strokeWidth={2}
-                  />
-                ))}
-              </Pie>
-              <Tooltip content={<PieTooltip />} />
-              <Legend
-                verticalAlign="bottom"
-                iconType="circle"
-                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-              />
-            </PieChart>
           </ResponsiveContainer>
         )}
       </div>
