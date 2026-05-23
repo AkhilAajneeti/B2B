@@ -205,12 +205,21 @@ const NotificationDropdown = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.95 }}
           transition={{ duration: 0.25 }}
-          // Responsive width: fits inside any viewport on phones (full width
-          // minus 1rem margin), locks to 384px on tablets+. Right-anchored to
-          // the bell button — the width formula keeps it inside the viewport.
-          className="absolute right-0 mt-2 w-[calc(100vw-1rem)] max-w-sm sm:max-w-none sm:w-96 bg-white shadow-2xl rounded-2xl z-50 border overflow-hidden"
+          // Mobile: FIXED to the viewport (anchored to the header's bottom +
+          // even horizontal margins) so it can't drift off-screen because the
+          // bell button is inset by the avatar + header padding.
+          // sm+: original behaviour — absolute, right-anchored to the bell.
+          className="fixed inset-x-3 top-16 mt-2 z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-96"
         >
-          <audio ref={audioRef} src="/notification.mp3" preload="auto" />
+          {/* Caret only shows on sm+ where the dropdown is anchored to the
+              bell. On mobile the dropdown spans the viewport, so a caret
+              pointing at the bell would be misleading. */}
+          <div className="hidden sm:block absolute -top-1.5 right-5 w-3 h-3 rotate-45 bg-white border-l border-t border-border z-[51]" />
+
+          {/* Inner panel — rounded + overflow-hidden so the inner sections
+              (header, body, pagination footer) clip cleanly to the corners. */}
+          <div className="bg-white shadow-2xl rounded-2xl border border-border overflow-hidden">
+            <audio ref={audioRef} src="/notification.mp3" preload="auto" />
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 sm:px-4 py-3 border-b">
             <h3 className="font-semibold text-gray-800">Notifications</h3>
@@ -337,6 +346,7 @@ const NotificationDropdown = () => {
               </button>
             </div>
           )}
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

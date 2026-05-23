@@ -59,23 +59,32 @@ const NotificationRow = ({ deal, variant, onClick }) => {
           label: "Today",
         };
 
+  const fullTitle = deal.title || "Untitled Lead";
+  const subtitle = deal.company || deal.project || deal.status || styles.label;
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/40 hover:shadow-[0_6px_18px_-10px_rgba(15,23,42,0.18)] transition-all"
+      // Slightly tighter horizontal padding on mobile so longer lead names
+      // get more room. Items align to the top so a wrapped 2-line title
+      // doesn't drag the icon down.
+      className="w-full text-left flex items-start gap-2.5 sm:gap-3 px-2.5 sm:px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/40 hover:shadow-[0_6px_18px_-10px_rgba(15,23,42,0.18)] transition-all"
+      title={fullTitle}
     >
       <div
-        className={`w-8 h-8 ${styles.iconBg} rounded-lg flex items-center justify-center shrink-0`}
+        className={`w-8 h-8 ${styles.iconBg} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}
       >
         <Icon name={styles.icon} size={14} className={styles.iconColor} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-foreground truncate">
-          {deal.title || "Untitled Lead"}
+        {/* Mobile: allow up to 2 lines so full name shows. Desktop: keep
+            single-line truncate to preserve the tight desktop layout. */}
+        <div className="text-sm font-medium text-foreground break-words line-clamp-2 sm:line-clamp-none sm:truncate leading-snug">
+          {fullTitle}
         </div>
-        <div className="text-xs text-muted-foreground truncate">
-          {deal.company || deal.project || deal.status || styles.label}
+        <div className="text-xs text-muted-foreground truncate mt-0.5">
+          {subtitle}
         </div>
       </div>
       <span
@@ -86,7 +95,7 @@ const NotificationRow = ({ deal, variant, onClick }) => {
       <Icon
         name="ChevronRight"
         size={14}
-        className="text-muted-foreground shrink-0"
+        className="text-muted-foreground shrink-0 mt-2"
       />
     </button>
   );
@@ -158,9 +167,11 @@ const DashboardSummaryAlert = () => {
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
-        className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-4"
+        className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-3 sm:p-4"
       >
-        <div className="flex items-start gap-3 pr-36">
+        {/* Mobile reserves space only for the X (8 = 2rem). Desktop also makes
+            room for the absolute-positioned View pipeline pill (36 = 9rem). */}
+        <div className="flex items-start gap-2.5 sm:gap-3 pr-9 sm:pr-36">
           <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
             <Icon name="BellRing" size={20} className="text-primary" />
           </div>
@@ -217,15 +228,30 @@ const DashboardSummaryAlert = () => {
                 />
               ))}
             </div>
+
+            {/* Mobile-only View pipeline button. On sm+ this lives in the
+                top-right action cluster instead. */}
+            <button
+              type="button"
+              onClick={() => navigate("/pipeline")}
+              className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white border border-primary/30 text-primary text-xs font-semibold shadow-sm hover:bg-primary hover:text-white transition-colors"
+              aria-label="Open pipeline"
+            >
+              <Icon name="Kanban" size={14} />
+              <span>View pipeline</span>
+              <Icon name="ArrowRight" size={12} />
+            </button>
           </div>
         </div>
 
-        {/* Top-right actions — View pipeline pill + dismiss X, sitting together. */}
+        {/* Top-right actions — View pipeline pill (desktop only) + dismiss X.
+            On mobile the pill moves to a full-width button below the list so
+            the title and lead names get the full card width to themselves. */}
         <div className="absolute top-3 right-3 flex items-center gap-2">
           <button
             type="button"
             onClick={() => navigate("/pipeline")}
-            className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full bg-white border border-primary/30 text-primary text-xs font-semibold shadow-sm hover:bg-primary hover:text-white hover:border-primary hover:shadow-[0_6px_20px_-8px_rgba(99,102,241,0.45)] transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full bg-white border border-primary/30 text-primary text-xs font-semibold shadow-sm hover:bg-primary hover:text-white hover:border-primary hover:shadow-[0_6px_20px_-8px_rgba(99,102,241,0.45)] transition-all"
             aria-label="Open pipeline"
           >
             <Icon name="Kanban" size={14} />
