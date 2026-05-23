@@ -191,7 +191,29 @@ const PROJECT_COLORS = [
 ];
 const OTHERS_COLOR = "#94A3B8";
 
-export const useProjectBreakdown = ({ filters, enabled = true, topN = 6 }) => {
+// Build the grouping key for one lead given the current `groupBy` mode.
+// Returns the human-readable bucket name the donut will use.
+const groupKeyForLead = (lead, groupBy, userTeamMap) => {
+  if (groupBy === "team") {
+    if (!lead?.assignedUserId) return "Unassigned";
+    const teamName = userTeamMap?.get(lead.assignedUserId);
+    return teamName || "No team";
+  }
+  // default: project
+  const raw = (lead?.cProject || lead?.cProjectName || "").toString().trim();
+  return raw || "No project";
+};
+
+export const useProjectBreakdown = ({
+  filters,
+  enabled = true,
+  topN = 6,
+  // "project" (default) groups by cProject. "team" groups by the assigned user's
+  // team — caller provides `userTeamMap: Map<userId, teamName>` so the hook
+  // stays pure. Switching modes is free: same dataset, just a different reducer.
+  groupBy = "project",
+  userTeamMap = null,
+}) => {
   const { data: list, isLoading, isFetching, isError } = useQuery({
     queryKey: ["project-distribution-dataset", filters],
     queryFn: () => fetchProjectDataset({ filters }),
@@ -213,9 +235,7 @@ export const useProjectBreakdown = ({ filters, enabled = true, topN = 6 }) => {
     const counts = new Map();
 
     for (const lead of records) {
-      const raw =
-        (lead?.cProject || lead?.cProjectName || "").toString().trim();
-      const key = raw || "No project";
+      const key = groupKeyForLead(lead, groupBy, userTeamMap);
       counts.set(key, (counts.get(key) || 0) + 1);
     }
 
@@ -263,7 +283,7 @@ export const useProjectBreakdown = ({ filters, enabled = true, topN = 6 }) => {
           }
         : null,
     };
-  }, [list, topN]);
+  }, [list, topN, groupBy, userTeamMap]);
 
   return {
     ...aggregated,

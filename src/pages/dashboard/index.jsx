@@ -6,6 +6,7 @@ import KPICard from "./components/KPICard";
 import PipelineChart from "./components/PipelineChart";
 import Icon from "../../components/AppIcon";
 import RightRail from "./components/RightRail";
+import DashboardSummaryAlert from "./components/DashboardSummaryAlert";
 import { fetchLeads } from "services/leads.service";
 import MultiLineChart from "./components/MultiLineChart";
 import { fetchMeeting } from "services/meeting.service";
@@ -271,6 +272,13 @@ const Dashboard = () => {
             Welcome back! Here's what's happening with your sales today.
           </p>
         </div>
+
+        {/* First-visit summary alert — overdue + follow-up-today leads.
+            Plays a chime, lists clickable leads that open the lead drawer. */}
+        <div className="mx-3 sm:mx-5">
+          <DashboardSummaryAlert />
+        </div>
+
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5 m-3 sm:m-5">
           {kpiData?.map((kpi, index) => (

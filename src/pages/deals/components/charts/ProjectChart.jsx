@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -8,7 +8,15 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import Icon from "components/AppIcon";
+import Button from "components/ui/Button";
+import { useUsers } from "hooks/useUsers";
+import { useTeams } from "hooks/useTeams";
 import { useProjectBreakdown } from "../../hooks/useLeadAnalytics";
+
+const GROUP_OPTIONS = [
+  { value: "project", label: "Projects" },
+  { value: "team", label: "Teams" },
+];
 
 // ---------------------------------------------------------------------------
 // Tooltip
@@ -117,6 +125,30 @@ const renderCenterLabel = ({ viewBox, total }) => {
 // ---------------------------------------------------------------------------
 
 const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
+  const [groupBy, setGroupBy] = useState("project");
+
+  // Users + teams power the "Teams" tab. Both hooks are cached app-wide, so
+  // switching tabs is free after the first fetch. `useUsers` only matters when
+  // we're in team mode — but it's harmless to mount either way (cache hit).
+  const { data: usersData } = useUsers();
+  const { data: teamsData } = useTeams();
+
+  // userId → team name. Built once per users/teams change and only when the
+  // chart is actually in team mode, so the project view pays no cost.
+  const userTeamMap = useMemo(() => {
+    if (groupBy !== "team") return null;
+    const teamsById = new Map(
+      (teamsData?.list || []).map((t) => [t.id, t.name]),
+    );
+    const map = new Map();
+    for (const u of usersData?.list || []) {
+      // Prefer the default team; fall back to the first team in the relation.
+      const teamId = u.defaultTeamId || (u.teamsIds || [])[0];
+      if (teamId) map.set(u.id, teamsById.get(teamId) || "Unknown team");
+    }
+    return map;
+  }, [groupBy, usersData, teamsData]);
+
   const {
     pieData,
     total,
@@ -125,7 +157,16 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
     isLoading,
     isFetching,
     isEmpty,
-  } = useProjectBreakdown({ filters, enabled });
+  } = useProjectBreakdown({ filters, enabled, groupBy, userTeamMap });
+
+  // Tab-aware copy.
+  const isTeams = groupBy === "team";
+  const titleText = isTeams ? "Team Distribution" : "Project Distribution";
+  const subtitleText = isTeams
+    ? "Lead share across teams"
+    : "Lead share across projects";
+  const bucketLabel = isTeams ? "Teams" : "Projects";
+  const topLabel = isTeams ? "Top team" : "Top project";
 
   return (
     <motion.div
@@ -135,11 +176,11 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4 shrink-0">
         <div>
           <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
             <span className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
-              Project Distribution
+              {titleText}
             </span>
             {isFetching && !isLoading && (
               <span className="relative inline-flex h-2 w-2">
@@ -149,8 +190,30 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
             )}
           </h3>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Lead share across projects
+            {subtitleText}
           </p>
+        </div>
+
+        {/* Group-by tabs — flips the donut from project to team buckets without
+            re-fetching anything (same dataset, different reducer). */}
+        <div
+          className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5 self-start"
+          role="tablist"
+          aria-label="Group by"
+        >
+          {GROUP_OPTIONS.map((opt) => (
+            <Button
+              key={opt.value}
+              size="sm"
+              variant={groupBy === opt.value ? "default" : "ghost"}
+              onClick={() => setGroupBy(opt.value)}
+              className="h-7 px-3 text-xs transition-all duration-200"
+              role="tab"
+              aria-selected={groupBy === opt.value}
+            >
+              {opt.label}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -232,7 +295,7 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
         <div className="mt-4 pt-3 border-t border-border grid grid-cols-2 gap-3 shrink-0">
           <div className="rounded-lg bg-slate-50 px-3 py-2">
             <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
-              Projects
+              {bucketLabel}
             </div>
             <div className="text-lg font-bold text-slate-900 tabular-nums">
               {projectCount}
@@ -240,7 +303,7 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
           </div>
           <div className="rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 px-3 py-2 text-right">
             <div className="text-[10px] uppercase tracking-wider text-indigo-700 font-medium truncate">
-              Top project
+              {topLabel}
             </div>
             <div className="text-sm font-bold text-slate-900 truncate">
               {topProject?.name || "—"}

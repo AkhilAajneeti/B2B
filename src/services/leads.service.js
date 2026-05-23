@@ -264,6 +264,25 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
     });
   }
 
+  // ✅ TEAM FILTER — `_teamUserIds` is the internal, derived field set by the
+  // deals page from the selected team's members. Translates to `assignedUserId
+  // IN [...]`. An empty array means the team has no users → match nothing.
+  if (Array.isArray(filters._teamUserIds)) {
+    if (filters._teamUserIds.length === 0) {
+      where.push({
+        type: "equals",
+        attribute: "id",
+        value: "__no_team_users__",
+      });
+    } else {
+      where.push({
+        type: "in",
+        attribute: "assignedUserId",
+        value: filters._teamUserIds,
+      });
+    }
+  }
+
   // ✅ QUERY BUILDER (FIXED)
   const query = where
     .map((f, i) => {

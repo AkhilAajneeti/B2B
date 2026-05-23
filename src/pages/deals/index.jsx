@@ -28,6 +28,7 @@ import { useMetaData } from "hooks/useMetaData";
 import { useLeadDetails } from "hooks/useLeadDetails";
 import { useUsers } from "hooks/useUsers";
 import { fetchTeamUser } from "services/team.service";
+import { useTeamUsers } from "hooks/useTeams";
 // import { canCreate, canDelete, canEdit } from "utils/permission";
 import {
   canCreate,
@@ -93,12 +94,38 @@ const DealsPage = () => {
     cProject: "",
     source: "",
     assignUser: "",
+    team: "",
     dateType: "",
     closeDateFrom: "",
     closeDateTo: "",
     xDays: ""
   });
-  const { data: leadsData, isLoading } = useNewLeads({ limit, page, filters });
+
+  // Team filter → fetch users in the selected team and expose their ids as an
+  // internal `_teamUserIds` field on the filters object. Service translates it
+  // into `assignedUserId IN [...]`. The team-users query is cached by React
+  // Query (10-min staleTime), so flipping teams is instant after first use.
+  const { data: filterTeamUsersData } = useTeamUsers(filters.team);
+  const filterTeamUserIds = useMemo(
+    () =>
+      filters.team
+        ? (filterTeamUsersData?.list || []).map((u) => u.id)
+        : null,
+    [filters.team, filterTeamUsersData],
+  );
+  const filtersForBackend = useMemo(
+    () =>
+      filters.team && filterTeamUserIds !== null
+        ? { ...filters, _teamUserIds: filterTeamUserIds }
+        : filters,
+    [filters, filterTeamUserIds],
+  );
+
+  const { data: leadsData, isLoading } = useNewLeads({
+    limit,
+    page,
+    filters: filtersForBackend,
+  });
   const createLeadMutation = useMutation({
     mutationFn: createLead,
     onSuccess: () => {
@@ -312,6 +339,7 @@ const DealsPage = () => {
       cProject: "",
       source: "",
       assignUser: "",
+      team: "",
       dateType: "",
       closeDateFrom: "",
       closeDateTo: "",
@@ -553,12 +581,12 @@ const DealsPage = () => {
                   {/* <StatusChart filters={filters} enabled={showAnalytics} /> */}
 
                   <ProjectChart
-                    filters={filters}
+                    filters={filtersForBackend}
                     enabled={showAnalytics}
                   />
 
                   <AssignedUserChart
-                    filters={filters}
+                    filters={filtersForBackend}
                     enabled={showAnalytics}
                   />
                 </div>

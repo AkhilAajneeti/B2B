@@ -148,6 +148,27 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
     });
   }
 
+  // Team filter (internal field set by the deals page from team membership).
+  // Honored unless the chart explicitly omits the assignedUserId attribute —
+  // e.g. AssignedUserChart drops assignedUserId so it can show all reps; but
+  // team scope is different (which TEAM's reps to show), so we keep it even
+  // when assignedUserId is omitted.
+  if (Array.isArray(filters._teamUserIds)) {
+    if (filters._teamUserIds.length === 0) {
+      where.push({
+        type: "equals",
+        attribute: "id",
+        value: "__no_team_users__",
+      });
+    } else {
+      where.push({
+        type: "in",
+        attribute: "assignedUserId",
+        value: filters._teamUserIds,
+      });
+    }
+  }
+
   return where;
 };
 
@@ -384,8 +405,10 @@ export const fetchProjectDataset = async ({ filters = {} }) => {
   const whereGroup = filtersToWhereGroup(filters, { omitAttributes: [] });
   const query = buildQuery(whereGroup);
 
-  // Slim payload — we only need the project name (and id for keying).
-  const select = ["id", "cProject", "cProjectName"].join(",");
+  // Slim payload — id + project fields (for the project view) and
+  // assignedUserId (so the same dataset can power the "Teams" tab via a
+  // user→team map built in the chart layer).
+  const select = ["id", "cProject", "cProjectName", "assignedUserId"].join(",");
 
   const all = [];
   let offset = 0;

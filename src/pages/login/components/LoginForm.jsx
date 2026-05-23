@@ -133,6 +133,15 @@ const LoginForm = () => {
         localStorage.setItem("acl", JSON.stringify(data.acl));
       }
 
+      // Fresh login → let the Dashboard summary alert re-appear (and re-chime)
+      // even if it was dismissed in a previous session that left flags behind.
+      try {
+        sessionStorage.removeItem("dashboardSummaryAlertDismissed");
+        sessionStorage.removeItem("dashboardSummaryAlertSoundPlayed");
+      } catch {
+        // sessionStorage unavailable — alert will just behave as if first-visit
+      }
+
       navigate("/dashboard");
     } catch (err) {
       console.error("Login error:", err);

@@ -5,6 +5,7 @@ import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
 import RoleGuard from "components/RoleGuard";
+import { useTeams } from "hooks/useTeams";
 
 const DealsFilters = ({
   filters,
@@ -116,6 +117,13 @@ const DealsFilters = ({
   const assignUserOptions = assignUser.map((acc) => ({
     value: acc.id, // 👈 important (ID use karo)
     label: acc.name,
+  }));
+
+  // Teams list — cached via React Query, only fetched once until staleTime expires.
+  const { data: teamsData } = useTeams();
+  const teamOptions = (teamsData?.list || []).map((t) => ({
+    value: t.id,
+    label: t.name,
   }));
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
@@ -245,6 +253,14 @@ const DealsFilters = ({
           onChange={(value) => handleFilterChange("assignUser", value)}
           searchable
         />
+        <Select
+          placeholder="Team"
+          options={teamOptions}
+          value={filters?.team || ""}
+          onChange={(value) => handleFilterChange("team", value)}
+          searchable
+          clearable
+        />
         {/* Date Type Select */}
         <Select
           className="min-w-0"
@@ -289,7 +305,7 @@ const DealsFilters = ({
           </div>
         )}
 
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${showDateInputs?"lg:col-span-3":"lg:col-span-4"}`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${showDateInputs?"lg:col-span-2":"lg:col-span-3"}`}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
             <Icon name="Plus" size={16} className="mr-2" />
             Lead Analytics

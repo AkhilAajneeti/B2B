@@ -5,13 +5,22 @@ import { useQueryClient } from "@tanstack/react-query";
 import { markAllNotificationsRead } from "services/notification.service";
 import Button from "./ui/Button";
 
+const PAGE_SIZE = 5;
+
 const NotificationDropdown = () => {
   const audioRef = useRef(null);
   const prevCountRef = useRef(0);
   const [activeTab, setActiveTab] = useState("all");
-  const [visible, setVisible] = useState(5);
+  const [page, setPage] = useState(1);
   const { open, notifications, setNotifications } = useNotification();
   const queryClient = useQueryClient();
+
+  // Reset to page 1 whenever the tab switches or the notifications list size
+  // changes — otherwise switching to "Unread" with a higher page index would
+  // render an empty page.
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, notifications.length]);
   useEffect(() => {
     if (notifications.length > prevCountRef.current) {
       audioRef.current?.play();
@@ -167,8 +176,14 @@ const NotificationDropdown = () => {
     activeTab == "unread"
       ? notifications.filter((n) => !n.read)
       : notifications;
-  // visible notification
-  const visibleNotification = filterNotification.slice(0, visible);
+
+  // Page-based pagination
+  const pageCount = Math.max(1, Math.ceil(filterNotification.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const visibleNotification = filterNotification.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   return (
     <AnimatePresence>
@@ -178,28 +193,25 @@ const NotificationDropdown = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.95 }}
           transition={{ duration: 0.25 }}
-          className="absolute right-0 mt-2 w-96 bg-white shadow-2xl rounded-2xl z-50 border overflow-hidden"
+          // Responsive width: fits inside any viewport on phones (full width
+          // minus 1rem margin), locks to 384px on tablets+. Right-anchored to
+          // the bell button — the width formula keeps it inside the viewport.
+          className="absolute right-0 mt-2 w-[calc(100vw-1rem)] max-w-sm sm:max-w-none sm:w-96 bg-white shadow-2xl rounded-2xl z-50 border overflow-hidden"
         >
           <audio ref={audioRef} src="/notification.mp3" preload="auto" />
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 sm:px-4 py-3 border-b">
             <h3 className="font-semibold text-gray-800">Notifications</h3>
 
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 text-xs">
               <button
-                onClick={() => {
-                  setActiveTab("all");
-                  setVisible(5);
-                }}
+                onClick={() => setActiveTab("all")}
                 className={`px-2 py-1 rounded-full ${activeTab === "all" ? "bg-gray-100" : "text-gray-500"}`}
               >
                 All
               </button>
               <button
-                onClick={() => {
-                  setActiveTab("unread");
-                  setVisible(5);
-                }}
+                onClick={() => setActiveTab("unread")}
                 className={`px-2 py-1 rounded-full ${activeTab === "unread" ? "bg-gray-100" : "text-gray-500"}`}
               >
                 Unread
@@ -268,17 +280,31 @@ const NotificationDropdown = () => {
                 );
               })
             )}
-            {visible < filterNotification.length && (
-              <div className="p-3 text-center">
-                <Button
-                  onClick={() => setVisible((prev) => prev + 5)}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  Show More
-                </Button>
-              </div>
-            )}
           </div>
+
+          {/* Pagination footer — only shows when there's more than one page. */}
+          {filterNotification.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-t bg-gray-50/60 text-xs">
+              <Button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="!px-2.5 !py-1 !h-auto !text-xs !bg-white !text-gray-700 hover:!bg-gray-100 disabled:!opacity-40 disabled:!cursor-not-allowed border border-gray-200 rounded-md"
+              >
+                Prev
+              </Button>
+              <span className="text-gray-500 tabular-nums">
+                Page <span className="font-semibold text-gray-800">{safePage}</span>{" "}
+                of <span className="font-semibold text-gray-800">{pageCount}</span>
+              </span>
+              <Button
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                disabled={safePage >= pageCount}
+                className="!px-2.5 !py-1 !h-auto !text-xs !bg-white !text-gray-700 hover:!bg-gray-100 disabled:!opacity-40 disabled:!cursor-not-allowed border border-gray-200 rounded-md"
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
