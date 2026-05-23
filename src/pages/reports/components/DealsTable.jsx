@@ -134,10 +134,12 @@ const DealsTable = ({
     await onDelete(deal.id); // 👈 parent ko bol rahe ho
   };
 
-  const paginatedDeals = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return deals?.slice(startIndex, startIndex + itemsPerPage);
-  }, [deals, currentPage, itemsPerPage]);
+  // `deals` is already a single page of results from the backend
+  // (parent fetches via `useNewLeads({ limit, page, filters })`). Slicing it
+  // again with currentPage/itemsPerPage was double-paginating — page 2 was
+  // trying to slice indices [10..20] of a 10-item page array, giving []
+  // back and rendering an empty table. Use `deals` as-is.
+  const paginatedDeals = useMemo(() => deals || [], [deals]);
 
   const isAllSelected =
     selectedDeals?.length === paginatedDeals?.length &&

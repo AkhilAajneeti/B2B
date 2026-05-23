@@ -68,8 +68,10 @@ const MeetingPage = () => {
     setMode("view");
     setIsDrawerOpen(true);
   };
-  // Filter and sort deals
-  const totalPages = data?.total || 0;
+  // Pagination page count — derived from the backend's total record count
+  // divided by the page size. Previously this stored the raw total, which
+  // made a 32-record dataset render 32 pages.
+  const totalPages = Math.ceil((data?.total || 0) / Math.max(limit, 1));
 
   const handleMenuToggle = () => {
     setIsSidebarOpen(!isSidebarOpen);
