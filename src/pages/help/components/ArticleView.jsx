@@ -105,6 +105,24 @@ const ArticleView = ({ article, categoryId }) => {
             {article.description}
           </p>
         )}
+        {article.lastUpdated && (
+          <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
+            <Icon name="RefreshCw" size={12} />
+            <span>
+              Updated{" "}
+              {(() => {
+                try {
+                  return new Date(article.lastUpdated).toLocaleDateString(
+                    "en-IN",
+                    { day: "2-digit", month: "short", year: "numeric" },
+                  );
+                } catch {
+                  return article.lastUpdated;
+                }
+              })()}
+            </span>
+          </div>
+        )}
       </header>
 
       {/* Body — rendered section by section */}

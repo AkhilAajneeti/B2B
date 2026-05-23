@@ -20,6 +20,13 @@ const Select = React.forwardRef(({
     searchable = false,
     clearable = false,
     loading = false,
+    // When true, dropdown option labels wrap to multiple lines instead of
+    // being truncated. Selected display still truncates so the trigger stays
+    // clean. Default keeps existing behavior across the app.
+    wrapOptions = false,
+    // Extra Tailwind classes applied to the dropdown panel container — used
+    // to widen the panel for long labels without affecting the trigger width.
+    dropdownClassName = "",
     id,
     name,
     onChange,
@@ -117,6 +124,9 @@ const Select = React.forwardRef(({
                     ref={ref}
                     id={selectId}
                     type="button"
+                    // Native tooltip shows the full label on hover when the
+                    // truncated trigger doesn't fit everything on screen.
+                    title={hasValue ? getSelectedDisplay() : undefined}
                     className={cn(
                         "flex h-10 w-full items-center justify-between rounded-lg border border-border bg-card text-card-foreground px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-smooth shadow-elevation-1 hover:shadow-elevation-2",
                         error && "border-destructive focus:ring-destructive",
@@ -173,7 +183,11 @@ const Select = React.forwardRef(({
 
                 {/* Dropdown */}
                 {isOpen && (
-                    <div className="absolute z-50 w-full mt-2 bg-card text-card-foreground border border-border rounded-lg shadow-elevation-2 backdrop-blur-sm">
+                    <div className={cn(
+                        "absolute z-50 w-full mt-2 bg-card text-card-foreground border border-border rounded-lg shadow-elevation-2 backdrop-blur-sm",
+                        dropdownClassName,
+                    )}>
+
                         {searchable && (
                             <div className="p-3 border-b border-border">
                                 <div className="relative">
@@ -197,14 +211,29 @@ const Select = React.forwardRef(({
                                 filteredOptions?.map((option) => (
                                     <div
                                         key={option?.value}
+                                        title={option?.label}
                                         className={cn(
-                                            "relative flex cursor-pointer select-none items-center rounded-md mx-1 px-3 py-2.5 text-sm outline-none transition-smooth hover:bg-primary/10 hover:text-primary",
+                                            // Switch from `items-center` to
+                                            // `items-start` when wrapping so a
+                                            // 2-line label keeps the check icon
+                                            // aligned to the top of the row.
+                                            "relative flex cursor-pointer select-none rounded-md mx-1 px-3 py-2.5 text-sm outline-none transition-smooth hover:bg-primary/10 hover:text-primary",
+                                            wrapOptions ? "items-start" : "items-center",
                                             isSelected(option?.value) && "bg-primary/20 text-primary font-medium",
                                             option?.disabled && "pointer-events-none opacity-50 cursor-not-allowed"
                                         )}
                                         onClick={() => !option?.disabled && handleOptionSelect(option)}
                                     >
-                                        <span className="flex-1 truncate">{option?.label}</span>
+                                        <span
+                                            className={cn(
+                                                "flex-1",
+                                                wrapOptions
+                                                    ? "whitespace-normal break-words leading-snug"
+                                                    : "truncate",
+                                            )}
+                                        >
+                                            {option?.label}
+                                        </span>
                                         {multiple && isSelected(option?.value) && (
                                             <Check className="h-4 w-4 ml-2 flex-shrink-0 text-primary" />
                                         )}

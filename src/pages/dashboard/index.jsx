@@ -203,16 +203,18 @@ const Dashboard = () => {
     return createdToday || scheduledToday;
   }).length;
 
-  const proposals = leads.filter(
-    (l) => l.status === "Proposal Shared" && isToday(l.modifiedAt),
+  // Leads whose status was set to "Purchased" today — a closed-won counter.
+  const purchased = leads.filter(
+    (l) => l.status === "Purchased" && isToday(l.modifiedAt),
   ).length;
 
   const siteVisits = leads.filter(
     (l) => l.status === "Site Visit Done" && isToday(l.modifiedAt),
   ).length;
 
-  const closedDeals = leads.filter(
-    (l) => l.status === "Deal Closed" && isToday(l.modifiedAt),
+  // Leads moved into "Site Visit Scheduled" today — new bookings counter.
+  const siteVisitsScheduled = leads.filter(
+    (l) => l.status === "Site Visit Scheduled" && isToday(l.modifiedAt),
   ).length;
   // Close sidebar on escape key
   useEffect(() => {
@@ -378,35 +380,34 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  {/* Proposals Shared */}
+                  {/* Purchased — closed-won leads moved to "Purchased" today */}
                   <div
                     onClick={() => {
                       const filtered = leads.filter(
                         (l) =>
-                          l.status === "Proposal Shared" &&
-                          isToday(l.modifiedAt),
+                          l.status === "Purchased" && isToday(l.modifiedAt),
                       );
 
                       setInsightData(filtered);
-                      setActiveInsight("proposals");
+                      setActiveInsight("purchased");
                     }}
-                    className="cursor-pointer bg-purple-50 border border-purple-100 rounded-2xl p-6 
+                    className="cursor-pointer bg-emerald-50 border border-emerald-100 rounded-2xl p-6
 hover:shadow-lg transition-all duration-300 flex items-center justify-between min-h-[110px]"
                   >
                     <div className="space-y-1">
-                      <p className="text-xs font-medium tracking-wide text-purple-700 uppercase">
-                        Total Proposals
+                      <p className="text-xs font-medium tracking-wide text-emerald-700 uppercase">
+                        Purchased
                       </p>
-                      <p className="text-3xl font-bold text-purple-600">
-                        {proposals}
+                      <p className="text-3xl font-bold text-emerald-600">
+                        {purchased}
                       </p>
                     </div>
 
-                    <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
                       <Icon
-                        name="FileText"
+                        name="BadgeCheck"
                         size={22}
-                        className="text-purple-600"
+                        className="text-emerald-600"
                       />
                     </div>
                   </div>
@@ -444,34 +445,35 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
                     </div>
                   </div>
 
-                  {/* Deals Closed */}
+                  {/* Site Visit Scheduled — new bookings made today */}
                   <div
                     onClick={() => {
                       const filtered = leads.filter(
                         (l) =>
-                          l.status === "Lead Closed" && isToday(l.modifiedAt),
+                          l.status === "Site Visit Scheduled" &&
+                          isToday(l.modifiedAt),
                       );
 
                       setInsightData(filtered);
-                      setActiveInsight("deals");
+                      setActiveInsight("siteVisitsScheduled");
                     }}
-                    className="cursor-pointer bg-green-50 border border-green-100 rounded-2xl p-6 
+                    className="cursor-pointer bg-sky-50 border border-sky-100 rounded-2xl p-6
 hover:shadow-lg transition-all duration-300 flex items-center justify-between min-h-[110px]"
                   >
                     <div className="space-y-1">
-                      <p className="text-xs font-medium tracking-wide text-green-700 uppercase">
-                        Client Onboarded
+                      <p className="text-xs font-medium tracking-wide text-sky-700 uppercase">
+                        Site Visit Scheduled
                       </p>
-                      <p className="text-3xl font-bold text-green-600">
-                        {closedDeals}
+                      <p className="text-3xl font-bold text-sky-600">
+                        {siteVisitsScheduled}
                       </p>
                     </div>
 
-                    <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center">
                       <Icon
-                        name="CheckCircle"
+                        name="CalendarCheck"
                         size={22}
-                        className="text-green-600"
+                        className="text-sky-600"
                       />
                     </div>
                   </div>
@@ -484,9 +486,10 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
                   <div className="flex justify-between items-center px-6 py-4 border-b border-border bg-muted/40">
                     <h3 className="text-base font-semibold text-foreground">
                       {activeInsight === "meetings" && "Today's Meetings"}
-                      {activeInsight === "proposals" && "Proposal Shared Leads"}
+                      {activeInsight === "purchased" && "Purchased Today"}
                       {activeInsight === "visits" && "Site Visits"}
-                      {activeInsight === "deals" && "Closed Deals"}
+                      {activeInsight === "siteVisitsScheduled" &&
+                        "Site Visits Scheduled Today"}
                     </h3>
 
                     <Button

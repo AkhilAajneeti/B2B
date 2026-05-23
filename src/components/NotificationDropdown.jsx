@@ -3,13 +3,18 @@ import { useNotification } from "NotificationContext";
 import { useState, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { markAllNotificationsRead } from "services/notification.service";
-import Button from "./ui/Button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const PAGE_SIZE = 5;
+// Smaller page size = pagination kicks in sooner and each page renders cleanly
+// inside the body height cap without internal scroll.
+const PAGE_SIZE = 4;
 
 const NotificationDropdown = () => {
   const audioRef = useRef(null);
   const prevCountRef = useRef(0);
+  // Body scroll container — used to bounce back to the top whenever the
+  // user flips to a new page, so the new items are visible immediately.
+  const bodyRef = useRef(null);
   const [activeTab, setActiveTab] = useState("all");
   const [page, setPage] = useState(1);
   const { open, notifications, setNotifications } = useNotification();
@@ -21,6 +26,13 @@ const NotificationDropdown = () => {
   useEffect(() => {
     setPage(1);
   }, [activeTab, notifications.length]);
+
+  // Smoothly scroll the inner list to top whenever the active page changes.
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page]);
   useEffect(() => {
     if (notifications.length > prevCountRef.current) {
       audioRef.current?.play();
@@ -226,8 +238,13 @@ const NotificationDropdown = () => {
               )}
             </div>
           </div>
-          {/* Body */}
-          <div className="max-h-96 overflow-y-auto">
+          {/* Body — height capped so each page fits without internal scroll;
+              when a page is taller than the cap, overflow-y-auto + scroll-smooth
+              keeps the scroll polite. */}
+          <div
+            ref={bodyRef}
+            className="max-h-[360px] overflow-y-auto scroll-smooth"
+          >
             {filterNotification.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <div className="text-3xl mb-2">🔔</div>
@@ -282,27 +299,42 @@ const NotificationDropdown = () => {
             )}
           </div>
 
-          {/* Pagination footer — only shows when there's more than one page. */}
+          {/* Pagination footer — shows the moment the list has more than one
+              page worth of items. Sticky-feeling bar with arrow buttons and a
+              clear "Page X of Y · N total" indicator. */}
           {filterNotification.length > PAGE_SIZE && (
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-t bg-gray-50/60 text-xs">
-              <Button
+            <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-t bg-gray-50">
+              <button
+                type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={safePage <= 1}
-                className="!px-2.5 !py-1 !h-auto !text-xs !bg-white !text-gray-700 hover:!bg-gray-100 disabled:!opacity-40 disabled:!cursor-not-allowed border border-gray-200 rounded-md"
+                aria-label="Previous page"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
+                <ChevronLeft className="w-3.5 h-3.5" />
                 Prev
-              </Button>
-              <span className="text-gray-500 tabular-nums">
-                Page <span className="font-semibold text-gray-800">{safePage}</span>{" "}
-                of <span className="font-semibold text-gray-800">{pageCount}</span>
-              </span>
-              <Button
+              </button>
+
+              <div className="text-[11px] sm:text-xs text-gray-500 tabular-nums text-center min-w-0">
+                <span className="hidden sm:inline">Page </span>
+                <span className="font-semibold text-gray-800">{safePage}</span>
+                <span className="mx-1">/</span>
+                <span className="font-semibold text-gray-800">{pageCount}</span>
+                <span className="ml-1.5 hidden sm:inline text-gray-400">
+                  · {filterNotification.length} total
+                </span>
+              </div>
+
+              <button
+                type="button"
                 onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
                 disabled={safePage >= pageCount}
-                className="!px-2.5 !py-1 !h-auto !text-xs !bg-white !text-gray-700 hover:!bg-gray-100 disabled:!opacity-40 disabled:!cursor-not-allowed border border-gray-200 rounded-md"
+                aria-label="Next page"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Next
-              </Button>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </motion.div>

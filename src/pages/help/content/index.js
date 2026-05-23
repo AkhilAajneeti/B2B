@@ -28,9 +28,18 @@ import tasks from "./tasks";
 import reports from "./reports";
 import permissions from "./permissions";
 import faq from "./faq";
+import whatsNew from "./whatsNew";
 
 // Categories — order here drives the sidebar order.
 export const CATEGORIES = [
+  {
+    id: "whats-new",
+    name: "What's New",
+    icon: "Rocket",
+    accent: "rose",
+    description: "Recent updates, in plain language, with the date they shipped.",
+    articles: whatsNew,
+  },
   {
     id: "getting-started",
     name: "Getting Started",

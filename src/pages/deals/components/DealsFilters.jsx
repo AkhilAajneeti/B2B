@@ -260,6 +260,11 @@ const DealsFilters = ({
           onChange={(value) => handleFilterChange("team", value)}
           searchable
           clearable
+          // Allow long team names to wrap in the dropdown list, give the
+          // panel a touch more breathing room, and surface the full name on
+          // hover (the trigger stays clean via the existing truncate).
+          wrapOptions
+          dropdownClassName="min-w-[260px]"
         />
         {/* Date Type Select */}
         <Select
