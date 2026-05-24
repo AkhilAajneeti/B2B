@@ -15,7 +15,7 @@ import { usePipelineData } from "../pages/pipeline/hooks/usePipelineData";
 import { PIPELINE_CATEGORIES } from "../pages/pipeline/utils/pipelineConstants";
 
 export const useUrgentLeads = () => {
-  const { deals, isLoading, isFetching } = usePipelineData();
+  const { deals, isLoading, isFetching, refetch } = usePipelineData();
 
   const urgent = useMemo(() => {
     const overdue = [];
@@ -27,5 +27,7 @@ export const useUrgentLeads = () => {
     return { overdue, dueToday, total: overdue.length + dueToday.length };
   }, [deals]);
 
-  return { ...urgent, isLoading, isFetching };
+  // `refetch` is passed through so the Dashboard alert (and any other consumer)
+  // can force a fresh pipeline fetch on visit instead of waiting for staleTime.
+  return { ...urgent, isLoading, isFetching, refetch };
 };

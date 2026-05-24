@@ -2,12 +2,17 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
+import { getStoredUser } from "../../utils/permission";
 
 const Sidebar = ({ isOpen = false, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isUpgradeCardVisible, setIsUpgradeCardVisible] = useState(true);
 
+  // Items marked `adminOnly` are filtered out at render time for non-admins.
+  // Role lookup matches the existing convention used in utils/permission.js
+  // (lowercased string compare against the stored user's role).
+  const isAdmin = getStoredUser()?.role?.toLowerCase() === "admin";
 
   const navigationItems = [
     {
@@ -38,14 +43,9 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       label: "Projects",
       path: "/projects",
       icon: "Layers",
-
+      adminOnly: true,
     },
-    {
-      label: "Task",
-      path: "/tasks",
-      icon: "ListChecks",
-
-    },
+    
         {
       label: "Pipeline",
       path: "/pipeline",
@@ -56,6 +56,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       label: "Meeting",
       path: "/meeting",
       icon: "Projector",
+
+    },
+    {
+      label: "Task",
+      path: "/tasks",
+      icon: "ListChecks",
 
     },
     // {
@@ -163,7 +169,9 @@ const Sidebar = ({ isOpen = false, onClose }) => {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4">
             <div className="px-3 space-y-1">
-              {navigationItems?.map((item) => {
+              {navigationItems
+                ?.filter((item) => !item.adminOnly || isAdmin)
+                .map((item) => {
                 const isActive = location?.pathname === item?.path;
 
                 return (

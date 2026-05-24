@@ -41,24 +41,30 @@ const DealDrawer = ({
   const [expandedActivityId, setExpandedActivityId] = useState(null);
   const [editingActivityId, setEditingActivityId] = useState(null);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    phoneNumber: "+91",
-    emailAddress: "",
-    whatsapp: "",
-    addressCity: "",
-    cProjectName: "",
-    cNextContactAt: "",
-    cLeatReceivedAt: new Date().toISOString().slice(0, 16),
-    cPreference: "",
-    assignedUserId: "",
-    teamId: "",
-    status: "",
-    source: "",
-    description: "",
-    cSiteVisitAt: "",
-    industry: "",
+  // Lazy init so we read the logged-in user once on mount — avoids the brief
+  // flash of empty Assign User / Team selects before the mode-change effect
+  // overwrites the form below.
+  const [formData, setFormData] = useState(() => {
+    const u = getStoredUser();
+    return {
+      firstName: "",
+      lastName: "",
+      phoneNumber: "+91",
+      emailAddress: "",
+      whatsapp: "",
+      addressCity: "",
+      cProjectName: "",
+      cNextContactAt: "",
+      cLeatReceivedAt: new Date().toISOString().slice(0, 16),
+      cPreference: "",
+      assignedUserId: u?.id || "",
+      teamId: u?.defaultTeamId || u?.teamsIds?.[0] || u?.teamIds?.[0] || "",
+      status: "",
+      source: "",
+      description: "",
+      cSiteVisitAt: "",
+      industry: "",
+    };
   });
   const queryClient = useQueryClient();
   const { data: usersData } = useUsers();
@@ -142,8 +148,14 @@ const DealDrawer = ({
         cNextContactAt: "",
         cLeatReceivedAt: "",
         cPreference: "",
-        assignedUserId: "",
-        teamId: "",
+        // Default the assigned user + team to the currently logged-in user —
+        // both can still be overridden from their dropdowns before saving.
+        assignedUserId: currentUser?.id || "",
+        teamId:
+          currentUser?.defaultTeamId ||
+          currentUser?.teamsIds?.[0] ||
+          currentUser?.teamIds?.[0] ||
+          "",
         status: "New",
         source: "",
         description: "",

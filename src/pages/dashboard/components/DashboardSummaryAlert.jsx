@@ -1,19 +1,18 @@
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../../components/AppIcon";
 import { useUrgentLeads } from "../../../hooks/useUrgentLeads";
 
-// Two independent session flags:
-//   DISMISSED_KEY — set when the user clicks the X. While set, the alert stays
-//                   hidden for the rest of the browser session. Cleared on
-//                   tab close → next login the alert shows again.
-//   SOUND_KEY     — set the first time the chime plays. Prevents the chime
-//                   from replaying if the user just navigates away from the
-//                   dashboard and comes back (alert itself stays visible
-//                   silently, per spec).
-const DISMISSED_KEY = "dashboardSummaryAlertDismissed";
-const SOUND_KEY = "dashboardSummaryAlertSoundPlayed";
+// Format a Date as `HH:MM` in the user's locale (24h with leading zeros).
+const formatClock = (date) =>
+  date
+    ? date.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+    : "";
 
 // Tiny WebAudio chime — two soft sine notes. No external assets, no autoplay
 // issues after a fresh login (the login click counts as user interaction).
@@ -110,49 +109,46 @@ const NotificationRow = ({ deal, variant, onClick }) => {
  * lead id in router state — the deals page reads `location.state.leadId`,
  * fetches by id, and opens the drawer automatically.
  *
- * Only shows on the first dashboard visit per session, plays a soft chime on
- * appearance, and is dismissible.
+ * Refreshes on every dashboard visit: each mount triggers a refetch so the
+ * urgent counts reflect the latest pipeline state, not stale cache. Plays a
+ * soft chime once per visit when there's urgent work, dismissible via the X
+ * (only for the current view — navigating away and back shows it again).
  */
 const DashboardSummaryAlert = () => {
   const navigate = useNavigate();
 
-  // Dismissed state is seeded from sessionStorage so the X-button decision
-  // persists across in-session re-mounts (navigating away and back). The
-  // alert ONLY disappears when the user clicks the X — no auto-hide.
-  const [dismissed, setDismissed] = useState(() => {
-    try {
-      return !!sessionStorage.getItem(DISMISSED_KEY);
-    } catch {
-      return false;
-    }
-  });
+  // Local dismiss + chime-played state — reset on every mount, so each
+  // dashboard visit starts fresh (alert visible, chime ready to play once).
+  const [dismissed, setDismissed] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(null);
+  const playedRef = useRef(false);
 
   // Shared with the Header notification dropdown — both surfaces stay synced
   // because they read from the same pipeline dataset via React Query cache.
-  const urgent = useUrgentLeads();
+  const { refetch, isFetching, ...urgent } = useUrgentLeads();
 
-  // Chime plays once per session, the first time the alert renders with real
-  // urgent data. Subsequent navigations back to the dashboard keep the alert
-  // visible silently.
+  // Force a fresh pipeline fetch on every dashboard visit. `refetch` from
+  // React Query bypasses staleTime and re-hits the network — exactly what
+  // we want for "show the latest data each time you land on the dashboard".
   useEffect(() => {
-    if (dismissed || urgent.total === 0) return;
-    try {
-      if (sessionStorage.getItem(SOUND_KEY)) return;
-      sessionStorage.setItem(SOUND_KEY, "1");
-    } catch {
-      // sessionStorage unavailable — fall through and still play once per mount
+    if (!refetch) {
+      setLastRefreshedAt(new Date());
+      return;
     }
+    refetch().finally(() => setLastRefreshedAt(new Date()));
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Chime plays once per visit when urgent data actually lands. The ref
+  // guards against re-firing if the urgent count changes during the visit.
+  useEffect(() => {
+    if (dismissed || urgent.total === 0 || playedRef.current) return;
     playChime();
+    playedRef.current = true;
   }, [dismissed, urgent.total]);
 
-  const handleDismiss = () => {
-    setDismissed(true);
-    try {
-      sessionStorage.setItem(DISMISSED_KEY, "1");
-    } catch {
-      // ignore — in-state dismissal still works for the current render
-    }
-  };
+  const handleDismiss = () => setDismissed(true);
 
   if (dismissed || urgent.total === 0) return null;
 
@@ -176,9 +172,24 @@ const DashboardSummaryAlert = () => {
             <Icon name="BellRing" size={20} className="text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground">
-              Here's what needs you today
-            </h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-semibold text-foreground">
+                Here's what needs you today
+              </h3>
+              {/* Freshness indicator: shows the time of the last successful
+                  fetch, or a "Refreshing…" pill while a refetch is in flight. */}
+              {isFetching ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  <Icon name="Loader2" size={10} className="animate-spin" />
+                  Refreshing…
+                </span>
+              ) : lastRefreshedAt ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-full">
+                  <Icon name="Clock" size={10} />
+                  Updated {formatClock(lastRefreshedAt)}
+                </span>
+              ) : null}
+            </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-1 mb-3">
               {urgent.overdue.length > 0 && (
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
