@@ -32,21 +32,56 @@ const UserTab = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [detailsLoadingId, setDetailsLoadingId] = useState(null);
+  const emptyEmail = () => ({ emailAddress: "", primary: true, optOut: false, invalid: false });
+  const emptyPhone = () => ({ phoneNumber: "", type: "Mobile", primary: true });
+
   const [inviteData, setInviteData] = useState({
     userName: "",
-    title: "",
+    salutationName: "",
     firstName: "",
     lastName: "",
-    phoneNumber: "",
-    emailAddress: "",
+    title: "",
+    emails: [emptyEmail()],
+    phones: [emptyPhone()],
     gender: "",
-    teamId: "",
-    type: "",
-    isActive: "",
-    role: "",
+    type: "regular",
+    isActive: true,
+    teamsIds: [],
+    defaultTeamId: "",
+    rolesIds: [],
     password: "",
     confirmPassword: "",
   });
+
+  const hydrateEmails = (member) => {
+    if (Array.isArray(member?.emailAddressData) && member.emailAddressData.length) {
+      return member.emailAddressData.map((e) => ({
+        emailAddress: e.emailAddress || "",
+        primary: !!e.primary,
+        optOut: !!e.optOut,
+        invalid: !!e.invalid,
+      }));
+    }
+    if (member?.emailAddress) {
+      return [{ emailAddress: member.emailAddress, primary: true, optOut: false, invalid: false }];
+    }
+    return [emptyEmail()];
+  };
+
+  const hydratePhones = (member) => {
+    if (Array.isArray(member?.phoneNumberData) && member.phoneNumberData.length) {
+      return member.phoneNumberData.map((p) => ({
+        phoneNumber: p.phoneNumber || "",
+        type: p.type || "Mobile",
+        primary: !!p.primary,
+      }));
+    }
+    if (member?.phoneNumber) {
+      return [{ phoneNumber: member.phoneNumber, type: "Mobile", primary: true }];
+    }
+    return [emptyPhone()];
+  };
+
   const handleEdit = (member) => {
     setIsEdit(true);
     setIsInviteModalOpen(true);
@@ -54,16 +89,18 @@ const UserTab = () => {
     setInviteData({
       id: member.id,
       userName: member.userName || "",
-      title: member.title || "",
+      salutationName: member.salutationName || "",
       firstName: member.firstName || "",
       lastName: member.lastName || "",
-      phoneNumber: member.phoneNumber || "",
-      emailAddress: member.emailAddress || "",
+      title: member.title || "",
+      emails: hydrateEmails(member),
+      phones: hydratePhones(member),
       gender: member.gender || "",
-      teamId: member.defaultTeamId || "",
-      type: member.type || "",
-      isActive: member.isActive ? "true" : "false",
-      role: member.role || "",
+      type: member.type || "regular",
+      isActive: member.isActive !== undefined ? !!member.isActive : true,
+      teamsIds: member.teamsIds || (member.defaultTeamId ? [member.defaultTeamId] : []),
+      defaultTeamId: member.defaultTeamId || "",
+      rolesIds: member.rolesIds || [],
       password: "",
       confirmPassword: "",
     });
@@ -91,27 +128,39 @@ const UserTab = () => {
       toast.error("Please select user type");
       return;
     }
-    if (!inviteData.teamId) {
-      toast.error("Please select a team");
+    if (!inviteData.teamsIds || inviteData.teamsIds.length === 0) {
+      toast.error("Please select at least one team");
       return;
     }
+
+    const cleanedEmails = inviteData.emails.filter((e) => e.emailAddress?.trim());
+    const cleanedPhones = inviteData.phones.filter((p) => p.phoneNumber?.trim());
+
+    const teamsIds = inviteData.teamsIds || [];
+    const defaultTeamId = inviteData.defaultTeamId || teamsIds[0] || null;
+
     const payload = {
       userName: inviteData.userName,
+      salutationName: inviteData.salutationName || null,
       firstName: inviteData.firstName,
       lastName: inviteData.lastName,
       title: inviteData.title,
-      phoneNumber: inviteData.phoneNumber,
-      emailAddress: inviteData.emailAddress,
-      gender: inviteData.gender,
+      emailAddress: cleanedEmails[0]?.emailAddress || "",
+      emailAddressData: cleanedEmails,
+      phoneNumber: cleanedPhones[0]?.phoneNumber || "",
+      phoneNumberData: cleanedPhones,
+      gender: inviteData.gender || null,
       type: inviteData.type,
-      isActive: inviteData.isActive === "true",
-      password: inviteData.password,
-      passwordConfirm: inviteData.password, // 🔥 important for Espo
-
-      // ✅ ensure team is properly set
-      teamsIds: inviteData.teamId ? [inviteData.teamId] : [],
-      defaultTeamId: inviteData.teamId ? inviteData.teamId : null,
+      isActive: !!inviteData.isActive,
+      teamsIds,
+      defaultTeamId,
+      rolesIds: inviteData.rolesIds || [],
     };
+
+    if (inviteData.password) {
+      payload.password = inviteData.password;
+      payload.passwordConfirm = inviteData.password;
+    }
 
     try {
       setIsLoading(true);
@@ -202,15 +251,28 @@ const UserTab = () => {
   const typeOptions = [
     { value: "regular", label: "Regular" },
     { value: "admin", label: "Admin" },
-  ];
-  const ActiveOptions = [
-    { value: "true", label: "true" },
-    { value: "false", label: "false" },
+    { value: "portal", label: "Portal" },
+    { value: "api", label: "API" },
   ];
   const GenderOptions = [
+    { value: "", label: "Not Set" },
     { value: "Male", label: "Male" },
     { value: "Female", label: "Female" },
     { value: "Neutral", label: "Neutral" },
+  ];
+  const SalutationOptions = [
+    { value: "", label: "—" },
+    { value: "Mr.", label: "Mr." },
+    { value: "Mrs.", label: "Mrs." },
+    { value: "Ms.", label: "Ms." },
+    { value: "Dr.", label: "Dr." },
+  ];
+  const PhoneTypeOptions = [
+    { value: "Mobile", label: "Mobile" },
+    { value: "Office", label: "Office" },
+    { value: "Home", label: "Home" },
+    { value: "Fax", label: "Fax" },
+    { value: "Other", label: "Other" },
   ];
 
   const handleInviteChange = (field, value) => {
@@ -218,6 +280,46 @@ const UserTab = () => {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const updateEmailField = (index, field, value) => {
+    setInviteData((prev) => {
+      const emails = prev.emails.map((e, i) => (i === index ? { ...e, [field]: value } : e));
+      if (field === "primary" && value) {
+        emails.forEach((e, i) => { e.primary = i === index; });
+      }
+      return { ...prev, emails };
+    });
+  };
+  const addEmail = () => {
+    setInviteData((prev) => ({ ...prev, emails: [...prev.emails, emptyEmail()] }));
+  };
+  const removeEmail = (index) => {
+    setInviteData((prev) => {
+      const emails = prev.emails.filter((_, i) => i !== index);
+      if (!emails.some((e) => e.primary) && emails.length) emails[0].primary = true;
+      return { ...prev, emails: emails.length ? emails : [emptyEmail()] };
+    });
+  };
+
+  const updatePhoneField = (index, field, value) => {
+    setInviteData((prev) => {
+      const phones = prev.phones.map((p, i) => (i === index ? { ...p, [field]: value } : p));
+      if (field === "primary" && value) {
+        phones.forEach((p, i) => { p.primary = i === index; });
+      }
+      return { ...prev, phones };
+    });
+  };
+  const addPhone = () => {
+    setInviteData((prev) => ({ ...prev, phones: [...prev.phones, emptyPhone()] }));
+  };
+  const removePhone = (index) => {
+    setInviteData((prev) => {
+      const phones = prev.phones.filter((_, i) => i !== index);
+      if (!phones.some((p) => p.primary) && phones.length) phones[0].primary = true;
+      return { ...prev, phones: phones.length ? phones : [emptyPhone()] };
+    });
   };
 
   const handleSendInvite = async () => {
@@ -641,9 +743,10 @@ const UserTab = () => {
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
                   <form onSubmit={handleSubmit}>
                     <div className="space-y-4">
-                      {/* userName's  && Title*/}
+                      {/* Personal Info */}
                       <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                        <div className="grid grid-cols-2 gap-2">
+                        {/* User Name */}
+                        <div className="grid grid-cols-2 gap-4">
                           <Input
                             label="User Name"
                             type="text"
@@ -651,70 +754,158 @@ const UserTab = () => {
                             onChange={(e) =>
                               handleInviteChange("userName", e?.target?.value)
                             }
-                            placeholder="colleague@company.com"
+                            placeholder="username"
                             required
                           />
+                        </div>
+
+                        {/* Name (Salutation + First + Last) | Designation */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">
+                              Name <span className="text-destructive">*</span>
+                            </label>
+                            <div className="grid grid-cols-[90px_1fr_1fr] gap-2">
+                              <Select
+                                options={SalutationOptions}
+                                value={inviteData?.salutationName}
+                                onChange={(value) =>
+                                  handleInviteChange("salutationName", value)
+                                }
+                                placeholder=""
+                              />
+                              <Input
+                                type="text"
+                                value={inviteData?.firstName}
+                                onChange={(e) =>
+                                  handleInviteChange("firstName", e?.target?.value)
+                                }
+                                placeholder="First Name"
+                                required
+                              />
+                              <Input
+                                type="text"
+                                value={inviteData?.lastName}
+                                onChange={(e) =>
+                                  handleInviteChange("lastName", e?.target?.value)
+                                }
+                                placeholder="Last Name"
+                              />
+                            </div>
+                          </div>
                           <Input
-                            label="Title"
+                            label="Designation"
                             type="text"
                             value={inviteData?.title}
                             onChange={(e) =>
                               handleInviteChange("title", e?.target?.value)
                             }
-                            placeholder="title"
-                            required
-                          />
-                        </div>
-                        {/* First Name's  && Last Name*/}
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            label="First Name"
-                            type="text"
-                            value={inviteData?.firstName}
-                            onChange={(e) =>
-                              handleInviteChange("firstName", e?.target?.value)
-                            }
-                            placeholder="colleague@company.com"
-                            required
-                          />
-                          <Input
-                            label="Last Name"
-                            type="text"
-                            value={inviteData?.lastName}
-                            onChange={(e) =>
-                              handleInviteChange("lastName", e?.target?.value)
-                            }
-                            placeholder="colleague@company.com"
-                            required
+                            placeholder="Designation"
                           />
                         </div>
 
-                        {/* email & phone number */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            label="Email Address"
-                            type="email"
-                            value={inviteData?.emailAddress}
-                            onChange={(e) =>
-                              handleInviteChange("emailAddress", e?.target?.value)
-                            }
-                            placeholder="colleague@company.com"
-                            required
-                          />
-                          <Input
-                            label="Phone Number"
-                            type="tel"
-                            value={inviteData?.phoneNumber}
-                            onChange={(e) =>
-                              handleInviteChange("phoneNumber", e?.target?.value)
-                            }
-                            placeholder="colleague@company.com"
-                            required
-                          />
+                        {/* Emails (multi) | Phones (multi) */}
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Emails */}
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Email</label>
+                            <div className="space-y-2">
+                              {inviteData.emails.map((email, idx) => (
+                                <div key={idx} className="flex gap-2 items-start">
+                                  <Input
+                                    type="email"
+                                    value={email.emailAddress}
+                                    onChange={(e) =>
+                                      updateEmailField(idx, "emailAddress", e?.target?.value)
+                                    }
+                                    placeholder="name@example.com"
+                                    className="flex-1"
+                                  />
+                                  <button
+                                    type="button"
+                                    title={email.primary ? "Primary" : "Mark as primary"}
+                                    onClick={() => updateEmailField(idx, "primary", true)}
+                                    className={`h-10 w-10 flex items-center justify-center rounded-md border border-border ${email.primary ? "text-primary" : "text-muted-foreground hover:bg-muted"}`}
+                                  >
+                                    <Icon name="Star" size={16} />
+                                  </button>
+                                  {inviteData.emails.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeEmail(idx)}
+                                      className="h-10 w-10 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted"
+                                    >
+                                      <Icon name="X" size={16} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={addEmail}
+                                className="h-10 w-10 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted"
+                              >
+                                <Icon name="Plus" size={16} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Phones */}
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Phone</label>
+                            <div className="space-y-2">
+                              {inviteData.phones.map((phone, idx) => (
+                                <div key={idx} className="flex gap-2 items-start">
+                                  <div className="w-28">
+                                    <Select
+                                      options={PhoneTypeOptions}
+                                      value={phone.type}
+                                      onChange={(value) =>
+                                        updatePhoneField(idx, "type", value)
+                                      }
+                                    />
+                                  </div>
+                                  <Input
+                                    type="tel"
+                                    value={phone.phoneNumber}
+                                    onChange={(e) =>
+                                      updatePhoneField(idx, "phoneNumber", e?.target?.value)
+                                    }
+                                    placeholder="+91 00000 00000"
+                                    className="flex-1"
+                                  />
+                                  <button
+                                    type="button"
+                                    title={phone.primary ? "Primary" : "Mark as primary"}
+                                    onClick={() => updatePhoneField(idx, "primary", true)}
+                                    className={`h-10 w-10 flex items-center justify-center rounded-md border border-border ${phone.primary ? "text-primary" : "text-muted-foreground hover:bg-muted"}`}
+                                  >
+                                    <Icon name="Star" size={16} />
+                                  </button>
+                                  {inviteData.phones.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removePhone(idx)}
+                                      className="h-10 w-10 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted"
+                                    >
+                                      <Icon name="X" size={16} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={addPhone}
+                                className="h-10 w-10 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted"
+                              >
+                                <Icon name="Plus" size={16} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* gender & phone number */}
-                        <div className="grid grid-cols-2 gap-2">
+                        {/* Gender */}
+                        <div className="grid grid-cols-2 gap-4">
                           <Select
                             label="Gender"
                             options={GenderOptions}
@@ -725,30 +916,13 @@ const UserTab = () => {
                           />
                         </div>
                       </div>
-                      {/* Team Access Control */}
+
+                      {/* Teams and Access Control */}
                       <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                        {/* Teams And Roles */}
-                        <label htmlFor="">Team And Access control</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Select
-                            label="Team"
-                            options={teamOptions}
-                            value={inviteData?.teamId}
-                            onChange={(value) =>
-                              handleInviteChange("teamId", value)
-                            }
-                          />
-                          <Select
-                            label="Role"
-                            options={roleOptions}
-                            value={inviteData?.role}
-                            onChange={(value) =>
-                              handleInviteChange("role", value)
-                            }
-                          />
-                        </div>
-                        {/* Regular And Is Active */}
-                        <div className="grid grid-cols-2 gap-2">
+                        <label className="text-sm font-medium">Teams and Access Control</label>
+
+                        {/* Type | Is Active */}
+                        <div className="grid grid-cols-2 gap-4">
                           <Select
                             label="Type"
                             options={typeOptions}
@@ -757,12 +931,53 @@ const UserTab = () => {
                               handleInviteChange("type", value)
                             }
                           />
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Is Active</label>
+                            <Input
+                              type="checkbox"
+                              checked={!!inviteData?.isActive}
+                              onChange={(e) =>
+                                handleInviteChange("isActive", e?.target?.checked)
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        {/* Teams (multi) | Default Team */}
+                        <div className="grid grid-cols-2 gap-4">
                           <Select
-                            label="IsActive"
-                            options={ActiveOptions}
-                            value={inviteData?.isActive}
+                            label="Teams"
+                            multiple
+                            searchable
+                            options={teamOptions}
+                            value={inviteData?.teamsIds}
                             onChange={(value) =>
-                              handleInviteChange("isActive", value)
+                              handleInviteChange("teamsIds", value)
+                            }
+                          />
+                          <Select
+                            label="Default Team"
+                            clearable
+                            options={(teamOptions || []).filter((t) =>
+                              (inviteData?.teamsIds || []).includes(t.value)
+                            )}
+                            value={inviteData?.defaultTeamId}
+                            onChange={(value) =>
+                              handleInviteChange("defaultTeamId", value)
+                            }
+                          />
+                        </div>
+
+                        {/* Roles (multi) */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <Select
+                            label="Roles"
+                            multiple
+                            searchable
+                            options={roleOptions}
+                            value={inviteData?.rolesIds}
+                            onChange={(value) =>
+                              handleInviteChange("rolesIds", value)
                             }
                           />
                         </div>
@@ -778,7 +993,7 @@ const UserTab = () => {
                               onChange={(e) =>
                                 handleInviteChange("password", e?.target?.value)
                               }
-                              required
+                              required={!isEdit}
                             />
                             <button
                               type="button"
@@ -802,7 +1017,7 @@ const UserTab = () => {
                                   e?.target?.value,
                                 )
                               }
-                              required
+                              required={!isEdit}
                             />
                             <button
                               type="button"
