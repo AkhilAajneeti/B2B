@@ -12,7 +12,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
   // Items marked `adminOnly` are filtered out at render time for non-admins.
   // Role lookup matches the existing convention used in utils/permission.js
   // (lowercased string compare against the stored user's role).
-  const isAdmin = getStoredUser()?.role?.toLowerCase() === "admin";
+  const isAdmin = getStoredUser()?.type?.toLowerCase() === "admin";
 
   const navigationItems = [
     {
