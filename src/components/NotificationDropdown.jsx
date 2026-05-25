@@ -5,9 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { markAllNotificationsRead } from "services/notification.service";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-// Smaller page size = pagination kicks in sooner and each page renders cleanly
-// inside the body height cap without internal scroll.
-const PAGE_SIZE = 4;
+// 8 per page keeps pagination clicks manageable for users with dozens of
+// notifications, while each page still scrolls cleanly within the body cap.
+const PAGE_SIZE = 5;
 
 const NotificationDropdown = () => {
   const audioRef = useRef(null);

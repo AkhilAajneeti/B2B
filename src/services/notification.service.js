@@ -1,15 +1,20 @@
-export const fetchNotifications = async () => {
+// `maxSize` defaults to 100 so the dropdown can paginate over the user's full
+// notification history client-side. The backend returns `total: -1`, so we
+// can't compute true totals from one request — fetching a generous batch up
+// front is simpler than chaining server-side page calls.
+export const fetchNotifications = async ({ maxSize = 100, offset = 0 } = {}) => {
   const token = localStorage.getItem("auth_token");
 
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Notification?maxSize=5&offset=0&orderBy=number&order=desc", {
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Notification?maxSize=${maxSize}&offset=${offset}&orderBy=number&order=desc`,
+    {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
       token: token, // ✅ backend expects this
     },
-  });
+    },
+  );
 
   if (!res.ok) {
     console.log("STATUS:", res.status);
