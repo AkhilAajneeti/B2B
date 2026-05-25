@@ -11,7 +11,15 @@ import {
   addDays as addDaysFn,
 } from "date-fns";
 
-/** Parse an EspoCRM date / date-time string into a Date (or null). */
+/**
+ * Parse an EspoCRM date / date-time string into a Date (or null).
+ *
+ * Note: ESPO transports date-times as "YYYY-MM-DD HH:mm:ss" without a tz
+ * suffix. The rest of this CRM (see leads.service callers, DealCard, etc.)
+ * treats those strings as LOCAL wall-clock time, not UTC - that matches what
+ * users actually type in their timezone. We follow the same convention so a
+ * follow-up entered as "25 May" never displays as "26 May" in UI later.
+ */
 export const parseEspoDate = (value) => {
   if (!value) return null;
   if (value instanceof Date) return isValid(value) ? value : null;
@@ -20,11 +28,10 @@ export const parseEspoDate = (value) => {
     const trimmed = value.trim();
     if (!trimmed) return null;
 
-    // Plain date -> treat as local midnight.
     const date =
       trimmed.length <= 10
-        ? new Date(`${trimmed}T00:00:00`)
-        : new Date(`${trimmed.replace(" ", "T")}Z`); // UTC date-time
+        ? new Date(`${trimmed}T00:00:00`) // plain date -> local midnight
+        : new Date(trimmed.replace(" ", "T")); // datetime -> local wall-clock
 
     return isValid(date) ? date : null;
   }
