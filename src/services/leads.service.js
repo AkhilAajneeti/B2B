@@ -244,7 +244,9 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
   if (filters.source) {
     where.push({
       type: "equals",
-      attribute: "source",
+      // Filter on cSubSource — the table now displays the sub-source, so the
+      // "Source" filter queries the same column. Dropdown label stays "Source".
+      attribute: "cSubSource",
       value: filters.source,
     });
   }

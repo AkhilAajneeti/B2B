@@ -135,7 +135,8 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
     where.push({ type: "equals", attribute: "status", value: filters.status });
   }
   if (filters.source && !omit.has("source")) {
-    where.push({ type: "equals", attribute: "source", value: filters.source });
+    // Match the table: the "Source" filter queries cSubSource.
+    where.push({ type: "equals", attribute: "cSubSource", value: filters.source });
   }
   if (filters.sector && !omit.has("cSector")) {
     where.push({ type: "equals", attribute: "cSector", value: filters.sector });

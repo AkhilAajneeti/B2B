@@ -33,9 +33,10 @@ const DealsFilters = ({
     { value: "Existing Customer", label: "Existing Customer" },
     { value: "Partner", label: "Partner" },
     { value: "Public Relations", label: "Public Relations" },
-    { value: "Web Site", label: "Web Site" },
+    { value: "Website", label: "Web Site" },
     { value: "Campaign", label: "Campaign" },
     { value: "ACL", label: "Aajneeti" },
+    { value: "Meta", label: "Meta" },
     { value: "Other", label: "Other" },
   ];
   const statusOptions = [
