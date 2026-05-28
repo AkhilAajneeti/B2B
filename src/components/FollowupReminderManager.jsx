@@ -169,8 +169,23 @@ const FollowupReminderManager = () => {
     persistFired(firedRef.current);
   };
 
-  const showReminderPopup = (reminder) => {
+  // Accepts a single reminder or an array; multiple due at the same moment are
+  // shown as ONE grouped popup to keep the screen uncluttered.
+  const showReminderPopup = (group) => {
+    const items = Array.isArray(group) ? group : [group];
+    if (!items.length) return;
+
     playBeep();
+
+    const isGroup = items.length > 1;
+    const lead = items[0];
+    const names = items.map((r) => r.name);
+    const namePreview =
+      names.length <= 3
+        ? names.join(", ")
+        : `${names.slice(0, 3).join(", ")} +${names.length - 3} more`;
+    const groupId = `group-${lead.time.getTime()}`;
+    const toastId = isGroup ? `reminder-${groupId}` : `reminder-${lead.id}`;
 
     // OS-level notification when the tab isn't focused.
     if (
@@ -179,15 +194,20 @@ const FollowupReminderManager = () => {
       document.hidden
     ) {
       try {
-        const n = new Notification("Follow-up reminder", {
-          body: `${reminder.name} • ${formatTime(reminder.time)}${
-            reminder.project ? ` • ${reminder.project}` : ""
-          }`,
-          tag: reminder.id,
-        });
+        const n = new Notification(
+          isGroup ? `${items.length} follow-ups due now` : "Follow-up reminder",
+          {
+            body: isGroup
+              ? namePreview
+              : `${lead.name} • ${formatTime(lead.time)}${
+                  lead.project ? ` • ${lead.project}` : ""
+                }`,
+            tag: isGroup ? groupId : lead.id,
+          },
+        );
         n.onclick = () => {
           window.focus();
-          navigate("/leads");
+          navigate("/leads", { state: { leadId: lead.id } });
           n.close();
         };
       } catch {
@@ -209,19 +229,23 @@ const FollowupReminderManager = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900">
-                Call Later reminder
+                {isGroup
+                  ? `${items.length} Call Later reminders`
+                  : "Call Later reminder"}
               </p>
-              <p className="text-sm text-gray-700 truncate">{reminder.name}</p>
+              <p className="text-sm text-gray-700 truncate">
+                {isGroup ? namePreview : lead.name}
+              </p>
               <p className="text-xs text-gray-500 mt-0.5">
-                {formatTime(reminder.time)}
-                {reminder.project ? ` • ${reminder.project}` : ""}
+                {formatTime(lead.time)}
+                {!isGroup && lead.project ? ` • ${lead.project}` : ""}
               </p>
             </div>
           </div>
           <div className="flex border-t border-gray-100">
             <button
               onClick={() => {
-                navigate("/leads");
+                navigate("/leads", { state: { leadId: lead.id } });
                 toast.dismiss(t.id);
               }}
               className="flex-1 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"
@@ -231,7 +255,7 @@ const FollowupReminderManager = () => {
             <button
               onClick={() => {
                 const handle = setTimeout(
-                  () => showReminderPopup(reminder),
+                  () => showReminderPopup(items),
                   SNOOZE_MS,
                 );
                 snoozeTimersRef.current.push(handle);
@@ -250,7 +274,7 @@ const FollowupReminderManager = () => {
           </div>
         </div>
       ),
-      { duration: Infinity, id: `reminder-${reminder.id}` },
+      { duration: Infinity, id: toastId },
     );
   };
 
@@ -282,12 +306,17 @@ const FollowupReminderManager = () => {
       );
       if (!next) return;
 
-      const delay = Math.min(next.time.getTime() - ts, SETTIMEOUT_MAX);
+      const delay = Math.min(Math.max(next.time.getTime() - ts, 0), SETTIMEOUT_MAX);
       timerRef.current = setTimeout(() => {
-        // Guard against a parallel tab having already fired it.
-        if (!firedRef.current.has(next.id)) {
-          markFired(next.id);
-          showReminderPopup(next);
+        // Fire EVERY reminder now due (handles several sharing the same time)
+        // as a single grouped popup, then chain to the next future group.
+        const fireNow = Date.now();
+        const due = reminders.filter(
+          (r) => r.time.getTime() <= fireNow && !firedRef.current.has(r.id),
+        );
+        if (due.length) {
+          due.forEach((r) => markFired(r.id));
+          showReminderPopup(due);
         }
         schedule(); // move to the next nearest
       }, delay);

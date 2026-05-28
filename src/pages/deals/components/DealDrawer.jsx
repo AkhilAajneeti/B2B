@@ -1044,10 +1044,7 @@ const DealDrawer = ({
 
 Thank you for contacting us for your lead generation requirements.
 
-I'm *${deal?.assignedUserName || "AAJneeti Team"
-                                  }* from *AAJneeti Advertising*.
-
-Let me know when you're available so that we can discuss this in more detail.
+I'm *${deal?.assignedUserName }* Let me know when you're available so that we can discuss this in more detail.
 
 *aajneeti.social*`
                                 )}`}
