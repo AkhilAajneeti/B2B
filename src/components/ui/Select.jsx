@@ -1,5 +1,5 @@
 // components/ui/Select.jsx - Shadcn style Select
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, Check, Search, X } from "lucide-react";
 import { cn } from "../../utils/cn";
 import Button from "./Button";
@@ -35,6 +35,48 @@ const Select = React.forwardRef(({
 }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+
+    // Ref on the outer container — used by the click-outside listener to
+    // detect whether a `mousedown` happened inside the select (trigger or
+    // dropdown panel) or anywhere else on the page.
+    const containerRef = useRef(null);
+
+    // Close on outside click / Escape. Only attaches listeners while the
+    // dropdown is open so there's zero runtime cost the rest of the time.
+    // The trigger button itself is inside `containerRef`, so clicking it
+    // doesn't trip the outside-click branch — `handleToggle` keeps owning
+    // the open/close decision for trigger clicks.
+    useEffect(() => {
+        if (!isOpen) return undefined;
+
+        const handlePointerDown = (event) => {
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(event.target)
+            ) {
+                setIsOpen(false);
+                setSearchTerm("");
+                onOpenChange?.(false);
+            }
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                setIsOpen(false);
+                setSearchTerm("");
+                onOpenChange?.(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handlePointerDown);
+        document.addEventListener("touchstart", handlePointerDown);
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("mousedown", handlePointerDown);
+            document.removeEventListener("touchstart", handlePointerDown);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isOpen, onOpenChange]);
 
     // Generate unique ID if not provided
     const selectId = id || `select-${Math.random()?.toString(36)?.substr(2, 9)}`;
@@ -106,7 +148,7 @@ const Select = React.forwardRef(({
     const hasValue = multiple ? value?.length > 0 : value !== undefined && value !== '';
 
     return (
-        <div className={cn("relative", className)}>
+        <div ref={containerRef} className={cn("relative", className)}>
             {label && (
                 <label
                     htmlFor={selectId}

@@ -14,6 +14,23 @@ const formatClock = (date) =>
       })
     : "";
 
+// Parse an ESPO-style datetime (either ISO or "YYYY-MM-DD HH:mm:ss") and
+// format as e.g. "16 May, 02:30 PM". Returns "" for falsy / invalid input.
+const formatDueDateTime = (value) => {
+  if (!value) return "";
+  const d = new Date(
+    typeof value === "string" ? value.replace(" ", "T") : value,
+  );
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 // Tiny WebAudio chime — two soft sine notes. No external assets, no autoplay
 // issues after a fresh login (the login click counts as user interaction).
 const playChime = () => {
@@ -59,16 +76,32 @@ const NotificationRow = ({ deal, variant, onClick }) => {
         };
 
   const fullTitle = deal.title || "Untitled Lead";
-  const subtitle = deal.company || deal.project || deal.status || styles.label;
 
+  const phone =
+    deal.raw?.phoneNumber ||
+    deal.raw?.phoneNumberMobile ||
+    deal.raw?.cAlternateNumber ||
+    "";
+  const projectName = deal.project || deal.company || "";
+  const dueDateTime = formatDueDateTime(deal.nextContactDate);
+
+  const metaLineOne = [deal.status, projectName].filter(Boolean);
+  const metaLineTwo = [phone, dueDateTime].filter(Boolean);
+
+  // `div role="button"` instead of a real <button> so we can legally nest
+  // an <a href="tel:…"> inside for the click-to-call action on mobile.
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      // Slightly tighter horizontal padding on mobile so longer lead names
-      // get more room. Items align to the top so a wrapped 2-line title
-      // doesn't drag the icon down.
-      className="w-full text-left flex items-start gap-2.5 sm:gap-3 px-2.5 sm:px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/40 hover:shadow-[0_6px_18px_-10px_rgba(15,23,42,0.18)] transition-all"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className="cursor-pointer w-full text-left flex items-start gap-2 sm:gap-3 px-2 sm:px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/40 hover:shadow-[0_6px_18px_-10px_rgba(15,23,42,0.18)] transition-all"
       title={fullTitle}
     >
       <div
@@ -76,27 +109,69 @@ const NotificationRow = ({ deal, variant, onClick }) => {
       >
         <Icon name={styles.icon} size={14} className={styles.iconColor} />
       </div>
-      <div className="min-w-0 flex-1">
-        {/* Mobile: allow up to 2 lines so full name shows. Desktop: keep
-            single-line truncate to preserve the tight desktop layout. */}
+
+      <div className="min-w-0 flex-1 space-y-0.5">
         <div className="text-sm font-medium text-foreground break-words line-clamp-2 sm:line-clamp-none sm:truncate leading-snug">
           {fullTitle}
         </div>
-        <div className="text-xs text-muted-foreground truncate mt-0.5">
-          {subtitle}
-        </div>
+
+        {/* Meta line 1 — status pill + project name. */}
+        {metaLineOne.length > 0 && (
+          <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+            {deal.status && (
+              <span
+                className={`px-1.5 py-px rounded text-[10px] font-semibold uppercase tracking-wider ${styles.iconBg} ${styles.iconColor}`}
+              >
+                {deal.status}
+              </span>
+            )}
+            {projectName && (
+              <span className="truncate">{projectName}</span>
+            )}
+          </div>
+        )}
+
+        {/* Meta line 2 — tap-to-call icon (mobile only) + due date/time. */}
+        {metaLineTwo.length > 0 && (
+          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+            {phone && (
+              <a
+                href={`tel:${phone}`}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Call ${phone}`}
+                title={`Call ${phone}`}
+                // Icon-only on mobile, hidden on desktop per current scope.
+                className="sm:hidden inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-200 transition-colors"
+              >
+                <Icon name="Phone" size={14} />
+              </a>
+            )}
+            {dueDateTime && (
+              <span className={`inline-flex items-center gap-1 ${styles.iconColor}`}>
+                <Icon name="CalendarClock" size={10} />
+                {dueDateTime}
+              </span>
+            )}
+          </div>
+        )}
       </div>
-      <span
-        className={`text-[10px] font-semibold uppercase tracking-wider ${styles.iconColor} hidden sm:inline-block`}
-      >
-        {styles.label}
-      </span>
-      <Icon
-        name="ChevronRight"
-        size={14}
-        className="text-muted-foreground shrink-0 mt-2"
-      />
-    </button>
+
+      {/* Right rail — badge + chevron grouped so they vertically center
+          together against the multi-line content (rather than top-aligning
+          with the title via individual `mt-*` hacks). */}
+      <div className="flex items-center gap-2 self-center shrink-0">
+        <span
+          className={`text-[10px] font-semibold uppercase tracking-wider ${styles.iconColor} hidden sm:inline-block`}
+        >
+          {styles.label}
+        </span>
+        <Icon
+          name="ChevronRight"
+          size={14}
+          className="text-muted-foreground"
+        />
+      </div>
+    </div>
   );
 };
 
@@ -163,11 +238,11 @@ const DashboardSummaryAlert = () => {
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
-        className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-3 sm:p-4"
+        className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-2.5 sm:p-4"
       >
         {/* Mobile reserves space only for the X (8 = 2rem). Desktop also makes
             room for the absolute-positioned View pipeline pill (36 = 9rem). */}
-        <div className="flex items-start gap-2.5 sm:gap-3 pr-9 sm:pr-36">
+        <div className="flex items-start gap-2 sm:gap-3 pr-9 sm:pr-36">
           <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
             <Icon name="BellRing" size={20} className="text-primary" />
           </div>
@@ -191,17 +266,6 @@ const DashboardSummaryAlert = () => {
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-1 mb-3">
-              {urgent.overdue.length > 0 && (
-                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Icon name="AlertCircle" size={14} className="text-red-600" />
-                  <span className="font-bold text-red-600">
-                    {urgent.overdue.length}
-                  </span>
-                  {urgent.overdue.length === 1
-                    ? "overdue lead"
-                    : "overdue leads"}
-                </span>
-              )}
               {urgent.dueToday.length > 0 && (
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Icon
@@ -217,24 +281,36 @@ const DashboardSummaryAlert = () => {
                     : "follow-ups today"}
                 </span>
               )}
+              {urgent.overdue.length > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Icon name="AlertCircle" size={14} className="text-red-600" />
+                  <span className="font-bold text-red-600">
+                    {urgent.overdue.length}
+                  </span>
+                  {urgent.overdue.length === 1
+                    ? "overdue lead"
+                    : "overdue leads"}
+                </span>
+              )}
             </div>
 
-            {/* Clickable lead list — overdue first, then due today. Capped height
-                so a busy day doesn't push the rest of the dashboard down. */}
+            {/* Clickable lead list — today's follow-ups first (most immediately
+                actionable), then overdue. Capped height so a busy day doesn't
+                push the rest of the dashboard down. */}
             <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
-              {urgent.overdue.map((deal) => (
-                <NotificationRow
-                  key={`o-${deal.id}`}
-                  deal={deal}
-                  variant="overdue"
-                  onClick={() => openLead(deal.id)}
-                />
-              ))}
               {urgent.dueToday.map((deal) => (
                 <NotificationRow
                   key={`t-${deal.id}`}
                   deal={deal}
                   variant="dueToday"
+                  onClick={() => openLead(deal.id)}
+                />
+              ))}
+              {urgent.overdue.map((deal) => (
+                <NotificationRow
+                  key={`o-${deal.id}`}
+                  deal={deal}
+                  variant="overdue"
                   onClick={() => openLead(deal.id)}
                 />
               ))}

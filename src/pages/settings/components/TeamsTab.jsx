@@ -9,31 +9,36 @@ import ReactSelect from "react-select";
 import CreatableSelect from "react-select/creatable";
 import TablePagination from "./TablePagination";
 import {
-  deleteUser,
-  fetchUser,
-  fetchUserById,
-  updateUser,
-} from "services/user.service";
-import {
   createTeam,
   deleteTeam,
-  fetchTeam,
   fetchTeamUser,
   updateTeam,
 } from "services/team.service";
-import { createUser, fetchRoles } from "services/setting.service";
 import toast from "react-hot-toast";
+import Select from "../../../components/ui/Select";
+import { DATE_FILTER_OPTIONS, matchesDateFilter } from "../../../utils/dateFilter";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTeams } from "../../../hooks/useTeams";
+import { useRoles } from "../../../hooks/useRoles";
 const TeamsTab = () => {
-  const [teamMembers, setTeamMembers] = useState([]);
+  const queryClient = useQueryClient();
+  const { data: teamsData, isLoading: teamsLoading } = useTeams();
+  const { data: rolesData } = useRoles();
+  const teamMembers = teamsData?.list || [];
+  const role = rolesData?.list || [];
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [team, setTeam] = useState([]);
-  const [role, setRole] = useState([]);
+  const [filters, setFilters] = useState({
+    search: "",
+    dateType: "",
+    dateFrom: "",
+    dateTo: "",
+    xDays: "",
+  });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [isShowDetails, setIsShowDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -91,10 +96,7 @@ const TeamsTab = () => {
         toast.success("User created successfully ✅");
       }
 
-      toast.success("User created successfully ✅");
-
-      const data = await fetchTeam();
-      setTeamMembers(data.list || []);
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
 
       setIsInviteModalOpen(false);
     } catch (err) {
@@ -119,40 +121,49 @@ const TeamsTab = () => {
       setTeamLoading(false);
     }
   };
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchTeam();
-        setTeamMembers(data.list || []);
-      } catch (err) {
-        console.error("failed to fetch data", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [roleRes] = await Promise.all([fetchRoles()]);
-        setRole(roleRes.list || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-    loadData();
-  }, []);
   const roleOptions = role?.map((t) => ({
     value: t.id,
     label: t.name,
   }));
+  const filteredMembers = React.useMemo(() => {
+    const q = (filters.search || "").trim().toLowerCase();
+    return (teamMembers || []).filter((m) => {
+      if (q) {
+        const name = (m?.name || "").toLowerCase();
+        if (!name.includes(q)) return false;
+      }
+      if (!matchesDateFilter(m?.createdAt, filters)) return false;
+      return true;
+    });
+  }, [teamMembers, filters]);
+
   const paginatedMembers = React.useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return teamMembers.slice(startIndex, endIndex);
-  }, [teamMembers, currentPage, itemsPerPage]);
+    return filteredMembers.slice(startIndex, endIndex);
+  }, [filteredMembers, currentPage, itemsPerPage]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "dateType") {
+        next.dateFrom = "";
+        next.dateTo = "";
+        next.xDays = "";
+      }
+      return next;
+    });
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({ search: "", dateType: "", dateFrom: "", dateTo: "", xDays: "" });
+    setCurrentPage(1);
+  };
+
+  const showDateInputs = ["on", "before", "after", "between"].includes(filters.dateType);
+  const showXDaysInput = filters.dateType === "lastXDays";
+  const activeFiltersCount = [filters.search, filters.dateType].filter(Boolean).length;
 
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
@@ -173,8 +184,7 @@ const TeamsTab = () => {
 
       toast.success("User deleted successfully ✅");
 
-      const data = await fetchTeam();
-      setTeamMembers(data.list || []);
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
 
       setIsDeleteModalOpen(false);
       setSelectedUserId(null);
@@ -212,7 +222,7 @@ const TeamsTab = () => {
     );
   };
 
-  const totalPages = Math.ceil(teamMembers?.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredMembers?.length / itemsPerPage);
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -286,6 +296,68 @@ const TeamsTab = () => {
 
         {/* Team Stats */}
 
+        {/* Filters */}
+        <div className="bg-card border border-border rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <h4 className="text-sm font-medium text-card-foreground">
+                Teams ({filteredMembers.length})
+              </h4>
+              {activeFiltersCount > 0 && (
+                <>
+                  <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                    {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""} active
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
+                    Clear all
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Input
+              type="search"
+              placeholder="Search by team name..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange("search", e?.target?.value)}
+              className="lg:col-span-2"
+            />
+            <Select
+              placeholder="Filter by date"
+              options={DATE_FILTER_OPTIONS}
+              value={filters.dateType}
+              onChange={(value) => handleFilterChange("dateType", value)}
+              clearable
+            />
+            {showXDaysInput && (
+              <Input
+                type="number"
+                placeholder="Enter days"
+                value={filters.xDays}
+                onChange={(e) => handleFilterChange("xDays", e?.target?.value)}
+              />
+            )}
+            {showDateInputs && (
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => handleFilterChange("dateFrom", e?.target?.value)}
+                />
+                {filters.dateType === "between" && (
+                  <Input
+                    type="date"
+                    value={filters.dateTo}
+                    onChange={(e) => handleFilterChange("dateTo", e?.target?.value)}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Team Members Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -307,7 +379,7 @@ const TeamsTab = () => {
               </tr>
             </thead>
             <tbody>
-              {isLoading  ? (
+              {teamsLoading ? (
                 Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
               ) : !paginatedMembers?.length ? (
                 <tr>
@@ -411,7 +483,7 @@ const TeamsTab = () => {
         <TablePagination
           currentPage={currentPage}
           totalPages={totalPages}
-          totalItems={teamMembers?.length}
+          totalItems={filteredMembers?.length}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
           onItemsPerPageChange={handleItemsPerPageChange}

@@ -20,6 +20,49 @@ import { useAccounts } from "hooks/useAccounts";
 import { canEditRecord } from "utils/permission";
 import { ParentSelectorModal } from "components/ParentSelectorModal";
 
+// Duration option value -> minutes. Keys match DURATION_OPTIONS below.
+const DURATION_TO_MINUTES = {
+  "15m": 15,
+  "30m": 30,
+  "1h": 60,
+  "2h": 120,
+  "3h": 180,
+  "1d": 1440,
+};
+
+// Format a Date as a `YYYY-MM-DDTHH:mm` string for a datetime-local <input>.
+const toLocalInputValue = (date) => {
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  );
+};
+
+// start (datetime-local string) + duration key -> end (datetime-local string).
+// Returns "" when either input is missing/invalid so callers can no-op.
+const computeEndFromDuration = (start, durationKey) => {
+  const minutes = DURATION_TO_MINUTES[durationKey];
+  if (!start || !minutes) return "";
+  const d = new Date(start);
+  if (Number.isNaN(d.getTime())) return "";
+  d.setMinutes(d.getMinutes() + minutes);
+  return toLocalInputValue(d);
+};
+
+// Reverse-map an existing start/end gap to a duration option (for edit mode),
+// so the Duration select shows the saved value. "" when no exact match.
+const deriveDurationKey = (start, end) => {
+  if (!start || !end) return "";
+  const startMs = new Date(start).getTime();
+  const endMs = new Date(end).getTime();
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return "";
+  const minutes = Math.round((endMs - startMs) / 60000);
+  const entry = Object.entries(DURATION_TO_MINUTES).find(
+    ([, m]) => m === minutes,
+  );
+  return entry ? entry[0] : "";
+};
 
 const DealDrawer = ({
   deal,
@@ -48,6 +91,7 @@ const DealDrawer = ({
     teamId: "",
     status: "",
     priority: "",
+    duration: "",
     startDate: "",
     dueDate: "",
     description: "",
@@ -70,6 +114,7 @@ const DealDrawer = ({
         teamId: "",
         status: "",
         priority: "",
+        duration: "",
         startDate: "",
         dueDate: "",
         joinUrl: "",
@@ -86,6 +131,12 @@ const DealDrawer = ({
         teamId: deal.teamId?.[0] || "",
         status: deal.status || "",
         priority: deal.priority || "",
+        // Derive the duration option from the saved start/end gap so the
+        // Duration select reflects the stored meeting length on open.
+        duration: deriveDurationKey(
+          deal.dateStart ? deal.dateStart.replace(" ", "T").slice(0, 16) : "",
+          deal.dateEnd ? deal.dateEnd.replace(" ", "T").slice(0, 16) : "",
+        ),
         startDate: deal.dateStart
           ? deal.dateStart.replace(" ", "T").slice(0, 16)
           : "",
@@ -253,7 +304,22 @@ const DealDrawer = ({
   };
 
   const handleChange = (key, value) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [key]: value };
+
+      // Auto-update Date End whenever Start Date or Duration changes — using
+      // whichever values are now current. A blank/invalid combo leaves the
+      // existing dueDate alone so manual edits aren't wiped.
+      if (key === "startDate" || key === "duration") {
+        const computedEnd = computeEndFromDuration(
+          key === "startDate" ? value : next.startDate,
+          key === "duration" ? value : next.duration,
+        );
+        if (computedEnd) next.dueDate = computedEnd;
+      }
+
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -577,9 +643,9 @@ const DealDrawer = ({
 
                       <Select
                         label="Duration"
-                        value={formData.priority || ""}
+                        value={formData.duration || ""}
                         options={DURATION_OPTIONS}
-                        onChange={(value) => handleChange("priority", value)}
+                        onChange={(value) => handleChange("duration", value)}
                       />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -596,7 +662,7 @@ const DealDrawer = ({
                       <div>
                         <Input
                           type="datetime-local"
-                          label="Due Date"
+                          label="Date End"
                           value={formData.dueDate || ""}
                           onChange={(e) =>
                             handleChange("dueDate", e.target.value)

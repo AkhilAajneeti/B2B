@@ -20,12 +20,6 @@ const Settings = () => {
   };
 
   const tabs = [
-    // {
-    //   id: "company",
-    //   label: "Company",
-    //   icon: "Building2",
-    //   description: "Organization details and branding",
-    // },
     {
       id: "user",
       label: "Users & Roles",

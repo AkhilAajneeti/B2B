@@ -9,20 +9,35 @@ import Avatar from "react-avatar";
 import TablePagination from "./TablePagination";
 import {
   deleteUser,
-  fetchUser,
   fetchUserById,
   updateUser,
 } from "services/user.service";
-import { fetchTeam } from "services/team.service";
-import { createUser, fetchRoles } from "services/setting.service";
+import { createUser } from "services/setting.service";
 import toast from "react-hot-toast";
 import UserDetailsModal from "./models/UserDetailsModal";
+import { DATE_FILTER_OPTIONS, matchesDateFilter } from "../../../utils/dateFilter";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUsers } from "../../../hooks/useUsers";
+import { useTeams } from "../../../hooks/useTeams";
+import { useRoles } from "../../../hooks/useRoles";
 const UserTab = () => {
-  const [teamMembers, setTeamMembers] = useState([]);
+  const queryClient = useQueryClient();
+  const { data: usersData, isLoading: usersLoading } = useUsers();
+  const { data: teamsData } = useTeams();
+  const { data: rolesData } = useRoles();
+  const teamMembers = usersData?.list || [];
+  const team = teamsData?.list || [];
+  const role = rolesData?.list || [];
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [team, setTeam] = useState([]);
-  const [role, setRole] = useState([]);
+  const [filters, setFilters] = useState({
+    search: "",
+    dateType: "",
+    dateFrom: "",
+    dateTo: "",
+    xDays: "",
+  });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +45,7 @@ const UserTab = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [isShowDetails, setIsShowDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [detailsLoadingId, setDetailsLoadingId] = useState(null);
   const emptyEmail = () => ({ emailAddress: "", primary: true, optOut: false, invalid: false });
   const emptyPhone = () => ({ phoneNumber: "", type: "Mobile", primary: true });
@@ -164,8 +179,6 @@ const UserTab = () => {
 
     try {
       setIsLoading(true);
-      console.log("Submitting payload:", payload);
-      // await createUser(payload);
       if (isEdit) {
         await updateUser(inviteData.id, payload);
         toast.success("User updated successfully ✅");
@@ -174,16 +187,13 @@ const UserTab = () => {
         toast.success("User created successfully ✅");
       }
 
-      toast.success("User created successfully ✅");
-
-      const data = await fetchUser();
-      setTeamMembers(data.list || []);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
 
       setIsInviteModalOpen(false);
     } catch (err) {
-      toast.error("Failed to create user ❌");
+      toast.error(isEdit ? "Failed to update user ❌" : "Failed to create user ❌");
     } finally {
-      setDetailsLoadingId(null);
+      setIsLoading(false);
     }
   };
   const fetchuserById = async (member) => {
@@ -202,36 +212,6 @@ const UserTab = () => {
     }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchUser();
-        setTeamMembers(data.list || []);
-      } catch (err) {
-        console.error("failed to fetch data", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [teamRes, roleRes] = await Promise.all([
-          fetchTeam(),
-          fetchRoles(),
-        ]);
-        setTeam(teamRes.list || []);
-        setRole(roleRes.list || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-    loadData();
-  }, []);
-
   const teamOptions = team?.map((t) => ({
     value: t.id,
     label: t.name,
@@ -240,11 +220,46 @@ const UserTab = () => {
     value: t.id,
     label: t.name,
   }));
+  const filteredMembers = React.useMemo(() => {
+    const q = (filters.search || "").trim().toLowerCase();
+    return (teamMembers || []).filter((m) => {
+      if (q) {
+        const name = (m?.name || "").toLowerCase();
+        const userName = (m?.userName || "").toLowerCase();
+        if (!name.includes(q) && !userName.includes(q)) return false;
+      }
+      if (!matchesDateFilter(m?.createdAt, filters)) return false;
+      return true;
+    });
+  }, [teamMembers, filters]);
+
   const paginatedMembers = React.useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return teamMembers.slice(startIndex, endIndex);
-  }, [teamMembers, currentPage, itemsPerPage]);
+    return filteredMembers.slice(startIndex, endIndex);
+  }, [filteredMembers, currentPage, itemsPerPage]);
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "dateType") {
+        next.dateFrom = "";
+        next.dateTo = "";
+        next.xDays = "";
+      }
+      return next;
+    });
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({ search: "", dateType: "", dateFrom: "", dateTo: "", xDays: "" });
+    setCurrentPage(1);
+  };
+
+  const showDateInputs = ["on", "before", "after", "between"].includes(filters.dateType);
+  const showXDaysInput = filters.dateType === "lastXDays";
+  const activeFiltersCount = [filters.search, filters.dateType].filter(Boolean).length;
 
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
@@ -322,33 +337,6 @@ const UserTab = () => {
     });
   };
 
-  const handleSendInvite = async () => {
-    setIsLoading(true);
-
-    setTimeout(() => {
-      const newMember = {
-        id: teamMembers?.length + 1,
-        name: inviteData?.email
-          ?.split("@")?.[0]
-          ?.replace(".", " ")
-          ?.replace(/\b\w/g, (l) => l?.toUpperCase()),
-        email: inviteData?.email,
-        role: inviteData?.role,
-        department: inviteData?.department,
-        status: "Invited",
-        lastActive: "Pending",
-        avatar: "https://images.unsplash.com/photo-1602241470511-879ce3890853",
-        avatarAlt: "Default avatar placeholder for new team member",
-      };
-
-      setTeamMembers((prev) => [...prev, newMember]);
-      setInviteData({ email: "", role: "User", department: "Sales" });
-      setIsInviteModalOpen(false);
-      setIsLoading(false);
-      console.log("Invite sent successfully");
-    }, 1000);
-  };
-
   const handleRemoveUser = async () => {
     if (!selectedUserId) return;
 
@@ -359,8 +347,7 @@ const UserTab = () => {
 
       toast.success("User deleted successfully ✅");
 
-      const data = await fetchUser();
-      setTeamMembers(data.list || []);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
 
       setIsDeleteModalOpen(false);
       setSelectedUserId(null);
@@ -398,7 +385,7 @@ const UserTab = () => {
     );
   };
 
-  const totalPages = Math.ceil(teamMembers?.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredMembers?.length / itemsPerPage);
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -493,7 +480,27 @@ const UserTab = () => {
           {canCreate('User') && (
             <Button
               variant="default"
-              onClick={() => setIsInviteModalOpen(true)}
+              onClick={() => {
+                setIsEdit(false);
+                setInviteData({
+                  userName: "",
+                  salutationName: "",
+                  firstName: "",
+                  lastName: "",
+                  title: "",
+                  emails: [emptyEmail()],
+                  phones: [emptyPhone()],
+                  gender: "",
+                  type: "regular",
+                  isActive: true,
+                  teamsIds: [],
+                  defaultTeamId: "",
+                  rolesIds: [],
+                  password: "",
+                  confirmPassword: "",
+                });
+                setIsInviteModalOpen(true);
+              }}
               iconName="UserPlus"
               iconPosition="left" className="linearbg-1 text-white hover:text-white"
             >
@@ -558,6 +565,68 @@ const UserTab = () => {
           </div>
         </div>
 
+        {/* Filters */}
+        <div className="bg-card border border-border rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <h4 className="text-sm font-medium text-card-foreground">
+                Users ({filteredMembers.length})
+              </h4>
+              {activeFiltersCount > 0 && (
+                <>
+                  <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                    {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""} active
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
+                    Clear all
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Input
+              type="search"
+              placeholder="Search by name or user name..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange("search", e?.target?.value)}
+              className="lg:col-span-2"
+            />
+            <Select
+              placeholder="Filter by date"
+              options={DATE_FILTER_OPTIONS}
+              value={filters.dateType}
+              onChange={(value) => handleFilterChange("dateType", value)}
+              clearable
+            />
+            {showXDaysInput && (
+              <Input
+                type="number"
+                placeholder="Enter days"
+                value={filters.xDays}
+                onChange={(e) => handleFilterChange("xDays", e?.target?.value)}
+              />
+            )}
+            {showDateInputs && (
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => handleFilterChange("dateFrom", e?.target?.value)}
+                />
+                {filters.dateType === "between" && (
+                  <Input
+                    type="date"
+                    value={filters.dateTo}
+                    onChange={(e) => handleFilterChange("dateTo", e?.target?.value)}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Team Members Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -584,7 +653,7 @@ const UserTab = () => {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
+              {usersLoading ? (
                 Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
               ) : !paginatedMembers?.length ? (
                 <tr>
@@ -701,7 +770,7 @@ const UserTab = () => {
         <TablePagination
           currentPage={currentPage}
           totalPages={totalPages}
-          totalItems={teamMembers?.length}
+          totalItems={filteredMembers?.length}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
           onItemsPerPageChange={handleItemsPerPageChange}
@@ -821,14 +890,7 @@ const UserTab = () => {
                                     placeholder="name@example.com"
                                     className="flex-1"
                                   />
-                                  <button
-                                    type="button"
-                                    title={email.primary ? "Primary" : "Mark as primary"}
-                                    onClick={() => updateEmailField(idx, "primary", true)}
-                                    className={`h-10 w-10 flex items-center justify-center rounded-md border border-border ${email.primary ? "text-primary" : "text-muted-foreground hover:bg-muted"}`}
-                                  >
-                                    <Icon name="Star" size={16} />
-                                  </button>
+
                                   {inviteData.emails.length > 1 && (
                                     <button
                                       type="button"
@@ -874,14 +936,7 @@ const UserTab = () => {
                                     placeholder="+91 00000 00000"
                                     className="flex-1"
                                   />
-                                  <button
-                                    type="button"
-                                    title={phone.primary ? "Primary" : "Mark as primary"}
-                                    onClick={() => updatePhoneField(idx, "primary", true)}
-                                    className={`h-10 w-10 flex items-center justify-center rounded-md border border-border ${phone.primary ? "text-primary" : "text-muted-foreground hover:bg-muted"}`}
-                                  >
-                                    <Icon name="Star" size={16} />
-                                  </button>
+
                                   {inviteData.phones.length > 1 && (
                                     <button
                                       type="button"

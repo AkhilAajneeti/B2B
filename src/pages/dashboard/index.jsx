@@ -275,9 +275,10 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* First-visit summary alert — overdue + follow-up-today leads.
-            Plays a chime, lists clickable leads that open the lead drawer. */}
-        <div className="mx-3 sm:mx-5">
+        {/* Summary alert — overdue + follow-up-today leads. Plays a chime,
+            lists clickable leads that open the lead drawer. Tighter mobile
+            margin so the inner card has more breathing room. */}
+        <div className="mx-2 sm:mx-5">
           <DashboardSummaryAlert />
         </div>
 
