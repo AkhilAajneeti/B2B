@@ -705,6 +705,10 @@ const DealDrawer = ({
                       <Input
                         type="datetime-local"
                         label="Next Contact"
+                        // 900s = 15-min increments to match the CRM backend's
+                        // scheduling slots; the native time picker snaps to
+                        // :00 / :15 / :30 / :45.
+                        step={900}
                         value={formData.cNextContactAt || ""}
                         onChange={(e) =>
                           handleChange("cNextContactAt", e.target.value)
@@ -738,6 +742,8 @@ const DealDrawer = ({
                       <Input
                         type="datetime-local"
                         label="Site Visit At"
+                        // 15-min increments to align with backend slots.
+                        step={900}
                         value={formData.cSiteVisitAt || ""}
                         onChange={(e) =>
                           handleChange("cSiteVisitAt", e.target.value)
@@ -929,6 +935,7 @@ const DealDrawer = ({
                     <Input
                       type="datetime-local"
                       label="Next Contact"
+                      step={900}
                       value={formData.cNextContactAt || ""}
                       disabled={!massFields.cNextContactAt}
                       onChange={(e) =>

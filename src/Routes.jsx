@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
+import FollowupReminderManager from "components/FollowupReminderManager";
 import NotFound from "pages/NotFound";
 import Settings from "./pages/settings";
 import IntegrationsPage from "./pages/integrations";
@@ -28,6 +29,9 @@ const Routes = () => {
     <BrowserRouter>
       <ErrorBoundary>
         <ScrollToTop />
+        {/* Global follow-up reminder timer - lives above the routes so it keeps
+            running on every page (mounted once, survives navigation). */}
+        <FollowupReminderManager />
         <RouterRoutes>
           {/* Define your route here */}
           <Route path="/login" element={<Login />} />

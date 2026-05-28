@@ -317,8 +317,8 @@ const DealsTable = ({
 
                   </td>
                   <td className="px-4 py-4">
-                    <div className={`font-medium flex justify-center items-center space-x-2 rounded-full ${getSourceColor(deal?.source)}`}>
-                      {deal?.source === "ACL" ? "Aajneeti" : deal?.source}
+                    <div className={`font-medium flex justify-center items-center space-x-2 rounded-full ${getSourceColor(deal?.cSubSource)}`}>
+                      {deal?.cSubSource || "None"}
                     </div>
                   </td>
                   <td className="px-4 py-4">
