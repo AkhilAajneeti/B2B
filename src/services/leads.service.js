@@ -243,11 +243,13 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
 
   if (filters.source) {
     where.push({
-      type: "equals",
-      // Filter on cSubSource — the table now displays the sub-source, so the
-      // "Source" filter queries the same column. Dropdown label stays "Source".
+      // `like` (case-insensitive contains) instead of `equals` — reps fill
+      // cSubSource freely, so an exact match misses values like "website" /
+      // "Website Form" when the option is "Website". The dropdown label stays
+      // "Source" but it queries the cSubSource column.
+      type: "like",
       attribute: "cSubSource",
-      value: filters.source,
+      value: `%${filters.source}%`,
     });
   }
   if (filters.sector) {

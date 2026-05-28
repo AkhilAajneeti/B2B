@@ -135,8 +135,13 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
     where.push({ type: "equals", attribute: "status", value: filters.status });
   }
   if (filters.source && !omit.has("source")) {
-    // Match the table: the "Source" filter queries cSubSource.
-    where.push({ type: "equals", attribute: "cSubSource", value: filters.source });
+    // Match the table: case-insensitive contains on cSubSource (reps fill it
+    // freely, so exact-match misses casing/format variants).
+    where.push({
+      type: "like",
+      attribute: "cSubSource",
+      value: `%${filters.source}%`,
+    });
   }
   if (filters.sector && !omit.has("cSector")) {
     where.push({ type: "equals", attribute: "cSector", value: filters.sector });
