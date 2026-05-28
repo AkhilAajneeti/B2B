@@ -78,26 +78,41 @@ const DealsTable = ({
     );
   };
   const getSourceColor = (source) => {
+    // normalize value
+    const normalizedSource = source
+      ?.trim() // remove extra spaces start/end
+      ?.replace(/\s+/g, " ") // multiple spaces -> single space
+      ?.toLowerCase();
+
     const colors = {
-      Call: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      Email: "bg-blue-50 text-blue-700 border border-blue-200",
-      "Existing Customer":
+      call: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+
+      email: "bg-blue-50 text-blue-700 border border-blue-200",
+
+      "existing customer":
         "bg-violet-50 text-violet-700 border border-violet-200",
-      Partner:
+
+      partner:
         "bg-orange-50 text-orange-700 border border-orange-200",
-      "Public Relations":
+
+      "public relations":
         "bg-pink-50 text-pink-700 border border-pink-200",
-      "Web Site":
+
+      "web site":
         "bg-cyan-50 text-cyan-700 border border-cyan-200",
-      Campaign:
+
+      campaign:
         "bg-amber-50 text-amber-700 border border-amber-200",
-      Other:
+
+      other:
         "bg-slate-100 text-slate-700 border border-slate-200",
-      ACL:
+
+      acl:
         "bg-gradient-to-r from-fuchsia-50 to-violet-50 text-violet-700 border border-violet-200 shadow-sm",
     };
+
     return (
-      colors?.[source] ||
+      colors?.[normalizedSource] ||
       "bg-gray-100 text-gray-700 border border-gray-200"
     );
   };
@@ -284,7 +299,7 @@ const DealsTable = ({
               Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
             ) : !paginatedDeals?.length ? (
               <tr>
-                <td colSpan="6">
+                <td colSpan="8">
                   <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
                     No leads available
                   </div>
@@ -318,7 +333,11 @@ const DealsTable = ({
                   </td>
                   <td className="px-4 py-4">
                     <div className={`font-medium flex justify-center items-center space-x-2 rounded-full ${getSourceColor(deal?.cSubSource)}`}>
-                      {deal?.cSubSource || "None"}
+                      {deal?.cSubSource
+                        ? deal?.cSubSource
+                        : deal?.source === "acl"
+                          ? "Aajneeti"
+                          : deal?.source}
                     </div>
                   </td>
                   <td className="px-4 py-4">
@@ -373,7 +392,7 @@ const DealsTable = ({
                         onClick={(e) => {
                           e.stopPropagation();
 
-                          const message = `Hello *${deal?.name || "Customer"}*,Thank you for contacting us for your lead generation requirements.I'm *${deal?.assignedUserName || "AAJneeti Team"}* from *AAJneeti Advertising*.Let me know when you're available so that we can discuss this in more detail.*aajneeti.social*`;
+                          const message = `Hello *${deal?.name || "Customer"}*,Thank you for contacting us for your lead generation requirements.I'm *${deal?.assignedUserName}.Let me know when you're available so that we can discuss this in more detail.`;
 
                           const whatsappUrl = `https://api.whatsapp.com/send/?phone=${deal?.phoneNumber}&text=${encodeURIComponent(
                             message

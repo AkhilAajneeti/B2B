@@ -232,6 +232,15 @@ const DashboardSummaryAlert = () => {
     navigate("/leads", { state: { leadId } });
   };
 
+  // Render at most 10 rows (today's first, then overdue). The counts above
+  // intentionally keep using the full `.length`, so they show the real totals.
+  const LIST_LIMIT = 10;
+  const dueTodayShown = urgent.dueToday.slice(0, LIST_LIMIT);
+  const overdueShown = urgent.overdue.slice(
+    0,
+    Math.max(0, LIST_LIMIT - dueTodayShown.length),
+  );
+
   return (
     <AnimatePresence>
       <motion.div
@@ -298,7 +307,7 @@ const DashboardSummaryAlert = () => {
                 actionable), then overdue. Capped height so a busy day doesn't
                 push the rest of the dashboard down. */}
             <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
-              {urgent.dueToday.map((deal) => (
+              {dueTodayShown.map((deal) => (
                 <NotificationRow
                   key={`t-${deal.id}`}
                   deal={deal}
@@ -306,7 +315,7 @@ const DashboardSummaryAlert = () => {
                   onClick={() => openLead(deal.id)}
                 />
               ))}
-              {urgent.overdue.map((deal) => (
+              {overdueShown.map((deal) => (
                 <NotificationRow
                   key={`o-${deal.id}`}
                   deal={deal}

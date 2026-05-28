@@ -220,7 +220,7 @@ const FollowupReminderManager = () => {
       (t) => (
         <div
           className={`max-w-sm w-full bg-white shadow-lg rounded-xl border border-orange-200 pointer-events-auto overflow-hidden ${
-            t.visible ? "animate-enter" : "animate-leave"
+            t.visible ? "animate-enter reminder-shake" : "animate-leave"
           }`}
         >
           <div className="flex items-start gap-3 p-4">

@@ -1043,10 +1043,7 @@ const DealDrawer = ({
                                   `Hello *${deal?.name || "Customer"}*,
 
 Thank you for contacting us for your lead generation requirements.
-
-I'm *${deal?.assignedUserName }* Let me know when you're available so that we can discuss this in more detail.
-
-*aajneeti.social*`
+I'm *${deal?.assignedUserName }* Let me know when you're available so that we can discuss this in more detail.`
                                 )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"

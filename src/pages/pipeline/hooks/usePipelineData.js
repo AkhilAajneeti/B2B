@@ -7,9 +7,12 @@
  *
  * React Query gives us a second caching/dedup layer plus background refresh.
  */
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { fetchPipelineLeads } from "../services/pipelineService";
+import {
+  fetchPipelineLeads,
+  invalidatePipelineCache,
+} from "../services/pipelineService";
 import { buildPipelineDeals } from "../utils/pipelineHelpers";
 import { usePipelineStore } from "../store/pipelineStore";
 import {
@@ -51,6 +54,14 @@ export const usePipelineData = ({ page = 1, limit = PIPELINE_PAGE_SIZE } = {}) =
     return buildPipelineDeals(patched);
   }, [query.data, optimisticPatches, removedIds]);
 
+  // An explicit refetch must bypass the service-level TTL cache, otherwise the
+  // dashboard alert / pipeline Refresh would re-render the same stale data on
+  // every visit. Clear the cache first, then let React Query re-hit the network.
+  const refetch = useCallback(() => {
+    invalidatePipelineCache();
+    return query.refetch();
+  }, [query]);
+
   return {
     deals,
     total: query.data?.total || 0,
@@ -59,6 +70,6 @@ export const usePipelineData = ({ page = 1, limit = PIPELINE_PAGE_SIZE } = {}) =
     isFetching: query.isFetching,
     isError: query.isError,
     error: query.error,
-    refetch: query.refetch,
+    refetch,
   };
 };
