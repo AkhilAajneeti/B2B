@@ -33,9 +33,13 @@ const DealsFilters = ({
     { value: "Existing Customer", label: "Existing Customer" },
     { value: "Partner", label: "Partner" },
     { value: "Public Relations", label: "Public Relations" },
-    { value: "Website", label: "Web Site" },
+    // value must match the actual cSubSource string stored on leads (matched
+    // case-insensitively as a `like %value%` on the backend). "Web Site" keeps
+    // its space; "Aajneeti" replaces the old "ACL" code so it matches the
+    // stored "aajneeti".
+    { value: "Web Site", label: "Web Site" },
     { value: "Campaign", label: "Campaign" },
-    { value: "ACL", label: "Aajneeti" },
+    { value: "Aajneeti", label: "Aajneeti" },
     { value: "Meta", label: "Meta" },
     { value: "Other", label: "Other" },
   ];
