@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { fetchTodayFollowups } from "services/reminder.service";
@@ -105,8 +105,12 @@ const playBeep = () => {
 
 const FollowupReminderManager = () => {
   const navigate = useNavigate();
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  // Subscribing to location makes this globally-mounted manager re-render on
+  // navigation, so it re-reads the token right after login (soft navigate, no
+  // reload) and starts the query then - instead of waiting for a page reload.
+  const location = useLocation();
+  const onLoginPage = location.pathname === "/login";
+  const token = localStorage.getItem("auth_token");
 
   const timerRef = useRef(null);
   const snoozeTimersRef = useRef([]);
@@ -115,7 +119,7 @@ const FollowupReminderManager = () => {
   const { data } = useQuery({
     queryKey: ["today-followups"],
     queryFn: fetchTodayFollowups,
-    enabled: !!token,
+    enabled: !!token && !onLoginPage,
     staleTime: 60 * 1000,
     refetchInterval: 5 * 60 * 1000, // re-sync reschedules / new follow-ups
     refetchOnWindowFocus: true,
