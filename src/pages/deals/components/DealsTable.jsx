@@ -94,6 +94,8 @@ const DealsTable = ({
 
       partner:
         "bg-orange-50 text-orange-700 border border-orange-200",
+      meta:
+        "bg-orange-100 text-orange-700 border border-orange-200",
 
       "public relations":
         "bg-pink-50 text-pink-700 border border-pink-200",

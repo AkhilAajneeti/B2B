@@ -331,6 +331,7 @@ const DealDrawer = ({
       cSiteVisitAt: toEspoDateTime(formData.cSiteVisitAt),
       cLeatReceivedAt: toEspoDateTime(formData.cLeatReceivedAt),
       teamsIds: formData.teamId ? [formData.teamId] : formData.teamsIds,
+      cSubSource: formData.source,
     };
     try {
       if (mode === "add") {
@@ -365,7 +366,10 @@ const DealDrawer = ({
 
     if (massFields.status) payload.status = formData.status;
 
-    if (massFields.source) payload.source = formData.source;
+    if (massFields.source) {
+      payload.source = formData.source;
+      payload.cSubSource = formData.source;
+    }
 
     if (massFields.teamId) {
       payload.teamId = formData.teamId;
@@ -869,7 +873,7 @@ const DealDrawer = ({
                 <p className="text-sm text-muted-foreground">
                   Updating {selectedIds.length} selected Leads
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   {/* Assigned User */}
                   <div className="flex items-center gap-3">
                     <input
@@ -877,18 +881,18 @@ const DealDrawer = ({
                       checked={massFields.assignedUserId}
                       onChange={() => toggleMassField("assignedUserId")}
                     />
-                    <Select
-                      label="Assigned User"
-                      value={formData.assignedUserId}
-                      options={userOptions}
-                      disabled={!massFields.assignedUserId}
-                      onChange={(v) => handleChange("assignedUserId", v)}
-                      searchable
-                    />
+                    <div className="flex-1 min-w-0">
+                      <Select
+                        label="Assigned User"
+                        value={formData.assignedUserId}
+                        options={userOptions}
+                        disabled={!massFields.assignedUserId}
+                        onChange={(v) => handleChange("assignedUserId", v)}
+                        searchable
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Team */}
                   <div className="flex items-center gap-3">
                     <input
@@ -896,17 +900,17 @@ const DealDrawer = ({
                       checked={massFields.teamId}
                       onChange={() => toggleMassField("teamId")}
                     />
-                    <Select
-                      label="Team"
-                      value={formData.teamId}
-                      options={teamOptions}
-                      disabled={!massFields.teamId}
-                      onChange={(v) => handleChange("teamId", v)}
-                    />
+                    <div className="flex-1 min-w-0">
+                      <Select
+                        label="Team"
+                        value={formData.teamId}
+                        options={teamOptions}
+                        disabled={!massFields.teamId}
+                        onChange={(v) => handleChange("teamId", v)}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Status */}
                   <div className="flex items-center gap-3">
                     <input
@@ -914,17 +918,17 @@ const DealDrawer = ({
                       checked={massFields.status}
                       onChange={() => toggleMassField("status")}
                     />
-                    <Select
-                      label="Status"
-                      value={formData.status}
-                      options={statusOptions}
-                      disabled={!massFields.status}
-                      onChange={(v) => handleChange("status", v)}
-                    />
+                    <div className="flex-1 min-w-0">
+                      <Select
+                        label="Status"
+                        value={formData.status}
+                        options={statusOptions}
+                        disabled={!massFields.status}
+                        onChange={(v) => handleChange("status", v)}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Next Contact Date */}
                   <div className="flex items-center gap-3">
                     <input
@@ -932,16 +936,18 @@ const DealDrawer = ({
                       checked={massFields.cNextContactAt}
                       onChange={() => toggleMassField("cNextContactAt")}
                     />
-                    <Input
-                      type="datetime-local"
-                      label="Next Contact"
-                      step={900}
-                      value={formData.cNextContactAt || ""}
-                      disabled={!massFields.cNextContactAt}
-                      onChange={(e) =>
-                        handleChange("cNextContactAt", e.target.value)
-                      }
-                    />
+                    <div className="flex-1 min-w-0">
+                      <Input
+                        type="datetime-local"
+                        label="Next Contact"
+                        step={900}
+                        value={formData.cNextContactAt || ""}
+                        disabled={!massFields.cNextContactAt}
+                        onChange={(e) =>
+                          handleChange("cNextContactAt", e.target.value)
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
 

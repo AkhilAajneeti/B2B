@@ -23,7 +23,7 @@ const DealsFilters = ({
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
     // { value: "export", label: "Export Selected", icon: "Download" },
-    { value: "delete", label: "Delete Selected", icon: "Trash2" },
+    // { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
 
 

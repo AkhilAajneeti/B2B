@@ -255,7 +255,7 @@ const DealsPage = () => {
       createLeadMutation.mutate(payload);
     } catch (err) {
       console.error("Lead creationd failed", err);
-    } z
+    }
   };
 
   const handleUpdateLead = async (id, payload) => {
