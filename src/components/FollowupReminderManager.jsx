@@ -207,6 +207,7 @@ const FollowupReminderManager = () => {
                   lead.project ? ` • ${lead.project}` : ""
                 }`,
             tag: isGroup ? groupId : lead.id,
+            requireInteraction: true, // stay on screen until the rep acts
           },
         );
         n.onclick = () => {
@@ -282,54 +283,59 @@ const FollowupReminderManager = () => {
     );
   };
 
-  // The scheduler: one timer to the nearest upcoming reminder, chained.
+  // Scheduler. Background tabs heavily throttle setTimeout, so we don't rely on
+  // a chained timer alone: a 30s poll + a visibility listener guarantee that
+  // anything due fires (within ~1 min while backgrounded, instantly on return).
   useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-
-    const now = Date.now();
-
-    // 1. Missed earlier today (time already passed, not yet fired) -> batch.
-    const missed = reminders.filter(
-      (r) => r.time.getTime() <= now && !firedRef.current.has(r.id),
-    );
-    if (missed.length) {
-      missed.forEach((r) => markFired(r.id));
-      toast(
-        `You have ${missed.length} follow-up${
-          missed.length === 1 ? "" : "s"
-        } that were due earlier today`,
-        { icon: "⏰", duration: 8000 },
+    // Fire every reminder now due (several at the same time -> one grouped
+    // popup), de-duped via firedRef so nothing fires twice.
+    const fireDue = () => {
+      const now = Date.now();
+      const due = reminders.filter(
+        (r) => r.time.getTime() <= now && !firedRef.current.has(r.id),
       );
-    }
+      if (!due.length) return;
+      due.forEach((r) => markFired(r.id));
+      showReminderPopup(due);
+    };
 
-    // 2. Schedule the nearest upcoming reminder, then chain to the next.
-    const schedule = () => {
+    // Precise timer to the nearest upcoming reminder (exact firing while the
+    // tab is in the foreground), re-armed after each fire.
+    const scheduleNext = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
       const ts = Date.now();
       const next = reminders.find(
         (r) => r.time.getTime() > ts && !firedRef.current.has(r.id),
       );
       if (!next) return;
-
-      const delay = Math.min(Math.max(next.time.getTime() - ts, 0), SETTIMEOUT_MAX);
+      const delay = Math.min(
+        Math.max(next.time.getTime() - ts, 0),
+        SETTIMEOUT_MAX,
+      );
       timerRef.current = setTimeout(() => {
-        // Fire EVERY reminder now due (handles several sharing the same time)
-        // as a single grouped popup, then chain to the next future group.
-        const fireNow = Date.now();
-        const due = reminders.filter(
-          (r) => r.time.getTime() <= fireNow && !firedRef.current.has(r.id),
-        );
-        if (due.length) {
-          due.forEach((r) => markFired(r.id));
-          showReminderPopup(due);
-        }
-        schedule(); // move to the next nearest
+        fireDue();
+        scheduleNext();
       }, delay);
     };
 
-    schedule();
+    fireDue(); // anything already due on load / after a data change
+    scheduleNext();
+
+    // Safety net: catches reminders the throttled background timer missed, and
+    // fires instantly the moment the rep returns to the tab.
+    const poll = setInterval(fireDue, 30 * 1000);
+    const onVisible = () => {
+      if (!document.hidden) {
+        fireDue();
+        scheduleNext();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      clearInterval(poll);
+      document.removeEventListener("visibilitychange", onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reminders]);

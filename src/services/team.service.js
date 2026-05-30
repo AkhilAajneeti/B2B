@@ -41,7 +41,6 @@ export const fetchTeamById = async (id) => {
 }
 export const fetchTeamUser = async (id) => {
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
   const res = await fetch(`https://gateway.aajneetiadvertising.com/team/${id}/users`, {
     method: "GET",
     headers: {
@@ -61,7 +60,6 @@ export const fetchTeamUser = async (id) => {
 }
 
 export const createTeam = async (payload) => {
-  console.log(payload);
   const token = localStorage.getItem("auth_token");
   const res = await fetch("https://gateway.aajneetiadvertising.com/team", {
     method: "POST",
@@ -69,18 +67,18 @@ export const createTeam = async (payload) => {
 
     body: JSON.stringify(payload),
   });
-  const text = await res.text();
+
   if (!res.ok) {
-    console.error("API ERROR:", text);
+    
     throw new Error("Team is not created", text);
   }
   // EspoCRM returns array
-  return text ? JSON.parse(text) : null;
+  return await res.json();
 };
 
 export const updateTeam = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
-  console.log(id, payload);
+  
   const res = await fetch(
     `https://gateway.aajneetiadvertising.com/team/${id}`,
     {
@@ -94,13 +92,12 @@ export const updateTeam = async (id, payload) => {
     }
   );
 
-  const text = await res.text();
-  console.log("response from team.service.js", res);
+
   if (!res.ok) {
     throw new Error(text || "User update failed");
   }
 
-  return text ? JSON.parse(text) : null;
+  return await res.json();
 };
 
 

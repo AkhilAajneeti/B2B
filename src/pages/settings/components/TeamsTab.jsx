@@ -86,14 +86,13 @@ const TeamsTab = () => {
 
     try {
       setIsLoading(true);
-      console.log("Submitting payload:", payload);
       // await createUser(payload);
       if (isEdit) {
         await updateTeam(inviteData.id, payload);
-        toast.success("User updated successfully ✅");
+        toast.success("Team updated successfully ✅");
       } else {
         await createTeam(payload);
-        toast.success("User created successfully ✅");
+        toast.success("Team created successfully ✅");
       }
 
       queryClient.invalidateQueries({ queryKey: ["teams"] });
@@ -116,7 +115,7 @@ const TeamsTab = () => {
 
       setIsTeamModalOpen(true);
     } catch (err) {
-      toast.error("Failed to load team users ❌");
+      toast.error("Failed to load teams ❌");
     } finally {
       setTeamLoading(false);
     }
@@ -182,14 +181,14 @@ const TeamsTab = () => {
 
       await deleteTeam(selectedUserId);
 
-      toast.success("User deleted successfully ✅");
+      toast.success("Team deleted successfully ✅");
 
       queryClient.invalidateQueries({ queryKey: ["teams"] });
 
       setIsDeleteModalOpen(false);
       setSelectedUserId(null);
     } catch (err) {
-      toast.error("Failed to delete user ❌");
+      toast.error("Failed to delete team ❌");
     } finally {
       setIsLoading(false);
     }
@@ -509,7 +508,7 @@ const TeamsTab = () => {
               {/* Header (Sticky) */}
               <div className="sticky top-0 bg-card z-10 flex items-center justify-between p-6 border-b border-border">
                 <h3 className="text-lg font-semibold text-card-foreground">
-                  {isEdit ? "Update User" : "Create User"}
+                  {isEdit ? "Update Team" : "Create Team"}
                 </h3>
 
                 <button
@@ -642,6 +641,7 @@ const TeamsTab = () => {
                     </div>
                     <div className="flex space-x-3 pt-4">
                       <Button
+                        type="button"
                         variant="outline"
                         onClick={() => setIsInviteModalOpen(false)}
                         fullWidth
@@ -656,7 +656,7 @@ const TeamsTab = () => {
                         iconPosition="left"
                         fullWidth
                       >
-                        {isEdit ? "Update User" : "Create User"}
+                        {isEdit ? "Update Team" : "Create Team"}
                       </Button>
                     </div>
                   </div>
