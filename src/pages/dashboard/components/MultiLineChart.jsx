@@ -83,16 +83,16 @@ const MultiLineChart = ({ leads = [] }) => {
           if (i > currentMonth) {
             return {
               label: start.toLocaleString("default", { month: "short" }),
-              facebook: 0,
+              meta: 0,
               ACL: 0,
               website: 0,
             };
           }
 
-          const [facebook, ACL, website] = await Promise.all([
+          const [meta, ACL, website] = await Promise.all([
             fetchLeadsCount([
               { type: "between", attribute: "createdAt", value: [start.toISOString(), end.toISOString()] },
-              { type: "in", attribute: "source", value: ["Facebook"] },
+              { type: "like", attribute: "cSubSource", value: "%meta%" },
             ]),
             fetchLeadsCount([
               { type: "between", attribute: "createdAt", value: [start.toISOString(), end.toISOString()] },
@@ -106,7 +106,7 @@ const MultiLineChart = ({ leads = [] }) => {
 
           return {
             label: start.toLocaleString("default", { month: "short" }),
-            facebook,
+            meta,
             ACL,
             website,
           };
@@ -148,14 +148,14 @@ const MultiLineChart = ({ leads = [] }) => {
           const end = new Date(year, month, endDay);
           end.setHours(23, 59, 59, 999);
 
-          const [facebook, ACL, website] = await Promise.all([
+          const [meta, ACL, website] = await Promise.all([
             fetchLeadsCount([
               {
                 type: "between",
                 attribute: "createdAt",
                 value: [start.toISOString(), end.toISOString()],
               },
-              { type: "in", attribute: "source", value: ["Facebook"] },
+              { type: "like", attribute: "cSubSource", value: "%meta%" },
             ]),
             fetchLeadsCount([
               {
@@ -177,7 +177,7 @@ const MultiLineChart = ({ leads = [] }) => {
 
           return {
             label: w.label,
-            facebook,
+            meta,
             ACL,
             website,
           };
@@ -211,14 +211,14 @@ const MultiLineChart = ({ leads = [] }) => {
 
       const batchResults = await Promise.all(
         batch.map(async (d) => {
-          const [facebook, ACL, website] = await Promise.all([
+          const [meta, ACL, website] = await Promise.all([
             fetchLeadsCount([
               {
                 type: "between",
                 attribute: "createdAt",
                 value: [d.start.toISOString(), d.end.toISOString()],
               },
-              { type: "in", attribute: "source", value: ["Facebook"] },
+              { type: "like", attribute: "cSubSource", value: "%meta%" },
             ]),
             fetchLeadsCount([
               {
@@ -240,7 +240,7 @@ const MultiLineChart = ({ leads = [] }) => {
 
           return {
             label: d.date.toLocaleDateString("en-IN", { weekday: "short" }),
-            facebook,
+            meta,
             ACL,
             website,
           };
@@ -292,10 +292,10 @@ const MultiLineChart = ({ leads = [] }) => {
     }
   })();
 
-  const facebookTotal = chartData.reduce((sum, item) => sum + item.facebook, 0);
+  const metaTotal = chartData.reduce((sum, item) => sum + item.meta, 0);
   const ACLTotal = chartData.reduce((sum, item) => sum + item.ACL, 0);
   const websiteTotal = chartData.reduce((sum, item) => sum + item.website, 0);
-  const Total = facebookTotal + ACLTotal + websiteTotal;
+  const Total = metaTotal + ACLTotal + websiteTotal;
   const isLoading =
     (viewType === "monthly" && loadingMonthly) ||
     (viewType === "weekly" && loadingWeekly) ||
@@ -358,7 +358,7 @@ const MultiLineChart = ({ leads = [] }) => {
               <div className="absolute inset-0 flex flex-col justify-end pb-6">
 
                 {[
-                  [220, 260, 190, 240, 230, 20, 220, 100, 0, 20, 20, 160], // facebook
+                  [220, 260, 190, 240, 230, 20, 220, 100, 0, 20, 20, 160], // meta
                   [180, 280, 200, 210, 150, 0, 120, 40, 0, 110, 120, 110], // ivr
                   [120, 140, 210, 130, 210, 0, 150, 80, 0, 140, 140, 0], // website
                 ].map((heights, lineIndex) => (
@@ -450,7 +450,7 @@ const MultiLineChart = ({ leads = [] }) => {
               {/* Main Leads Line */}
               <Line
                 type="monotone"
-                dataKey="facebook"
+                dataKey="meta"
                 stroke="#1877F2"
                 strokeWidth={2}
                 dot={{ r: 4 }}
@@ -483,7 +483,7 @@ const MultiLineChart = ({ leads = [] }) => {
         <div className="flex gap-6 overflow-x-auto no-scrollbar sm:justify-center text-sm px-2">
           <div className="flex items-center gap-2 min-w-max">
             <div className="w-3 h-3 rounded-full bg-[#1877F2]" />
-            <span>Facebook: {facebookTotal}</span>
+            <span>Meta: {metaTotal}</span>
           </div>
 
           <div className="flex items-center gap-2 min-w-max">
