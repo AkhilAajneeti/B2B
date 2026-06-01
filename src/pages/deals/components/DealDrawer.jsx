@@ -956,7 +956,7 @@ const DealDrawer = ({
                     Cancel
                   </Button>
                   <Button type="submit">
-                    Update {selectedIds.length} Accounts
+                    Update {selectedIds.length} Leads
                   </Button>
                 </div>
               </form>

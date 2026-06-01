@@ -974,14 +974,14 @@ const DealDrawer = ({
                                     <Icon name="Edit" size={14} />
                                   </Button>
 
-                                  <Button
+                                  {/* <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={(e) => handleDelete(e, stream)}
                                     className="h-8 w-8 text-destructive hover:text-destructive"
                                   >
                                     <Icon name="Trash2" size={14} />
-                                  </Button>
+                                  </Button> */}
                                 </div>
                               </div>
 
