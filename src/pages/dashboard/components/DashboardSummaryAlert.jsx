@@ -14,6 +14,84 @@ const formatClock = (date) =>
       })
     : "";
 
+// Per-status colour palette. Tailwind needs full class strings at build time,
+// so we list them literally. Unknown statuses fall through to NEUTRAL.
+const STATUS_STYLES = {
+  Interested:           { bg: "bg-emerald-50", text: "text-emerald-700" },
+  "Follow up":          { bg: "bg-blue-50",    text: "text-blue-700"    },
+  "Call Not Picked":    { bg: "bg-amber-50",   text: "text-amber-700"   },
+  "Call Later":         { bg: "bg-indigo-50",  text: "text-indigo-700"  },
+  "Call Not Connecting":{ bg: "bg-orange-50",  text: "text-orange-700"  },
+  "Site Visit Scheduled": { bg: "bg-cyan-50",  text: "text-cyan-700"    },
+  "Site Visit Done":    { bg: "bg-teal-50",    text: "text-teal-700"    },
+  New:                  { bg: "bg-slate-100",  text: "text-slate-700"   },
+  Purchased:            { bg: "bg-green-50",   text: "text-green-700"   },
+  "Not Interested":     { bg: "bg-rose-50",    text: "text-rose-700"    },
+  "Fake Lead":          { bg: "bg-pink-50",    text: "text-pink-700"    },
+  "Invalid Number":     { bg: "bg-gray-100",   text: "text-gray-700"    },
+  "Irrelevant Lead":    { bg: "bg-stone-100",  text: "text-stone-700"   },
+  "Low Budget":         { bg: "bg-yellow-50",  text: "text-yellow-700"  },
+  "Low Interest":       { bg: "bg-lime-50",    text: "text-lime-700"    },
+  "Other Location":     { bg: "bg-sky-50",     text: "text-sky-700"     },
+  "Switch Off":         { bg: "bg-neutral-100", text: "text-neutral-700" },
+};
+const NEUTRAL_PILL = { bg: "bg-muted/50", text: "text-muted-foreground" };
+const getStatusStyle = (status) => STATUS_STYLES[status] || NEUTRAL_PILL;
+
+// Returns hours until the due time (negative = overdue). Null for bad input.
+const hoursUntil = (value) => {
+  if (!value) return null;
+  const d = new Date(
+    typeof value === "string" && value.length > 10
+      ? `${value.replace(" ", "T")}Z`
+      : value,
+  );
+  if (Number.isNaN(d.getTime())) return null;
+  return (d.getTime() - Date.now()) / 36e5;
+};
+
+// Maps overdue age -> left-edge stripe class. Today gets warm orange; overdue
+// climbs from soft red to deep red as days late grow, so an aging lead pops
+// even inside a wall of overdue rows.
+const stripeForRow = (variant, value) => {
+  if (variant !== "overdue") return "bg-orange-400";
+  const h = hoursUntil(value);
+  if (h === null) return "bg-red-400";
+  const daysLate = -h / 24;
+  if (daysLate < 1) return "bg-red-300";
+  if (daysLate < 3) return "bg-red-400";
+  if (daysLate < 7) return "bg-red-500";
+  if (daysLate < 14) return "bg-red-600";
+  return "bg-red-700";
+};
+
+// Same age scale, but for the right-rail urgency text colour.
+const urgencyTextForRow = (variant, value) => {
+  if (variant !== "overdue") return "text-orange-600";
+  const h = hoursUntil(value);
+  if (h === null) return "text-red-600";
+  const daysLate = -h / 24;
+  if (daysLate < 1) return "text-red-500";
+  if (daysLate < 7) return "text-red-600";
+  return "text-red-700";
+};
+
+// Human-friendly "in 2h", "3d late", "due now". Falls back to date+time.
+const relativeUrgency = (variant, value) => {
+  const h = hoursUntil(value);
+  if (h === null) return variant === "overdue" ? "Overdue" : "Today";
+  if (variant === "overdue") {
+    const late = -h;
+    if (late < 1) return `${Math.max(1, Math.round(late * 60))} min late`;
+    if (late < 24) return `${Math.round(late)}h late`;
+    return `${Math.round(late / 24)}d late`;
+  }
+  if (h < 0) return "Due now";
+  if (h < 1) return `In ${Math.max(1, Math.round(h * 60))} min`;
+  if (h < 24) return `In ${Math.round(h)}h`;
+  return "Today";
+};
+
 // Parse an ESPO-style datetime (either ISO or "YYYY-MM-DD HH:mm:ss") and
 // format as e.g. "16 May, 02:30 PM". Returns "" for falsy / invalid input.
 const formatDueDateTime = (value) => {
@@ -62,21 +140,6 @@ const playChime = () => {
 };
 
 const NotificationRow = ({ deal, variant, onClick }) => {
-  const styles =
-    variant === "overdue"
-      ? {
-          iconBg: "bg-red-50",
-          iconColor: "text-red-600",
-          icon: "AlertCircle",
-          label: "Overdue",
-        }
-      : {
-          iconBg: "bg-orange-50",
-          iconColor: "text-orange-600",
-          icon: "CalendarClock",
-          label: "Today",
-        };
-
   const fullTitle = deal.title || "Untitled Lead";
 
   const phone =
@@ -87,8 +150,10 @@ const NotificationRow = ({ deal, variant, onClick }) => {
   const projectName = deal.project || deal.company || "";
   const dueDateTime = formatDueDateTime(deal.nextContactDate);
 
-  const metaLineOne = [deal.status, projectName].filter(Boolean);
-  const metaLineTwo = [phone, dueDateTime].filter(Boolean);
+  const statusStyle = getStatusStyle(deal.status);
+  const stripeClass = stripeForRow(variant, deal.nextContactDate);
+  const urgencyClass = urgencyTextForRow(variant, deal.nextContactDate);
+  const urgencyLabel = relativeUrgency(variant, deal.nextContactDate);
 
   // `div role="button"` instead of a real <button> so we can legally nest
   // an <a href="tel:…"> inside for the click-to-call action on mobile.
@@ -103,38 +168,38 @@ const NotificationRow = ({ deal, variant, onClick }) => {
           onClick?.();
         }
       }}
-      className="cursor-pointer w-full text-left flex items-start gap-2 sm:gap-3 px-2 sm:px-3 py-2 rounded-lg bg-card border border-border hover:border-primary/40 hover:shadow-[0_6px_18px_-10px_rgba(15,23,42,0.18)] transition-all"
+      // The colour now lives in a single 3px left stripe (severity); the rest
+      // of the row stays neutral so 24 overdue rows read as 24 distinct rows
+      // instead of a wall of red.
+      className="group relative cursor-pointer w-full text-left flex items-start gap-2 sm:gap-3 pl-3 pr-2 sm:pr-3 py-2 rounded-lg bg-card border border-border overflow-hidden hover:border-primary/40 hover:shadow-[0_6px_18px_-10px_rgba(15,23,42,0.18)] transition-all"
       title={fullTitle}
     >
-      <div
-        className={`w-8 h-8 ${styles.iconBg} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}
-      >
-        <Icon name={styles.icon} size={14} className={styles.iconColor} />
-      </div>
+      <span
+        aria-hidden
+        className={`absolute left-0 top-0 bottom-0 w-1 ${stripeClass}`}
+      />
 
       <div className="min-w-0 flex-1 space-y-0.5">
         <div className="text-sm font-medium text-foreground break-words line-clamp-2 sm:line-clamp-none sm:truncate leading-snug">
           {fullTitle}
         </div>
 
-        {/* Meta line 1 — status pill + project name. */}
-        {metaLineOne.length > 0 && (
+        {/* Meta line 1 — status pill (per-status colour) + project name. */}
+        {(deal.status || projectName) && (
           <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
             {deal.status && (
               <span
-                className={`px-1.5 py-px rounded text-[10px] font-semibold uppercase tracking-wider ${styles.iconBg} ${styles.iconColor}`}
+                className={`px-1.5 py-px rounded text-[10px] font-semibold uppercase tracking-wider ${statusStyle.bg} ${statusStyle.text}`}
               >
                 {deal.status}
               </span>
             )}
-            {projectName && (
-              <span className="truncate">{projectName}</span>
-            )}
+            {projectName && <span className="truncate">{projectName}</span>}
           </div>
         )}
 
-        {/* Meta line 2 — tap-to-call icon (mobile only) + due date/time. */}
-        {metaLineTwo.length > 0 && (
+        {/* Meta line 2 — tap-to-call (mobile only) + due date/time in muted. */}
+        {(phone || dueDateTime) && (
           <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
             {phone && (
               <a
@@ -142,14 +207,13 @@ const NotificationRow = ({ deal, variant, onClick }) => {
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Call ${phone}`}
                 title={`Call ${phone}`}
-                // Icon-only on mobile, hidden on desktop per current scope.
                 className="sm:hidden inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-200 transition-colors"
               >
                 <Icon name="Phone" size={14} />
               </a>
             )}
             {dueDateTime && (
-              <span className={`inline-flex items-center gap-1 ${styles.iconColor}`}>
+              <span className="inline-flex items-center gap-1">
                 <Icon name="CalendarClock" size={10} />
                 {dueDateTime}
               </span>
@@ -158,14 +222,15 @@ const NotificationRow = ({ deal, variant, onClick }) => {
         )}
       </div>
 
-      {/* Right rail — badge + chevron grouped so they vertically center
-          together against the multi-line content (rather than top-aligning
-          with the title via individual `mt-*` hacks). */}
+      {/* Right rail — relative urgency ("3d late", "in 2h") tinted by severity
+          tier, plus chevron. Vertically centred so it aligns with multi-line
+          content rather than the title alone. */}
       <div className="flex items-center gap-2 self-center shrink-0">
         <span
-          className={`text-[10px] font-semibold uppercase tracking-wider ${styles.iconColor} hidden sm:inline-block`}
+          className={`text-[11px] font-semibold ${urgencyClass} hidden sm:inline-block whitespace-nowrap`}
+          title={dueDateTime}
         >
-          {styles.label}
+          {urgencyLabel}
         </span>
         <Icon
           name="ChevronRight"
@@ -336,7 +401,7 @@ const DashboardSummaryAlert = () => {
               aria-label="Open pipeline"
             >
               <Icon name="Kanban" size={14} />
-              <span>View overdue leads</span>
+              <span>View Overdue Leads</span>
               <Icon name="ArrowRight" size={12} />
             </button>
           </div>

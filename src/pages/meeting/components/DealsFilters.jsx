@@ -36,7 +36,7 @@ const DealsFilters = ({
   const showDateInputs = ["between", "after", "before"].includes(filters?.dateType);
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "User" },
-    { value: "delete", label: "Delete Selected", icon: "Trash2" },
+    // { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
 
   const handleFilterChange = (key, value) => {

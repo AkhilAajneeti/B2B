@@ -58,8 +58,8 @@ const DealsFilters = ({
   ];
   const bulkActions = [
     { value: "massupdate", label: "Mass Update", icon: "Update" },
-    { value: "export", label: "Export Selected", icon: "Download" },
-    { value: "delete", label: "Delete Selected", icon: "Trash2" },
+    // { value: "export", label: "Export Selected", icon: "Download" },
+    // { value: "delete", label: "Delete Selected", icon: "Trash2" },
   ];
 
   const handleFilterChange = (key, value) => {
