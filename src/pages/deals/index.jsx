@@ -48,7 +48,17 @@ const DealsPage = () => {
   // const [currentPage, setCurrentPage] = useState(1);
   // const [itemsPerPage, setItemsPerPage] = useState(25);
   const [limit, setLimit] = useState(20);
-  const [page, setPage] = useState(1);
+  // Use a lazy initializer for `page` so the persisted value (set below in
+  // the filters section) is honoured on remount.
+  const [page, setPage] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem("deals.tableState");
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.page || 1;
+    } catch {
+      return 1;
+    }
+  });
   const [mode, setMode] = useState("view");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -83,11 +93,11 @@ const DealsPage = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const [sortConfig, setSortConfig] = useState({
-    key: "createdAt",
-    direction: "desc",
-  });
-  const [filters, setFilters] = useState({
+  // Persist filters / page / sort across navigation. The user expects them to
+  // survive jumping into a lead's drawer (which can navigate to /tasks etc.)
+  // and coming back. Cleared only via the Clear-Filters button or tab close.
+  const DEALS_STATE_KEY = "deals.tableState";
+  const DEFAULT_FILTERS = {
     search: "",
     status: "",
     sector: "",
@@ -98,8 +108,32 @@ const DealsPage = () => {
     dateType: "",
     closeDateFrom: "",
     closeDateTo: "",
-    xDays: ""
-  });
+    xDays: "",
+  };
+  const DEFAULT_SORT = { key: "createdAt", direction: "desc" };
+  const loadPersistedState = () => {
+    try {
+      const raw = sessionStorage.getItem(DEALS_STATE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+  const persisted = loadPersistedState();
+
+  const [sortConfig, setSortConfig] = useState(persisted?.sortConfig || DEFAULT_SORT);
+  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS, ...(persisted?.filters || {}) });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        DEALS_STATE_KEY,
+        JSON.stringify({ filters, sortConfig, page }),
+      );
+    } catch {
+      /* sessionStorage full / disabled — persistence degrades silently */
+    }
+  }, [filters, sortConfig, page]);
 
   // Team filter → fetch users in the selected team and expose their ids as an
   // internal `_teamUserIds` field on the filters object. Service translates it
