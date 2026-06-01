@@ -12,6 +12,7 @@ import { fetchLeads } from "services/leads.service";
 // import { fetchContacts } from "services/contact.service";
 import { createCall } from "services/call.services";
 import { createMeeting } from "services/meeting.service";
+import { toEspoDateTime } from "../../pipeline/utils/dateHelpers";
 
 const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
   const [formData, setFormData] = useState({
@@ -110,9 +111,6 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
     e.preventDefault();
 
     if (!validateForm()) return;
-    const toEspoDateTime = (value) => {
-      return value ? value.replace("T", " ") + ":00" : null;
-    };
     const payload = {
       _scope: formData._scope,
 

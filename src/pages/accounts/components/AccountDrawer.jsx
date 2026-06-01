@@ -153,8 +153,12 @@ const AccountDrawer = ({
   const formatDateTime = (value) => {
     if (!value) return "—";
 
-    // backend format: "YYYY-MM-DD HH:mm:ss"
-    const safeValue = value.replace(" ", "T"); // ISO safe
+    // EspoCRM backend transports datetimes as "YYYY-MM-DD HH:mm:ss" in UTC.
+    // Append Z so JS parses as UTC and toLocale* renders in the user's tz.
+    const safeValue =
+      typeof value === "string" && value.length > 10
+        ? `${value.replace(" ", "T")}Z`
+        : value;
     const date = new Date(safeValue);
 
     if (isNaN(date.getTime())) return "—";

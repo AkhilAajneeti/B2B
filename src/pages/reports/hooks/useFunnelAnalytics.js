@@ -187,7 +187,7 @@ export const useFunnelAnalytics = ({
     // Done in memory — both charts still share one network fetch.
     const records = (list || []).filter((lead) => {
       if (!lead?.createdAt) return false;
-      const d = new Date(lead.createdAt.replace(" ", "T"));
+      const d = new Date(`${lead.createdAt.replace(" ", "T")}Z`);
       if (Number.isNaN(d.getTime())) return false;
       return d >= monthStart && d < monthEnd;
     });
@@ -236,7 +236,7 @@ export const useFunnelAnalytics = ({
 
       // 8-week trend by createdAt.
       if (lead?.createdAt) {
-        const d = new Date(lead.createdAt.replace(" ", "T"));
+        const d = new Date(`${lead.createdAt.replace(" ", "T")}Z`);
         if (!Number.isNaN(d.getTime())) {
           for (const w of rep.trend) {
             if (d >= w.start && d < w.end) {

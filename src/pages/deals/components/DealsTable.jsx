@@ -21,14 +21,20 @@ const DealsTable = ({
   const formatDate = (date) => {
     if (!date) return "—"; // null / undefined / empty
 
-    const parsedDate = new Date(date);
+    // EspoCRM datetimes ("YYYY-MM-DD HH:mm:ss") are UTC; append Z so JS
+    // converts them to the user's local timezone for display.
+    const safe =
+      typeof date === "string" && date.length > 10
+        ? `${date.replace(" ", "T")}Z`
+        : date;
+    const parsedDate = new Date(safe);
 
     if (isNaN(parsedDate.getTime())) return "—"; // invalid date
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    })?.format(new Date(date));
+    })?.format(parsedDate);
   };
 
   const getStageColor = (stage) => {

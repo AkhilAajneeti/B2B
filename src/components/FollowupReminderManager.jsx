@@ -28,11 +28,15 @@ const SNOOZE_MS = 10 * 60 * 1000;
 
 /* --- date helpers (kept local so this stays independent of the pipeline) --- */
 
-// ESPO datetimes ("YYYY-MM-DD HH:mm:ss") are treated as local wall-clock time,
-// consistent with the rest of the CRM.
+// EspoCRM datetimes ("YYYY-MM-DD HH:mm:ss") are UTC. Append Z so JS parses
+// the instant correctly; downstream `Date` methods (getHours, isToday, etc.)
+// then operate on the user's local timezone, which is what we want.
 const parseLocal = (value) => {
   if (!value) return null;
-  const d = new Date(String(value).replace(" ", "T"));
+  const s = String(value).trim();
+  if (!s) return null;
+  const iso = s.length <= 10 ? `${s}T12:00:00Z` : `${s.replace(" ", "T")}Z`;
+  const d = new Date(iso);
   return isNaN(d.getTime()) ? null : d;
 };
 

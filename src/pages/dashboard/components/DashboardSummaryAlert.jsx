@@ -19,7 +19,9 @@ const formatClock = (date) =>
 const formatDueDateTime = (value) => {
   if (!value) return "";
   const d = new Date(
-    typeof value === "string" ? value.replace(" ", "T") : value,
+    typeof value === "string" && value.length > 10
+      ? `${value.replace(" ", "T")}Z`
+      : value,
   );
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString("en-IN", {

@@ -138,23 +138,33 @@ const Dashboard = () => {
       d1.getFullYear() === date2.getFullYear()
     );
   };
+  // EspoCRM transports datetimes as "YYYY-MM-DD HH:mm:ss" in UTC.
+  // Append Z so JS interprets as UTC, then format/compare in local tz.
+  const toLocalDate = (value) => {
+    if (!value) return null;
+    const s = typeof value === "string" ? value.trim() : value;
+    if (typeof s === "string" && s.length > 10) {
+      return new Date(`${s.replace(" ", "T")}Z`);
+    }
+    return new Date(s);
+  };
   const formatDate = (date) => {
     if (!date) return "—"; // null / undefined / empty
 
-    const parsedDate = new Date(date);
+    const parsedDate = toLocalDate(date);
 
-    if (isNaN(parsedDate.getTime())) return "—"; // invalid date
+    if (!parsedDate || isNaN(parsedDate.getTime())) return "—"; // invalid date
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    })?.format(new Date(date));
+    })?.format(parsedDate);
   };
   const formatTime = (value) => {
     if (!value) return "—";
 
-    const safe = value.replace(" ", "T"); // EspoCRM fix
-    const date = new Date(safe);
+    const date = toLocalDate(value);
+    if (!date) return "—";
 
     if (isNaN(date.getTime())) return "—";
 
@@ -164,10 +174,10 @@ const Dashboard = () => {
     });
   };
   const isToday = (date) => {
-    const d = new Date(date);
+    const d = toLocalDate(date);
+    if (!d || isNaN(d.getTime())) return false;
     const now = new Date();
     return (
-      d.toDateString() === now.toDateString() &&
       d.getDate() === now.getDate() &&
       d.getMonth() === now.getMonth() &&
       d.getFullYear() === now.getFullYear()
@@ -175,7 +185,8 @@ const Dashboard = () => {
   };
 
   const isYesterday = (date) => {
-    const d = new Date(date);
+    const d = toLocalDate(date);
+    if (!d || isNaN(d.getTime())) return false;
     const y = new Date();
     y.setDate(y.getDate() - 1);
     return d.toDateString() === y.toDateString();
@@ -194,11 +205,11 @@ const Dashboard = () => {
   const meetings = meetingsList.filter((m) => {
     const createdToday =
       m.createdAt &&
-      isToday(m.createdAt.replace(" ", "T"));
+      isToday(m.createdAt);
 
     const scheduledToday =
       m.dateStart &&
-      isToday(m.dateStart.replace(" ", "T"));
+      isToday(m.dateStart);
 
     return createdToday || scheduledToday;
   }).length;
@@ -328,22 +339,22 @@ const Dashboard = () => {
                         .filter((m) => {
                           const createdToday =
                             m.createdAt &&
-                            isToday(m.createdAt.replace(" ", "T"));
+                            isToday(m.createdAt);
 
                           const scheduledToday =
                             m.dateStart &&
-                            isToday(m.dateStart.replace(" ", "T"));
+                            isToday(m.dateStart);
 
                           return createdToday || scheduledToday;
                         })
                         .map((m) => {
                           const createdToday =
                             m.createdAt &&
-                            isToday(m.createdAt.replace(" ", "T"));
+                            isToday(m.createdAt);
 
                           const scheduledToday =
                             m.dateStart &&
-                            isToday(m.dateStart.replace(" ", "T"));
+                            isToday(m.dateStart);
 
                           return {
                             ...m,

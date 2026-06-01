@@ -16,6 +16,7 @@ import {
   createCallStream,
 } from "../../../services/call.services";
 import renderAttendees from "./renderAttendees";
+import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
 
 const DealDrawer = ({
   deal,
@@ -154,7 +155,11 @@ const DealDrawer = ({
   const formatDate = (date) => {
     if (!date) return "—";
 
-    const safeDate = date.replace(" ", "T"); // 👈 key fix
+    // EspoCRM datetimes are UTC; append Z so local tz applies on display.
+    const safeDate =
+      typeof date === "string" && date.length > 10
+        ? `${date.replace(" ", "T")}Z`
+        : date;
     const parsed = new Date(safeDate);
 
     if (isNaN(parsed.getTime())) return "—";
@@ -168,7 +173,11 @@ const DealDrawer = ({
   const formatDateTime = (dateString) => {
     if (!dateString) return "—";
 
-    const date = new Date(dateString.replace(" ", "T"));
+    const safe =
+      typeof dateString === "string" && dateString.length > 10
+        ? `${dateString.replace(" ", "T")}Z`
+        : dateString;
+    const date = new Date(safe);
 
     return date.toLocaleString("en-IN", {
       day: "2-digit",
@@ -441,9 +450,7 @@ const DealDrawer = ({
       [name]: value,
     }));
   };
-  const toEspoDateTime = (value) => {
-    return value ? value.replace("T", " ") + ":00" : null;
-  };
+  const toEspoDateTime = (value) => toEspoDateTimeUtc(value);
   const createStream = async () => {
     //post activity
     setActivityForm(true);

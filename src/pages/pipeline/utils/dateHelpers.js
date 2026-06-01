@@ -14,11 +14,10 @@ import {
 /**
  * Parse an EspoCRM date / date-time string into a Date (or null).
  *
- * Note: ESPO transports date-times as "YYYY-MM-DD HH:mm:ss" without a tz
- * suffix. The rest of this CRM (see leads.service callers, DealCard, etc.)
- * treats those strings as LOCAL wall-clock time, not UTC - that matches what
- * users actually type in their timezone. We follow the same convention so a
- * follow-up entered as "25 May" never displays as "26 May" in UI later.
+ * EspoCRM transports date-times as "YYYY-MM-DD HH:mm:ss" in UTC (no tz
+ * suffix) and plain dates as "YYYY-MM-DD". We parse the datetime form as
+ * UTC by appending "Z", and the date-only form as noon UTC so the calendar
+ * day survives any timezone shift downstream.
  */
 export const parseEspoDate = (value) => {
   if (!value) return null;
@@ -30,14 +29,40 @@ export const parseEspoDate = (value) => {
 
     const date =
       trimmed.length <= 10
-        ? new Date(`${trimmed}T00:00:00`) // plain date -> local midnight
-        : new Date(trimmed.replace(" ", "T")); // datetime -> local wall-clock
+        ? new Date(`${trimmed}T12:00:00Z`) // plain date -> noon UTC (date survives tz shift)
+        : new Date(`${trimmed.replace(" ", "T")}Z`); // datetime -> UTC
 
     return isValid(date) ? date : null;
   }
 
   const fallback = new Date(value);
   return isValid(fallback) ? fallback : null;
+};
+
+/**
+ * Convert a value into what a `<input type="datetime-local">` expects
+ * (`YYYY-MM-DDTHH:mm`, in the user's local wall-clock). Accepts:
+ *  - Espo API strings ("YYYY-MM-DD HH:mm:ss", UTC) -> converted to local
+ *  - Strings already in datetime-local form ("YYYY-MM-DDTHH:mm") -> passed through
+ *  - Date objects -> formatted in local components
+ * Returns "" for null/invalid.
+ */
+export const fromEspoToLocalInput = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    // Already in datetime-local form ("YYYY-MM-DDTHH:mm"): pass through.
+    if (trimmed.includes("T") && !trimmed.includes(" ")) {
+      return trimmed.slice(0, 16);
+    }
+  }
+  const d = parseEspoDate(value);
+  if (!d) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  );
 };
 
 /** Calendar days from today -> positive = future, negative = past. */
@@ -88,13 +113,38 @@ export const formatShortDate = (value) => {
   });
 };
 
-/** Serialise a Date back into the EspoCRM date-time format (noon, UTC-safe). */
-export const toEspoDateTime = (date) => {
-  const d = date instanceof Date ? date : parseEspoDate(date) || new Date();
+/**
+ * Serialise a Date (or anything Date-ish) into EspoCRM's UTC datetime format
+ * `YYYY-MM-DD HH:mm:ss`. String inputs from `<input type="datetime-local">`
+ * (e.g. "2026-06-13T11:03") are treated as local wall-clock and converted to
+ * UTC. Date-only strings ("2026-06-13") are pinned to noon UTC so the calendar
+ * day survives any timezone conversion.
+ */
+export const toEspoDateTime = (value) => {
+  if (!value) return null;
   const pad = (n) => String(n).padStart(2, "0");
+
+  let d;
+  if (value instanceof Date) {
+    d = value;
+  } else if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.length <= 10) {
+      // "YYYY-MM-DD" - keep at noon UTC so date doesn't drift across tz shifts
+      return `${trimmed} 12:00:00`;
+    }
+    // datetime-local emits "YYYY-MM-DDTHH:mm" (no tz) -> parse as local
+    d = new Date(trimmed.replace(" ", "T"));
+  } else {
+    d = new Date(value);
+  }
+
+  if (!isValid(d)) return null;
+
   return (
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-    ` 12:00:00`
+    `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ` +
+    `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`
   );
 };
 

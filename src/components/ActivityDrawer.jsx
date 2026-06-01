@@ -11,6 +11,10 @@ import { fetchLeads } from "services/leads.service";
 import { fetchAccounts } from "services/account.service";
 import { canEditRecord } from "utils/permission";
 import { ParentSelectorModal } from "components/ParentSelectorModal";
+import {
+  toEspoDateTime as toEspoDateTimeUtc,
+  fromEspoToLocalInput,
+} from "../pages/pipeline/utils/dateHelpers";
 
 const ActivityDrawer = ({
     deal,
@@ -80,8 +84,8 @@ const ActivityDrawer = ({
                 teamId: deal.teamId || deal.teamsIds?.[0] || "",
                 status: deal.status || "",
                 priority: deal.priority || "",
-                startDate: deal.startDate || deal.dateStart?.replace(" ", "T").slice(0, 16) || "",
-                dueDate: deal.dueDate || deal.dateEnd?.replace(" ", "T").slice(0, 16) || "",
+                startDate: deal.startDate || fromEspoToLocalInput(deal.dateStart) || "",
+                dueDate: deal.dueDate || fromEspoToLocalInput(deal.dateEnd) || "",
                 description: deal.description || "",
                 parentName: deal.parentType || "",
                 parentType: deal.parentId || "",
@@ -405,9 +409,7 @@ const ActivityDrawer = ({
             [name]: value,
         }));
     };
-    const toEspoDateTime = (value) => {
-        return value ? value.replace("T", " ") + ":00" : null;
-    };
+    const toEspoDateTime = (value) => toEspoDateTimeUtc(value);
 
     const getParentTypeOptions = () => {
         let options = [];

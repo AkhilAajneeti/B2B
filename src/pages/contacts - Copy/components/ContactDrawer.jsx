@@ -284,7 +284,12 @@ const ContactDrawer = ({
 
   const formatDateTime = (value) => {
     if (!value) return "—";
-    const d = new Date(value.replace(" ", "T"));
+    // EspoCRM datetimes are UTC; append Z so toLocaleString uses local tz.
+    const safe =
+      typeof value === "string" && value.length > 10
+        ? `${value.replace(" ", "T")}Z`
+        : value;
+    const d = new Date(safe);
     return d.toLocaleString("en-US", {
       month: "short",
       day: "numeric",
@@ -784,7 +789,7 @@ const ContactDrawer = ({
                             <span className="text-sm text-foreground">
                               {contact?.modifiedAt
                                 ? new Date(
-                                    contact.modifiedAt.replace(" ", "T"),
+                                    `${contact.modifiedAt.replace(" ", "T")}Z`,
                                   ).toLocaleString()
                                 : "—"}
                               <span className="text-muted-foreground">
@@ -1007,7 +1012,7 @@ const ContactDrawer = ({
                                       <span className="flex items-center gap-1">
                                         <Icon name="Clock" size={12} />
                                         {new Date(
-                                          activity.dateStart.replace(" ", "T"),
+                                          `${activity.dateStart.replace(" ", "T")}Z`,
                                         ).toLocaleDateString()}
                                       </span>
                                     )}
@@ -1045,7 +1050,7 @@ const ContactDrawer = ({
                                     <p className="font-medium">
                                       {activity.dateStart &&
                                         new Date(
-                                          activity.dateStart.replace(" ", "T"),
+                                          `${activity.dateStart.replace(" ", "T")}Z`,
                                         ).toLocaleString()}
                                     </p>
                                   </div>
@@ -1057,7 +1062,7 @@ const ContactDrawer = ({
                                     <p className="font-medium">
                                       {activity.dateEnd &&
                                         new Date(
-                                          activity.dateEnd.replace(" ", "T"),
+                                          `${activity.dateEnd.replace(" ", "T")}Z`,
                                         ).toLocaleString()}
                                     </p>
                                   </div>

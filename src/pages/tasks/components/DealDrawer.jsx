@@ -12,6 +12,7 @@ import { fetchAccounts } from "services/account.service";
 import { taskStreamById } from "services/tasks.service";
 import { canEditRecord } from "utils/permission";
 import { ParentSelectorModal } from "components/ParentSelectorModal";
+import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
 
 const DealDrawer = ({
   deal,
@@ -416,9 +417,7 @@ const DealDrawer = ({
       [name]: value,
     }));
   };
-  const toEspoDateTime = (value) => {
-    return value ? value.replace("T", " ") + ":00" : null;
-  };
+  const toEspoDateTime = (value) => toEspoDateTimeUtc(value);
 
   useEffect(() => {
     if (!isOpen) {

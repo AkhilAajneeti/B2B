@@ -108,7 +108,7 @@ export const useWinRateAnalytics = ({
       const category = categorize(lead.status);
       if (!category) continue;
 
-      const d = new Date(lead.createdAt.replace(" ", "T"));
+      const d = new Date(`${lead.createdAt.replace(" ", "T")}Z`);
       if (Number.isNaN(d.getTime())) continue;
       // Only count leads whose year matches the requested year. (Backend already filters,
       // but localStorage hydration could carry stale entries; this is a safety net.)

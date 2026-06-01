@@ -312,7 +312,12 @@ const ContactDrawer = ({
 
   const formatDateTime = (value) => {
     if (!value) return "—";
-    const d = new Date(value.replace(" ", "T"));
+    // EspoCRM datetimes are UTC; append Z so toLocaleString uses local tz.
+    const safe =
+      typeof value === "string" && value.length > 10
+        ? `${value.replace(" ", "T")}Z`
+        : value;
+    const d = new Date(safe);
     return d.toLocaleString("en-US", {
       month: "short",
       day: "numeric",

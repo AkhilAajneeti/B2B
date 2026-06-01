@@ -85,7 +85,11 @@ const DealDrawer = ({
   const formatDate = (date) => {
     if (!date) return "—";
 
-    const safeDate = date.replace(" ", "T"); // 👈 key fix
+    // EspoCRM datetimes are UTC; append Z so display uses local tz.
+    const safeDate =
+      typeof date === "string" && date.length > 10
+        ? `${date.replace(" ", "T")}Z`
+        : date;
     const parsed = new Date(safeDate);
 
     if (isNaN(parsed.getTime())) return "—";
@@ -99,7 +103,10 @@ const DealDrawer = ({
   const formatDateTime = (value) => {
     if (!value) return "—";
 
-    const safe = value.replace(" ", "T"); // EspoCRM fix
+    const safe =
+      typeof value === "string" && value.length > 10
+        ? `${value.replace(" ", "T")}Z`
+        : value;
     const date = new Date(safe);
 
     if (isNaN(date.getTime())) return "—";
@@ -361,17 +368,6 @@ const DealDrawer = ({
       ...prev,
       [name]: value,
     }));
-  };
-  const toEspoDateTime = (value) => {
-    if (!value) return null;
-
-    // already Espo format → do nothing
-    if (value.includes(" ")) {
-      return value;
-    }
-
-    // from datetime-local input
-    return value.replace("T", " ") + ":00";
   };
 
   return (

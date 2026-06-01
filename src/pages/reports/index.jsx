@@ -122,7 +122,7 @@ const Reports = () => {
   const isWithinSelectedDays = (createdAt, selectedDay) => {
     if (!selectedDay) return true;
 
-    const createdDate = new Date(createdAt?.replace(" ", "T"));
+    const createdDate = new Date(`${createdAt?.replace(" ", "T")}Z`);
     const today = new Date();
 
     // Reset time for accurate comparison

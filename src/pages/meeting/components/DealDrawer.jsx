@@ -18,6 +18,7 @@ import { useTeams } from "hooks/useTeams";
 import { useLeads } from "hooks/useLeads";
 import { useAccounts } from "hooks/useAccounts";
 import { canEditRecord } from "utils/permission";
+import { toEspoDateTime, fromEspoToLocalInput } from "../../pipeline/utils/dateHelpers";
 import { ParentSelectorModal } from "components/ParentSelectorModal";
 
 // Duration option value -> minutes. Keys match DURATION_OPTIONS below.
@@ -134,15 +135,11 @@ const DealDrawer = ({
         // Derive the duration option from the saved start/end gap so the
         // Duration select reflects the stored meeting length on open.
         duration: deriveDurationKey(
-          deal.dateStart ? deal.dateStart.replace(" ", "T").slice(0, 16) : "",
-          deal.dateEnd ? deal.dateEnd.replace(" ", "T").slice(0, 16) : "",
+          fromEspoToLocalInput(deal.dateStart),
+          fromEspoToLocalInput(deal.dateEnd),
         ),
-        startDate: deal.dateStart
-          ? deal.dateStart.replace(" ", "T").slice(0, 16)
-          : "",
-        dueDate: deal.dateEnd
-          ? deal.dateEnd.replace(" ", "T").slice(0, 16)
-          : "",
+        startDate: fromEspoToLocalInput(deal.dateStart),
+        dueDate: fromEspoToLocalInput(deal.dateEnd),
         joinUrl: deal.joinUrl || "",
         description: deal.description || "",
         parentName: deal.parentType || "",
@@ -205,7 +202,11 @@ const DealDrawer = ({
   const formatDate = (date) => {
     if (!date) return "—";
 
-    const safeDate = date.replace(" ", "T"); // 👈 key fix
+    // EspoCRM datetimes are UTC; append Z so the local timezone is applied.
+    const safeDate =
+      typeof date === "string" && date.length > 10
+        ? `${date.replace(" ", "T")}Z`
+        : date;
     const parsed = new Date(safeDate);
 
     if (isNaN(parsed.getTime())) return "—";
@@ -468,9 +469,6 @@ const DealDrawer = ({
       ...prev,
       [name]: value,
     }));
-  };
-  const toEspoDateTime = (value) => {
-    return value ? value.replace("T", " ") + ":00" : null;
   };
   const createStream = async () => {
     //post activity

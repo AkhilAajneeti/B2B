@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useLeadMeeting } from "hooks/useMeeting";
 import { createLeadMeeting, createMeeting } from "services/meeting.service";
 import { fetchTeamUser } from "services/team.service";
+import { toEspoDateTime, fromEspoToLocalInput } from "../../pipeline/utils/dateHelpers";
 const DealDrawer = ({
   deal,
   isOpen,
@@ -55,7 +56,7 @@ const DealDrawer = ({
       addressCity: "",
       cProjectName: "",
       cNextContactAt: "",
-      cLeatReceivedAt: new Date().toISOString().slice(0, 16),
+      cLeatReceivedAt: fromEspoToLocalInput(new Date()),
       cPreference: "",
       assignedUserId: u?.id || "",
       teamId: u?.defaultTeamId || u?.teamsIds?.[0] || u?.teamIds?.[0] || "",
@@ -198,7 +199,12 @@ const DealDrawer = ({
   const formatDate = (date) => {
     if (!date) return "—";
 
-    const safeDate = date.replace(" ", "T"); // 👈 key fix
+    // EspoCRM datetimes are UTC; append Z so JS parses correctly,
+    // then format in the user's local timezone.
+    const safeDate =
+      typeof date === "string" && date.length > 10
+        ? `${date.replace(" ", "T")}Z`
+        : date;
     const parsed = new Date(safeDate);
 
     if (isNaN(parsed.getTime())) return "—";
@@ -212,7 +218,10 @@ const DealDrawer = ({
   const formatDateTime = (value) => {
     if (!value) return "—";
 
-    const safe = value.replace(" ", "T"); // EspoCRM fix
+    const safe =
+      typeof value === "string" && value.length > 10
+        ? `${value.replace(" ", "T")}Z`
+        : value;
     const date = new Date(safe);
 
     if (isNaN(date.getTime())) return "—";
@@ -496,17 +505,6 @@ const DealDrawer = ({
       [name]: value,
     }));
   };
-  const toEspoDateTime = (value) => {
-    if (!value) return null;
-
-    // already Espo format → do nothing
-    if (value.includes(" ")) {
-      return value;
-    }
-
-    // from datetime-local input
-    return value.replace("T", " ") + ":00";
-  };
   const IndustryOptions = [
     { value: "Advertising", label: "Advertising" },
     { value: "Aerospace", label: "Aerospace" },
@@ -713,7 +711,7 @@ const DealDrawer = ({
                         // scheduling slots; the native time picker snaps to
                         // :00 / :15 / :30 / :45.
                         step={900}
-                        value={formData.cNextContactAt || ""}
+                        value={fromEspoToLocalInput(formData.cNextContactAt)}
                         onChange={(e) =>
                           handleChange("cNextContactAt", e.target.value)
                         }
@@ -748,7 +746,7 @@ const DealDrawer = ({
                         label="Site Visit At"
                         // 15-min increments to align with backend slots.
                         step={900}
-                        value={formData.cSiteVisitAt || ""}
+                        value={fromEspoToLocalInput(formData.cSiteVisitAt)}
                         onChange={(e) =>
                           handleChange("cSiteVisitAt", e.target.value)
                         }
@@ -820,8 +818,8 @@ const DealDrawer = ({
                           type="datetime-local"
                           label="Lead Received At"
                           value={
-                            formData.cLeatReceivedAt ||
-                            new Date().toISOString().slice(0, 16)
+                            fromEspoToLocalInput(formData.cLeatReceivedAt) ||
+                            fromEspoToLocalInput(new Date())
                           }
                           onChange={(e) =>
                             handleChange("cLeatReceivedAt", e.target.value)
@@ -831,9 +829,7 @@ const DealDrawer = ({
                         <Input
                           type="datetime-local"
                           label="Lead Received At"
-                          value={
-                            formData.cLeatReceivedAt
-                          }
+                          value={fromEspoToLocalInput(formData.cLeatReceivedAt)}
                           onChange={(e) =>
                             handleChange("cLeatReceivedAt", e.target.value)
                           }
@@ -941,7 +937,7 @@ const DealDrawer = ({
                         type="datetime-local"
                         label="Next Contact"
                         step={900}
-                        value={formData.cNextContactAt || ""}
+                        value={fromEspoToLocalInput(formData.cNextContactAt)}
                         disabled={!massFields.cNextContactAt}
                         onChange={(e) =>
                           handleChange("cNextContactAt", e.target.value)

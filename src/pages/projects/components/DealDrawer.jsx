@@ -9,6 +9,7 @@ import { fetchUser } from "services/user.service";
 import { fetchTeam } from "services/team.service";
 import { fetchContacts } from "services/contact.service";
 import makeAnimated from "react-select/animated";
+import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
 const DealDrawer = ({
   deal,
   selectedIds = [],
@@ -215,9 +216,7 @@ const DealDrawer = ({
       [name]: value,
     }));
   };
-  const toEspoDateTime = (value) => {
-    return value ? value.replace("T", " ") + ":00" : null;
-  };
+  const toEspoDateTime = (value) => toEspoDateTimeUtc(value);
 
   useEffect(() => {
     if (!isOpen) {
