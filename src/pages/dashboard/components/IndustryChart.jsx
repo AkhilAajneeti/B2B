@@ -12,6 +12,7 @@ import Icon from "../../../components/AppIcon";
 import Select from "../../../components/ui/Select";
 import Input from "../../../components/ui/Input";
 import { fetchLeadsCount } from "services/leads.service";
+import { todayLocal } from "../../../utils/dateFilter";
 const COLORS = [
   "#1877F2",
   "#22c55e",
@@ -179,7 +180,9 @@ const IndustryChart = () => {
           <p className="font-medium text-popover-foreground mb-1">
             {data.name}
           </p>
-          <p className="text-sm text-muted-foreground">Leads: {data.value}</p>
+          <p className="text-sm text-muted-foreground">
+            Leads: {isEmpty ? 0 : data.value}
+          </p>
         </div>
       );
     }
@@ -217,6 +220,7 @@ const IndustryChart = () => {
               <div className="flex gap-2">
                 <Input
                   type="date"
+                  max={todayLocal()}
                   value={filters?.closeDateFrom || ""}
                   onChange={(e) =>
                     handleFilterChange("closeDateFrom", e.target.value)
@@ -226,6 +230,8 @@ const IndustryChart = () => {
                 {filters?.dateType === "between" && (
                   <Input
                     type="date"
+                    max={todayLocal()}
+                    min={filters?.closeDateFrom || undefined}
                     value={filters?.closeDateTo || ""}
                     onChange={(e) =>
                       handleFilterChange("closeDateTo", e.target.value)

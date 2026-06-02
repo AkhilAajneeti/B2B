@@ -279,7 +279,10 @@ const AssignedUserChartComponent = ({ filters = {}, enabled = true }) => {
   });
 
   // Cap the date picker so users can't pick the future (ESPO would return 0 anyway).
-  const todayIso = new Date().toISOString().slice(0, 10);
+  // Use local-date format ("sv-SE") instead of UTC slice — for IST users past
+  // 6:30 PM, .toISOString() has already rolled to the next day and would
+  // unintentionally allow tomorrow.
+  const todayIso = new Date().toLocaleDateString("sv-SE");
 
   const populated = useMemo(
     () => (data || []).filter((r) => r.total > 0),

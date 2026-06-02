@@ -117,15 +117,15 @@ const DealDrawer = ({
     e.preventDefault();
 
     if (!formData.name?.trim()) {
-      toast.error("Task name is required");
+      toast.error("Project name is required");
       return;
     }
 
     const payload = {
-      // ✅ TASK REQUIRED
+      // ✅ Project REQUIRED
       name: formData.name.trim(),
       assignedUserId: formData.assignedUserId || null,
-      // ✅ TASK expects ARRAY
+      // ✅ Project expects ARRAY
       teamsIds: formData.teamId ? [formData.teamId] : [],
       address: formData.address || "",
       description: formData.description || "",
@@ -138,7 +138,6 @@ const DealDrawer = ({
       reminders: [],
     };
 
-    console.log("FINAL TASK PAYLOAD 👉", payload);
 
     try {
       if (mode === "add") {
@@ -151,8 +150,8 @@ const DealDrawer = ({
 
       onClose();
     } catch (err) {
-      console.error("Task creation failed", err);
-      toast.error("Task is not created");
+      console.error("Project creation failed", err);
+      toast.error("Project is not created");
     }
   };
   const handleBulkUpdate = async (e) => {
@@ -244,11 +243,11 @@ const DealDrawer = ({
             <div className="flex items-center space-x-3">
               <h2 className="text-xl font-semibold text-foreground">
                 {isMassUpdate
-                  ? "Mass Update Tasks"
+                  ? "Mass Update Project"
                   : mode === "add"
-                    ? "Add Task"
+                    ? "Add Project"
                     : isEditing
-                      ? "Edit Task"
+                      ? "Edit Project"
                       : deal?.name}
               </h2>
             </div>
@@ -571,7 +570,7 @@ const DealDrawer = ({
             {isMassUpdate && (
               <>
                 <p className="text-sm text-muted-foreground text-center pt-4 fw-bold">
-                  Updating {selectedIds.length} selected tasks
+                  Updating {selectedIds.length} selected project
                 </p>
                 <form className="space-y-6 p-6" onSubmit={handleBulkUpdate}>
                   <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -597,7 +596,7 @@ const DealDrawer = ({
                       Cancel
                     </Button>
                     <Button type="submit">
-                      Update {selectedIds.length} Tasks
+                      Update {selectedIds.length} project
                     </Button>
                   </div>
                 </form>

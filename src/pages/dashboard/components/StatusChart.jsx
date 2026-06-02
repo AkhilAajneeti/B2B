@@ -252,7 +252,9 @@ const StatusChart = () => {
           <p className="font-medium text-popover-foreground mb-1">
             {data.name}
           </p>
-          <p className="text-sm text-muted-foreground">Leads: {data.value}</p>
+          <p className="text-sm text-muted-foreground">
+            Leads: {isEmpty ? 0 : data.value}
+          </p>
         </div>
       );
     }

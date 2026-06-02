@@ -5,6 +5,7 @@ import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
 import RoleGuard from "components/RoleGuard";
+import { todayLocal } from "../../../utils/dateFilter";
 
 const FilterControls = ({
   filters,
@@ -231,6 +232,7 @@ const FilterControls = ({
             <div className="flex gap-2">
               <Input
                 type="date"
+                max={todayLocal()}
                 value={filters?.closeDateFrom || ""}
                 onChange={(e) =>
                   handleFilterChange("closeDateFrom", e.target.value)
@@ -239,6 +241,8 @@ const FilterControls = ({
               {filters?.dateType === "between" && (
                 <Input
                   type="date"
+                  max={todayLocal()}
+                  min={filters?.closeDateFrom || undefined}
                   value={filters?.closeDateTo || ""}
                   onChange={(e) =>
                     handleFilterChange("closeDateTo", e.target.value)

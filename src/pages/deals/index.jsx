@@ -170,8 +170,14 @@ const DealsPage = () => {
   const deleteLeadMutation = useMutation({
     mutationFn: deleteLead,
     onSuccess: () => {
-      toast.success("Deleted");
+      // Pass the same id as the loading toast so this replaces it instead
+      // of stacking on top — otherwise the spinner stays on screen forever.
+      toast.success("Deleted", { id: "delete-lead" });
       queryClient.invalidateQueries(["leads"]);
+    },
+    onError: (err) => {
+      console.error("Delete failed", err);
+      toast.error("Failed to delete lead", { id: "delete-lead" });
     },
   });
   // fetch leads

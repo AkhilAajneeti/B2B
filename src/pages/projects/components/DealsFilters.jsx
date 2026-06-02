@@ -5,6 +5,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
+import { todayLocal } from "../../../utils/dateFilter";
 
 const DealsFilters = ({
   filters,
@@ -181,6 +182,7 @@ const DealsFilters = ({
           <div className="flex gap-2">
             <Input
               type="date"
+              max={todayLocal()}
               value={filters?.closeDateFrom || ""}
               onChange={(e) =>
                 handleFilterChange("closeDateFrom", e.target.value)
@@ -190,6 +192,8 @@ const DealsFilters = ({
             {filters?.dateType === "between" && (
               <Input
                 type="date"
+                max={todayLocal()}
+                min={filters?.closeDateFrom || undefined}
                 value={filters?.closeDateTo || ""}
                 onChange={(e) =>
                   handleFilterChange("closeDateTo", e.target.value)

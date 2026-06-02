@@ -89,25 +89,34 @@ const MultiLineChart = ({ leads = [] }) => {
             };
           }
 
-          const [meta, ACL, website] = await Promise.all([
+          // Priority rule: cSubSource wins over source, so each lead lands in
+          // exactly one bucket and the totals stop double-counting.
+          //   Meta    = cSubSource exactly "Meta"
+          //   Website = source = "Web Site" AND cSubSource is null
+          //   Aajneeti (ACL) = Total − Meta − Website (everything else)
+          const dateRange = {
+            type: "between",
+            attribute: "createdAt",
+            value: [start.toISOString(), end.toISOString()],
+          };
+
+          const [total, meta, website] = await Promise.all([
+            fetchLeadsCount([dateRange]),
             fetchLeadsCount([
-              { type: "between", attribute: "createdAt", value: [start.toISOString(), end.toISOString()] },
-              { type: "like", attribute: "cSubSource", value: "%meta%" },
+              dateRange,
+              { type: "equals", attribute: "cSubSource", value: "Meta" },
             ]),
             fetchLeadsCount([
-              { type: "between", attribute: "createdAt", value: [start.toISOString(), end.toISOString()] },
-              { type: "in", attribute: "source", value: ["ACL"] },
-            ]),
-            fetchLeadsCount([
-              { type: "between", attribute: "createdAt", value: [start.toISOString(), end.toISOString()] },
-              { type: "in", attribute: "source", value: ["Web Site"] },
+              dateRange,
+              { type: "isNull", attribute: "cSubSource" },
+              { type: "equals", attribute: "source", value: "Web Site" },
             ]),
           ]);
 
           return {
             label: start.toLocaleString("default", { month: "short" }),
             meta,
-            ACL,
+            ACL: Math.max(0, total - meta - website),
             website,
           };
         })
@@ -148,37 +157,29 @@ const MultiLineChart = ({ leads = [] }) => {
           const end = new Date(year, month, endDay);
           end.setHours(23, 59, 59, 999);
 
-          const [meta, ACL, website] = await Promise.all([
+          const dateRange = {
+            type: "between",
+            attribute: "createdAt",
+            value: [start.toISOString(), end.toISOString()],
+          };
+
+          const [total, meta, website] = await Promise.all([
+            fetchLeadsCount([dateRange]),
             fetchLeadsCount([
-              {
-                type: "between",
-                attribute: "createdAt",
-                value: [start.toISOString(), end.toISOString()],
-              },
-              { type: "like", attribute: "cSubSource", value: "%meta%" },
+              dateRange,
+              { type: "equals", attribute: "cSubSource", value: "Meta" },
             ]),
             fetchLeadsCount([
-              {
-                type: "between",
-                attribute: "createdAt",
-                value: [start.toISOString(), end.toISOString()],
-              },
-              { type: "in", attribute: "source", value: ["ACL"] },
-            ]),
-            fetchLeadsCount([
-              {
-                type: "between",
-                attribute: "createdAt",
-                value: [start.toISOString(), end.toISOString()],
-              },
-              { type: "in", attribute: "source", value: ["Web Site"] },
+              dateRange,
+              { type: "isNull", attribute: "cSubSource" },
+              { type: "equals", attribute: "source", value: "Web Site" },
             ]),
           ]);
 
           return {
             label: w.label,
             meta,
-            ACL,
+            ACL: Math.max(0, total - meta - website),
             website,
           };
         })
@@ -211,37 +212,29 @@ const MultiLineChart = ({ leads = [] }) => {
 
       const batchResults = await Promise.all(
         batch.map(async (d) => {
-          const [meta, ACL, website] = await Promise.all([
+          const dateRange = {
+            type: "between",
+            attribute: "createdAt",
+            value: [d.start.toISOString(), d.end.toISOString()],
+          };
+
+          const [total, meta, website] = await Promise.all([
+            fetchLeadsCount([dateRange]),
             fetchLeadsCount([
-              {
-                type: "between",
-                attribute: "createdAt",
-                value: [d.start.toISOString(), d.end.toISOString()],
-              },
-              { type: "like", attribute: "cSubSource", value: "%meta%" },
+              dateRange,
+              { type: "equals", attribute: "cSubSource", value: "Meta" },
             ]),
             fetchLeadsCount([
-              {
-                type: "between",
-                attribute: "createdAt",
-                value: [d.start.toISOString(), d.end.toISOString()],
-              },
-              { type: "in", attribute: "source", value: ["ACL"] },
-            ]),
-            fetchLeadsCount([
-              {
-                type: "between",
-                attribute: "createdAt",
-                value: [d.start.toISOString(), d.end.toISOString()],
-              },
-              { type: "in", attribute: "source", value: ["Web Site"] },
+              dateRange,
+              { type: "isNull", attribute: "cSubSource" },
+              { type: "equals", attribute: "source", value: "Web Site" },
             ]),
           ]);
 
           return {
             label: d.date.toLocaleDateString("en-IN", { weekday: "short" }),
             meta,
-            ACL,
+            ACL: Math.max(0, total - meta - website),
             website,
           };
         })

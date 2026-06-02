@@ -3,6 +3,7 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Select from "../../../components/ui/Select";
 import Input from "../../../components/ui/Input";
+import { todayLocal } from "../../../utils/dateFilter";
 const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total, limit, page }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activityDateFilter, setActivityDateFilter] = useState("last_7_days");
@@ -124,6 +125,7 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total, l
               <div className="flex gap-2">
                 <Input
                   type="date"
+                  max={todayLocal()}
                   value={activeFilters?.startDate || ""}
                   onChange={(e) =>
                     handleFilterChange("startDate", e.target.value)
@@ -133,6 +135,8 @@ const AccountsFilters = ({ onFiltersChange, activeFilters, resultCount, total, l
                 {activeFilters?.dateType === "between" && (
                   <Input
                     type="date"
+                    max={todayLocal()}
+                    min={activeFilters?.startDate || undefined}
                     value={activeFilters?.endDate || ""}
                     onChange={(e) =>
                       handleFilterChange("endDate", e.target.value)

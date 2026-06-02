@@ -16,7 +16,7 @@ import {
 } from "services/team.service";
 import toast from "react-hot-toast";
 import Select from "../../../components/ui/Select";
-import { DATE_FILTER_OPTIONS, matchesDateFilter } from "../../../utils/dateFilter";
+import { DATE_FILTER_OPTIONS, matchesDateFilter, todayLocal } from "../../../utils/dateFilter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTeams } from "../../../hooks/useTeams";
 import { useRoles } from "../../../hooks/useRoles";
@@ -342,12 +342,15 @@ const TeamsTab = () => {
               <div className="flex gap-2">
                 <Input
                   type="date"
+                  max={todayLocal()}
                   value={filters.dateFrom}
                   onChange={(e) => handleFilterChange("dateFrom", e?.target?.value)}
                 />
                 {filters.dateType === "between" && (
                   <Input
                     type="date"
+                    max={todayLocal()}
+                    min={filters.dateFrom || undefined}
                     value={filters.dateTo}
                     onChange={(e) => handleFilterChange("dateTo", e?.target?.value)}
                   />

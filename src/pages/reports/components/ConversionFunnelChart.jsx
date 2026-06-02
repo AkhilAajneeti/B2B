@@ -15,6 +15,7 @@ import Icon from "../../../components/AppIcon";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { useFunnelAnalytics } from "../hooks/useFunnelAnalytics";
+import { todayLocal } from "../../../utils/dateFilter";
 
 const DATE_FILTER_OPTIONS = [
   { label: "This Month", value: "current" },
@@ -452,6 +453,7 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
           {filterType === "on" && (
             <Input
               type="date"
+              max={todayLocal()}
               value={selectedDate}
               onChange={(event) => setSelectedDate(event.target.value)}
               className="h-10 w-full sm:w-40"
@@ -463,6 +465,7 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
               <Input
                 type="date"
+                max={todayLocal()}
                 value={startDate}
                 onChange={(event) => handleStartDateChange(event.target.value)}
                 className="h-10 w-full sm:w-40"
@@ -470,6 +473,7 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
               />
               <Input
                 type="date"
+                max={todayLocal()}
                 value={endDate}
                 min={startDate}
                 onChange={(event) => setEndDate(event.target.value)}

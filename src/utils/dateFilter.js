@@ -1,3 +1,9 @@
+// Today's date as `YYYY-MM-DD` in the user's LOCAL timezone. Useful as
+// `max` on past-only date filters — IST users past 6:30 PM would otherwise
+// see tomorrow as selectable if we used `new Date().toISOString().slice(0,10)`,
+// which formats in UTC.
+export const todayLocal = () => new Date().toLocaleDateString("sv-SE");
+
 export const DATE_FILTER_OPTIONS = [
   { label: "Today", value: "today" },
   { label: "Last 7 Days", value: "lastSevenDays" },
