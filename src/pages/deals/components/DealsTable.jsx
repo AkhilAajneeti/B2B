@@ -343,7 +343,7 @@ const DealsTable = ({
                     <div className={`font-medium flex justify-center items-center space-x-2 rounded-full ${getSourceColor(deal?.cSubSource)}`}>
                       {deal?.cSubSource
                         ? deal?.cSubSource
-                        : deal?.source === "acl"
+                        : deal?.source?.toLowerCase() === "acl"
                           ? "Aajneeti"
                           : deal?.source}
                     </div>
