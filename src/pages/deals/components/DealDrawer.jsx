@@ -1092,7 +1092,7 @@ I'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're av
                               Project Name
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cProject || "None"}
+                              {deal?.cProject || deal?.cProjectName || deal?.cProjectNomen || "None"}
                             </p>
                           </div>
 
