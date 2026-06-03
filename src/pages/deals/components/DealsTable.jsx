@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
+import { getStoredUser, formatUserDisplayName } from "../../../utils/permission";
 
 const DealsTable = ({
   deals,
@@ -400,7 +401,10 @@ const DealsTable = ({
                         onClick={(e) => {
                           e.stopPropagation();
 
-                          const message = `Hello *${deal?.name || "Customer"}*,Thank you for contacting us for your lead generation requirements.I'm *${deal?.assignedUserName}.Let me know when you're available so that we can discuss this in more detail.`;
+                          // The WhatsApp message goes from the clicker's number, so the
+                          // name in the body should be the logged-in user, not the assigned one.
+                          const senderName = formatUserDisplayName(getStoredUser()?.username);
+                          const message = `Hello *${deal?.name || "Customer"}*,Thank you for contacting us for your lead generation requirements.I'm *${senderName}*.Let me know when you're available so that we can discuss this in more detail.`;
 
                           const whatsappUrl = `https://api.whatsapp.com/send/?phone=${deal?.phoneNumber}&text=${encodeURIComponent(
                             message
@@ -529,10 +533,11 @@ const DealsTable = ({
                       onClick={(e) => {
                         e.stopPropagation();
 
+                        const senderName = formatUserDisplayName(getStoredUser()?.username);
                         const message = `Hello *${deal?.name || "Customer"}*,
 Thank you for contacting us for your lead generation requirements.
 
-I'm *${deal?.assignedUserName || "AAJneeti Team"}* from *AAJneeti Advertising*.`;
+I'm *${senderName}* from *AAJneeti Advertising*.`;
 
                         const whatsappUrl = `https://api.whatsapp.com/send/?phone=${deal?.phoneNumber
                           }&text=${encodeURIComponent(message)}`;

@@ -12,7 +12,7 @@ import { useUsers } from "hooks/useUsers";
 import { useLeadStream } from "hooks/useLeadStream";
 import { useLeadActivity, useLeadTask } from "hooks/useLeadActivity";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { canEditRecord, getStoredUser } from "utils/permission";
+import { canEditRecord, getStoredUser, formatUserDisplayName } from "utils/permission";
 import ActivityDrawer from "components/ActivityDrawer";
 import { createTasks } from "services/tasks.service";
 import { useNavigate } from "react-router-dom";
@@ -1045,7 +1045,7 @@ const DealDrawer = ({
                                   `Hello *${deal?.name || "Customer"}*,
 
 Thank you for contacting us for your lead generation requirements.
-I'm *${deal?.assignedUserName }* Let me know when you're available so that we can discuss this in more detail.`
+I'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`
                                 )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"

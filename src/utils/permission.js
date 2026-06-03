@@ -48,6 +48,21 @@ export const getStoredUser = () => {
   }
 };
 
+/**
+ * Prettifies a username like "chandra_vikas" → "Chandra Vikas":
+ * replaces underscores with spaces and title-cases each word.
+ * Returns the fallback when the input is empty / not a string.
+ */
+export const formatUserDisplayName = (username, fallback = "AAJneeti Team") => {
+  if (typeof username !== "string" || !username.trim()) return fallback;
+  return username
+    .trim()
+    .replace(/_/g, " ")
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+};
+
 const getEntityActionValue = (entity, action) => {
   const acl = getStoredAcl();
   const entityAcl = acl?.table?.[entity];
