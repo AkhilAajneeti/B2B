@@ -337,7 +337,7 @@ const DealsTable = ({
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-foreground">{deal?.cProject || deal?.cProjectName || "None"}</div>
+                    <div className="text-foreground">{deal?.cProject || deal?.cProjectName || deal?.cProjectNomen|| "None"}</div>
 
                   </td>
                   <td className="px-4 py-4">
