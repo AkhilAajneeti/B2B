@@ -74,6 +74,29 @@ const DealDrawer = ({
   const { data: taskData } = useLeadTask(deal?.id, isOpen);
   const { data: meetData } = useLeadMeeting(deal?.id, isOpen);
   const currentUser = getStoredUser();
+
+  // WhatsApp URL — shared by the main Whatsapp section and the Quick Reply
+  // chip near Followers. Decodes/re-encodes the backend template to fix the
+  // raw-space bug; falls back to a client-side intro when no template is set.
+  const whatsappHref = useMemo(() => {
+    if (!deal?.cWhatsapp && !deal?.phoneNumber) return null;
+    const base = deal?.cWhatsapp
+      ? `https://${deal.cWhatsapp.replace(/^https?:\/\//, "")}`
+      : `https://wa.me/${(deal?.phoneNumber || "").replace(/\D/g, "")}`;
+    if (deal?.cWhatsappTemplate) {
+      try {
+        const raw = decodeURIComponent(
+          deal.cWhatsappTemplate.replace(/^\?text=/, ""),
+        );
+        return `${base}?text=${encodeURIComponent(raw)}`;
+      } catch {
+        /* malformed %XX — fall through to the client-side fallback below */
+      }
+    }
+    const fallbackText = `Hello *${deal?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`;
+    return `${base}?text=${encodeURIComponent(fallbackText)}`;
+  }, [deal?.cWhatsapp, deal?.cWhatsappTemplate, deal?.phoneNumber, deal?.name, currentUser?.username]);
+
   const currentTeamIds = useMemo(
     () => [...new Set([
       ...(currentUser?.teamsIds || []),
@@ -1367,29 +1390,30 @@ const DealDrawer = ({
                             </p>
                           </div>
 
-                          {/* Followers */}
+                          {/* Followers — each name rendered as an orange pill
+                              chip with a zap icon. */}
                           <div>
                             <p className="text-sm text-muted-foreground">
                               Followers
                             </p>
-                            <p className="text-foreground font-medium">
-                              {leadsDetails?.followersNames ? (
-                                <div className="flex flex-wrap gap-2">
-                                  {Object.entries(
-                                    leadsDetails.followersNames,
-                                  ).map(([id, name]) => (
+                            {leadsDetails?.followersNames &&
+                            Object.keys(leadsDetails.followersNames).length ? (
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {Object.entries(leadsDetails.followersNames).map(
+                                  ([id, name]) => (
                                     <span
                                       key={id}
-                                      className="text-sm text-primary font-medium"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-orange-300 bg-orange-50 text-orange-700 text-xs font-semibold"
                                     >
+                                      <Icon name="Zap" size={12} />
                                       {name}
                                     </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span>—</span>
-                              )}
-                            </p>
+                                  ),
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-foreground font-medium">—</span>
+                            )}
                           </div>
                         </div>
                       </div>

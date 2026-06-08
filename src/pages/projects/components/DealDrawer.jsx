@@ -301,6 +301,7 @@ const DealDrawer = ({
                         onChange={(value) =>
                           handleSelectChange("assignedUserId", value)
                         }
+                        searchable
                       />
                       <Select
                         label="Teams"
@@ -309,6 +310,7 @@ const DealDrawer = ({
                         onChange={(value) =>
                           handleSelectChange("teamId", value)
                         }
+                        searchable
                       />
                     </div>
                   </div>

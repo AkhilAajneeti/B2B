@@ -167,7 +167,9 @@ const DealsFilters = ({
           options={assignUserOptions}
           value={filters?.assignUser || ""}
           onChange={(value) => handleFilterChange("assignUser", value)}
+          searchable
         />
+
 
         <Select
           className="min-w-0"

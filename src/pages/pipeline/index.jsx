@@ -124,7 +124,7 @@ const Pipeline = () => {
               >
                 Refresh
               </Button>
-             
+
             </div>
           </div>
 
@@ -198,11 +198,10 @@ const Pipeline = () => {
                             <div
                               ref={provided.innerRef}
                               {...provided.droppableProps}
-                              className={`h-full rounded-xl transition-colors ${
-                                snapshot.isDraggingOver
+                              className={`h-full rounded-xl transition-colors ${snapshot.isDraggingOver
                                   ? "ring-2 ring-primary/40"
                                   : ""
-                              }`}
+                                }`}
                             >
                               <PipelineColumn
                                 column={column}
