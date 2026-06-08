@@ -8,7 +8,9 @@ import { getDistinctOptions } from "../utils/pipelineHelpers";
 import {
   PIPELINE_COLUMNS,
   PRIORITY_OPTIONS,
+  PIPELINE_DATE_FILTER_OPTIONS,
 } from "../utils/pipelineConstants";
+import { todayLocal } from "../../../utils/dateFilter";
 
 /**
  * PipelineFilters - presentation only.
@@ -124,12 +126,12 @@ const PipelineFilters = ({
           </div>
 
           {/* Column / category */}
-          <Select
+          {/* <Select
             placeholder="Column"
             options={categoryOptions}
             value={filters?.category || "all"}
             onChange={(value) => onFilterChange("category", value)}
-          />
+          /> */}
 
           {/* Owner */}
           <Select
@@ -163,6 +165,64 @@ const PipelineFilters = ({
             value={filters?.priority || "all"}
             onChange={(value) => onFilterChange("priority", value)}
           />
+
+          {/* Date window — flows server-side via fetchNewLeads. Defaults to
+              Current Month so a fresh visit shows this month's leads. */}
+          <Select
+            placeholder="Filter by date"
+            options={PIPELINE_DATE_FILTER_OPTIONS}
+            value={filters?.dateType || "currentMonth"}
+            onChange={(value) => {
+              onFilterChange("dateType", value);
+              // Clear the custom-date inputs when switching to a preset that
+              // doesn't use them — stops stale dates from sticking around.
+              if (value !== "on" && value !== "between") {
+                onFilterChange("closeDateFrom", "");
+                onFilterChange("closeDateTo", "");
+              }
+            }}
+          />
+
+          {/* Specific Day — single date picker. */}
+          {filters?.dateType === "on" && (
+            <Input
+              type="date"
+              max={todayLocal()}
+              value={filters?.closeDateFrom || ""}
+              onChange={(e) =>
+                onFilterChange("closeDateFrom", e?.target?.value)
+              }
+            />
+          )}
+
+          {/* Date Range — From / To pair. */}
+          {filters?.dateType === "between" && (
+            <div className="flex gap-2 md:col-span-2">
+              <div className="flex-1 min-w-0">
+                <Input
+                  type="date"
+                  label="From"
+                  max={todayLocal()}
+                  value={filters?.closeDateFrom || ""}
+                  onChange={(e) =>
+                    onFilterChange("closeDateFrom", e?.target?.value)
+                  }
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <Input
+                  type="date"
+                  label="To"
+                  max={todayLocal()}
+                  min={filters?.closeDateFrom || undefined}
+                  value={filters?.closeDateTo || ""}
+                  onChange={(e) =>
+                    onFilterChange("closeDateTo", e?.target?.value)
+                  }
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

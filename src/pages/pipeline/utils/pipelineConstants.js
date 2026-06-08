@@ -205,6 +205,8 @@ export const DERIVED_CATEGORIES = [
 ];
 
 // Default filter shape used by the store and the filter bar.
+// `dateType` / `closeDateFrom` / `closeDateTo` flow server-side via
+// fetchNewLeads (the rest are applied client-side by applyFilters).
 export const DEFAULT_FILTERS = {
   search: "",
   owner: "all",
@@ -212,7 +214,24 @@ export const DEFAULT_FILTERS = {
   source: "all",
   priority: "all",
   category: "all",
+  dateType: "currentMonth",
+  closeDateFrom: "",
+  closeDateTo: "",
 };
+
+// Date filter options for the pipeline. Smaller, curated set vs. the full
+// deals page list — these are the windows that make sense for an action
+// pipeline. "currentMonth" is the default so a fresh visit shows this month.
+export const PIPELINE_DATE_FILTER_OPTIONS = [
+  { label: "Current Month", value: "none" },
+  { label: "Current Month", value: "currentMonth" },
+  { label: "Last Month", value: "lastMonth" },
+  { label: "Last 7 Days", value: "lastSevenDays" },
+  { label: "Current Quarter", value: "currentQuarter" },
+  { label: "Last Quarter", value: "lastQuarter" },
+  { label: "Specific Day", value: "on" },
+  { label: "Date Range", value: "between" },
+];
 
 // Priority options for the filter bar.
 export const PRIORITY_OPTIONS = [

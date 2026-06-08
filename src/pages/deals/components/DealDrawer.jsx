@@ -1042,8 +1042,7 @@ const DealDrawer = ({
                                   // Prefer the backend-provided wa.me URL in `cWhatsapp`.
                                   // Fall back to constructing one from phoneNumber.
                                   // Strip any existing protocol so we apply https:// once.
-                                  const base = deal?.cWhatsapp
-                                    ? `https://${deal.cWhatsapp.replace(/^https?:\/\//, "")}`
+                                  const base = deal?.cWhatsappTemplate ? `https://${deal.cWhatsappTemplate.replace(/^https?:\/\//, "")}`
                                     : `https://wa.me/${deal.phoneNumber.replace(/\D/g, "")}`;
                                   const text = encodeURIComponent(
                                     `Hello *${deal?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`

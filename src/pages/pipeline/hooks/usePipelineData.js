@@ -23,9 +23,24 @@ import {
 } from "../utils/pipelineConstants";
 
 export const usePipelineData = ({ page = 1, limit = PIPELINE_PAGE_SIZE } = {}) => {
+  // Pull the date-window selection from the store so React Query re-fetches
+  // (and the service refreshes) the moment the user changes the date dropdown.
+  // Only the date fields go into the query key — the rest of the filters
+  // (search, owner, status, etc.) are applied client-side and don't need a
+  // network round-trip.
+  const { filters, optimisticPatches, removedIds } = usePipelineStore();
+  const dateFilter = useMemo(
+    () => ({
+      dateType: filters?.dateType || "currentMonth",
+      closeDateFrom: filters?.closeDateFrom || "",
+      closeDateTo: filters?.closeDateTo || "",
+    }),
+    [filters?.dateType, filters?.closeDateFrom, filters?.closeDateTo],
+  );
+
   const query = useQuery({
-    queryKey: [PIPELINE_QUERY_KEY, page, limit],
-    queryFn: () => fetchPipelineLeads({ page, limit }),
+    queryKey: [PIPELINE_QUERY_KEY, page, limit, dateFilter],
+    queryFn: () => fetchPipelineLeads({ page, limit, dateFilter }),
     placeholderData: keepPreviousData,
     staleTime: PIPELINE_STALE_TIME,
     gcTime: PIPELINE_GC_TIME,
@@ -33,8 +48,6 @@ export const usePipelineData = ({ page = 1, limit = PIPELINE_PAGE_SIZE } = {}) =
     refetchOnReconnect: false,
     retry: 1,
   });
-
-  const { optimisticPatches, removedIds } = usePipelineStore();
 
   // Apply optimistic state, then normalize + classify. Memoized so the heavy
   // work only re-runs when the data or the optimistic layer actually changes.
