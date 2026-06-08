@@ -166,12 +166,15 @@ const PipelineFilters = ({
             onChange={(value) => onFilterChange("priority", value)}
           />
 
-          {/* Date window — flows server-side via fetchNewLeads. Defaults to
-              Current Month so a fresh visit shows this month's leads. */}
+          {/* Date window — flows server-side via fetchNewLeads. Default
+              dateType is empty so this Select shows its placeholder until the
+              user picks a window. The service still falls back to currentMonth
+              internally for the initial fetch. */}
           <Select
-            placeholder="Filter by date"
+            placeholder="Select Date Filter"
             options={PIPELINE_DATE_FILTER_OPTIONS}
-            value={filters?.dateType || "currentMonth"}
+            value={filters?.dateType || ""}
+            clearable
             onChange={(value) => {
               onFilterChange("dateType", value);
               // Clear the custom-date inputs when switching to a preset that

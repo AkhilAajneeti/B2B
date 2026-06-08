@@ -1039,15 +1039,33 @@ const DealDrawer = ({
                             {deal?.cWhatsapp || deal?.phoneNumber ? (
                               <a
                                 href={(() => {
-                                  // Prefer the backend-provided wa.me URL in `cWhatsapp`.
-                                  // Fall back to constructing one from phoneNumber.
-                                  // Strip any existing protocol so we apply https:// once.
-                                  const base = deal?.cWhatsappTemplate ? `https://${deal.cWhatsappTemplate.replace(/^https?:\/\//, "")}`
-                                    : `https://wa.me/${deal.phoneNumber.replace(/\D/g, "")}`;
-                                  const text = encodeURIComponent(
-                                    `Hello *${deal?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`
-                                  );
-                                  return `${base}?text=${text}`;
+                                  // URL base — prefer the wa.me link the backend
+                                  // already curated; fall back to building one
+                                  // from phoneNumber. Strip any existing protocol
+                                  // so https:// only gets applied once.
+                                  const base = deal?.cWhatsapp
+                                    ? `https://${deal.cWhatsapp.replace(/^https?:\/\//, "")}`
+                                    : `https://wa.me/${(deal?.phoneNumber || "").replace(/\D/g, "")}`;
+
+                                  // No template = open WhatsApp with no pre-filled text.
+                                  if (!deal?.cWhatsappTemplate) return base;
+
+                                  // Backend's "?text=..." is half-encoded — substituted
+                                  // names like "Robin Ghosh" come through with a raw
+                                  // space that breaks the URL and triggers
+                                  // about:blank#blocked. Decode to plain text, then
+                                  // re-encode cleanly via encodeURIComponent so every
+                                  // character is normalised.
+                                  try {
+                                    const raw = decodeURIComponent(
+                                      deal.cWhatsappTemplate.replace(/^\?text=/, "")
+                                    );
+                                    return `${base}?text=${encodeURIComponent(raw)}`;
+                                  } catch {
+                                    // Malformed %XX in the backend template — degrade to
+                                    // an empty chat instead of a blocked link.
+                                    return base;
+                                  }
                                 })()}
                                 target="_blank"
                                 rel="noopener noreferrer"

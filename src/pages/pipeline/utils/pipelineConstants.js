@@ -31,7 +31,10 @@ export const BUDGET_ISSUE_KEYWORDS = [
   "low budget",
 ];
 
-// Lead statuses that should never appear on the action pipeline
+// Lead statuses that should never appear on the action pipeline.
+// "purchased" is the win state — same conceptual category as "won"/"converted",
+// just the term this codebase uses. Excluding it stops closed-won deals from
+// nagging reps under the Overdue badge because of stale follow-up dates.
 export const EXCLUDED_STATUSES = [
   "converted",
   "dead",
@@ -39,6 +42,7 @@ export const EXCLUDED_STATUSES = [
   "won",
   "lost",
   "closed",
+  "purchased",
 ];
 
 // Urgency styling keyed by category. Whole strings only (Tailwind-safe).
@@ -207,6 +211,10 @@ export const DERIVED_CATEGORIES = [
 // Default filter shape used by the store and the filter bar.
 // `dateType` / `closeDateFrom` / `closeDateTo` flow server-side via
 // fetchNewLeads (the rest are applied client-side by applyFilters).
+// `dateType` is empty by default so the dropdown shows its placeholder
+// ("Select Date Filter") rather than a pre-selected option. The service
+// falls back to "currentMonth" internally when dateType is empty, so the
+// initial fetch still has a sensible scope.
 export const DEFAULT_FILTERS = {
   search: "",
   owner: "all",
@@ -214,16 +222,15 @@ export const DEFAULT_FILTERS = {
   source: "all",
   priority: "all",
   category: "all",
-  dateType: "currentMonth",
+  dateType: "",
   closeDateFrom: "",
   closeDateTo: "",
 };
 
 // Date filter options for the pipeline. Smaller, curated set vs. the full
 // deals page list — these are the windows that make sense for an action
-// pipeline. "currentMonth" is the default so a fresh visit shows this month.
+// pipeline.
 export const PIPELINE_DATE_FILTER_OPTIONS = [
-  { label: "Current Month", value: "none" },
   { label: "Current Month", value: "currentMonth" },
   { label: "Last Month", value: "lastMonth" },
   { label: "Last 7 Days", value: "lastSevenDays" },
