@@ -1047,25 +1047,30 @@ const DealDrawer = ({
                                     ? `https://${deal.cWhatsapp.replace(/^https?:\/\//, "")}`
                                     : `https://wa.me/${(deal?.phoneNumber || "").replace(/\D/g, "")}`;
 
-                                  // No template = open WhatsApp with no pre-filled text.
-                                  if (!deal?.cWhatsappTemplate) return base;
-
+                                  // Prefer backend's curated template if present.
                                   // Backend's "?text=..." is half-encoded — substituted
                                   // names like "Robin Ghosh" come through with a raw
                                   // space that breaks the URL and triggers
                                   // about:blank#blocked. Decode to plain text, then
                                   // re-encode cleanly via encodeURIComponent so every
                                   // character is normalised.
-                                  try {
-                                    const raw = decodeURIComponent(
-                                      deal.cWhatsappTemplate.replace(/^\?text=/, "")
-                                    );
-                                    return `${base}?text=${encodeURIComponent(raw)}`;
-                                  } catch {
-                                    // Malformed %XX in the backend template — degrade to
-                                    // an empty chat instead of a blocked link.
-                                    return base;
+                                  if (deal?.cWhatsappTemplate) {
+                                    try {
+                                      const raw = decodeURIComponent(
+                                        deal.cWhatsappTemplate.replace(/^\?text=/, "")
+                                      );
+                                      return `${base}?text=${encodeURIComponent(raw)}`;
+                                    } catch {
+                                      // Malformed %XX in the backend template —
+                                      // fall through to the generic intro below.
+                                    }
                                   }
+
+                                  // No backend template (or it was malformed) — use the
+                                  // generic intro so the rep still gets a pre-filled
+                                  // message they can edit before sending.
+                                  const fallbackText = `Hello *${deal?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`;
+                                  return `${base}?text=${encodeURIComponent(fallbackText)}`;
                                 })()}
                                 target="_blank"
                                 rel="noopener noreferrer"
