@@ -1034,7 +1034,7 @@ const DealDrawer = ({
                           {/* WhatsApp */}
                           <div>
                             <p className="text-sm text-muted-foreground">
-                              Whatsapp
+                              Whatsapp Template
                             </p>
                             {deal?.cWhatsapp || deal?.phoneNumber ? (
                               <a
