@@ -24,6 +24,9 @@ const MONTH_LABELS = [
 ];
 
 // Category sets per spec — lowercase for case-insensitive matching.
+// "Call Not Picked / Connecting" and "Switch Off" describe connection
+// failures (still in progress, just unreachable for now), not closed-lost
+// outcomes — keeping them in ACTIVE so they don't drag the win rate down.
 const WIN_SET = new Set(["purchased"]);
 const ACTIVE_SET = new Set([
   "new",
@@ -33,6 +36,9 @@ const ACTIVE_SET = new Set([
   "site visit done",
   "call later",
   "broker",
+  "call not picked",
+  "call not connecting",
+  "switch off",
 ]);
 const LOST_SET = new Set([
   "dead",
@@ -43,9 +49,6 @@ const LOST_SET = new Set([
   "low interest",
   "not interested",
   "other location",
-  "switch off",
-  "call not picked",
-  "call not connecting",
 ]);
 
 const categorize = (status) => {
@@ -104,14 +107,25 @@ export const useWinRateAnalytics = ({
     const records = list || [];
 
     for (const lead of records) {
-      if (!lead?.createdAt) continue;
       const category = categorize(lead.status);
       if (!category) continue;
 
-      const d = new Date(`${lead.createdAt.replace(" ", "T")}Z`);
+      // Closed deals (won / lost) bucket by when they actually closed
+      // (modifiedAt is the proxy — the Purchased/Lost transition is the last
+      // meaningful edit). Active leads still bucket by createdAt because
+      // they haven't closed yet. Falls back to createdAt if modifiedAt is
+      // missing on an older record.
+      const dateField =
+        category === "active"
+          ? lead.createdAt
+          : lead.modifiedAt || lead.createdAt;
+      if (!dateField) continue;
+
+      const d = new Date(`${dateField.replace(" ", "T")}Z`);
       if (Number.isNaN(d.getTime())) continue;
-      // Only count leads whose year matches the requested year. (Backend already filters,
-      // but localStorage hydration could carry stale entries; this is a safety net.)
+      // Only count rows whose bucket year matches the requested year. Stops
+      // a 2025 lead that closed in 2026 from showing under both years, and
+      // guards against stale localStorage entries.
       if (d.getFullYear() !== year) continue;
 
       const idx = d.getMonth();

@@ -1036,17 +1036,20 @@ const DealDrawer = ({
                             <p className="text-sm text-muted-foreground">
                               Whatsapp
                             </p>
-                            {deal?.phoneNumber ? (
+                            {deal?.cWhatsapp || deal?.phoneNumber ? (
                               <a
-                                href={`https://api.whatsapp.com/send/?phone=${deal.phoneNumber.replace(
-                                  /\D/g,
-                                  ""
-                                )}&text=${encodeURIComponent(
-                                  `Hello *${deal?.name || "Customer"}*,
-
-Thank you for contacting us for your lead generation requirements.
-I'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`
-                                )}`}
+                                href={(() => {
+                                  // Prefer the backend-provided wa.me URL in `cWhatsapp`.
+                                  // Fall back to constructing one from phoneNumber.
+                                  // Strip any existing protocol so we apply https:// once.
+                                  const base = deal?.cWhatsapp
+                                    ? `https://${deal.cWhatsapp.replace(/^https?:\/\//, "")}`
+                                    : `https://wa.me/${deal.phoneNumber.replace(/\D/g, "")}`;
+                                  const text = encodeURIComponent(
+                                    `Hello *${deal?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`
+                                  );
+                                  return `${base}?text=${text}`;
+                                })()}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 hover:underline transition-colors"
@@ -1057,7 +1060,7 @@ I'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're av
                                   className="w-4 h-4 object-contain"
                                 />
 
-                                <span>{deal.phoneNumber}</span>
+                                <span>{deal?.phoneNumber || deal?.cWhatsapp}</span>
                               </a>
                             ) : (
                               <p className="text-foreground">None</p>

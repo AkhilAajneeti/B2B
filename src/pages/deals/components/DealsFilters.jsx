@@ -73,19 +73,21 @@ const DealsFilters = ({
     // { label: "Next Month", value: "nextMonth" },
     { label: "Current Quarter", value: "currentQuarter" },
     { label: "Last Quarter", value: "lastQuarter" },
+    
+
+    // special — user-driven date pickers. Values stay the same so the
+    // backend filter builder and showDateInputs logic don't change.
+    { label: "Specific Day", value: "on" },
+    { label: "Before a Date", value: "before" },
+    { label: "After a Date", value: "after" },
+    { label: "Date Range", value: "between" },
+    { label: "Last X Days", value: "lastXDays" },
     { label: "Current Year", value: "currentYear" },
     { label: "Last Year", value: "lastYear" },
     { label: "Past", value: "past" },
     { label: "Future", value: "future" },
-    { label: "Ever", value: "ever" },
-    { label: "Is Empty", value: "isEmpty" },
-
-    // special
-    { label: "On", value: "on" },
-    { label: "Before", value: "before" },
-    { label: "After", value: "after" },
-    { label: "Between", value: "between" },
-    { label: "Last X Days", value: "lastXDays" },
+    // { label: "Ever", value: "ever" },
+    // { label: "Is Empty", value: "isEmpty" },
     // { label: "After X Days", value: "afterXDays" },
   ];
   const showDateInputs = ["on", "before", "after", "between"].includes(filters?.dateType);
@@ -293,33 +295,62 @@ const DealsFilters = ({
           />
         )}
 
-        {/* Date Range Inputs */}
+        {/* Date Range Inputs — span an extra grid column when showing two
+            inputs so each has enough width for its picker to open and be
+            usable. */}
         {showDateInputs && (
-          <div className="flex gap-2">
-            <Input
-              type="date"
-              max={todayLocal()}
-              value={filters?.closeDateFrom || ""}
-              onChange={(e) =>
-                handleFilterChange("closeDateFrom", e.target.value)
-              }
-            />
-
-            {filters?.dateType === "between" && (
+          <div
+            className={`flex gap-2 ${filters?.dateType === "between" ? "lg:col-span-2" : ""}`}
+          >
+            <div className="flex-1 min-w-0">
               <Input
                 type="date"
+                label={
+                  {
+                    on: "Pick a date",
+                    before: "Before this date",
+                    after: "From this date",
+                    between: "From",
+                  }[filters?.dateType]
+                }
                 max={todayLocal()}
-                min={filters?.closeDateFrom || undefined}
-                value={filters?.closeDateTo || ""}
+                value={filters?.closeDateFrom || ""}
                 onChange={(e) =>
-                  handleFilterChange("closeDateTo", e.target.value)
+                  handleFilterChange("closeDateFrom", e.target.value)
                 }
               />
+            </div>
+
+            {filters?.dateType === "between" && (
+              <div className="flex-1 min-w-0">
+                <Input
+                  type="date"
+                  label="To"
+                  max={todayLocal()}
+                  min={filters?.closeDateFrom || undefined}
+                  value={filters?.closeDateTo || ""}
+                  onChange={(e) =>
+                    handleFilterChange("closeDateTo", e.target.value)
+                  }
+                />
+              </div>
             )}
           </div>
         )}
 
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${showDateInputs?"lg:col-span-2":"lg:col-span-3"}`}>
+        {/* Lead Analytics — pinned to the rightmost grid column in single-input
+            date modes (Specific Day / Before / After) so it sits at the far
+            right instead of right next to the date input. Date Range already
+            fills cols 3-4 so the button auto-flows to col 5; no-date-filter
+            mode keeps col-span-3 so the button stays right-aligned across its
+            wider cell. */}
+        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${
+          !showDateInputs
+            ? "lg:col-span-3"
+            : filters?.dateType === "between"
+              ? "lg:col-span-1"
+              : "lg:col-start-5 lg:col-span-1"
+        }`}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
             <Icon name="Plus" size={16} className="mr-2" />
             Lead Analytics

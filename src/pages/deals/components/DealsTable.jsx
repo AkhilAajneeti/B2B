@@ -337,7 +337,7 @@ const DealsTable = ({
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="text-foreground">{deal?.cProject || deal?.cProjectName || deal?.cProjectNomen|| "None"}</div>
+                    <div className="text-foreground">{deal?.cProject || deal?.cProjectName || deal?.cProjectNomen || "None"}</div>
 
                   </td>
                   <td className="px-4 py-4">
@@ -401,16 +401,15 @@ const DealsTable = ({
                         onClick={(e) => {
                           e.stopPropagation();
 
-                          // The WhatsApp message goes from the clicker's number, so the
-                          // name in the body should be the logged-in user, not the assigned one.
-                          const senderName = formatUserDisplayName(getStoredUser()?.username);
-                          const message = `Hello *${deal?.name || "Customer"}*,Thank you for contacting us for your lead generation requirements.I'm *${senderName}*.Let me know when you're available so that we can discuss this in more detail.`;
+                          const phone = deal?.phoneNumber?.replace(/\D/g, "");
 
-                          const whatsappUrl = `https://api.whatsapp.com/send/?phone=${deal?.phoneNumber}&text=${encodeURIComponent(
-                            message
-                          )}`;
+                          if (!phone) return;
 
-                          window.open(whatsappUrl, "_blank");
+                          window.open(
+                            `https://api.whatsapp.com/send/?phone=${phone}`,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
                         }}
                         className="h-8 w-8 rounded-full hover:bg-green-100 transition-all duration-200"
                       >
@@ -533,23 +532,17 @@ const DealsTable = ({
                       onClick={(e) => {
                         e.stopPropagation();
 
-                        const senderName = formatUserDisplayName(getStoredUser()?.username);
-                        const message = `Hello *${deal?.name || "Customer"}*,
-Thank you for contacting us for your lead generation requirements.
+                        const phone = deal?.phoneNumber?.replace(/\D/g, "");
 
-I'm *${senderName}* from *AAJneeti Advertising*.`;
+                        if (!phone) return;
 
-                        const whatsappUrl = `https://api.whatsapp.com/send/?phone=${deal?.phoneNumber
-                          }&text=${encodeURIComponent(message)}`;
-
-                        window.open(whatsappUrl, "_blank");
+                        window.open(
+                          `https://api.whatsapp.com/send/?phone=${phone}`,
+                          "_blank",
+                          "noopener,noreferrer"
+                        );
                       }}
-                      className="
-            h-10 w-10 rounded-xl
-            bg-green-500/10 hover:bg-green-500/20
-            transition-all duration-200
-            flex-shrink-0
-          "
+                      className="h-8 w-8 rounded-full hover:bg-green-100 transition-all duration-200"
                     >
                       <img
                         src="/assets/whatsapp-logo.png"
