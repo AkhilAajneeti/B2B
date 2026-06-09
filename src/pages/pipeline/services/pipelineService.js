@@ -78,11 +78,10 @@ const buildDateClause = (dateFilter = {}) => {
   const prefix = "whereGroup[0]";
   const parts = [
     `${prefix}[type]=${dateType}`,
-    // `cNextContact` (no "At" suffix) is the field actually populated on every
-    // lead — older leads created before the `cNextContactAt` field existed
-    // only carry `cNextContact`. Filtering here on `cNextContact` matches the
-    // backend's own admin filter and surfaces all matching leads.
-    `${prefix}[attribute]=cNextContact`,
+    // Match the backend admin's own filter URL: attribute is `cNextContactAt`
+    // (with "At" suffix — the real datetime column) and `[value]=` is always
+    // present, even empty for valueless types like currentMonth.
+    `${prefix}[attribute]=cNextContactAt`,
     `${prefix}[dateTime]=true`,
   ];
 
@@ -93,7 +92,12 @@ const buildDateClause = (dateFilter = {}) => {
     if (!closeDateFrom || !closeDateTo) return "";
     parts.push(`${prefix}[value][]=${encodeURIComponent(closeDateFrom)}`);
     parts.push(`${prefix}[value][]=${encodeURIComponent(closeDateTo)}`);
-  } else if (!VALUELESS_DATE_TYPES.has(dateType)) {
+  } else if (VALUELESS_DATE_TYPES.has(dateType)) {
+    // Custom datetime columns (like cNextContactAt) 500 at the gateway when
+    // `[value]=` is missing — EspoCRM's whereGroup parser expects all four
+    // keys (type, attribute, value, dateTime) even for valueless types.
+    parts.push(`${prefix}[value]=`);
+  } else {
     return "";
   }
 
