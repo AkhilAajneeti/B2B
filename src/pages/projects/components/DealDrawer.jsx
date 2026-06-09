@@ -41,6 +41,10 @@ const DealDrawer = ({
     parentName: "",
     parentType: "",
     collaboratorsIds: "",
+    enableConfiguration: false,
+    // Structured form of the backend `configuration` string. Each row is
+    // {id, name, count}; serialized back to "id:name:count\n" on save.
+    configurationItems: [],
   });
   useEffect(() => {
     if (mode === "add") {
@@ -53,6 +57,8 @@ const DealDrawer = ({
         parentName: "", // Account | Lead | Contact (TYPE)
         parentType: "",
         collaboratorsIds: "",
+        enableConfiguration: false,
+        configurationItems: [],
       });
     } else if (deal) {
       setFormData({
@@ -64,6 +70,8 @@ const DealDrawer = ({
         description: deal.description || "",
         parentName: deal.parentType || "",
         parentType: deal.parentId || "",
+        enableConfiguration: deal.enableConfiguration || false,
+        configurationItems: parseConfiguration(deal.configuration),
       });
     }
   }, [deal, mode]);
@@ -113,6 +121,77 @@ const DealDrawer = ({
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Keep configurationItems in sync with the currently selected collaborators:
+  //  - New collaborator selected -> add a row with count = 1
+  //  - Collaborator removed      -> drop their row
+  //  - Existing collaborator     -> preserve their current count
+  // Names are sourced from the loaded users list so removing & re-adding a
+  // collaborator picks up their current display name even if it changed.
+  useEffect(() => {
+    const ids = Array.isArray(formData.collaboratorsIds)
+      ? formData.collaboratorsIds
+      : [];
+    setFormData((prev) => {
+      const prevItems = prev.configurationItems || [];
+      const prevById = new Map(prevItems.map((i) => [i.id, i]));
+      const nextItems = ids.map((id) => {
+        if (prevById.has(id)) return prevById.get(id);
+        const user = users?.find((u) => u.id === id);
+        const name = user?.name || user?.userName || id;
+        return { id, name, count: 1 };
+      });
+      const sameLength = nextItems.length === prevItems.length;
+      const noChange =
+        sameLength &&
+        nextItems.every((n, i) => n === prevItems[i]);
+      if (noChange) return prev;
+      return { ...prev, configurationItems: nextItems };
+    });
+  }, [formData.collaboratorsIds, users]);
+
+  const updateConfigurationCount = (id, raw) => {
+    // Clamp to >= 1, fall back to 1 for invalid input (empty / negative / NaN).
+    const parsed = parseInt(raw, 10);
+    const count = Number.isFinite(parsed) && parsed >= 1 ? parsed : 1;
+    setFormData((prev) => ({
+      ...prev,
+      configurationItems: (prev.configurationItems || []).map((item) =>
+        item.id === id ? { ...item, count } : item,
+      ),
+    }));
+  };
+
+  // Configuration is stored on the backend as a newline-separated string in
+  // the form "id:name:count\n" per row. We work with a structured array
+  // ({id, name, count}) locally so the row UI is straightforward, then
+  // serialize back to the string shape on save.
+  const parseConfiguration = (raw) => {
+    if (!raw || typeof raw !== "string") return [];
+    return raw
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        // Names can themselves contain a colon ("Dr: Foo"), so split on the
+        // FIRST and LAST colon only: id = head, count = tail, name = middle.
+        const firstColon = line.indexOf(":");
+        const lastColon = line.lastIndexOf(":");
+        if (firstColon === -1 || lastColon === firstColon) return null;
+        const id = line.slice(0, firstColon);
+        const name = line.slice(firstColon + 1, lastColon);
+        const count = parseInt(line.slice(lastColon + 1), 10);
+        if (!id || !name || Number.isNaN(count)) return null;
+        return { id, name, count };
+      })
+      .filter(Boolean);
+  };
+
+  const serializeConfiguration = (items = []) =>
+    items
+      .filter((i) => i?.id && i?.name)
+      .map((i) => `${i.id}:${i.name}:${i.count || 1}`)
+      .join("\n") + (items.length ? "\n" : "");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -134,6 +213,8 @@ const DealDrawer = ({
       parentType: formData.parentName || null, // Account
       parentId: formData.parentType || null, // record ID
       collaboratorsIds: formData.collaboratorsIds || null, // record ID
+      enableConfiguration: !!formData.enableConfiguration,
+      configuration: serializeConfiguration(formData.configurationItems),
       attachmentsIds: [],
       reminders: [],
     };
@@ -364,6 +445,64 @@ const DealDrawer = ({
                           }),
                         }}
                       />
+
+                      {/* Enable Configuration toggle — gates the per-collaborator
+                          lead-count list below. When off, the list still renders
+                          but is dimmed and non-interactive so the user can see
+                          what's there without editing. */}
+                      <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                          checked={!!formData.enableConfiguration}
+                          onChange={(e) =>
+                            handleChange("enableConfiguration", e.target.checked)
+                          }
+                        />
+                        Enable Configuration
+                      </label>
+
+                      {/* Configuration rows: one per selected collaborator with an
+                          editable lead-count number input. Min 1. */}
+                      <div
+                        className={`space-y-2 transition-opacity ${formData.enableConfiguration
+                          ? "opacity-100"
+                          : "opacity-50 pointer-events-none"
+                          }`}
+                      >
+                        <p className="text-sm text-muted-foreground">
+                          Configuration
+                        </p>
+                        {(formData.configurationItems || []).length === 0 ? (
+                          <p className="text-xs text-muted-foreground italic">
+                            Add collaborators above to configure lead counts.
+                          </p>
+                        ) : (
+                          (formData.configurationItems || []).map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between gap-3 px-3 py-2 rounded-md bg-muted/30 border border-border"
+                            >
+                              <span className="text-sm text-foreground truncate">
+                                {item.name}
+                              </span>
+                              <input
+                                type="number"
+                                min={1}
+                                value={item.count}
+                                onChange={(e) =>
+                                  updateConfigurationCount(
+                                    item.id,
+                                    e.target.value,
+                                  )
+                                }
+                                disabled={!formData.enableConfiguration}
+                                className="w-20 px-2 py-1 text-sm text-right border border-border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed"
+                              />
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
                     <div className="col-span-2">
                       <textarea

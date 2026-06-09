@@ -12,7 +12,7 @@ import { useUsers } from "hooks/useUsers";
 import { useLeadStream } from "hooks/useLeadStream";
 import { useLeadActivity, useLeadTask } from "hooks/useLeadActivity";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { canEditRecord, getStoredUser, formatUserDisplayName } from "utils/permission";
+import { canEditRecord, getStoredUser, formatUserDisplayName, isAdminOrManager } from "utils/permission";
 import ActivityDrawer from "components/ActivityDrawer";
 import { createTasks } from "services/tasks.service";
 import { useNavigate } from "react-router-dom";
@@ -62,6 +62,7 @@ const DealDrawer = ({
       teamId: u?.defaultTeamId || u?.teamsIds?.[0] || u?.teamIds?.[0] || "",
       status: "",
       source: "",
+      cSubSource: "",
       description: "",
       cSiteVisitAt: "",
       industry: "",
@@ -74,28 +75,14 @@ const DealDrawer = ({
   const { data: taskData } = useLeadTask(deal?.id, isOpen);
   const { data: meetData } = useLeadMeeting(deal?.id, isOpen);
   const currentUser = getStoredUser();
+  // Source / Sub Source visibility: admins & managers see both with real
+  // labels; everyone else only sees the Sub Source input, relabeled "Source"
+  // (the real `source` field is internal-classification-only for them).
+  const isAdmin = isAdminOrManager();
 
   // WhatsApp URL — shared by the main Whatsapp section and the Quick Reply
   // chip near Followers. Decodes/re-encodes the backend template to fix the
   // raw-space bug; falls back to a client-side intro when no template is set.
-  const whatsappHref = useMemo(() => {
-    if (!deal?.cWhatsapp && !deal?.phoneNumber) return null;
-    const base = deal?.cWhatsapp
-      ? `https://${deal.cWhatsapp.replace(/^https?:\/\//, "")}`
-      : `https://wa.me/${(deal?.phoneNumber || "").replace(/\D/g, "")}`;
-    if (deal?.cWhatsappTemplate) {
-      try {
-        const raw = decodeURIComponent(
-          deal.cWhatsappTemplate.replace(/^\?text=/, ""),
-        );
-        return `${base}?text=${encodeURIComponent(raw)}`;
-      } catch {
-        /* malformed %XX — fall through to the client-side fallback below */
-      }
-    }
-    const fallbackText = `Hello *${deal?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`;
-    return `${base}?text=${encodeURIComponent(fallbackText)}`;
-  }, [deal?.cWhatsapp, deal?.cWhatsappTemplate, deal?.phoneNumber, deal?.name, currentUser?.username]);
 
   const currentTeamIds = useMemo(
     () => [...new Set([
@@ -182,6 +169,7 @@ const DealDrawer = ({
           "",
         status: "New",
         source: "",
+        cSubSource: "",
         description: "",
         cSiteVisitAt: "",
         industry: "",
@@ -196,7 +184,6 @@ const DealDrawer = ({
   const [massFields, setMassFields] = useState({
     assignedUserId: false,
     status: false,
-    source: false,
     teamId: false,
     cNextContactAt: false,
   });
@@ -363,7 +350,6 @@ const DealDrawer = ({
       cSiteVisitAt: toEspoDateTime(formData.cSiteVisitAt),
       cLeatReceivedAt: toEspoDateTime(formData.cLeatReceivedAt),
       teamsIds: formData.teamId ? [formData.teamId] : formData.teamsIds,
-      cSubSource: formData.source,
     };
     try {
       if (mode === "add") {
@@ -397,11 +383,6 @@ const DealDrawer = ({
       payload.cNextContactAt = toEspoDateTime(formData.cNextContactAt);
 
     if (massFields.status) payload.status = formData.status;
-
-    if (massFields.source) {
-      payload.source = formData.source;
-      payload.cSubSource = formData.source;
-    }
 
     if (massFields.teamId) {
       payload.teamId = formData.teamId;
@@ -497,6 +478,7 @@ const DealDrawer = ({
     { value: "Web Site", label: "Web Site" },
     { value: "Campaign", label: "Campaign" },
     { value: "ACL", label: "Aajneeti" },
+    { value: "Meta", label: "Meta" },
     { value: "Other", label: "Other" },
   ];
   const statusOptions = [
@@ -813,7 +795,7 @@ const DealDrawer = ({
                         options={statusOptions}
                         onChange={(value) => handleChange("status", value)}
                       />
-                      {mode === "add" ? (
+                      {isAdmin && (mode === "add" ? (
                         <Select
                           label="Source"
                           value={formData.source || ""}
@@ -828,7 +810,15 @@ const DealDrawer = ({
                           onChange={(value) => handleChange("source", value)}
                           disabled
                         />
-                      )}
+                      ))}
+                      <Select
+                        label={isAdmin ? "Sub Source" : "Source"}
+                        value={formData.cSubSource || ""}
+                        options={sourceOptions}
+                        onChange={(value) =>
+                          handleChange("cSubSource", value)
+                        }
+                      />
                       <Select
                         label="Industry"
                         value={formData.industry || ""}
@@ -1173,16 +1163,29 @@ const DealDrawer = ({
                             </span>
                           </div>
 
-                          {/* Source */}
+                          {/* Source — admin/manager only */}
+                          {isAdmin && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Source
+                              </p>
+                              <p className="text-foreground font-medium">
+                                {deal?.source || "None"}
+                              </p>
+                            </div>
+                          )}
+                          {/* Sub Source — labeled "Source" for non-admins so
+                              the underlying source/sub-source split stays
+                              internal to admins. */}
                           <div>
                             <p className="text-sm text-muted-foreground">
-                              Source
+                              {isAdmin ? "Sub Source" : "Source"}
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.source || "None"}
+                              {deal?.cSubSource || "None"}
                             </p>
                           </div>
-                          {/* Source */}
+                          {/* Site Visit */}
                           <div>
                             <p className="text-sm text-muted-foreground">
                               Site Visit
