@@ -204,6 +204,45 @@ const fetchBudgetIssueLeads = async ({ page, limit, dateFilter }) => {
   return await res.json();
 };
 
+/**
+ * Fan-out helper — fetch ALL pages of the primary cNextContactAt-filtered
+ * query, not just page 1. The kanban needs every matching lead to produce
+ * accurate column counts and a complete drag-and-drop surface; capping at
+ * the gateway's 200-per-page limit was silently hiding leads from columns
+ * (e.g. 469 leads in the window → only 200 ever reaching the classifier →
+ * 269 missing from Overdue / Upcoming / etc.).
+ *
+ * Strategy: fetch page 1 to discover `total`, then fan out the remaining
+ * pages in parallel via Promise.all. For a typical 400-500 lead month this
+ * is 2-3 parallel requests on cold load — wall-clock ~1× a single request,
+ * not Nx serial. The TTL cache (PIPELINE_CACHE_TTL) then keeps subsequent
+ * navigations free.
+ */
+const fetchAllPrimaryPages = async ({ dateFilter, limit }) => {
+  const first = await fetchLeadsForPipeline({ page: 1, limit, dateFilter });
+  const total = first?.total ?? first?.list?.length ?? 0;
+  const collected = [...(first?.list || [])];
+
+  // Nothing more to fetch — either we got everything in page 1 or there's
+  // nothing at all.
+  if (collected.length >= total) {
+    return { list: collected, total };
+  }
+
+  const pagesNeeded = Math.ceil(total / limit);
+  const restPromises = [];
+  for (let p = 2; p <= pagesNeeded; p++) {
+    restPromises.push(fetchLeadsForPipeline({ page: p, limit, dateFilter }));
+  }
+
+  const restResponses = await Promise.all(restPromises);
+  for (const response of restResponses) {
+    if (response?.list?.length) collected.push(...response.list);
+  }
+
+  return { list: collected, total };
+};
+
 // ---------------------------------------------------------------------------
 // Caching + request deduplication
 // ---------------------------------------------------------------------------
@@ -211,10 +250,12 @@ const fetchBudgetIssueLeads = async ({ page, limit, dateFilter }) => {
 const responseCache = new Map(); // key -> { data, timestamp }
 const inFlightRequests = new Map(); // key -> Promise
 
-const makeKey = ({ page, limit, dateFilter = {} }) =>
-  // Cache key includes the date filter so currentMonth / lastMonth / etc.
-  // each get their own cache slot instead of clobbering each other.
-  `pipeline:p${page}:l${limit}:dt${dateFilter.dateType || "currentMonth"}:f${
+const makeKey = ({ limit, dateFilter = {} }) =>
+  // Cache key per (limit, dateFilter) — no `page` segment any more because
+  // each fetch now loads ALL pages for the window in one orchestrated call.
+  // Each date window (currentMonth / lastMonth / etc.) gets its own slot so
+  // switching the filter doesn't blow up unrelated cached windows.
+  `pipeline:l${limit}:dt${dateFilter.dateType || "currentMonth"}:f${
     dateFilter.closeDateFrom || ""
   }:t${dateFilter.closeDateTo || ""}`;
 
@@ -229,18 +270,25 @@ export const invalidatePipelineCache = () => {
 // ---------------------------------------------------------------------------
 
 /**
- * Fetch one page of pipeline leads.
+ * Fetch ALL pipeline leads for the given date window (no pagination caller-
+ * side). The kanban needs a complete picture for accurate column counts and
+ * a coherent drag-and-drop surface.
  *
- * - returns the cached page when it is still fresh (unless `force`)
- * - dedupes concurrent identical requests via the in-flight map
+ *  - Primary pages (cNextContactAt in window) are fan-out fetched by
+ *    `fetchAllPrimaryPages` after page 1 reveals `total`.
+ *  - Budget-issue companion (status LIKE %budget% AND createdAt in window)
+ *    runs in parallel; single page because budget-lead count rarely exceeds
+ *    the page limit. Add a similar fan-out if that ever changes.
+ *  - Merged + de-duped by id; classifier then buckets each unique lead.
+ *  - Cached per (limit, dateFilter) with `PIPELINE_CACHE_TTL`; in-flight
+ *    map de-dupes concurrent identical requests.
  */
 export const fetchPipelineLeads = async ({
-  page = 1,
   limit = PIPELINE_PAGE_SIZE,
   dateFilter = { dateType: "currentMonth" },
   force = false,
 } = {}) => {
-  const key = makeKey({ page, limit, dateFilter });
+  const key = makeKey({ limit, dateFilter });
 
   const cached = responseCache.get(key);
   if (!force && cached && Date.now() - cached.timestamp < PIPELINE_CACHE_TTL) {
@@ -252,26 +300,18 @@ export const fetchPipelineLeads = async ({
   }
 
   const request = (async () => {
-    // Two parallel fetches:
-    //  - Primary (cNextContact in window) — feeds Overdue / Due Today /
-    //    Upcoming / Active / Stale columns.
-    //  - Budget-issue companion (status LIKE %budget% AND createdAt in window)
-    //    — surfaces Low Budget leads that the primary filter would miss
-    //    because they typically have no scheduled follow-up.
-    // Merged + de-duped by id; classifier then buckets each unique lead.
     const normalizedDateFilter = {
       dateType: dateFilter.dateType || "currentMonth",
       closeDateFrom: dateFilter.closeDateFrom || "",
       closeDateTo: dateFilter.closeDateTo || "",
     };
-    const [primaryResponse, budgetResponse] = await Promise.all([
-      fetchLeadsForPipeline({
-        page,
-        limit,
+    const [primaryAll, budgetResponse] = await Promise.all([
+      fetchAllPrimaryPages({
         dateFilter: normalizedDateFilter,
+        limit,
       }),
       fetchBudgetIssueLeads({
-        page,
+        page: 1,
         limit,
         dateFilter: normalizedDateFilter,
       }),
@@ -280,7 +320,7 @@ export const fetchPipelineLeads = async ({
     const seen = new Set();
     const list = [];
     for (const lead of [
-      ...(primaryResponse?.list || []),
+      ...(primaryAll?.list || []),
       ...(budgetResponse?.list || []),
     ]) {
       if (lead?.id && !seen.has(lead.id)) {
@@ -288,18 +328,16 @@ export const fetchPipelineLeads = async ({
         list.push(lead);
       }
     }
-    // `total` is approximated as the sum of both responses' totals — the two
-    // queries can overlap, so this is an upper bound. The deduped list is
-    // what's actually rendered.
-    const total =
-      (primaryResponse?.total ?? primaryResponse?.list?.length ?? 0) +
-      (budgetResponse?.total ?? budgetResponse?.list?.length ?? 0);
+    // Total = unique leads actually served. (Previously this was the sum of
+    // both responses' totals, which double-counted overlap between the
+    // primary and budget queries.)
+    const total = list.length;
     const data = {
       list,
       total,
-      page,
       limit,
-      hasMore: page * limit < total,
+      // Everything for this window is loaded; nothing left to paginate.
+      hasMore: false,
     };
     responseCache.set(key, { data, timestamp: Date.now() });
     return data;

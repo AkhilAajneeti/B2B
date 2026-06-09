@@ -22,12 +22,16 @@ import {
   PIPELINE_PAGE_SIZE,
 } from "../utils/pipelineConstants";
 
-export const usePipelineData = ({ page = 1, limit = PIPELINE_PAGE_SIZE } = {}) => {
+export const usePipelineData = ({ limit = PIPELINE_PAGE_SIZE } = {}) => {
   // Pull the date-window selection from the store so React Query re-fetches
   // (and the service refreshes) the moment the user changes the date dropdown.
   // Only the date fields go into the query key — the rest of the filters
   // (search, owner, status, etc.) are applied client-side and don't need a
   // network round-trip.
+  //
+  // `page` was removed when the service moved to a fan-out-all-pages fetch:
+  // the kanban needs every lead in the window for accurate column counts and
+  // a coherent drag surface, so the hook is no longer page-aware.
   const { filters, optimisticPatches, removedIds } = usePipelineStore();
   const dateFilter = useMemo(
     () => ({
@@ -39,8 +43,8 @@ export const usePipelineData = ({ page = 1, limit = PIPELINE_PAGE_SIZE } = {}) =
   );
 
   const query = useQuery({
-    queryKey: [PIPELINE_QUERY_KEY, page, limit, dateFilter],
-    queryFn: () => fetchPipelineLeads({ page, limit, dateFilter }),
+    queryKey: [PIPELINE_QUERY_KEY, limit, dateFilter],
+    queryFn: () => fetchPipelineLeads({ limit, dateFilter }),
     placeholderData: keepPreviousData,
     staleTime: PIPELINE_STALE_TIME,
     gcTime: PIPELINE_GC_TIME,

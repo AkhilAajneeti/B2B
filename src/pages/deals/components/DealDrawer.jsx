@@ -818,7 +818,7 @@ const DealDrawer = ({
                         onChange={(value) =>
                           handleChange("cSubSource", value)
                         }
-                        disabled
+                        disabled={mode !== "add"}
                       />
                       <Select
                         label="Industry"
