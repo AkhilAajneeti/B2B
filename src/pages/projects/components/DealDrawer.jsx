@@ -660,6 +660,61 @@ const DealDrawer = ({
                           </div>
                         </div>
                       </div>
+
+                      {/* ================= Configuration ================= */}
+                      {/* Read-only view of the round-robin lead-count
+                          configuration. Parses the backend `configuration`
+                          string on the fly so we don't depend on form state
+                          here. When `enableConfiguration` is false, the rows
+                          render dimmed to signal the values aren't active. */}
+                      <div className="border border-border rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-base font-semibold text-foreground">
+                            Configuration
+                          </h3>
+                          <span
+                            className={`px-3 py-1 text-xs font-medium rounded-full ${deal?.enableConfiguration
+                              ? "bg-success/10 text-success"
+                              : "bg-muted text-muted-foreground"
+                              }`}
+                          >
+                            {deal?.enableConfiguration ? "Enabled" : "Disabled"}
+                          </span>
+                        </div>
+
+                        {(() => {
+                          const items = parseConfiguration(deal?.configuration);
+                          if (items.length === 0) {
+                            return (
+                              <p className="text-sm text-muted-foreground italic">
+                                No configuration set.
+                              </p>
+                            );
+                          }
+                          return (
+                            <div
+                              className={`space-y-2 ${deal?.enableConfiguration
+                                ? "opacity-100"
+                                : "opacity-60"
+                                }`}
+                            >
+                              {items.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="flex items-center justify-between gap-3 px-3 py-2 rounded-md bg-muted/30 border border-border"
+                                >
+                                  <span className="text-sm text-foreground truncate">
+                                    {item.name}
+                                  </span>
+                                  <span className="text-sm font-medium text-foreground tabular-nums">
+                                    {item.count}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                   )}
 

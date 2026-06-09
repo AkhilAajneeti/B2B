@@ -61,7 +61,7 @@ const DealDrawer = ({
       assignedUserId: u?.id || "",
       teamId: u?.defaultTeamId || u?.teamsIds?.[0] || u?.teamIds?.[0] || "",
       status: "",
-      source: "",
+      source: "ACL",
       cSubSource: "",
       description: "",
       cSiteVisitAt: "",
@@ -168,7 +168,7 @@ const DealDrawer = ({
           currentUser?.teamIds?.[0] ||
           "",
         status: "New",
-        source: "",
+        source: "ACL",
         cSubSource: "",
         description: "",
         cSiteVisitAt: "",
@@ -818,6 +818,7 @@ const DealDrawer = ({
                         onChange={(value) =>
                           handleChange("cSubSource", value)
                         }
+                        disabled
                       />
                       <Select
                         label="Industry"
