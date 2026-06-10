@@ -559,6 +559,15 @@ const DealsTable = ({
                           </span>
                         </div>
                       )}
+                      {/* project */}
+                      {deal?.cProject && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Icon name="Building2" size={12} />
+                          <span className="truncate">
+                            {deal?.cProject}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Date */}
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
