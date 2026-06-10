@@ -77,6 +77,11 @@ const DealDrawer = ({
         enableConfiguration: deal.enableConfiguration || false,
         configurationItems: parseConfiguration(deal.configuration),
       });
+      // Always land on the overview tab when (re-)opening an existing
+      // project — if the parent reuses the same DealDrawer instance, a
+      // stale `isEditing: true` from a previous edit session would
+      // otherwise pop the form open instead of the overview.
+      setIsEditing(false);
     }
   }, [deal, mode]);
   // mass update
@@ -233,6 +238,9 @@ const DealDrawer = ({
         await onUpdate(deal.id, payload);
       }
 
+      // Drop back to overview so the next time the user opens this drawer
+      // it starts in view state, not the previous edit-form state.
+      setIsEditing(false);
       onClose();
     } catch (err) {
       console.error("Project creation failed", err);
@@ -636,35 +644,6 @@ const DealDrawer = ({
                         </div>
                       </div>
 
-                      {/* ================= Details ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <h3 className="text-base font-semibold text-foreground mb-6">
-                          Details
-                        </h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                          {/* Description */}
-                          <div className="md:col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              Address
-                            </p>
-                            <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.address}
-                            </p>
-                          </div>
-
-                          {/* Description */}
-                          <div className="md:col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              Description
-                            </p>
-                            <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.description}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
                       {/* ================= Configuration ================= */}
                       {/* Read-only view of the round-robin lead-count
                           configuration. Parses the backend `configuration`
@@ -718,6 +697,35 @@ const DealDrawer = ({
                             </div>
                           );
                         })()}
+                      </div>
+
+                      {/* ================= Details ================= */}
+                      <div className="border border-border rounded-xl p-6">
+                        <h3 className="text-base font-semibold text-foreground mb-6">
+                          Details
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {/* Description */}
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-muted-foreground">
+                              Address
+                            </p>
+                            <p className="text-foreground leading-relaxed mt-1">
+                              {deal?.address}
+                            </p>
+                          </div>
+
+                          {/* Description */}
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-muted-foreground">
+                              Description
+                            </p>
+                            <p className="text-foreground leading-relaxed mt-1">
+                              {deal?.description}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}

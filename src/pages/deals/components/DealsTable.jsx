@@ -38,6 +38,56 @@ const DealsTable = ({
     })?.format(parsedDate);
   };
 
+  // Soft status-tinted gradient for the mobile lead card background. Mirrors
+  // the same palette as getStageColor so the card and the status badge feel
+  // visually connected. Whole class strings (not concatenated) so the
+  // Tailwind JIT can statically discover every variant.
+  const getStageGradient = (stage) => {
+    const gradients = {
+      New: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+      Interested:
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      "Follow up":
+        "bg-gradient-to-br from-indigo-50/70 to-background border-indigo-100",
+      "Call Later":
+        "bg-gradient-to-br from-amber-50/70 to-background border-amber-100",
+      "Call Not Connecting":
+        "bg-gradient-to-br from-rose-50/70 to-background border-rose-100",
+      "Call Not Picked":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      Broker:
+        "bg-gradient-to-br from-violet-50/70 to-background border-violet-100",
+      Dead: "bg-gradient-to-br from-slate-100/70 to-background border-slate-200",
+      "Fake Lead":
+        "bg-gradient-to-br from-pink-50/70 to-background border-pink-100",
+      "Invalid Number":
+        "bg-gradient-to-br from-gray-100/70 to-background border-gray-200",
+      "Irrelevant Lead":
+        "bg-gradient-to-br from-orange-50/70 to-background border-orange-100",
+      "Low Budget":
+        "bg-gradient-to-br from-yellow-50/70 to-background border-yellow-100",
+      "Low Interest":
+        "bg-gradient-to-br from-lime-50/70 to-background border-lime-100",
+      "Not Interested":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      "Other Location":
+        "bg-gradient-to-br from-cyan-50/70 to-background border-cyan-100",
+      Purchased:
+        "bg-gradient-to-br from-green-50/70 to-background border-green-100",
+      "Site Visit Done":
+        "bg-gradient-to-br from-teal-50/70 to-background border-teal-100",
+      "Site Visit Scheduled":
+        "bg-gradient-to-br from-sky-50/70 to-background border-sky-100",
+      "Switch Off":
+        "bg-gradient-to-br from-neutral-100/70 to-background border-neutral-200",
+    };
+
+    return (
+      gradients?.[stage] ||
+      "bg-gradient-to-br from-background to-muted/20 border-border/50"
+    );
+  };
+
   const getStageColor = (stage) => {
     const colors = {
       New: "bg-blue-50 text-blue-700 border border-blue-200",
@@ -453,14 +503,13 @@ const DealsTable = ({
           paginatedDeals?.map((deal) => (
             <div
               key={deal?.id}
-              className="
-    mx-3 my-2 p-4 rounded-2xl
-    border border-border/50
-    bg-gradient-to-br from-background to-muted/20
+              className={`
+    mx-3 my-2 p-4 rounded-2xl border
+    ${getStageGradient(deal?.status)}
     hover:shadow-md
     active:scale-[0.99]
     transition-all duration-200
-  "
+  `}
             >
               <div className="flex gap-3">
                 {/* Checkbox */}
@@ -543,7 +592,7 @@ const DealsTable = ({
                         }}
                         className="h-10 w-10 rounded-full hover:bg-blue-400   active:scale-95 transition-all duration-150 flex items-center justify-center"
                       >
-                        <Icon name="PhoneCall" size={16} className="text-blue-600 hover:text-white" />
+                        <Icon name="PhoneCall" size={20} className="text-blue-600 hover:text-white" />
                       </Button>
 
                       {/* WhatsApp — brand green, white logo via invert */}
@@ -566,7 +615,7 @@ const DealsTable = ({
                         <img
                           src="/assets/whatsapp-logo.png"
                           alt=""
-                          className="w-5 h-5 object-contain  "
+                          className="w-8 h-8 object-contain  "
                         />
                       </Button>
                     </div>
