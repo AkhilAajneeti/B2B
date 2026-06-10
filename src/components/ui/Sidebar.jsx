@@ -40,7 +40,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
 
     },
     {
-      label: "Projects",
+      label: "My Campaigns",
       path: "/projects",
       icon: "Layers",
       adminOnly: true,

@@ -22,7 +22,7 @@ const DealsFilters = ({
   const isAdminManager = isAdminOrManager();
   const bulkActions = [
     { value: "massupdate", label: "Mass Update", icon: "Update" },
-    { value: "export", label: "Export Selected", icon: "Download" },
+    // { value: "export", label: "Export Selected", icon: "Download" },
     ...(isAdminManager ? [{ value: "delete", label: "Delete Selected", icon: "Trash2" }] : []),
   ];
   const ACTIVITY_DATE_FILTERS = [
@@ -204,7 +204,7 @@ const DealsFilters = ({
             )}
           </div>
         )}
-        <Button variant="outline" size="sm" className="linearbg-1 text-white hover:text-white">
+        <Button variant="outline" size="sm" className="linearbg-1 text-white hover:text-white" disable>
           <Icon name="Download" size={16} className="mr-1" />
           Export All
         </Button>

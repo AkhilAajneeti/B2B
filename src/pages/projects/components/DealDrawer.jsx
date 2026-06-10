@@ -65,7 +65,11 @@ const DealDrawer = ({
         name: deal.name || "",
         address: deal.address || "",
         assignedUserId: deal.assignedUserId || "",
-        teamId: deal.teamId || "",
+        // Project records store team as `teamsIds: [...]` (plural array),
+        // not the singular `teamId` field used by the form's <Select>. Pull
+        // the first id out so editing pre-selects the saved team. The save
+        // payload below wraps it back into an array on submit.
+        teamId: deal.teamId || deal.teamsIds?.[0] || "",
         collaboratorsIds: deal.collaboratorsIds || "",
         description: deal.description || "",
         parentName: deal.parentType || "",

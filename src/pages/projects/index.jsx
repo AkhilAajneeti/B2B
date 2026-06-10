@@ -292,7 +292,7 @@ const ProjectsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Projects - Aajneeti Connect ltd</title>
+        <title>My Campaigns - Aajneeti Connect ltd</title>
         <meta
           name="description"
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."
@@ -308,11 +308,11 @@ const ProjectsPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                  Projects
+                  My Campaigns
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   Easily create, assign, and track tasks to ensure every
-                  projects is completed on time and nothing is missed in your
+                  Campaigns is completed on time and nothing is missed in your
                   workflow.
                 </p>
               </div>
@@ -322,6 +322,7 @@ const ProjectsPage = () => {
                   onClick={() =>
                     exportLeadsToCSV(projects, "all_leads")
                   }
+                  disable
                 >
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All
@@ -329,7 +330,7 @@ const ProjectsPage = () => {
 
                {canCreate('CProjects') && ( <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
-                  New Project
+                  New Campaigns
                 </Button>)}
 
               </div>

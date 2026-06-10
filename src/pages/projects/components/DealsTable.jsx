@@ -160,7 +160,7 @@ const DealsTable = ({
                   onClick={() => onSort("name")}
                   className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
                 >
-                  <span>Name</span>
+                  <span>Campaign Name</span>
                   {getSortIcon("name")}
                 </button>
               </th>

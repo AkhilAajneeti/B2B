@@ -525,31 +525,51 @@ const DealsTable = ({
                       </div>
                     </div>
 
-                    {/* WhatsApp */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                    {/* Quick-action pills — side-by-side, larger touch
+                        target than the table-row icons because mobile users
+                        tap with thumbs. Solid colored backgrounds make each
+                        action unmistakable at a glance. */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Call — opens the device dialer via tel: */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Call lead"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const phone = deal?.phoneNumber?.replace(/\D/g, "");
+                          if (!phone) return;
+                          window.location.href = `tel:${phone}`;
+                        }}
+                        className="h-10 w-10 rounded-full hover:bg-blue-400   active:scale-95 transition-all duration-150 flex items-center justify-center"
+                      >
+                        <Icon name="PhoneCall" size={16} className="text-blue-600 hover:text-white" />
+                      </Button>
 
-                        const phone = deal?.phoneNumber?.replace(/\D/g, "");
-
-                        if (!phone) return;
-
-                        window.open(
-                          `https://api.whatsapp.com/send/?phone=${phone}`,
-                          "_blank",
-                          "noopener,noreferrer"
-                        );
-                      }}
-                      className="h-8 w-8 rounded-full hover:bg-green-100 transition-all duration-200"
-                    >
-                      <img
-                        src="/assets/whatsapp-logo.png"
-                        alt="WhatsApp"
-                        className="w-5 h-5 object-contain"
-                      />
-                    </Button>
+                      {/* WhatsApp — brand green, white logo via invert */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Open WhatsApp chat"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const phone = deal?.phoneNumber?.replace(/\D/g, "");
+                          if (!phone) return;
+                          window.open(
+                            `https://api.whatsapp.com/send/?phone=${phone}`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
+                        }}
+                        className="h-10 w-10 rounded-full  hover:bg-[#1fb85557]  active:scale-95 transition-all duration-150 flex items-center justify-center"
+                      >
+                        <img
+                          src="/assets/whatsapp-logo.png"
+                          alt=""
+                          className="w-5 h-5 object-contain  "
+                        />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
