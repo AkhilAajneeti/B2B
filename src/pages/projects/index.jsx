@@ -317,16 +317,16 @@ const ProjectsPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Button
+                {/* <Button
                   variant="outline" className="linearbg-1 text-white hover:text-white"
                   onClick={() =>
                     exportLeadsToCSV(projects, "all_leads")
                   }
-                  disabled
+                  
                 >
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All
-                </Button>
+                </Button> */}
 
                {canCreate('CProjects') && ( <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />

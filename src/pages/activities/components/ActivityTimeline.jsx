@@ -290,11 +290,10 @@ const ActivityTimeline = ({
 
                     {/* DELETE ACTION — confirm before firing so a stray tap
                         on mobile doesn't wipe data. */}
-                    {onDelete && (
+                    {/* {onDelete && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled
                         onClick={() => {
                           if (
                             window.confirm(
@@ -309,7 +308,7 @@ const ActivityTimeline = ({
                       >
                         <Icon name="Trash2" size={16} />
                       </Button>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </div>
