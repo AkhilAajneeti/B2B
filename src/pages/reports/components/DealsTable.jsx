@@ -7,12 +7,9 @@ import { deleteLead } from "services/leads.service";
 const DealsTable = ({
   deals,
   selectedDeals,
-  onSelectAll,
   onDealClick,
   sortConfig,
   onSort,
-  currentPage,
-  itemsPerPage,
   isLoading,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -101,12 +98,52 @@ const DealsTable = ({
     );
   };
 
-  const getProbabilityColor = (probability) => {
-    if (probability >= 80) return "text-green-600";
-    if (probability >= 60) return "text-yellow-600";
-    if (probability >= 40) return "text-orange-600";
-    return "text-red-600";
+  const getStageGradient = (stage) => {
+    const gradients = {
+      New: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+      Interested:
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      "Follow up":
+        "bg-gradient-to-br from-indigo-50/70 to-background border-indigo-100",
+      "Call Later":
+        "bg-gradient-to-br from-amber-50/70 to-background border-amber-100",
+      "Call Not Connecting":
+        "bg-gradient-to-br from-rose-50/70 to-background border-rose-100",
+      "Call Not Picked":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      Broker:
+        "bg-gradient-to-br from-violet-50/70 to-background border-violet-100",
+      Dead: "bg-gradient-to-br from-slate-100/70 to-background border-slate-200",
+      "Fake Lead":
+        "bg-gradient-to-br from-pink-50/70 to-background border-pink-100",
+      "Invalid Number":
+        "bg-gradient-to-br from-gray-100/70 to-background border-gray-200",
+      "Irrelevant Lead":
+        "bg-gradient-to-br from-orange-50/70 to-background border-orange-100",
+      "Low Budget":
+        "bg-gradient-to-br from-yellow-50/70 to-background border-yellow-100",
+      "Low Interest":
+        "bg-gradient-to-br from-lime-50/70 to-background border-lime-100",
+      "Not Interested":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      "Other Location":
+        "bg-gradient-to-br from-cyan-50/70 to-background border-cyan-100",
+      Purchased:
+        "bg-gradient-to-br from-green-50/70 to-background border-green-100",
+      "Site Visit Done":
+        "bg-gradient-to-br from-teal-50/70 to-background border-teal-100",
+      "Site Visit Scheduled":
+        "bg-gradient-to-br from-sky-50/70 to-background border-sky-100",
+      "Switch Off":
+        "bg-gradient-to-br from-neutral-100/70 to-background border-neutral-200",
+    };
+
+    return (
+      gradients?.[stage] ||
+      "bg-gradient-to-br from-background to-muted/20 border-border/50"
+    );
   };
+
 
   const getSortIcon = (column) => {
     if (sortConfig?.key !== column) {
@@ -265,7 +302,13 @@ const DealsTable = ({
           <div
             key={deal?.id}
             onClick={() => onDealClick(deal)}
-            className="p-4 border-b border-border bg-background hover:bg-muted/30 transition"
+            className={`
+    mx-3 my-2 p-4 rounded-2xl border
+    ${getStageGradient(deal?.status)}
+    hover:shadow-md
+    active:scale-[0.99]
+    transition-all duration-200
+  `}
           >
             <div className="flex items-start gap-3">
               {/* Checkbox */}

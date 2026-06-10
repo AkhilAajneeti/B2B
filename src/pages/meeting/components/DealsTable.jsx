@@ -44,6 +44,19 @@ const DealsTable = ({
     return colors?.[stage] || "bg-gray-100 text-gray-800";
   };
 
+  // Soft status-tinted gradient for the mobile meeting card background —
+  // mirrors getStageColor's palette so the row's tint matches the badge.
+  // Whole class strings (not concatenated) so Tailwind's JIT statically
+  // discovers every variant.
+  const getStageGradient = (stage) => {
+    const gradients = {
+      Planned: "bg-gradient-to-br from-blue-50/70 to-background",
+      "Not Held": "bg-gradient-to-br from-red-50/70 to-background",
+      Held: "bg-gradient-to-br from-green-50/70 to-background",
+    };
+    return gradients?.[stage] || "bg-background";
+  };
+
   const getProbabilityColor = (probability) => {
     if (probability >= 80) return "text-green-600";
     if (probability >= 60) return "text-yellow-600";
@@ -302,7 +315,9 @@ const DealsTable = ({
         {paginatedDeals?.map((deal) => (
           <div
             key={deal?.id}
-            className="p-4 border-b border-border bg-background hover:bg-muted/30 transition"
+            className={` mx-3 my-2 p-4 rounded-2xl border ${getStageGradient(
+              deal?.status,
+            )} hover:shadow-md active:scale-[0.99] transition-all duration-200`}
           >
             <div className="flex items-start gap-3">
               {/* Checkbox */}

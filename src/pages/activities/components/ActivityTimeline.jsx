@@ -2,7 +2,13 @@ import React, { useState, useMemo } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 
-const ActivityTimeline = ({ activities, onEdit, onComplete, onReschedule }) => {
+const ActivityTimeline = ({
+  activities,
+  onEdit,
+  onComplete,
+  onReschedule,
+  onDelete,
+}) => {
   /* =======================
      PAGINATION (ADDED)
   ======================= */
@@ -48,6 +54,35 @@ const ActivityTimeline = ({ activities, onEdit, onComplete, onReschedule }) => {
       year: "numeric",
     });
   };
+  // Soft status-tinted gradient for the activity card background — same
+  // pattern as the mobile lead-card and meeting-row treatments. Whole class
+  // strings (not concatenated) so Tailwind JIT statically discovers every
+  // variant.
+  const getStatusGradient = (status) => {
+    const gradients = {
+      Closed:
+        "bg-gradient-to-br from-green-50/70 to-background border-green-100",
+      Completed:
+        "bg-gradient-to-br from-green-50/70 to-background border-green-100",
+      Held:
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      Open: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+      Planned:
+        "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+      New: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+      "In Progress":
+        "bg-gradient-to-br from-amber-50/70 to-background border-amber-100",
+      Pending:
+        "bg-gradient-to-br from-amber-50/70 to-background border-amber-100",
+      "Not Held":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+    };
+    return (
+      gradients?.[status] ||
+      "bg-card border-border"
+    );
+  };
+
   const getStatusValue = (activity) => {
     // Create activity
     if (activity.type === "Create") {
@@ -94,7 +129,11 @@ const ActivityTimeline = ({ activities, onEdit, onComplete, onReschedule }) => {
           <div className="flex items-start space-x-4">
             {/* Activity content */}
             <div className="flex-1 min-w-0">
-              <div className="bg-card border border-border rounded-lg p-4 shadow-sm hover:shadow-md transition">
+              <div
+                className={`border rounded-lg p-4 shadow-sm hover:shadow-md transition ${getStatusGradient(
+                  getStatusValue(activity),
+                )}`}
+              >
                 <div className="flex items-start justify-between gap-4">
                   {/* LEFT CONTENT */}
                   <div className="flex-1 min-w-0">
@@ -166,6 +205,28 @@ const ActivityTimeline = ({ activities, onEdit, onComplete, onReschedule }) => {
                         title="Mark as completed"
                       >
                         <Icon name="Check" size={16} />
+                      </Button>
+                    )}
+
+                    {/* DELETE ACTION — confirm before firing so a stray tap
+                        on mobile doesn't wipe data. */}
+                    {onDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              "Delete this activity? This cannot be undone.",
+                            )
+                          ) {
+                            onDelete(activity.id);
+                          }
+                        }}
+                        className="h-8 w-8 text-red-600 hover:bg-red-50"
+                        title="Delete activity"
+                      >
+                        <Icon name="Trash2" size={16} />
                       </Button>
                     )}
                   </div>

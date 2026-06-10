@@ -210,6 +210,25 @@ const Activities = () => {
   const handleClearSelection = () => {
     setSelectedActivities([]);
   };
+
+  // Single-activity delete (the per-card trash button in ActivityTimeline).
+  // Bulk delete still flows through handleBulkDelete; this is the granular
+  // "kill just this one" path.
+  const handleSingleDelete = async (activityId) => {
+    try {
+      await deleteActivity(activityId);
+      setActivities((prev) =>
+        prev.filter((activity) => activity.id !== activityId),
+      );
+      setSelectedActivities((prev) =>
+        prev?.filter((id) => id !== activityId),
+      );
+      toast.success("Activity deleted");
+    } catch (error) {
+      console.error("Failed to delete activity:", error);
+      toast.error("Failed to delete activity");
+    }
+  };
   const ActivitySkeleton = () => (
     <div className="flex items-start space-x-4 animate-pulse">
       {/* Checkbox */}
@@ -347,21 +366,29 @@ const Activities = () => {
                   {filteredActivities?.map((activity) => (
                     <div
                       key={activity?.id}
-                      className="flex items-start space-x-4"
+                      // gap-4 instead of space-x-4 so the gap collapses
+                      // automatically when the checkbox is hidden on mobile
+                      // (space-x uses margin-left, which would leave a stray
+                      // indent on the content div).
+                      className="flex items-start gap-4"
                     >
                       <Checkbox
                         checked={selectedActivities?.includes(activity?.id)}
                         onChange={(e) =>
                           handleSelectActivity(activity?.id, e?.target?.checked)
                         }
-                        className="mt-6"
+                        // Hidden on mobile — bulk selection lives on desktop
+                        // only so activity cards can use the full screen width
+                        // on phones.
+                        className="mt-6 hidden md:block"
                       />
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <ActivityTimeline
                           activities={[activity]}
                           onEdit={handleEditActivity}
                           onComplete={handleCompleteActivity}
                           onReschedule={handleRescheduleActivity}
+                          onDelete={handleSingleDelete}
                         />
                       </div>
                     </div>

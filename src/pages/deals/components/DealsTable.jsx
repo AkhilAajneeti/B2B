@@ -22,8 +22,6 @@ const DealsTable = ({
   const formatDate = (date) => {
     if (!date) return "—"; // null / undefined / empty
 
-    // EspoCRM datetimes ("YYYY-MM-DD HH:mm:ss") are UTC; append Z so JS
-    // converts them to the user's local timezone for display.
     const safe =
       typeof date === "string" && date.length > 10
         ? `${date.replace(" ", "T")}Z`
@@ -208,11 +206,6 @@ const DealsTable = ({
     await onDelete(deal.id); // 👈 parent ko bol rahe ho
   };
 
-  // const paginatedDeals = useMemo(() => {
-  //   if (!deals?.length) return [];
-  //   const startIndex = (page - 1) * setPage;
-  //   return deals?.slice(startIndex, startIndex + setPage);
-  // }, [deals, page, setPage]);
   const paginatedDeals = deals;
   const isAllSelected =
     selectedDeals?.length === paginatedDeals?.length &&
