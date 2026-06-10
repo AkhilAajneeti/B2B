@@ -312,7 +312,7 @@ const ProjectsPage = () => {
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   Easily create, assign, and track tasks to ensure every
-                  Campaigns is completed on time and nothing is missed in your
+                  campaigns is completed on time and nothing is missed in your
                   workflow.
                 </p>
               </div>
@@ -322,7 +322,7 @@ const ProjectsPage = () => {
                   onClick={() =>
                     exportLeadsToCSV(projects, "all_leads")
                   }
-                  disable
+                  disabled
                 >
                   <Icon name="Download" size={16} className="mr-2" />
                   Export All

@@ -576,10 +576,6 @@ const DealsTable = ({
                       </div>
                     </div>
 
-                    {/* Quick-action pills — side-by-side, larger touch
-                        target than the table-row icons because mobile users
-                        tap with thumbs. Solid colored backgrounds make each
-                        action unmistakable at a glance. */}
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Call — opens the device dialer via tel: */}
                       <Button

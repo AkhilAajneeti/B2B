@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import toast from "react-hot-toast";
 import { fetchTodayFollowups } from "services/reminder.service";
 
 /**
@@ -25,6 +24,9 @@ import { fetchTodayFollowups } from "services/reminder.service";
 
 const SETTIMEOUT_MAX = 2 ** 31 - 1; // ~24.8 days; today's max delay is < 24h
 const SNOOZE_MS = 10 * 60 * 1000;
+// How long the stack auto-pops open after a new reminder lands. Just enough
+// for the rep to register the new arrival without being intrusive.
+const AUTO_EXPAND_MS = 3 * 1000;
 
 /* --- date helpers (kept local so this stays independent of the pipeline) --- */
 
@@ -119,6 +121,13 @@ const FollowupReminderManager = () => {
   const timerRef = useRef(null);
   const snoozeTimersRef = useRef([]);
   const firedRef = useRef(loadFired());
+  // Stack rendering — `activeReminders` holds every entry currently on-screen
+  // (newest at the end). `expanded` is the open/closed state of the deck.
+  // `autoExpandTimerRef` lets us briefly pop the stack open when a new
+  // reminder lands so the rep notices, then collapse back automatically.
+  const autoExpandTimerRef = useRef(null);
+  const [activeReminders, setActiveReminders] = useState([]);
+  const [expanded, setExpanded] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["today-followups"],
@@ -178,8 +187,9 @@ const FollowupReminderManager = () => {
   };
 
   // Accepts a single reminder or an array; multiple due at the same moment are
-  // shown as ONE grouped popup to keep the screen uncluttered.
-  const showReminderPopup = (group) => {
+  // shown as ONE grouped entry to keep the stack uncluttered. Each entry adds
+  // a card to `activeReminders`; the rendered deck/expanded view is below.
+  const addReminder = (group) => {
     const items = Array.isArray(group) ? group : [group];
     if (!items.length) return;
 
@@ -193,9 +203,9 @@ const FollowupReminderManager = () => {
         ? names.join(", ")
         : `${names.slice(0, 3).join(", ")} +${names.length - 3} more`;
     const groupId = `group-${lead.time.getTime()}`;
-    const toastId = isGroup ? `reminder-${groupId}` : `reminder-${lead.id}`;
+    const entryId = isGroup ? `reminder-${groupId}` : `reminder-${lead.id}`;
 
-    // OS-level notification when the tab isn't focused.
+    // OS-level notification when the tab isn't focused — UNCHANGED from before.
     if (
       "Notification" in window &&
       Notification.permission === "granted" &&
@@ -211,7 +221,7 @@ const FollowupReminderManager = () => {
                   lead.project ? ` • ${lead.project}` : ""
                 }`,
             tag: isGroup ? groupId : lead.id,
-            requireInteraction: true, // stay on screen until the rep acts
+            requireInteraction: true,
           },
         );
         n.onclick = () => {
@@ -224,68 +234,43 @@ const FollowupReminderManager = () => {
       }
     }
 
-    // In-app popup (persistent until acted on).
-    toast.custom(
-      (t) => (
-        <div
-          className={`max-w-sm w-full bg-white shadow-lg rounded-xl border border-orange-200 pointer-events-auto overflow-hidden ${
-            t.visible ? "animate-enter reminder-shake" : "animate-leave"
-          }`}
-        >
-          <div className="flex items-start gap-3 p-4">
-            <div className="w-9 h-9 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 text-lg">
-              📞
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900">
-                {isGroup
-                  ? `${items.length} Call Later reminders`
-                  : "Call Later reminder"}
-              </p>
-              <p className="text-sm text-gray-700 truncate">
-                {isGroup ? namePreview : lead.name}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {formatTime(lead.time)}
-                {!isGroup && lead.project ? ` • ${lead.project}` : ""}
-              </p>
-            </div>
-          </div>
-          <div className="flex border-t border-gray-100">
-            <button
-              onClick={() => {
-                navigate("/leads", { state: { leadId: lead.id } });
-                toast.dismiss(t.id);
-              }}
-              className="flex-1 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"
-            >
-              View
-            </button>
-            <button
-              onClick={() => {
-                const handle = setTimeout(
-                  () => showReminderPopup(items),
-                  SNOOZE_MS,
-                );
-                snoozeTimersRef.current.push(handle);
-                toast.dismiss(t.id);
-              }}
-              className="flex-1 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 border-l border-gray-100"
-            >
-              Snooze 10m
-            </button>
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="flex-1 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 border-l border-gray-100"
-            >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      ),
-      { duration: Infinity, id: toastId },
+    // Push to stack state (skip if this exact entry is already present so
+    // the same group never appears twice if both the timer and the poll
+    // fire it).
+    setActiveReminders((prev) => {
+      if (prev.some((e) => e.id === entryId)) return prev;
+      return [
+        ...prev,
+        { id: entryId, items, time: lead.time, isGroup, namePreview },
+      ];
+    });
+
+    // Auto-expand briefly so the rep notices a new reminder landing on top
+    // of a stack they may have collapsed earlier.
+    setExpanded(true);
+    if (autoExpandTimerRef.current) clearTimeout(autoExpandTimerRef.current);
+    autoExpandTimerRef.current = setTimeout(
+      () => setExpanded(false),
+      AUTO_EXPAND_MS,
     );
   };
+
+  const removeReminder = (id) =>
+    setActiveReminders((prev) => prev.filter((e) => e.id !== id));
+
+  const handleView = (entry) => {
+    const lead = entry.items[0];
+    navigate("/leads", { state: { leadId: lead.id } });
+    removeReminder(entry.id);
+  };
+
+  const handleSnooze = (entry) => {
+    const handle = setTimeout(() => addReminder(entry.items), SNOOZE_MS);
+    snoozeTimersRef.current.push(handle);
+    removeReminder(entry.id);
+  };
+
+  const handleDismiss = (entry) => removeReminder(entry.id);
 
   // Scheduler. Background tabs heavily throttle setTimeout, so we don't rely on
   // a chained timer alone: a 30s poll + a visibility listener guarantee that
@@ -300,7 +285,7 @@ const FollowupReminderManager = () => {
       );
       if (!due.length) return;
       due.forEach((r) => markFired(r.id));
-      showReminderPopup(due);
+      addReminder(due);
     };
 
     // Precise timer to the nearest upcoming reminder (exact firing while the
@@ -344,13 +329,168 @@ const FollowupReminderManager = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reminders]);
 
-  // Clean up any pending snooze timers on unmount.
+  // Clean up any pending snooze timers + the auto-expand timer on unmount.
   useEffect(() => {
     const snoozeTimers = snoozeTimersRef.current;
-    return () => snoozeTimers.forEach((h) => clearTimeout(h));
+    return () => {
+      snoozeTimers.forEach((h) => clearTimeout(h));
+      if (autoExpandTimerRef.current) clearTimeout(autoExpandTimerRef.current);
+    };
   }, []);
 
-  return null;
+  // ---------------------------------------------------------------------
+  // STACK UI — replaces the per-toast popups. Collapsed view shows ONE card
+  // with peek-cards behind it and a count badge. Click to expand into the
+  // full list with View / Snooze / Dismiss buttons per entry, color-coded
+  // so the intent of each action is obvious at a glance:
+  //   View   → orange (primary action)
+  //   Snooze → amber  (defer)
+  //   Dismiss → gray, red hover (passive remove)
+  // ---------------------------------------------------------------------
+  if (activeReminders.length === 0) return null;
+
+  // Top of the stack = newest reminder. Reps see the most recent push.
+  const topEntry = activeReminders[activeReminders.length - 1];
+  const total = activeReminders.length;
+
+  const cancelAutoCollapse = () => {
+    if (autoExpandTimerRef.current) {
+      clearTimeout(autoExpandTimerRef.current);
+      autoExpandTimerRef.current = null;
+    }
+  };
+
+  return (
+    <div
+      className="fixed top-4 right-4 z-[60] w-[92vw] max-w-sm pointer-events-auto"
+      // Any deliberate interaction with the stack cancels auto-collapse so
+      // a rep mid-read doesn't have it slam shut on them.
+      onMouseEnter={cancelAutoCollapse}
+      onPointerDown={cancelAutoCollapse}
+    >
+      {expanded ? (
+        /* EXPANDED — vertical list of all active reminders */
+        <div className="bg-white rounded-xl shadow-2xl border border-orange-200 overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2.5 bg-orange-50 border-b border-orange-100">
+            <div className="flex items-center gap-2">
+              <span className="text-orange-600 text-lg leading-none">📞</span>
+              <p className="text-sm font-semibold text-orange-900">
+                {total} follow-up{total > 1 ? "s" : ""} pending
+              </p>
+            </div>
+            <button
+              onClick={() => setExpanded(false)}
+              className="text-gray-400 hover:text-gray-700 px-2 py-0.5 text-lg leading-none rounded hover:bg-gray-100"
+              aria-label="Collapse stack"
+              title="Collapse"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-100">
+            {activeReminders.map((entry) => {
+              const lead = entry.items[0];
+              const headline = entry.isGroup
+                ? `${entry.items.length} Call Later reminders`
+                : "Call Later reminder";
+              const subhead = entry.isGroup ? entry.namePreview : lead.name;
+              return (
+                <div key={entry.id} className="p-3">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 text-lg">
+                      📞
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {headline}
+                      </p>
+                      <p className="text-sm text-gray-700 truncate">{subhead}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {formatTime(entry.time)}
+                        {!entry.isGroup && lead.project
+                          ? ` • ${lead.project}`
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleView(entry)}
+                      className="flex-1 py-2 text-xs font-semibold rounded-md bg-orange-500 text-white hover:bg-orange-600 active:scale-95 transition shadow-sm"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleSnooze(entry)}
+                      className="flex-1 py-2 text-xs font-semibold rounded-md bg-amber-100 text-amber-800 hover:bg-amber-200 active:scale-95 transition border border-amber-200"
+                    >
+                      Snooze 10m
+                    </button>
+                    <button
+                      onClick={() => handleDismiss(entry)}
+                      className="flex-1 py-2 text-xs font-semibold rounded-md bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 active:scale-95 transition border border-gray-200"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        /* COLLAPSED — deck-of-cards: top card with two ghost cards peeking */
+        <button
+          type="button"
+          onClick={() => {
+            cancelAutoCollapse();
+            setExpanded(true);
+          }}
+          className="relative w-full text-left group focus:outline-none"
+          aria-label={`Expand ${total} pending follow-up reminders`}
+        >
+          {/* Peek cards behind — render up to 2 so the deck feels thick
+              without becoming a tower at high counts. */}
+          {total > 2 && (
+            <div className="absolute inset-x-3 top-3 -bottom-3 bg-orange-50 rounded-xl border border-orange-200 shadow" />
+          )}
+          {total > 1 && (
+            <div className="absolute inset-x-1.5 top-1.5 -bottom-1.5 bg-white rounded-xl border border-orange-200 shadow" />
+          )}
+
+          {/* Top card */}
+          <div className="relative bg-white rounded-xl shadow-lg border border-orange-200 p-4 group-hover:shadow-xl group-active:scale-[0.99] transition">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 text-xl">
+                📞
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900">
+                  {total === 1
+                    ? "Follow-up reminder"
+                    : `${total} follow-ups pending`}
+                </p>
+                <p className="text-xs text-gray-600 truncate mt-0.5">
+                  {topEntry.isGroup
+                    ? topEntry.namePreview
+                    : topEntry.items[0].name}
+                </p>
+                <p className="text-xs text-orange-600 mt-1 font-medium">
+                  Tap to view {total === 1 ? "" : "all"} →
+                </p>
+              </div>
+              {total > 1 && (
+                <span className="text-xs font-bold text-white bg-orange-500 rounded-full min-w-[24px] h-6 px-2 flex items-center justify-center shadow-sm">
+                  {total}
+                </span>
+              )}
+            </div>
+          </div>
+        </button>
+      )}
+    </div>
+  );
 };
 
 export default FollowupReminderManager;

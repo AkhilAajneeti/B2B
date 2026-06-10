@@ -204,7 +204,7 @@ const DealsFilters = ({
             )}
           </div>
         )}
-        <Button variant="outline" size="sm" className="linearbg-1 text-white hover:text-white" disable>
+        <Button variant="outline" size="sm" className="linearbg-1 text-white hover:text-white" disabled>
           <Icon name="Download" size={16} className="mr-1" />
           Export All
         </Button>

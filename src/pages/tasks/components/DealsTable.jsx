@@ -42,9 +42,9 @@ const DealsTable = ({
     const colors = {
       Started: "bg-blue-100 text-blue-800",
       Completed: "bg-green-100 text-green-800",
-      Deffered: "bg-orange-100 text-danger-800",
+      Deffered: "bg-slate-200 text-slate-200",
       Canceled: "bg-purple-100 text-purple-800",
-      "Not Started": "bg-gray-100 text-gray-700",
+      "Not Started": "bg-orange-100 text-orange-700",
     };
 
     return colors?.[stage] || "bg-gray-100 text-gray-800";
@@ -65,6 +65,25 @@ const DealsTable = ({
     if (probability >= 60) return "text-yellow-600";
     if (probability >= 40) return "text-orange-600";
     return "text-red-600";
+  };
+  const getStageGradient = (stage) => {
+    const gradients = {
+      Started: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+      Completed:
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      Canceled:
+        "bg-gradient-to-br from-indigo-50/70 to-background border-indigo-100",
+      Broker:
+        "bg-gradient-to-br from-violet-50/70 to-background border-violet-100",
+      Deferred: "bg-gradient-to-br from-slate-100/70 to-background border-slate-200",
+      "Not Started":
+        "bg-gradient-to-br from-orange-50/70 to-background border-orange-100",
+    };
+
+    return (
+      gradients?.[stage] ||
+      "bg-gradient-to-br from-background to-muted/20 border-border/50"
+    );
   };
 
   const getSortIcon = (column) => {
@@ -336,8 +355,7 @@ const DealsTable = ({
         {paginatedDeals?.map((deal) => (
           <div
             key={deal?.id}
-            className="p-4 border-b border-border bg-background hover:bg-muted/30 transition"
-          >
+            className={` mx-3 my-2 p-4 rounded-2xl border ${getStageGradient(deal?.status)} hover:shadow-md active:scale-[0.99] transition-all duration-200`}>
             <div className="flex items-start gap-3">
               {/* Checkbox */}
               <Checkbox

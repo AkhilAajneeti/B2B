@@ -294,6 +294,7 @@ const ActivityTimeline = ({
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled
                         onClick={() => {
                           if (
                             window.confirm(
