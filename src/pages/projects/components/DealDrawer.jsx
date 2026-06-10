@@ -350,8 +350,28 @@ const DealDrawer = ({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (isEditing) {
-                      setFormData(deal); // reset on cancel
+                    if (isEditing && deal) {
+                      // Rehydrate to the SAME well-formed shape the mount
+                      // effect uses, not the raw backend object. Otherwise
+                      // formData ends up missing fields (configurationItems,
+                      // the singular `teamId` derived from `teamsIds[0]`,
+                      // etc.) and downstream code reading those keys crashes
+                      // — e.g. the sync effect's `prev.configurationItems`
+                      // or the ReactSelect's collaborators filter.
+                      setFormData({
+                        name: deal.name || "",
+                        address: deal.address || "",
+                        assignedUserId: deal.assignedUserId || "",
+                        teamId: deal.teamId || deal.teamsIds?.[0] || "",
+                        collaboratorsIds: deal.collaboratorsIds || "",
+                        description: deal.description || "",
+                        parentName: deal.parentType || "",
+                        parentType: deal.parentId || "",
+                        enableConfiguration: deal.enableConfiguration || false,
+                        configurationItems: parseConfiguration(
+                          deal.configuration,
+                        ),
+                      });
                     }
                     setIsEditing(!isEditing);
                   }}

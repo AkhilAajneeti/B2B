@@ -339,9 +339,9 @@ const DealsTable = ({
                 </div>
 
                 {/* Project Name */}
-                {deal?.cProjectName && (
+                {deal?.cProject && (
                   <div className="text-sm text-muted-foreground mt-1 truncate">
-                    {deal?.cProjectName}
+                    {deal?.cProject}
                   </div>
                 )}
 
@@ -360,6 +360,7 @@ const DealsTable = ({
                   Created: {formatDate(deal?.createdAt)}
                 </div>
               </div>
+              
             </div>
           </div>
         ))}
