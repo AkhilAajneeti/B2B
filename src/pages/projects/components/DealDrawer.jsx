@@ -367,7 +367,7 @@ const DealDrawer = ({
                     ? "Add Project"
                     : isEditing
                       ? "Edit Project"
-                      : deal?.name}
+                      : deal?.projectNomen}
               </h2>
             </div>
             <div className="flex items-center space-x-2">
