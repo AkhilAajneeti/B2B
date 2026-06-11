@@ -92,12 +92,42 @@ const LoginForm = () => {
       /* STEP 2: get logged in user */
       const user = data.user;
 
+      // Helper — builds the loginObj from a user record + a rolesNames map.
+      // Used twice: once to make a wrapped token for the enrichment fetch
+      // (the gateway only accepts the base64-wrapped format we eventually
+      // store as auth_token, NOT the raw data.token), and again after
+      // enrichment with the full role info filled in.
+      const buildLoginObj = (u, rolesNamesMap) => ({
+        id: u.id,
+        username: u.userName,
+        token: data.token,
+        secret: data.secret,
+        type: u.type,
+        acl: data.acl || null,
+        rolesIds: u.rolesIds || [],
+        rolesNames: rolesNamesMap || {},
+        roles: Object.values(rolesNamesMap || {}),
+        role: Object.values(rolesNamesMap || {})?.[0] || "",
+        teamsIds: u.teamsIds?.length
+          ? u.teamsIds
+          : u.teamIds?.length
+            ? u.teamIds
+            : u.defaultTeamId
+              ? [u.defaultTeamId]
+              : [],
+        teamId: u.teamId || u.defaultTeamId || null,
+        assignedUserId: u.id,
+      });
+
+      // Wrap once now so the role-enrichment fetch has a token the gateway
+      // accepts. (Passing `data.token` raw made the gateway return 500.)
+      const wrappedToken = btoa(
+        JSON.stringify(buildLoginObj(user, user.rolesNames)),
+      );
+
       // The login response returns a stripped user — `rolesNames` is empty
-      // for non-admin users, so role-gated UI (Sidebar items, edit form
-      // locks, etc.) can't tell Owners/Managers apart from regular reps.
-      // Enrich by fetching the full user record. Wrapped in try/catch so a
-      // failed enrichment never blocks login itself — the user just lands
-      // without role info, same behavior as before.
+      // for non-admin users. Enrich via /User/{id} so role-gated UI works.
+      // Wrapped in try/catch so a failed enrichment never blocks login.
       let enrichedUser = user;
       try {
         const userRes = await fetch(
@@ -106,7 +136,7 @@ const LoginForm = () => {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              token: data.token,
+              token: wrappedToken,
             },
           },
         );
@@ -118,38 +148,11 @@ const LoginForm = () => {
         console.warn("Could not enrich user with role info:", err);
       }
 
-      const rolesNames = enrichedUser.rolesNames || {};
-      // 🔐 Step 2: create login object from response
-      const loginObj = {
-        id: enrichedUser.id,
-        username: enrichedUser.userName,
-        token: data.token,
-        secret: data.secret,
-        type: enrichedUser.type,
-        acl: data.acl || null,
-        // Role lookup shapes — keep all three keys so any consumer can
-        // pick whichever is convenient. Sidebar.jsx reads rolesNames.
-        rolesIds: enrichedUser.rolesIds || [],
-        rolesNames,
-        roles: Object.values(rolesNames),
-        teamsIds:
-          enrichedUser.teamsIds?.length
-            ? enrichedUser.teamsIds
-            : enrichedUser.teamIds?.length
-              ? enrichedUser.teamIds
-              : enrichedUser.defaultTeamId
-                ? [enrichedUser.defaultTeamId]
-                : [],
-
-        teamId:
-          enrichedUser.teamId ||
-          enrichedUser.defaultTeamId ||
-          null,
-
-        // Role (single — first entry of rolesNames for legacy callers)
-        role: Object.values(rolesNames)?.[0] || "",
-        assignedUserId: enrichedUser.id,
-      };
+      // 🔐 Step 2: create login object from response (with enriched roles)
+      const loginObj = buildLoginObj(
+        enrichedUser,
+        enrichedUser.rolesNames || {},
+      );
 
       // 🔐 Step 3: stringify + base64 encode
       const jsonString = JSON.stringify(loginObj);
