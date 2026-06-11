@@ -10,7 +10,7 @@ import { fetchTeam } from "services/team.service";
 import { fetchContacts } from "services/contact.service";
 import makeAnimated from "react-select/animated";
 import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
-import { isAdminOrManager } from "../../../utils/permission.js";
+import { isAdminOrManager, isSupAdmin } from "../../../utils/permission.js";
 const DealDrawer = ({
   deal,
   selectedIds = [],
@@ -416,31 +416,31 @@ const DealDrawer = ({
                       {/* Client Nomen now binds to clientNomen (was wired to
                           projectNomen — typing in either field was saving to
                           the wrong key on the backend). */}
-                      <Input
+                      {isSupAdmin && <Input
                         label="Client Nomen *"
                         value={formData.clientNomen || ""}
                         onChange={(e) => handleChange("clientNomen", e.target.value)}
-                        disabled={!isAdmin}
-                      />
+
+                      />}
                       <Input
                         label="Project Nomen *"
                         value={formData.projectNomen || ""}
                         onChange={(e) => handleChange("projectNomen", e.target.value)}
                         disabled={!isAdmin}
                       />
-                      <Input
+                      {isSupAdmin && <Input
                         label="Name *"
                         value={formData.name || ""}
                         onChange={(e) => handleChange("name", e.target.value)}
-                        disabled={!isAdmin}
-                      />
+
+                      />}
                       <Input
                         label="Address"
                         value={formData.address || ""}
                         onChange={(e) =>
                           handleChange("address", e.target.value)
                         }
-                        disabled={!isAdmin}
+                        disabled={!isSupAdmin}
                       />
                       <Select
                         label="Assigned User"
@@ -450,7 +450,7 @@ const DealDrawer = ({
                           handleSelectChange("assignedUserId", value)
                         }
                         searchable
-                        disabled={!isAdmin}
+                        disabled={!isSupAdmin}
                       />
                       <Select
                         label="Teams"
@@ -460,7 +460,7 @@ const DealDrawer = ({
                           handleSelectChange("teamId", value)
                         }
                         searchable
-                        disabled={!isAdmin}
+                        disabled={!isSupAdmin}
                       />
                     </div>
                   </div>
@@ -573,41 +573,44 @@ const DealDrawer = ({
                         )}
                       </div>
                     </div>
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
-                        rows={4}
-                        value={formData.description || ""}
-                        placeholder="Description"
-                        onChange={(e) =>
-                          handleChange("description", e.target.value)
-                        }
-                        disabled={!isAdmin}
-                      />
-                    </div>
+                    {isSupAdmin &&
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                          Description
+                        </label>
+                        <textarea
+                          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                          rows={4}
+                          value={formData.description || ""}
+                          placeholder="Description"
+                          onChange={(e) =>
+                            handleChange("description", e.target.value)
+                          }
+                        />
+                      </div>
+                    }
 
                     {/* WhatsApp Template — free-text message body used to
                         seed wa.me URLs / outbound chats. Multi-line so reps
                         can paste a full template with greeting, name
                         placeholder, signature, etc. */}
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        WhatsApp Template
-                      </label>
-                      <textarea
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
-                        rows={4}
-                        value={formData.whatsappTemplate || ""}
-                        placeholder="Hello {name}, ..."
-                        onChange={(e) =>
-                          handleChange("whatsappTemplate", e.target.value)
-                        }
-                        disabled={!isAdmin}
-                      />
-                    </div>
+                    {isSupAdmin &&
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                          WhatsApp Template
+                        </label>
+                        <textarea
+                          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                          rows={4}
+                          value={formData.whatsappTemplate || ""}
+                          placeholder="Hello {name}, ..."
+                          onChange={(e) =>
+                            handleChange("whatsappTemplate", e.target.value)
+                          }
+                          disabled={!isAdmin}
+                        />
+                      </div>
+                    }
                   </div>
 
                   {/* ================= Actions ================= */}

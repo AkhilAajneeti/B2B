@@ -169,3 +169,8 @@ export const isAdminOrManager = () => {
   const role = user?.role?.toLowerCase();
   return role === 'admin' || role === 'manager';
 };
+export const isSupAdmin = () => {
+  const user = getStoredUser();
+  const role = user?.type?.toLowerCase();
+  return role === 'admin';
+};
