@@ -316,12 +316,42 @@ const DealDrawer = ({
     loadData();
   }, []);
 
-  const userOptions = users
-    ?.filter((u) => u?.isActive) // ✅ only active users
-    ?.map((u) => ({
-      value: u.id,
-      label: u.name || u.userName,
-    }));
+  // userOptions = active users from /User, with any saved collaborators
+  // injected if /User doesn't return them.
+  //
+  // Why injection: /User filters by the requester's scope. An Owner-role
+  // user may only get back herself + her team — but the campaign she's
+  // editing was set up by an admin and could reference collaborators
+  // outside her scope. Without injection, those saved collaborators don't
+  // appear in the multi-select (no matching option), so the user sees an
+  // empty Collaborator field even though the campaign has them assigned.
+  //
+  // We use deal.collaboratorsNames (already on the deal payload) as the
+  // label source for injected entries.
+  const userOptions = React.useMemo(() => {
+    const base = (users || [])
+      .filter((u) => u?.isActive !== false)
+      .map((u) => ({ value: u.id, label: u.name || u.userName }));
+
+    const savedIds = Array.isArray(formData.collaboratorsIds)
+      ? formData.collaboratorsIds
+      : Array.isArray(deal?.collaboratorsIds)
+        ? deal.collaboratorsIds
+        : [];
+    const savedNames = deal?.collaboratorsNames || {};
+
+    for (const id of savedIds) {
+      if (!base.some((o) => o.value === id)) {
+        base.push({ value: id, label: savedNames[id] || id });
+      }
+    }
+    return base;
+  }, [
+    users,
+    formData.collaboratorsIds,
+    deal?.collaboratorsIds,
+    deal?.collaboratorsNames,
+  ]);
   const teamOptions = team?.map((t) => ({
     value: t.id,
     label: t.name,
