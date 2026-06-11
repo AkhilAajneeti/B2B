@@ -223,7 +223,7 @@ const DealsTable = ({
                 </td>
                 <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
                   <div className="font-medium text-foreground">
-                    {deal?.name}
+                    {deal?.projectnomen || "Default"}
                   </div>
                 </td>
 

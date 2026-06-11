@@ -10,6 +10,7 @@ import { fetchTeam } from "services/team.service";
 import { fetchContacts } from "services/contact.service";
 import makeAnimated from "react-select/animated";
 import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
+import { isAdminOrManager } from "../../../utils/permission.js";
 const DealDrawer = ({
   deal,
   selectedIds = [],
@@ -25,6 +26,11 @@ const DealDrawer = ({
   const [isEditing, setIsEditing] = useState(false);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
+  // Only admins/managers can edit project metadata. Reps still need to be
+  // able to touch the Collaborator field + its Configuration block (their
+  // workflow involves adjusting the lead-split when collaborators join or
+  // leave), but everything else stays locked.
+  const isAdmin = isAdminOrManager();
 
 
   const [contact, setContact] = useState([]);
@@ -414,16 +420,19 @@ const DealDrawer = ({
                         label="Client Nomen *"
                         value={formData.clientNomen || ""}
                         onChange={(e) => handleChange("clientNomen", e.target.value)}
+                        disabled={!isAdmin}
                       />
                       <Input
                         label="Project Nomen *"
                         value={formData.projectNomen || ""}
                         onChange={(e) => handleChange("projectNomen", e.target.value)}
+                        disabled={!isAdmin}
                       />
                       <Input
                         label="Name *"
                         value={formData.name || ""}
                         onChange={(e) => handleChange("name", e.target.value)}
+                        disabled={!isAdmin}
                       />
                       <Input
                         label="Address"
@@ -431,6 +440,7 @@ const DealDrawer = ({
                         onChange={(e) =>
                           handleChange("address", e.target.value)
                         }
+                        disabled={!isAdmin}
                       />
                       <Select
                         label="Assigned User"
@@ -440,6 +450,7 @@ const DealDrawer = ({
                           handleSelectChange("assignedUserId", value)
                         }
                         searchable
+                        disabled={!isAdmin}
                       />
                       <Select
                         label="Teams"
@@ -449,6 +460,7 @@ const DealDrawer = ({
                           handleSelectChange("teamId", value)
                         }
                         searchable
+                        disabled={!isAdmin}
                       />
                     </div>
                   </div>
@@ -566,13 +578,14 @@ const DealDrawer = ({
                         Description
                       </label>
                       <textarea
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
                         rows={4}
                         value={formData.description || ""}
                         placeholder="Description"
                         onChange={(e) =>
                           handleChange("description", e.target.value)
                         }
+                        disabled={!isAdmin}
                       />
                     </div>
 
@@ -585,13 +598,14 @@ const DealDrawer = ({
                         WhatsApp Template
                       </label>
                       <textarea
-                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
                         rows={4}
                         value={formData.whatsappTemplate || ""}
                         placeholder="Hello {name}, ..."
                         onChange={(e) =>
                           handleChange("whatsappTemplate", e.target.value)
                         }
+                        disabled={!isAdmin}
                       />
                     </div>
                   </div>
@@ -632,15 +646,38 @@ const DealDrawer = ({
                       {/* ================= Overview ================= */}
                       <div className="border border-border rounded-xl p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Name */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Name
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.name || "—"}
-                            </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {/* Client Nomen */}
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Client Nomen
+                              </p>
+                              <p className="text-foreground font-medium mt-1">
+                                {deal?.clientNomen || "—"}
+                              </p>
+                            </div>
+
+                            {/* Project Nomen */}
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Project Nomen
+                              </p>
+                              <p className="text-foreground font-medium mt-1">
+                                {deal?.projectNomen || "—"}
+                              </p>
+                            </div>
                           </div>
+                          {/* Name */}
+                          {isAdmin && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Name
+                              </p>
+                              <p className="text-foreground font-medium">
+                                {deal?.name || "—"}
+                              </p>
+                            </div>
+                          )}
 
                           {/* Phone */}
                           <div>
@@ -767,63 +804,18 @@ const DealDrawer = ({
 
                       {/* ================= Details ================= */}
                       <div className="border border-border rounded-xl p-6">
-                        <h3 className="text-base font-semibold text-foreground mb-6">
-                          Details
-                        </h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                          {/* Client Nomen */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Client Nomen
-                            </p>
-                            <p className="text-foreground font-medium mt-1">
-                              {deal?.clientNomen || "—"}
-                            </p>
-                          </div>
-
-                          {/* Project Nomen */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Project Nomen
-                            </p>
-                            <p className="text-foreground font-medium mt-1">
-                              {deal?.projectNomen || "—"}
-                            </p>
-                          </div>
-
-                          {/* Address */}
-                          <div className="md:col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              Address
-                            </p>
-                            <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.address || "—"}
-                            </p>
-                          </div>
-
-                          {/* Description */}
-                          <div className="md:col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              Description
-                            </p>
-                            <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.description || "—"}
-                            </p>
-                          </div>
-
-                          {/* WhatsApp Template — preserve newlines and spacing
+                        {/* WhatsApp Template — preserve newlines and spacing
                               with whitespace-pre-wrap so templates with line
                               breaks render the way the rep wrote them. */}
-                          <div className="md:col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              WhatsApp Template
-                            </p>
-                            <p className="text-foreground leading-relaxed mt-1 whitespace-pre-wrap">
-                              {deal?.whatsappTemplate || "—"}
-                            </p>
-                          </div>
+                        <div className="md:col-span-2">
+                          <p className="text-sm text-muted-foreground">
+                            WhatsApp Template
+                          </p>
+                          <p className="text-foreground leading-relaxed mt-1 whitespace-pre-wrap">
+                            {deal?.whatsappTemplate || "—"}
+                          </p>
                         </div>
+
                       </div>
                     </div>
                   )}

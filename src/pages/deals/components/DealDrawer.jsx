@@ -476,10 +476,26 @@ const DealDrawer = ({
       value: u.id,
       label: u.name || u.userName,
     }));
-  const teamOptions = team?.map((t) => ({
-    value: t.id,
-    label: t.name,
-  }));
+  // teamOptions is built from useTeams() which only returns teams the logged-
+  // in user has direct access to. If a lead carries a team outside that scope
+  // (e.g. admin viewing a lead from a different team, or a re-assigned lead),
+  // the saved team won't be in the dropdown options and the <Select> will
+  // render its placeholder instead of the saved label.
+  //
+  // Fix: inject the lead's saved team into the option list when it's missing,
+  // pulling the display name from deal.teamsNames so the rep sees the real
+  // team name pre-selected even when they couldn't have picked it themselves.
+  const teamOptions = useMemo(() => {
+    const base = (team || []).map((t) => ({ value: t.id, label: t.name }));
+    const savedTeamId =
+      formData.teamId || deal?.teamId || deal?.teamsIds?.[0] || "";
+    if (savedTeamId && !base.some((o) => o.value === savedTeamId)) {
+      const savedTeamName =
+        deal?.teamsNames?.[savedTeamId] || "Saved team";
+      base.unshift({ value: savedTeamId, label: savedTeamName });
+    }
+    return base;
+  }, [team, formData.teamId, deal?.teamId, deal?.teamsIds, deal?.teamsNames]);
 
   const sourceOptions = [
     { value: "Call", label: "Call" },

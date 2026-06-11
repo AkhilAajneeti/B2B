@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { canCreate, canEntityRecord, canRead, getStoredAcl, getStoredUser, isOwnRecord } from "../../utils/permission.js";
+import { canCreate, canEntityRecord, canRead, getStoredAcl, getStoredUser, isAdminOrManager, isOwnRecord } from "../../utils/permission.js";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import Header from "../../components/ui/Header";
@@ -328,7 +328,13 @@ const ProjectsPage = () => {
                   Export All
                 </Button> */}
 
-               {canCreate('CProjects') && ( <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
+               {/* Admin/manager-only — sales reps shouldn't be able to spin
+                   up new campaigns from the projects page. The previous
+                   ACL-based gate (canCreate) was permissive enough that
+                   non-admin users still saw the button; tighten it with an
+                   explicit role check on top of the ACL check. */}
+               {canCreate('CProjects') && isAdminOrManager() && (
+                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Campaigns
                 </Button>)}
