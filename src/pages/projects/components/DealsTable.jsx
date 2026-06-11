@@ -12,8 +12,9 @@ const DealsTable = ({
   onDealClick,
   sortConfig,
   onSort,
-  currentPage,
-  itemsPerPage,
+  // currentPage / itemsPerPage no longer destructured — pagination is fully
+  // server-side now. Parent still passes them as props (harmless) but the
+  // table treats `deals` as the already-paged slice.
   onDelete,
   isLoading,
 }) => {
@@ -87,10 +88,12 @@ const DealsTable = ({
     await onDelete(deal.id); // 👈 parent ko bol rahe ho
   };
 
-  const paginatedDeals = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return deals?.slice(startIndex, startIndex + itemsPerPage);
-  }, [deals, currentPage, itemsPerPage]);
+  // `deals` is already a single page of results from the backend (parent
+  // fetches via useProjects({ page, limit })). Slicing it again with
+  // currentPage/itemsPerPage was double-paginating — on page 2, deals had
+  // ~25 items but slice([25, 50]) returned [] and rendered an empty table,
+  // making pagination look broken. Use `deals` as-is.
+  const paginatedDeals = useMemo(() => deals || [], [deals]);
 
   const isAllSelected =
     selectedDeals?.length === paginatedDeals?.length &&
