@@ -59,7 +59,7 @@ const DealDrawer = ({
       cLeatReceivedAt: fromEspoToLocalInput(new Date()),
       cPreference: "",
       assignedUserId: u?.id || "",
-      teamId: u?.defaultTeamId || u?.teamsIds?.[0] || u?.teamIds?.[0] || "",
+      teamId: u?.teamIds || u?.teamIds?.[0] || "",
       status: "",
       source: "ACL",
       cSubSource: "",
@@ -168,7 +168,6 @@ const DealDrawer = ({
         // both can still be overridden from their dropdowns before saving.
         assignedUserId: currentUser?.id || "",
         teamId:
-          currentUser?.defaultTeamId ||
           currentUser?.teamsIds?.[0] ||
           currentUser?.teamIds?.[0] ||
           "",

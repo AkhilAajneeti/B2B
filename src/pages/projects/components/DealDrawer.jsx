@@ -407,15 +407,18 @@ const DealDrawer = ({
                   <div className="bg-card border border-border rounded-lg p-4 space-y-4">
                     {/* Name */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Client Nomen now binds to clientNomen (was wired to
+                          projectNomen — typing in either field was saving to
+                          the wrong key on the backend). */}
                       <Input
                         label="Client Nomen *"
-                        value={formData.projectNomen || ""}
-                        onChange={(e) => handleChange("projectNomen", e.target.value)}
+                        value={formData.clientNomen || ""}
+                        onChange={(e) => handleChange("clientNomen", e.target.value)}
                       />
                       <Input
                         label="Project Nomen *"
-                        value={formData.clientNomen || ""}
-                        onChange={(e) => handleChange("clientNomen", e.target.value)}
+                        value={formData.projectNomen || ""}
+                        onChange={(e) => handleChange("projectNomen", e.target.value)}
                       />
                       <Input
                         label="Name *"
@@ -559,14 +562,35 @@ const DealDrawer = ({
                       </div>
                     </div>
                     <div className="col-span-2">
+                      <label className="block text-sm font-medium text-foreground mb-1">
+                        Description
+                      </label>
                       <textarea
                         className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                        label="Description"
                         rows={4}
                         value={formData.description || ""}
                         placeholder="Description"
                         onChange={(e) =>
                           handleChange("description", e.target.value)
+                        }
+                      />
+                    </div>
+
+                    {/* WhatsApp Template — free-text message body used to
+                        seed wa.me URLs / outbound chats. Multi-line so reps
+                        can paste a full template with greeting, name
+                        placeholder, signature, etc. */}
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-foreground mb-1">
+                        WhatsApp Template
+                      </label>
+                      <textarea
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        rows={4}
+                        value={formData.whatsappTemplate || ""}
+                        placeholder="Hello {name}, ..."
+                        onChange={(e) =>
+                          handleChange("whatsappTemplate", e.target.value)
                         }
                       />
                     </div>
@@ -748,13 +772,33 @@ const DealDrawer = ({
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                          {/* Description */}
+                          {/* Client Nomen */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Client Nomen
+                            </p>
+                            <p className="text-foreground font-medium mt-1">
+                              {deal?.clientNomen || "—"}
+                            </p>
+                          </div>
+
+                          {/* Project Nomen */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Project Nomen
+                            </p>
+                            <p className="text-foreground font-medium mt-1">
+                              {deal?.projectNomen || "—"}
+                            </p>
+                          </div>
+
+                          {/* Address */}
                           <div className="md:col-span-2">
                             <p className="text-sm text-muted-foreground">
                               Address
                             </p>
                             <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.address}
+                              {deal?.address || "—"}
                             </p>
                           </div>
 
@@ -764,7 +808,19 @@ const DealDrawer = ({
                               Description
                             </p>
                             <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.description}
+                              {deal?.description || "—"}
+                            </p>
+                          </div>
+
+                          {/* WhatsApp Template — preserve newlines and spacing
+                              with whitespace-pre-wrap so templates with line
+                              breaks render the way the rep wrote them. */}
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-muted-foreground">
+                              WhatsApp Template
+                            </p>
+                            <p className="text-foreground leading-relaxed mt-1 whitespace-pre-wrap">
+                              {deal?.whatsappTemplate || "—"}
                             </p>
                           </div>
                         </div>
