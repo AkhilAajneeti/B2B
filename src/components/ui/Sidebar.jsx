@@ -2,17 +2,25 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
-import { getStoredUser } from "../../utils/permission";
+import { getStoredUser, isSupAdmin } from "../../utils/permission";
 
 const Sidebar = ({ isOpen = false, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isUpgradeCardVisible, setIsUpgradeCardVisible] = useState(true);
 
-  // Items marked `adminOnly` are filtered out at render time for non-admins.
-  // Role lookup matches the existing convention used in utils/permission.js
-  // (lowercased string compare against the stored user's role).
-  const isAdmin = getStoredUser()?.type?.toLowerCase() === "admin";
+  // Items marked `adminOnly` are visible to elevated users only. "Elevated"
+  // here means ANY of:
+  //   - account type === "admin"   (covered by isSupAdmin)
+  //   - role === "owner"            (no helper, checked inline)
+  //   - role === "manager"          (no helper for manager-only, checked inline
+  //                                  because isAdminOrManager also matches
+  //                                  role === "admin" which isn't requested here)
+  // Lookups stay lowercased to match the convention in utils/permission.js.
+  const storedUser = getStoredUser();
+  const userRole = storedUser?.role?.toLowerCase();
+  const isAdmin =
+    isSupAdmin() || userRole === "owner" || userRole === "manager";
 
   const navigationItems = [
     {
@@ -43,6 +51,10 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       label: "My Campaigns",
       path: "/projects",
       icon: "Layers",
+      // Visible only to elevated users — type=admin, role=owner, or
+      // role=manager. The check happens via the `isAdmin` flag computed
+      // at the top of this component (see the comment there for the full
+      // truth table).
       adminOnly: true,
     },
     

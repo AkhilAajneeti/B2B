@@ -333,7 +333,7 @@ const ProjectsPage = () => {
                    ACL-based gate (canCreate) was permissive enough that
                    non-admin users still saw the button; tighten it with an
                    explicit role check on top of the ACL check. */}
-               {canCreate('CProjects') && isAdminOrManager() && (
+               {canCreate('CProjects') && isSupAdmin() && (
                 <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Campaigns
