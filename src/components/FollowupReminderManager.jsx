@@ -379,10 +379,21 @@ const FollowupReminderManager = () => {
               </p>
             </div>
             <button
-              onClick={() => handleDismiss(entry)}
-              className="text-gray-400 hover:text-gray-700 px-2 py-0.5 text-lg leading-none rounded hover:bg-gray-100"
-              aria-label="Collapse stack"
-              title="Collapse"
+              onClick={() => {
+                // X = same intent as Dismiss on a single card, but applied
+                // to every active reminder in one click. Cancel the auto-
+                // collapse timer first so nothing tries to re-fire after
+                // the stack is empty.
+                if (autoExpandTimerRef.current) {
+                  clearTimeout(autoExpandTimerRef.current);
+                  autoExpandTimerRef.current = null;
+                }
+                setActiveReminders([]);
+                setExpanded(false);
+              }}
+              className="text-gray-400 hover:text-red-600 px-2 py-0.5 text-lg leading-none rounded hover:bg-red-50"
+              aria-label="Dismiss all reminders"
+              title="Dismiss all"
             >
               ✕
             </button>

@@ -33,6 +33,9 @@ const DealDrawer = ({
   const [activityText, setActivityText] = useState("");
   const [postingActivity, setPostingActivity] = useState(false);
   const [formData, setFormData] = useState({
+    projectNomen: "",
+    clientNomen: "",
+    whatsappTemplate: "",
     name: "",
     assignedUserId: "",
     teamId: "",
@@ -49,6 +52,9 @@ const DealDrawer = ({
   useEffect(() => {
     if (mode === "add") {
       setFormData({
+        projectNomen: "",
+        clientNomen: "",
+        whatsappTemplate: "",
         name: "",
         assignedUserId: "",
         teamId: "",
@@ -62,6 +68,12 @@ const DealDrawer = ({
       });
     } else if (deal) {
       setFormData({
+        // Falls back to "" so the <Input>s stay controlled even when the
+        // backend returns null/undefined — otherwise React warns about
+        // switching from uncontrolled to controlled when the user starts typing.
+        projectNomen: deal.projectNomen || "",
+        clientNomen: deal.clientNomen || "",
+        whatsappTemplate: deal.whatsappTemplate || "",
         name: deal.name || "",
         address: deal.address || "",
         assignedUserId: deal.assignedUserId || "",
@@ -395,6 +407,16 @@ const DealDrawer = ({
                   <div className="bg-card border border-border rounded-lg p-4 space-y-4">
                     {/* Name */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="Client Nomen *"
+                        value={formData.projectNomen || ""}
+                        onChange={(e) => handleChange("projectNomen", e.target.value)}
+                      />
+                      <Input
+                        label="Project Nomen *"
+                        value={formData.clientNomen || ""}
+                        onChange={(e) => handleChange("clientNomen", e.target.value)}
+                      />
                       <Input
                         label="Name *"
                         value={formData.name || ""}
