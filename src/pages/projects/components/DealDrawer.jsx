@@ -230,6 +230,14 @@ const DealDrawer = ({
     const payload = {
       // ✅ Project REQUIRED
       name: formData.name.trim(),
+      // New identifiers — clientNomen / projectNomen / whatsappTemplate were
+      // wired through the form + view but never made it into the save
+      // payload (this object is hand-built, not spread), so the inputs were
+      // silently dropped. Add them explicitly, with "" fallbacks so missing
+      // values don't send `undefined`.
+      clientNomen: formData.clientNomen || "",
+      projectNomen: formData.projectNomen || "",
+      whatsappTemplate: formData.whatsappTemplate || "",
       assignedUserId: formData.assignedUserId || null,
       // ✅ Project expects ARRAY
       teamsIds: formData.teamId ? [formData.teamId] : [],
