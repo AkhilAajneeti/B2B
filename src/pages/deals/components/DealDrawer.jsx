@@ -181,7 +181,15 @@ const DealDrawer = ({
       });
       setIsEditing(true); // form open
     } else if (deal && mode === "view") {
-      setFormData(deal);
+      // Lead records store the team as `teamsIds: [...]` (plural array),
+      // not the singular `teamId` field the form's <Select> binds to. Spread
+      // the raw deal so every other field hydrates 1:1, then explicitly map
+      // teamsIds[0] -> teamId so the Team dropdown pre-selects on edit
+      // instead of forcing the rep to re-pick.
+      setFormData({
+        ...deal,
+        teamId: deal.teamId || deal.teamsIds?.[0] || "",
+      });
       setIsEditing(false);
     }
   }, [deal, mode]);
@@ -1136,7 +1144,7 @@ const DealDrawer = ({
                               Project Name
                             </p>
                             <p className="text-foreground font-medium">
-                              {deal?.cProject || deal?.cProject || deal?.cProjectNomen || "None"}
+                              {deal?.cProject || deal?.cProjectNomen || "None"}
                             </p>
                           </div>
 

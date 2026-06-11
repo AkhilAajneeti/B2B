@@ -379,7 +379,7 @@ const FollowupReminderManager = () => {
               </p>
             </div>
             <button
-              onClick={() => setExpanded(false)}
+              onClick={() => handleDismiss(entry)}
               className="text-gray-400 hover:text-gray-700 px-2 py-0.5 text-lg leading-none rounded hover:bg-gray-100"
               aria-label="Collapse stack"
               title="Collapse"
