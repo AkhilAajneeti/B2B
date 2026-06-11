@@ -9,18 +9,29 @@ const Sidebar = ({ isOpen = false, onClose }) => {
   const navigate = useNavigate();
   const [isUpgradeCardVisible, setIsUpgradeCardVisible] = useState(true);
 
-  // Items marked `adminOnly` are visible to elevated users only. "Elevated"
-  // here means ANY of:
-  //   - account type === "admin"   (covered by isSupAdmin)
-  //   - role === "owner"            (no helper, checked inline)
-  //   - role === "manager"          (no helper for manager-only, checked inline
-  //                                  because isAdminOrManager also matches
-  //                                  role === "admin" which isn't requested here)
-  // Lookups stay lowercased to match the convention in utils/permission.js.
+  // Items marked `adminOnly` are visible to elevated users only.
+  // "Elevated" = type=admin OR has the Owner / Manager role.
+  //
+  // Role storage in the login object follows EspoCRM's plural-keyed shape:
+  //   - `rolesIds:   ["id123"]`                ← we don't need these
+  //   - `rolesNames: { id123: "Owner" }`       ← name lookup, what we use
+  // We also accept the singular-keyed variants (`role`, `roles`, `roleNames`)
+  // for forward compatibility in case the auth response shape changes.
+  // All sources are normalized + lowercased before membership check.
   const storedUser = getStoredUser();
-  const userRole = storedUser?.role?.toLowerCase();
+  const userRoles = [
+    storedUser?.role,
+    ...(Array.isArray(storedUser?.roles) ? storedUser.roles : []),
+    ...Object.values(storedUser?.rolesNames || {}),
+    ...Object.values(storedUser?.roleNames || {}),
+  ]
+    .filter(Boolean)
+    .map((r) => (typeof r === "string" ? r : r?.name || ""))
+    .map((r) => r.toLowerCase());
   const isAdmin =
-    isSupAdmin() || userRole === "owner" || userRole === "manager";
+    isSupAdmin() ||
+    userRoles.includes("owner") ||
+    userRoles.includes("manager");
 
   const navigationItems = [
     {
