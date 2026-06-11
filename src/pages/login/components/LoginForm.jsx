@@ -91,34 +91,64 @@ const LoginForm = () => {
 
       /* STEP 2: get logged in user */
       const user = data.user;
+
+      // The login response returns a stripped user — `rolesNames` is empty
+      // for non-admin users, so role-gated UI (Sidebar items, edit form
+      // locks, etc.) can't tell Owners/Managers apart from regular reps.
+      // Enrich by fetching the full user record. Wrapped in try/catch so a
+      // failed enrichment never blocks login itself — the user just lands
+      // without role info, same behavior as before.
+      let enrichedUser = user;
+      try {
+        const userRes = await fetch(
+          `https://gateway.aajneetiadvertising.com/User/${user.id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              token: data.token,
+            },
+          },
+        );
+        if (userRes.ok) {
+          const full = await userRes.json();
+          enrichedUser = { ...user, ...full };
+        }
+      } catch (err) {
+        console.warn("Could not enrich user with role info:", err);
+      }
+
+      const rolesNames = enrichedUser.rolesNames || {};
       // 🔐 Step 2: create login object from response
       const loginObj = {
-        id: user.id,
-        username: user.userName,
+        id: enrichedUser.id,
+        username: enrichedUser.userName,
         token: data.token,
         secret: data.secret,
-        type: user.type,
+        type: enrichedUser.type,
         acl: data.acl || null,
-        roles: Object.values(user.rolesNames || {}),
+        // Role lookup shapes — keep all three keys so any consumer can
+        // pick whichever is convenient. Sidebar.jsx reads rolesNames.
+        rolesIds: enrichedUser.rolesIds || [],
+        rolesNames,
+        roles: Object.values(rolesNames),
         teamsIds:
-          user.teamsIds?.length
-            ? user.teamsIds
-            : user.teamIds?.length
-              ? user.teamIds
-              : user.defaultTeamId
-                ? [user.defaultTeamId]
+          enrichedUser.teamsIds?.length
+            ? enrichedUser.teamsIds
+            : enrichedUser.teamIds?.length
+              ? enrichedUser.teamIds
+              : enrichedUser.defaultTeamId
+                ? [enrichedUser.defaultTeamId]
                 : [],
 
         teamId:
-          user.teamId ||
-          user.defaultTeamId ||
+          enrichedUser.teamId ||
+          enrichedUser.defaultTeamId ||
           null,
 
-        // Role
-        role:
-          Object.values(user.rolesNames || {})?.[0] ||
-          "",
-        assignedUserId: user.id,
+        // Role (single — first entry of rolesNames for legacy callers)
+        role: Object.values(rolesNames)?.[0] || "",
+        assignedUserId: enrichedUser.id,
       };
 
       // 🔐 Step 3: stringify + base64 encode
