@@ -418,7 +418,7 @@ const DealDrawer = ({
                       {/* Client Nomen now binds to clientNomen (was wired to
                           projectNomen — typing in either field was saving to
                           the wrong key on the backend). */}
-                      {isSupAdmin && <Input
+                      {isSupAdmin() && <Input
                         label="Client Nomen *"
                         value={formData.clientNomen || ""}
                         onChange={(e) => handleChange("clientNomen", e.target.value)}
@@ -428,9 +428,9 @@ const DealDrawer = ({
                         label="Project Nomen *"
                         value={formData.projectNomen || ""}
                         onChange={(e) => handleChange("projectNomen", e.target.value)}
-                        disabled={!isSupAdmin}
+                        disabled={!isSupAdmin()}
                       />
-                      {isSupAdmin && <Input
+                      {isSupAdmin() && <Input
                         label="Name *"
                         value={formData.name || ""}
                         onChange={(e) => handleChange("name", e.target.value)}
@@ -442,7 +442,7 @@ const DealDrawer = ({
                         onChange={(e) =>
                           handleChange("address", e.target.value)
                         }
-                        disabled={!isSupAdmin}
+                        disabled={!isSupAdmin()}
                       />
                       <Select
                         label="Assigned User"
@@ -452,7 +452,7 @@ const DealDrawer = ({
                           handleSelectChange("assignedUserId", value)
                         }
                         searchable
-                        disabled={!isSupAdmin}
+                        disabled={!isSupAdmin()}
                       />
                       <Select
                         label="Teams"
@@ -462,7 +462,7 @@ const DealDrawer = ({
                           handleSelectChange("teamId", value)
                         }
                         searchable
-                        disabled={!isSupAdmin}
+                        disabled={!isSupAdmin()}
                       />
                     </div>
                   </div>
@@ -575,7 +575,7 @@ const DealDrawer = ({
                         )}
                       </div>
                     </div>
-                    {isSupAdmin &&
+                    {isSupAdmin() &&
                       <div className="col-span-2">
                         <label className="block text-sm font-medium text-foreground mb-1">
                           Description
@@ -596,7 +596,7 @@ const DealDrawer = ({
                         seed wa.me URLs / outbound chats. Multi-line so reps
                         can paste a full template with greeting, name
                         placeholder, signature, etc. */}
-                    {isSupAdmin &&
+                    {isSupAdmin() &&
                       <div className="col-span-2">
                         <label className="block text-sm font-medium text-foreground mb-1">
                           WhatsApp Template
@@ -653,7 +653,7 @@ const DealDrawer = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                           {/* Client Nomen */}
-                          {isSupAdmin && <div>
+                          {isSupAdmin() && <div>
                             <p className="text-sm text-muted-foreground">
                               Client Nomen
                             </p>
