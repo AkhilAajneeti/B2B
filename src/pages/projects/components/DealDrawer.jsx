@@ -269,8 +269,8 @@ const DealDrawer = ({
       setIsEditing(false);
       onClose();
     } catch (err) {
-      console.error("Project creation failed", err);
-      toast.error("Project is not created");
+      console.error("Campaign creation failed", err);
+      toast.error("Campaign is not created");
     }
   };
   const handleBulkUpdate = async (e) => {
@@ -362,11 +362,11 @@ const DealDrawer = ({
             <div className="flex items-center space-x-3">
               <h2 className="text-xl font-semibold text-foreground">
                 {isMassUpdate
-                  ? "Mass Update Project"
+                  ? "Mass Update Campaign"
                   : mode === "add"
-                    ? "Add Project"
+                    ? "Add Campaign"
                     : isEditing
-                      ? "Edit Project"
+                      ? "Edit Campaign"
                       : deal?.projectNomen}
               </h2>
             </div>
@@ -617,7 +617,7 @@ const DealDrawer = ({
 
                   {/* ================= Actions ================= */}
                   <div className="flex justify-end gap-3">
-                    <Button type="submit">Save Project</Button>
+                    <Button type="submit">Save Campaign</Button>
                   </div>
                 </form>
               </div>
@@ -873,7 +873,7 @@ const DealDrawer = ({
             {isMassUpdate && (
               <>
                 <p className="text-sm text-muted-foreground text-center pt-4 fw-bold">
-                  Updating {selectedIds.length} selected project
+                  Updating {selectedIds.length} selected Campaign
                 </p>
                 <form className="space-y-6 p-6" onSubmit={handleBulkUpdate}>
                   <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -899,7 +899,7 @@ const DealDrawer = ({
                       Cancel
                     </Button>
                     <Button type="submit">
-                      Update {selectedIds.length} project
+                      Update {selectedIds.length} Campaign
                     </Button>
                   </div>
                 </form>
