@@ -426,7 +426,7 @@ const DealDrawer = ({
                         label="Project Nomen *"
                         value={formData.projectNomen || ""}
                         onChange={(e) => handleChange("projectNomen", e.target.value)}
-                        disabled={!isAdmin}
+                        disabled={!isSupAdmin}
                       />
                       {isSupAdmin && <Input
                         label="Name *"
@@ -600,14 +600,14 @@ const DealDrawer = ({
                           WhatsApp Template
                         </label>
                         <textarea
-                          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 "
                           rows={4}
                           value={formData.whatsappTemplate || ""}
                           placeholder="Hello {name}, ..."
                           onChange={(e) =>
                             handleChange("whatsappTemplate", e.target.value)
                           }
-                          disabled={!isAdmin}
+                      
                         />
                       </div>
                     }
