@@ -377,13 +377,7 @@ const DealDrawer = ({
                   size="sm"
                   onClick={() => {
                     if (isEditing && deal) {
-                      // Rehydrate to the SAME well-formed shape the mount
-                      // effect uses, not the raw backend object. Otherwise
-                      // formData ends up missing fields (configurationItems,
-                      // the singular `teamId` derived from `teamsIds[0]`,
-                      // etc.) and downstream code reading those keys crashes
-                      // — e.g. the sync effect's `prev.configurationItems`
-                      // or the ReactSelect's collaborators filter.
+
                       setFormData({
                         name: deal.name || "",
                         address: deal.address || "",
@@ -615,7 +609,7 @@ const DealDrawer = ({
                           onChange={(e) =>
                             handleChange("whatsappTemplate", e.target.value)
                           }
-                      
+
                         />
                       </div>
                     }
@@ -657,29 +651,29 @@ const DealDrawer = ({
                       {/* ================= Overview ================= */}
                       <div className="border border-border rounded-xl p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {/* Client Nomen */}
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                Client Nomen
-                              </p>
-                              <p className="text-foreground font-medium mt-1">
-                                {deal?.clientNomen || "—"}
-                              </p>
-                            </div>
 
-                            {/* Project Nomen */}
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                Project Nomen
-                              </p>
-                              <p className="text-foreground font-medium mt-1">
-                                {deal?.projectNomen || "—"}
-                              </p>
-                            </div>
+                          {/* Client Nomen */}
+                          {isSupAdmin && <div>
+                            <p className="text-sm text-muted-foreground">
+                              Client Nomen
+                            </p>
+                            <p className="text-foreground font-medium mt-1">
+                              {deal?.clientNomen || "—"}
+                            </p>
+                          </div>}
+
+                          {/* Project Nomen */}
+                          <div>
+                            <p className="text-sm text-muted-foreground">
+                              Project Nomen
+                            </p>
+                            <p className="text-foreground font-medium mt-1">
+                              {deal?.projectNomen || "—"}
+                            </p>
                           </div>
+
                           {/* Name */}
-                          {isAdmin && (
+                          {/* {isSupAdmin && (
                             <div>
                               <p className="text-sm text-muted-foreground">
                                 Name
@@ -688,7 +682,7 @@ const DealDrawer = ({
                                 {deal?.name || "—"}
                               </p>
                             </div>
-                          )}
+                          )} */}
 
                           {/* Phone */}
                           <div>
