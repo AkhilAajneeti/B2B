@@ -6,7 +6,7 @@ import Input from "components/ui/Input";
 import toast from "react-hot-toast";
 import ReactSelect from "react-select";
 import { fetchUser } from "services/user.service";
-import { fetchTeam } from "services/team.service";
+import { fetchTeam, fetchTeamUser } from "services/team.service";
 import { fetchContacts } from "services/contact.service";
 import makeAnimated from "react-select/animated";
 import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
@@ -316,6 +316,41 @@ const DealDrawer = ({
     loadData();
   }, []);
 
+  // For non-admin roles (Owner / rep), /User only returns users in their
+  // own scope (often just themselves + their direct team). That makes the
+  // Collaborator dropdown look empty even though the campaign's team has
+  // members the rep should be able to pick from.
+  //
+  // Fix: when a campaign is opened, also fetch users of THAT campaign's
+  // team(s) via /team/{id}/users (admin-readable membership endpoint) and
+  // merge them into the local `users` state. The userOptions memo above
+  // then surfaces them as dropdown options automatically.
+  //
+  // Triggers on deal.id so it runs once per opened campaign, not on every
+  // formData change.
+  useEffect(() => {
+    const teamIds = deal?.teamsIds || [];
+    if (!teamIds.length) return;
+
+    const loadTeamUsers = async () => {
+      try {
+        const responses = await Promise.all(
+          teamIds.map((id) => fetchTeamUser(id)),
+        );
+        const teamUsers = responses.flatMap((r) => r?.list || []);
+        if (!teamUsers.length) return;
+        setUsers((prev) => {
+          const existing = new Set((prev || []).map((u) => u.id));
+          const fresh = teamUsers.filter((u) => u?.id && !existing.has(u.id));
+          return fresh.length ? [...prev, ...fresh] : prev;
+        });
+      } catch (err) {
+        console.error("Failed to fetch team users for collaborator list", err);
+      }
+    };
+    loadTeamUsers();
+  }, [deal?.id]);
+
   // userOptions = active users from /User, with any saved collaborators
   // injected if /User doesn't return them.
   //
@@ -482,7 +517,7 @@ const DealDrawer = ({
                           handleSelectChange("assignedUserId", value)
                         }
                         searchable
-                        disabled={!isSupAdmin()}
+                        // disabled={!isSupAdmin()}
                       />
                       <Select
                         label="Teams"
