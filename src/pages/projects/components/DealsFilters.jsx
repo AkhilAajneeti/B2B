@@ -66,7 +66,7 @@ const DealsFilters = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Deals ({dealCount?.toLocaleString()})
+            Campaigns ({dealCount?.toLocaleString()})
           </h2>
           {activeFiltersCount > 0 && (
             <div className="flex items-center space-x-2">
@@ -156,7 +156,7 @@ const DealsFilters = ({
       >
         <Input
           type="search"
-          placeholder="Search Projects..."
+          placeholder="Search Campaign..."
           value={filters?.search || ""}
           onChange={(e) => handleFilterChange("search", e?.target?.value)}
           className="lg:col-span-2"

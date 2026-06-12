@@ -350,7 +350,7 @@ const ProjectsPage = () => {
               filters={filters}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
-              dealCount={projects?.length}
+              dealCount={totalItems}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
             />

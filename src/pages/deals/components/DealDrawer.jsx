@@ -506,7 +506,6 @@ const DealDrawer = ({
     { value: "Web Site", label: "Web Site" },
     { value: "Campaign", label: "Campaign" },
     { value: "ACL", label: "Aajneeti" },
-    { value: "Meta", label: "Meta" },
     { value: "Other", label: "Other" },
   ];
   const statusOptions = [
@@ -839,12 +838,16 @@ const DealDrawer = ({
                           disabled
                         />
                       ))}
-                      <Select
+                      {/* Sub Source is free-text (reps may enter campaign
+                          names, ad sources, partner refs, etc. that don't
+                          fit the canned sourceOptions list). Locked in
+                          edit mode — write-once at creation, same rule as
+                          the Source field. */}
+                      <Input
                         label={isAdmin ? "Sub Source" : "Source"}
                         value={formData.cSubSource || ""}
-                        options={sourceOptions}
-                        onChange={(value) =>
-                          handleChange("cSubSource", value)
+                        onChange={(e) =>
+                          handleChange("cSubSource", e.target.value)
                         }
                         disabled={mode !== "add"}
                       />
