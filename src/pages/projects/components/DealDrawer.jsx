@@ -236,7 +236,10 @@ const DealDrawer = ({
       // silently dropped. Add them explicitly, with "" fallbacks so missing
       // values don't send `undefined`.
       clientNomen: formData.clientNomen || "",
-      projectNomen: formData.projectNomen || "",
+      // Default to the literal "Default" when the rep leaves Project Nomen
+      // empty — `.trim()` also catches whitespace-only entries so an
+      // accidental spacebar press doesn't bypass the fallback.
+      projectNomen: formData.projectNomen?.trim() || "Default",
       whatsappTemplate: formData.whatsappTemplate || "",
       assignedUserId: formData.assignedUserId || null,
       // ✅ Project expects ARRAY
@@ -718,12 +721,13 @@ const DealDrawer = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                           {/* Client Nomen */}
-                          {isSupAdmin() && <div>
+                          {isSupAdmin() && 
+                          <div className="col-span-2">
                             <p className="text-sm text-muted-foreground">
                               Client Nomen
                             </p>
                             <p className="text-foreground font-medium mt-1">
-                              {deal?.clientNomen || "—"}
+                              {deal?.clientNomen || "none"}
                             </p>
                           </div>}
 
@@ -733,7 +737,7 @@ const DealDrawer = ({
                               Project Nomen
                             </p>
                             <p className="text-foreground font-medium mt-1">
-                              {deal?.projectNomen || "—"}
+                              {deal?.projectNomen || "Default"}
                             </p>
                           </div>
 
@@ -759,7 +763,7 @@ const DealDrawer = ({
                                 {deal.createdByName}
                               </p>
                             ) : (
-                              <p className="text-foreground">—</p>
+                              <p className="text-foreground">None</p>
                             )}
                           </div>
 
@@ -773,7 +777,7 @@ const DealDrawer = ({
                                 {deal.assignedUserName}
                               </p>
                             ) : (
-                              <p className="text-foreground">—</p>
+                              <p className="text-foreground">None</p>
                             )}
                           </div>
 
@@ -787,7 +791,7 @@ const DealDrawer = ({
                                 {deal.lastAssignedUser}
                               </p>
                             ) : (
-                              <p className="text-foreground">—</p>
+                              <p className="text-foreground">None</p>
                             )}
                           </div>
 
@@ -811,7 +815,7 @@ const DealDrawer = ({
                             <p className="text-foreground font-medium">
                               {deal?.modifiedAt
                                 ? formatDate(deal.modifiedAt)
-                                : "—"}
+                                : "None"}
                             </p>
                           </div>
                         </div>
