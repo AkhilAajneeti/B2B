@@ -517,7 +517,7 @@ const DealDrawer = ({
                           handleSelectChange("assignedUserId", value)
                         }
                         searchable
-                        // disabled={!isSupAdmin()}
+                        disabled={!isSupAdmin()}
                       />
                       <Select
                         label="Teams"
