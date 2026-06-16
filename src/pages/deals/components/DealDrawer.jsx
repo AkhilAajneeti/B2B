@@ -1191,18 +1191,22 @@ const DealDrawer = ({
                                   });
                                 }
                                 if (!items.length) return deal.cPreference;
+                                // Stack the question (muted) and the answer
+                                // (strong bold, on its own line) within each
+                                // bullet so the value reads as a distinct
+                                // line — sharing one line with semibold was
+                                // too subtle to scan.
                                 return (
-                                  <ul className="list-disc pl-5 space-y-1">
+                                  <ul className="list-disc pl-5 space-y-2">
                                     {items.map((it, i) => (
                                       <li key={i}>
-                                        {it.text}
+                                        <span className="text-muted-foreground">
+                                          {it.text}
+                                        </span>
                                         {it.bold && (
-                                          <>
-                                            {" "}
-                                            <strong className="font-semibold">
-                                              {it.bold}
-                                            </strong>
-                                          </>
+                                          <span className="block font-bold text-foreground mt-0.5">
+                                            {it.bold}
+                                          </span>
                                         )}
                                       </li>
                                     ))}
