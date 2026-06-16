@@ -1160,15 +1160,6 @@ const DealDrawer = ({
                               {deal?.cProject || deal?.cProjectNomen || "None"}
                             </p>
                           </div>
-
-                          {/* Preference — backend stores it as HTML-ish
-                              "Q? <b>A</b> Q? <b>A</b>" sometimes with stray
-                              newlines between pairs (which was creating the
-                              big vertical gap when whitespace-pre-wrap was
-                              on). Walk the string, group each (text-up-to-<b>,
-                              <b>...</b>) into one Q&A item, then render as a
-                              tight bullet list. Bold-only via local match —
-                              no dangerouslySetInnerHTML, no XSS surface. */}
                           <div className="col-span-2">
                             <p className="text-sm text-muted-foreground">
                               Preference
