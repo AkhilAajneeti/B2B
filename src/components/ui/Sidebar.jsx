@@ -201,7 +201,16 @@ const Sidebar = ({ isOpen = false, onClose }) => {
           <nav className="flex-1 overflow-y-auto py-4">
             <div className="px-3 space-y-1">
               {navigationItems
-                ?.filter((item) => !item.adminOnly || isAdmin)
+                ?.filter((item) => {
+                  // `adminOnly` — visible to admin / owner / manager.
+                  // `isSupAdmin` — visible ONLY to type=admin (stricter
+                  //   than adminOnly; owner / manager are hidden too).
+                  // Both flags can coexist on an item; the strictest one
+                  //   wins.
+                  if (item.adminOnly && !isAdmin) return false;
+                  if (item.isSupAdmin && !isSupAdmin()) return false;
+                  return true;
+                })
                 .map((item) => {
                 const isActive = location?.pathname === item?.path;
 
