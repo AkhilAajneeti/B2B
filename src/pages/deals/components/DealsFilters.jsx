@@ -73,7 +73,7 @@ const DealsFilters = ({
     // { label: "Next Month", value: "nextMonth" },
     { label: "Current Quarter", value: "currentQuarter" },
     { label: "Last Quarter", value: "lastQuarter" },
-    
+
 
     // special — user-driven date pickers. Values stay the same so the
     // backend filter builder and showDateInputs logic don't change.
@@ -90,8 +90,23 @@ const DealsFilters = ({
     // { label: "Is Empty", value: "isEmpty" },
     // { label: "After X Days", value: "afterXDays" },
   ];
+  // showDateInputs is still used by the Lead Analytics button's col-span
+  // logic below. The detailed X-days / DateInputs flags moved into
+  // renderDateConditional; the only outer gate we still need is the
+  // wrapping-grid one for Next Contact (so an empty grid doesn't render
+  // when no extra inputs apply).
+  //
+  // Both filter keys are kept independent so a rep can have BOTH active at
+  // once (e.g. "leads created this month AND next contact scheduled this
+  // week"). Backend maps `nextContactType` to the `cNextContact` attribute.
   const showDateInputs = ["on", "before", "after", "between"].includes(filters?.dateType);
-  const showXDaysInput = ["lastXDays", "afterXDays"].includes(filters?.dateType);
+  // Wrapper-grid gate for the activity-date conditional inputs (so an empty
+  // grid doesn't render when no extra inputs apply).
+  const showDateConditional =
+    showDateInputs || ["lastXDays", "afterXDays"].includes(filters?.dateType);
+  const showNextContactConditional =
+    ["on", "before", "after", "between"].includes(filters?.nextContactType) ||
+    ["lastXDays", "afterXDays"].includes(filters?.nextContactType);
   const handleFilterChange = (key, value) => {
     let updated = {
       ...filters,
@@ -105,7 +120,94 @@ const DealsFilters = ({
       updated.xDays = "";
     }
 
+    // Same reset logic for the Next Contact filter's dependents.
+    if (key === "nextContactType") {
+      updated.nextContactFrom = "";
+      updated.nextContactTo = "";
+      updated.nextContactXDays = "";
+    }
+
     onFiltersChange(updated);
+  };
+
+  // Renders the conditional inputs (X Days + Date Range) that appear when
+  // a date-mode filter is set. Used for both `dateType` (createdAt-based)
+  // and `nextContactType` (cNextContact-based) so we don't repeat the
+  // ~50-line block twice.
+  //
+  // Params:
+  //   type          - the currently picked filter type (e.g. "between")
+  //   fromKey/toKey - state keys for the From/To dates
+  //   xDaysKey      - state key for the "Enter days" input
+  //   maxToday      - when true, both pickers cap at today (useful for
+  //                   activity-date filters where future dates make no
+  //                   sense; nextContact pickers leave this off so the
+  //                   rep can pick a future follow-up date).
+  const renderDateConditional = ({
+    type,
+    fromKey,
+    toKey,
+    xDaysKey,
+    maxToday,
+  }) => {
+    const showXDays = ["lastXDays", "afterXDays"].includes(type);
+    const showRange = ["on", "before", "after", "between"].includes(type);
+    if (!showXDays && !showRange) return null;
+
+    const maxAttr = maxToday ? todayLocal() : undefined;
+
+    return (
+      <>
+        {showXDays && (
+          <Input
+            type="number"
+            placeholder="Enter days"
+            value={filters?.[xDaysKey] || ""}
+            onChange={(e) => handleFilterChange(xDaysKey, e.target.value)}
+          />
+        )}
+
+        {showRange && (
+          <div
+            className={`flex gap-2 ${type === "between" ? "lg:col-span-2" : ""}`}
+          >
+            <div className="flex-1 min-w-0">
+              <Input
+                type="date"
+                label={
+                  {
+                    on: "Pick a date",
+                    before: "Before this date",
+                    after: "From this date",
+                    between: "From",
+                  }[type]
+                }
+                max={maxAttr}
+                value={filters?.[fromKey] || ""}
+                onChange={(e) =>
+                  handleFilterChange(fromKey, e.target.value)
+                }
+              />
+            </div>
+
+            {type === "between" && (
+              <div className="flex-1 min-w-0">
+                <Input
+                  type="date"
+                  label="To"
+                  max={maxAttr}
+                  min={filters?.[fromKey] || undefined}
+                  value={filters?.[toKey] || ""}
+                  onChange={(e) =>
+                    handleFilterChange(toKey, e.target.value)
+                  }
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </>
+    );
   };
 
   useEffect(() => {
@@ -283,60 +385,18 @@ const DealsFilters = ({
           onChange={(value) => handleFilterChange("dateType", value)}
         />
 
-        {/* X Days Input */}
-        {showXDaysInput && (
-          <Input
-            type="number"
-            placeholder="Enter days"
-            value={filters?.xDays || ""}
-            onChange={(e) =>
-              handleFilterChange("xDays", e.target.value)
-            }
-          />
-        )}
 
-        {/* Date Range Inputs — span an extra grid column when showing two
-            inputs so each has enough width for its picker to open and be
-            usable. */}
-        {showDateInputs && (
-          <div
-            className={`flex gap-2 ${filters?.dateType === "between" ? "lg:col-span-2" : ""}`}
-          >
-            <div className="flex-1 min-w-0">
-              <Input
-                type="date"
-                label={
-                  {
-                    on: "Pick a date",
-                    before: "Before this date",
-                    after: "From this date",
-                    between: "From",
-                  }[filters?.dateType]
-                }
-                max={todayLocal()}
-                value={filters?.closeDateFrom || ""}
-                onChange={(e) =>
-                  handleFilterChange("closeDateFrom", e.target.value)
-                }
-              />
-            </div>
-
-            {filters?.dateType === "between" && (
-              <div className="flex-1 min-w-0">
-                <Input
-                  type="date"
-                  label="To"
-                  max={todayLocal()}
-                  min={filters?.closeDateFrom || undefined}
-                  value={filters?.closeDateTo || ""}
-                  onChange={(e) =>
-                    handleFilterChange("closeDateTo", e.target.value)
-                  }
-                />
-              </div>
-            )}
-          </div>
-        )}
+        {/* Next Contact filter — same option list as Filter by date, but
+            applied to `cNextContact` on the backend instead of `createdAt`.
+            Independent filter keys (nextContactType / nextContactFrom /
+            nextContactTo / nextContactXDays) let both filters coexist. */}
+        <Select
+          className="min-w-0"
+          placeholder="Next Contact"
+          options={ACTIVITY_DATE_FILTERS}
+          value={filters?.nextContactType || ""}
+          onChange={(value) => handleFilterChange("nextContactType", value)}
+        />
 
         {/* Lead Analytics — pinned to the rightmost grid column in single-input
             date modes (Specific Day / Before / After) so it sits at the far
@@ -344,20 +404,42 @@ const DealsFilters = ({
             fills cols 3-4 so the button auto-flows to col 5; no-date-filter
             mode keeps col-span-3 so the button stays right-aligned across its
             wider cell. */}
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${
-          !showDateInputs
-            ? "lg:col-span-3"
-            : filters?.dateType === "between"
-              ? "lg:col-span-1"
-              : "lg:col-start-5 lg:col-span-1"
-        }`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${!showDateInputs
+          ? "lg:col-span-2"
+          : filters?.dateType === "between"
+            ? "lg:col-span-1"
+            : "lg:col-start-5 lg:col-span-1"
+          }`}>
           <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
             <Icon name="Plus" size={16} className="mr-2" />
             Lead Analytics
           </Button>
         </div>
-
       </div>
+
+      {showDateConditional && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+          {renderDateConditional({
+            type: filters?.dateType,
+            fromKey: "closeDateFrom",
+            toKey: "closeDateTo",
+            xDaysKey: "xDays",
+            maxToday: true,
+          })}
+        </div>
+      )}
+      {showNextContactConditional && (
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+          {renderDateConditional({
+            type: filters?.nextContactType,
+            fromKey: "nextContactFrom",
+            toKey: "nextContactTo",
+            xDaysKey: "nextContactXDays",
+            maxToday: false,
+          })}
+        </div>
+      )}
 
     </div>
   );

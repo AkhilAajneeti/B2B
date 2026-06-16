@@ -217,6 +217,72 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
     }
   }
 
+  // ✅ NEXT CONTACT FILTER — mirrors the activity-date filter above but
+  // targets `cNextContact` instead of `createdAt`, with its own filter keys
+  // (`nextContactType` / `nextContactFrom` / `nextContactTo` /
+  // `nextContactXDays`) so both filters can be active independently.
+  if (filters.nextContactType) {
+    const type = filters.nextContactType;
+
+    switch (type) {
+      case "today":
+      case "lastSevenDays":
+      case "currentMonth":
+      case "lastMonth":
+      case "nextMonth":
+      case "currentQuarter":
+      case "lastQuarter":
+      case "currentYear":
+      case "lastYear":
+      case "past":
+      case "future":
+      case "ever":
+      case "isEmpty":
+        where.push({
+          type,
+          attribute: "cNextContact",
+          dateTime: true,
+        });
+        break;
+
+      case "on":
+      case "before":
+      case "after":
+        if (filters.nextContactFrom) {
+          where.push({
+            type,
+            attribute: "cNextContact",
+            value: filters.nextContactFrom,
+            dateTime: true,
+          });
+        }
+        break;
+
+      case "between":
+        if (filters.nextContactFrom && filters.nextContactTo) {
+          where.push({
+            type,
+            attribute: "cNextContact",
+            value: [filters.nextContactFrom, filters.nextContactTo],
+            dateTime: true,
+          });
+        }
+        break;
+
+      case "lastXDays":
+      case "afterXDays":
+        if (filters.nextContactXDays) {
+          where.push({
+            type,
+            attribute: "cNextContact",
+            value: filters.nextContactXDays,
+            dateTime: true,
+          });
+        }
+        break;
+    }
+  }
+
   // ✅ OTHER FILTERS
   if (filters.search) {
     where.push({
