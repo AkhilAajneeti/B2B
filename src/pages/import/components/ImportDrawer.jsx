@@ -797,10 +797,12 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
               {/* Errors table — only renders when there's at least one
                   error row (mirrors EspoCRM's behavior of hiding the
                   section on clean imports). Each row's arrow opens a
-                  per-row dropdown with View / Remove. */}
+                  per-row dropdown with View / Remove.
+                  NOTE: NO `overflow-hidden` on the card — the dropdown
+                  needs to escape the card boundary on the last row. */}
               {state.errors.length > 0 && (
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
+                <div className="border border-border rounded-lg">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30 rounded-t-lg">
                     <span className="w-2.5 h-2.5 rounded-sm bg-rose-500" />
                     <h3 className="font-semibold text-foreground">
                       Errors
