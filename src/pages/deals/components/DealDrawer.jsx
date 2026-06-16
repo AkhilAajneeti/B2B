@@ -1161,33 +1161,63 @@ const DealDrawer = ({
                             </p>
                           </div>
 
+                          {/* Preference — backend stores it as HTML-ish
+                              "Q? <b>A</b> Q? <b>A</b>" sometimes with stray
+                              newlines between pairs (which was creating the
+                              big vertical gap when whitespace-pre-wrap was
+                              on). Walk the string, group each (text-up-to-<b>,
+                              <b>...</b>) into one Q&A item, then render as a
+                              tight bullet list. Bold-only via local match —
+                              no dangerouslySetInnerHTML, no XSS surface. */}
                           <div className="col-span-2">
                             <p className="text-sm text-muted-foreground">
                               Preference
                             </p>
-                            <div className="text-foreground font-medium leading-relaxed whitespace-pre-wrap">
-                              {deal?.cPreference
-                                ? deal.cPreference
-                                    .split(/(<b>.*?<\/b>)/g)
-                                    .map((part, i) => {
-                                      const match = part.match(/^<b>(.*)<\/b>$/);
-                                      if (match) {
-                                        return (
-                                          <React.Fragment key={i}>
+                            <div className="text-foreground font-medium">
+                              {(() => {
+                                if (!deal?.cPreference) return "None";
+                                const parts = deal.cPreference.split(
+                                  /(<b>.*?<\/b>)/g,
+                                );
+                                const items = [];
+                                let buffer = "";
+                                for (const part of parts) {
+                                  const m = part.match(/^<b>(.*)<\/b>$/);
+                                  if (m) {
+                                    items.push({
+                                      text: buffer.trim(),
+                                      bold: m[1].trim(),
+                                    });
+                                    buffer = "";
+                                  } else {
+                                    buffer += part;
+                                  }
+                                }
+                                if (buffer.trim()) {
+                                  items.push({
+                                    text: buffer.trim(),
+                                    bold: null,
+                                  });
+                                }
+                                if (!items.length) return deal.cPreference;
+                                return (
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {items.map((it, i) => (
+                                      <li key={i}>
+                                        {it.text}
+                                        {it.bold && (
+                                          <>
+                                            {" "}
                                             <strong className="font-semibold">
-                                              {match[1]}
+                                              {it.bold}
                                             </strong>
-                                            <br />
-                                          </React.Fragment>
-                                        );
-                                      }
-                                      return (
-                                        <React.Fragment key={i}>
-                                          {part}
-                                        </React.Fragment>
-                                      );
-                                    })
-                                : "None"}
+                                          </>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>
