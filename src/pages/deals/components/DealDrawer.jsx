@@ -5,7 +5,7 @@ import Select from "../../../components/ui/Select";
 import Input from "components/ui/Input";
 import toast from "react-hot-toast";
 import Avatar from "react-avatar";
- 
+
 import { createLeadActivity, updateStream } from "services/leads.service";
 import { useTeams } from "hooks/useTeams";
 import { useUsers } from "hooks/useUsers";
@@ -599,6 +599,7 @@ const DealDrawer = ({
   const leadData = leadsDetails || deal;
   const canEditDeal = (deal) =>
     canEditRecord("Lead", getPermissionRecord({ ...deal, ...leadsDetails }));
+
   return (
     <>
       {/* Backdrop */}
@@ -1092,13 +1093,7 @@ const DealDrawer = ({
                                     ? `https://${deal.cWhatsapp.replace(/^https?:\/\//, "")}`
                                     : `https://wa.me/${(deal?.phoneNumber || "").replace(/\D/g, "")}`;
 
-                                  // Prefer backend's curated template if present.
-                                  // Backend's "?text=..." is half-encoded — substituted
-                                  // names like "Robin Ghosh" come through with a raw
-                                  // space that breaks the URL and triggers
-                                  // about:blank#blocked. Decode to plain text, then
-                                  // re-encode cleanly via encodeURIComponent so every
-                                  // character is normalised.
+
                                   if (deal?.cWhatsappTemplate) {
                                     try {
                                       const raw = decodeURIComponent(
@@ -1166,14 +1161,34 @@ const DealDrawer = ({
                             </p>
                           </div>
 
-                          {/* Preference */}
-                          <div>
+                          <div className="col-span-2">
                             <p className="text-sm text-muted-foreground">
                               Preference
                             </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.cPreference || "None"}
-                            </p>
+                            <div className="text-foreground font-medium leading-relaxed whitespace-pre-wrap">
+                              {deal?.cPreference
+                                ? deal.cPreference
+                                    .split(/(<b>.*?<\/b>)/g)
+                                    .map((part, i) => {
+                                      const match = part.match(/^<b>(.*)<\/b>$/);
+                                      if (match) {
+                                        return (
+                                          <React.Fragment key={i}>
+                                            <strong className="font-semibold">
+                                              {match[1]}
+                                            </strong>
+                                            <br />
+                                          </React.Fragment>
+                                        );
+                                      }
+                                      return (
+                                        <React.Fragment key={i}>
+                                          {part}
+                                        </React.Fragment>
+                                      );
+                                    })
+                                : "None"}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1432,7 +1447,7 @@ const DealDrawer = ({
                               Followers
                             </p>
                             {leadsDetails?.followersNames &&
-                            Object.keys(leadsDetails.followersNames).length ? (
+                              Object.keys(leadsDetails.followersNames).length ? (
                               <div className="flex flex-wrap gap-2 mt-1">
                                 {Object.entries(leadsDetails.followersNames).map(
                                   ([id, name]) => (
