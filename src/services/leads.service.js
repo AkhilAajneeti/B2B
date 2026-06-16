@@ -218,7 +218,7 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
   }
 
   // ✅ NEXT CONTACT FILTER — mirrors the activity-date filter above but
-  // targets `cNextContact` instead of `createdAt`, with its own filter keys
+  // targets `cNextContactAt` instead of `createdAt`, with its own filter keys
   // (`nextContactType` / `nextContactFrom` / `nextContactTo` /
   // `nextContactXDays`) so both filters can be active independently.
   if (filters.nextContactType) {
@@ -240,7 +240,7 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
       case "isEmpty":
         where.push({
           type,
-          attribute: "cNextContact",
+          attribute: "cNextContactAt",
           dateTime: true,
         });
         break;
@@ -251,7 +251,7 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
         if (filters.nextContactFrom) {
           where.push({
             type,
-            attribute: "cNextContact",
+            attribute: "cNextContactAt",
             value: filters.nextContactFrom,
             dateTime: true,
           });
@@ -262,7 +262,7 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
         if (filters.nextContactFrom && filters.nextContactTo) {
           where.push({
             type,
-            attribute: "cNextContact",
+            attribute: "cNextContactAt",
             value: [filters.nextContactFrom, filters.nextContactTo],
             dateTime: true,
           });
@@ -274,7 +274,7 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
         if (filters.nextContactXDays) {
           where.push({
             type,
-            attribute: "cNextContact",
+            attribute: "cNextContactAt",
             value: filters.nextContactXDays,
             dateTime: true,
           });
