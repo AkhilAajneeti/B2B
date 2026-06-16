@@ -184,6 +184,16 @@ export const DRAWER_INITIAL = {
   importResult: null,
   imported: [],
   duplicates: [],
+  // Per-row import errors (validation failures, save errors, etc.).
+  errors: [],
+  // The error currently being inspected in the detail modal. `null` =
+  // modal closed; otherwise we render an overlay with this error's row +
+  // validation failures.
+  selectedError: null,
+  // Tracks which error row's dropdown menu (View / Remove) is open. Empty
+  // string = no menu open. Single-string state instead of per-row flags
+  // so we never get two menus open simultaneously.
+  openErrorRowId: "",
   // Name of an in-flight action button (e.g. "Revert Import") so we can
   // spin only that button instead of all three.
   pendingAction: "",

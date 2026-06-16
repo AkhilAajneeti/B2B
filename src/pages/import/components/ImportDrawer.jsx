@@ -63,10 +63,10 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
             "cNextContactAt",
           ].join(",");
 
-          // Three parallel fetches: the import detail + its imported &
-          // duplicates related lists. The detail call gives us status,
-          // counts, createdBy, and the source file name.
-          const [detailRes, impRes, dupRes] = await Promise.all([
+          // Four parallel fetches: the import detail + its imported,
+          // duplicates, and errors related lists. The detail call gives
+          // us status, counts, createdBy, and the source file name.
+          const [detailRes, impRes, dupRes, errRes] = await Promise.all([
             fetch(`${API_BASE}/Import/${viewImportId}`, {
               headers: { "Content-Type": "application/json", token },
             }),
@@ -76,6 +76,10 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
             ),
             fetch(
               `${API_BASE}/Import/${viewImportId}/duplicates?maxSize=20&orderBy=createdAt&order=desc&select=${selectFields}`,
+              { headers: { "Content-Type": "application/json", token } },
+            ),
+            fetch(
+              `${API_BASE}/Import/${viewImportId}/errors?maxSize=50&orderBy=rowIndex&order=asc`,
               { headers: { "Content-Type": "application/json", token } },
             ),
           ]);
@@ -89,6 +93,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
           const duplicates = dupRes.ok
             ? (await dupRes.json())?.list || []
             : [];
+          const errors = errRes.ok ? (await errRes.json())?.list || [] : [];
 
           setState((prev) => ({
             ...prev,
@@ -96,6 +101,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
             importResult,
             imported,
             duplicates,
+            errors,
             // Best-effort: surface the original filename if EspoCRM
             // returns it on the import record. Different deploys expose
             // it under different keys.
@@ -284,11 +290,13 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
       const importResult = await importRes.json();
       const importId = importResult?.id;
 
-      // 3. Fetch Imported + Duplicates related lists in parallel. If they
-      //    fail we still show the overview (with empty result tables) —
-      //    the import itself already succeeded.
+      // 3. Fetch Imported + Duplicates + Errors related lists in parallel.
+      //    If they fail we still show the overview — the import itself
+      //    already succeeded so degrading the overview is preferable to
+      //    rolling everything back.
       let imported = [];
       let duplicates = [];
+      let errors = [];
       if (importId) {
         const selectFields = [
           "name",
@@ -299,7 +307,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
           "cNextContactAt",
         ].join(",");
         try {
-          const [impRes, dupRes] = await Promise.all([
+          const [impRes, dupRes, errRes] = await Promise.all([
             fetch(
               `${API_BASE}/Import/${importId}/imported?maxSize=20&orderBy=createdAt&order=desc&select=${selectFields}`,
               { headers: { "Content-Type": "application/json", token } },
@@ -308,9 +316,14 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
               `${API_BASE}/Import/${importId}/duplicates?maxSize=20&orderBy=createdAt&order=desc&select=${selectFields}`,
               { headers: { "Content-Type": "application/json", token } },
             ),
+            fetch(
+              `${API_BASE}/Import/${importId}/errors?maxSize=50&orderBy=rowIndex&order=asc`,
+              { headers: { "Content-Type": "application/json", token } },
+            ),
           ]);
           if (impRes.ok) imported = (await impRes.json())?.list || [];
           if (dupRes.ok) duplicates = (await dupRes.json())?.list || [];
+          if (errRes.ok) errors = (await errRes.json())?.list || [];
         } catch (relErr) {
           console.warn("Failed to fetch import related lists:", relErr);
         }
@@ -324,6 +337,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
         importResult,
         imported,
         duplicates,
+        errors,
       }));
       onSuccess?.();
     } catch (err) {
@@ -361,6 +375,52 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
       console.error(`${actionKey} error:`, err);
       toast.error(err?.message || `${actionKey} failed`);
       setState((prev) => ({ ...prev, pendingAction: "" }));
+    }
+  };
+
+  // ----- Per-error-row actions (View / Remove) ------------------------------
+  //
+  // Open dropdown is tracked by a single `openErrorRowId` so two dropdowns
+  // never appear together. `viewError` flips the `selectedError` modal on;
+  // `removeError` DELETEs the error row and locally drops it from the list
+  // (no need for a full overview refetch).
+  const toggleErrorDropdown = (errorId) =>
+    setState((prev) => ({
+      ...prev,
+      openErrorRowId: prev.openErrorRowId === errorId ? "" : errorId,
+    }));
+
+  const viewError = (error) =>
+    setState((prev) => ({
+      ...prev,
+      selectedError: error,
+      openErrorRowId: "",
+    }));
+
+  const closeErrorDetail = () =>
+    setState((prev) => ({ ...prev, selectedError: null }));
+
+  const removeError = async (error) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_BASE}/Import/error/${error.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", token },
+      });
+      if (!res.ok) {
+        throw new Error(`Could not remove error (${res.status})`);
+      }
+      // Drop the deleted row from local state — saves a full overview
+      // refetch and keeps the UX snappy.
+      setState((prev) => ({
+        ...prev,
+        errors: prev.errors.filter((e) => e.id !== error.id),
+        openErrorRowId: "",
+      }));
+      toast.success("Error removed");
+    } catch (err) {
+      console.error("Remove error failed:", err);
+      toast.error(err?.message || "Could not remove error");
     }
   };
 
@@ -733,6 +793,95 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
                   state.duplicates.length
                 }
               />
+
+              {/* Errors table — only renders when there's at least one
+                  error row (mirrors EspoCRM's behavior of hiding the
+                  section on clean imports). Each row's arrow opens a
+                  per-row dropdown with View / Remove. */}
+              {state.errors.length > 0 && (
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-rose-500" />
+                    <h3 className="font-semibold text-foreground">
+                      Errors
+                      <span className="text-muted-foreground font-normal ml-2">
+                        ({state.errors.length.toLocaleString()})
+                      </span>
+                    </h3>
+                  </div>
+                  <div className="overflow-visible">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-muted-foreground">
+                          <th className="text-left px-4 py-2 font-normal w-1/3">
+                            Line Number
+                          </th>
+                          <th className="text-left px-4 py-2 font-normal">
+                            Type
+                          </th>
+                          <th className="w-10 px-4 py-2" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {state.errors.map((err) => (
+                          <tr
+                            key={err.id}
+                            className="border-b border-border last:border-0"
+                          >
+                            <td className="px-4 py-2 text-foreground">
+                              {err.rowIndex ?? err.lineNumber ?? "—"}
+                            </td>
+                            <td className="px-4 py-2 text-foreground">
+                              {err.type || "—"}
+                            </td>
+                            <td className="px-4 py-2 relative">
+                              {/* Arrow button toggles the dropdown for
+                                  this specific row. `relative` on the cell
+                                  + `absolute` on the menu keeps the
+                                  positioning local. */}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => toggleErrorDropdown(err.id)}
+                                aria-label="Error actions"
+                              >
+                                <Icon name="ChevronDown" size={16} />
+                              </Button>
+
+                              {state.openErrorRowId === err.id && (
+                                <>
+                                  {/* Click-outside backdrop */}
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => toggleErrorDropdown(err.id)}
+                                    aria-hidden
+                                  />
+                                  <div className="absolute right-2 mt-1 w-32 bg-popover border border-border rounded-md shadow-lg z-20 py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => viewError(err)}
+                                      className="block w-full text-left px-3 py-2 text-sm text-popover-foreground hover:bg-muted"
+                                    >
+                                      View
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeError(err)}
+                                      className="block w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -791,6 +940,136 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
           )}
         </div>
       </aside>
+
+      {/* ============ Error detail modal (overlay on top of drawer) ============
+          Renders when the rep clicks "View" on an error row's dropdown.
+          Shows Line Number / Export Line Number / Type / Validation
+          Failures table / Row (raw CSV row values). Higher z-index than
+          the drawer so it sits cleanly on top, with its own backdrop. */}
+      {state.selectedError && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-[60]"
+            onClick={closeErrorDetail}
+            aria-hidden
+          />
+          <div
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-xl max-h-[85vh] overflow-hidden bg-background border border-border rounded-lg shadow-2xl flex flex-col"
+            role="dialog"
+            aria-labelledby="import-error-title"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3
+                id="import-error-title"
+                className="text-base font-semibold text-foreground"
+              >
+                Import Error
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={closeErrorDetail}
+                aria-label="Close error detail"
+              >
+                <Icon name="X" size={18} />
+              </Button>
+            </div>
+
+            <div className="overflow-y-auto p-5 space-y-5 text-sm">
+              {/* Line Number + Export Line Number side-by-side */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-muted-foreground mb-1">Line Number</p>
+                  <p className="text-foreground font-medium">
+                    {state.selectedError.rowIndex ??
+                      state.selectedError.lineNumber ??
+                      "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground mb-1">
+                    Export Line Number
+                  </p>
+                  <p className="text-foreground font-medium">
+                    {state.selectedError.exportRowIndex ??
+                      state.selectedError.rowIndex ??
+                      "—"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Type */}
+              <div>
+                <p className="text-muted-foreground mb-1">Type</p>
+                <p className="text-foreground font-medium">
+                  {state.selectedError.type || "—"}
+                </p>
+              </div>
+
+              {/* Validation Failures — only when present. EspoCRM returns
+                  this as an array of { field, type } pairs. The "field"
+                  key may be a label string OR the raw attribute key; we
+                  show whatever the backend gives us. */}
+              {Array.isArray(state.selectedError.validationFailures) &&
+                state.selectedError.validationFailures.length > 0 && (
+                  <div>
+                    <p className="text-muted-foreground mb-2">
+                      Validation Failures
+                    </p>
+                    <div className="border border-border rounded-md overflow-hidden">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-border bg-muted/30 text-muted-foreground">
+                            <th className="text-left px-3 py-2 font-normal">
+                              Field
+                            </th>
+                            <th className="text-left px-3 py-2 font-normal">
+                              Validation
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {state.selectedError.validationFailures.map(
+                            (vf, i) => (
+                              <tr
+                                key={i}
+                                className="border-b border-border last:border-0"
+                              >
+                                <td className="px-3 py-2 text-foreground">
+                                  {vf.field || vf.attribute || "—"}
+                                </td>
+                                <td className="px-3 py-2 text-foreground">
+                                  {vf.type ||
+                                    vf.validation ||
+                                    vf.message ||
+                                    "—"}
+                                </td>
+                              </tr>
+                            ),
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+              {/* Row — the raw CSV row values for this error. EspoCRM
+                  returns `row` as either a string (the whole CSV line)
+                  or an array of values. Render both shapes. */}
+              {state.selectedError.row && (
+                <div>
+                  <p className="text-muted-foreground mb-1">Row</p>
+                  <div className="bg-muted/30 border border-border rounded-md p-3 text-foreground whitespace-pre-wrap font-mono text-xs">
+                    {Array.isArray(state.selectedError.row)
+                      ? state.selectedError.row.join("\n")
+                      : state.selectedError.row}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };
