@@ -34,7 +34,7 @@ import {
 } from "./utils";
 import ImportResultTable from "./ImportResultTable";
 
-const ImportDrawer = ({ isOpen, onClose, onSuccess }) => {
+const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
   // The whole drawer flow is described by a single object so resetting on
   // close is one assignment (`setState(DRAWER_INITIAL)`) and so any future
   // Step 2.5 / 3.1 field slots in without proliferating useState calls.
@@ -42,11 +42,80 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess }) => {
   const fileInputRef = useRef(null);
 
   // When the parent flips isOpen back to true after a previous close, we
-  // want a fresh form. Resetting here means the parent doesn't have to
-  // know about the internal state shape.
+  // want a fresh form (Step 1) — UNLESS the parent also passed a
+  // viewImportId, in which case we fetch that import and jump straight
+  // to Step 3 (overview).
   useEffect(() => {
-    if (isOpen) setState({ ...DRAWER_INITIAL });
-  }, [isOpen]);
+    if (!isOpen) return;
+    setState({ ...DRAWER_INITIAL });
+
+    if (viewImportId) {
+      let cancelled = false;
+      (async () => {
+        try {
+          const token = localStorage.getItem("auth_token");
+          const selectFields = [
+            "name",
+            "phoneNumber",
+            "cProject",
+            "status",
+            "createdAt",
+            "cNextContactAt",
+          ].join(",");
+
+          // Three parallel fetches: the import detail + its imported &
+          // duplicates related lists. The detail call gives us status,
+          // counts, createdBy, and the source file name.
+          const [detailRes, impRes, dupRes] = await Promise.all([
+            fetch(`${API_BASE}/Import/${viewImportId}`, {
+              headers: { "Content-Type": "application/json", token },
+            }),
+            fetch(
+              `${API_BASE}/Import/${viewImportId}/imported?maxSize=20&orderBy=createdAt&order=desc&select=${selectFields}`,
+              { headers: { "Content-Type": "application/json", token } },
+            ),
+            fetch(
+              `${API_BASE}/Import/${viewImportId}/duplicates?maxSize=20&orderBy=createdAt&order=desc&select=${selectFields}`,
+              { headers: { "Content-Type": "application/json", token } },
+            ),
+          ]);
+
+          if (cancelled) return;
+          if (!detailRes.ok) {
+            throw new Error(`Could not load import (${detailRes.status})`);
+          }
+          const importResult = await detailRes.json();
+          const imported = impRes.ok ? (await impRes.json())?.list || [] : [];
+          const duplicates = dupRes.ok
+            ? (await dupRes.json())?.list || []
+            : [];
+
+          setState((prev) => ({
+            ...prev,
+            step: 3,
+            importResult,
+            imported,
+            duplicates,
+            // Best-effort: surface the original filename if EspoCRM
+            // returns it on the import record. Different deploys expose
+            // it under different keys.
+            fileName:
+              importResult?.fileName ||
+              importResult?.fileFileName ||
+              "import-file.csv",
+          }));
+        } catch (err) {
+          if (cancelled) return;
+          console.error("Failed to load import overview:", err);
+          toast.error(err?.message || "Failed to load import");
+          onClose?.();
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [isOpen, viewImportId, onClose]);
 
   if (!isOpen) return null;
 

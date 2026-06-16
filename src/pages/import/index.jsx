@@ -50,6 +50,11 @@ const ImportPage = () => {
   const [order, setOrder] = useState("desc");
   const [selectedIds, setSelectedIds] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Non-null when the rep clicked an existing import in the table — the
+  // drawer fetches that import's detail + imported + duplicates and
+  // renders Step 3 (overview) directly, skipping the new-import flow.
+  // Reset to null whenever the drawer closes.
+  const [viewImportId, setViewImportId] = useState(null);
 
   // React Query — keeps a 2-minute fresh window per (limit, page, filters,
   // order) combo and de-dupes concurrent identical requests for us.
@@ -115,6 +120,26 @@ const ImportPage = () => {
   const toggleAll = (checked) =>
     setSelectedIds(checked ? rows.map((r) => r.id) : []);
 
+  // Click on an import's Created At (desktop) or its mobile card → open
+  // the drawer in overview mode for that specific import.
+  const handleViewImport = (id) => {
+    setViewImportId(id);
+    setDrawerOpen(true);
+  };
+
+  // Reset both pieces when the drawer closes, otherwise the next
+  // "New Import" click would still carry the previous viewImportId and
+  // jump back into overview mode instead of starting fresh.
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+    setViewImportId(null);
+  };
+
+  const handleNewImport = () => {
+    setViewImportId(null);
+    setDrawerOpen(true);
+  };
+
   const isAllSelected = rows.length > 0 && selectedIds.length === rows.length;
   const isIndeterminate =
     selectedIds.length > 0 && selectedIds.length < rows.length;
@@ -145,7 +170,7 @@ const ImportPage = () => {
               </p>
             </div>
             <Button
-              onClick={() => setDrawerOpen(true)}
+              onClick={handleNewImport}
               className="linearbg-1 text-white hover:text-white shrink-0"
             >
               <Icon name="Plus" size={16} className="mr-2" />
@@ -174,6 +199,7 @@ const ImportPage = () => {
             onSort={handleSort}
             onToggleRow={toggleRow}
             onToggleAll={toggleAll}
+            onRowClick={handleViewImport}
           />
 
           <TablePagination
@@ -187,15 +213,17 @@ const ImportPage = () => {
         </div>
       </main>
 
-      {/* Right-side drawer (3-step New Import flow). Closing it via X /
-          backdrop / Close button just flips this flag — the drawer itself
-          handles resetting its internal state on the next open. On a
-          successful import we refetch the imports table so the new row
-          appears behind the drawer when it closes. */}
+      {/* Right-side drawer. Two modes:
+            - viewImportId=null → fresh "New Import" flow (Step 1)
+            - viewImportId=<id> → overview for that existing import (Step 3)
+          The drawer itself handles fetching + state reset on open. We
+          refetch the table on every successful action so the row behind
+          the drawer stays in sync. */}
       <ImportDrawer
         isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={handleDrawerClose}
         onSuccess={refetch}
+        viewImportId={viewImportId}
       />
     </div>
   );

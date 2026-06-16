@@ -23,6 +23,10 @@ const ImportTable = ({
   onSort,
   onToggleRow,
   onToggleAll,
+  // Fires when the rep clicks an import's Created At cell (desktop) or
+  // the entire card (mobile). Parent uses this to open the drawer in
+  // overview mode with the clicked import's id.
+  onRowClick,
 }) => {
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -114,9 +118,13 @@ const ImportTable = ({
                     />
                   </td>
                   <td className="p-4">
-                    <span className="text-primary font-medium">
+                    <button
+                      type="button"
+                      onClick={() => onRowClick?.(row.id)}
+                      className="text-primary font-medium hover:underline cursor-pointer"
+                    >
                       {formatCreatedAt(row.createdAt)}
-                    </span>
+                    </button>
                   </td>
                   <td className="p-4">
                     <span
@@ -161,7 +169,11 @@ const ImportTable = ({
           </div>
         ) : (
           rows.map((row) => (
-            <div key={row.id} className="p-4 border-b border-border">
+            <div
+              key={row.id}
+              className="p-4 border-b border-border cursor-pointer hover:bg-muted/30"
+              onClick={() => onRowClick?.(row.id)}
+            >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0">
                   <p className="text-sm text-primary font-medium truncate">
