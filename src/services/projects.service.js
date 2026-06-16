@@ -10,11 +10,14 @@ export const fetchProjects = async ({
 
   let where = [];
 
-  // 🔍 SEARCH
+  // 🔍 SEARCH — backend filter now hits `projectNomen` (the rep-facing
+  // identifier shown in the table) rather than the raw `name` field, which
+  // is internal/admin-only. The DealsFilters placeholder ("Search Campaign…")
+  // stays the same so the rep's mental model is unchanged.
   if (filters.search?.trim()) {
     where.push({
       type: "like",
-      attribute: "name",
+      attribute: "projectNomen",
       value: `%${filters.search.trim()}%`,
     });
   }

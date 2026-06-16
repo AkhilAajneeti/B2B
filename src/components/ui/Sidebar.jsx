@@ -99,11 +99,19 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: "Calendar",
       badge: null,
     },
-    { 
+    {
       label: "Reports",
       path: "/reports",
       icon: "BarChart3",
       badge: null,
+    },
+    {
+      label: "Import",
+      path: "/import",
+      icon: "Upload",
+      // Same elevated-only gate as My Campaigns — type=admin, role=owner,
+      // or role=manager. Reps shouldn't see the bulk-import surface.
+      adminOnly: true,
     },
     {
       label: "Settings",

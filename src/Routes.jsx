@@ -19,6 +19,7 @@ import Login from "./pages/login";
 import ProtectedRoute from "routes/ProtectedRoute";
 import TaskPage from "pages/tasks";
 import MeetingPage from "pages/meeting";
+import ImportPage from "pages/import";
 import CallPage from "./pages/call";
 import Pipeline from "pages/pipeline";
 import ProjectsPage from "pages/projects";
@@ -147,6 +148,14 @@ const Routes = () => {
             element={
               <ProtectedRoute>
                 <MeetingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/import"
+            element={
+              <ProtectedRoute>
+                <ImportPage />
               </ProtectedRoute>
             }
           />
