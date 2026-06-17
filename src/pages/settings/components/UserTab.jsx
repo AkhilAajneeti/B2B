@@ -15,11 +15,12 @@ import {
 import { createUser } from "services/setting.service";
 import toast from "react-hot-toast";
 import UserDetailsModal from "./models/UserDetailsModal";
-import { DATE_FILTER_OPTIONS, matchesDateFilter, todayLocal } from "../../../utils/dateFilter";
+import { DATE_FILTER_OPTIONS, matchesDateFilter, STATUS_FILTER_OPTIONS, todayLocal } from "../../../utils/dateFilter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "../../../hooks/useUsers";
 import { useTeams } from "../../../hooks/useTeams";
 import { useRoles } from "../../../hooks/useRoles";
+import { filter } from "d3";
 const UserTab = () => {
   const queryClient = useQueryClient();
   const { data: usersData, isLoading: usersLoading } = useUsers();
@@ -34,6 +35,7 @@ const UserTab = () => {
   const [filters, setFilters] = useState({
     search: "",
     dateType: "",
+    statusType: "",
     dateFrom: "",
     dateTo: "",
     xDays: "",
@@ -229,6 +231,11 @@ const UserTab = () => {
         if (!name.includes(q) && !userName.includes(q)) return false;
       }
       if (!matchesDateFilter(m?.createdAt, filters)) return false;
+      // Status filter — values come from STATUS_FILTER_OPTIONS
+      // ("Active" / "InActive"). Match against the boolean isActive
+      // flag on each user record. Empty string = no filter.
+      if (filters.statusType === "Active" && !m?.isActive) return false;
+      if (filters.statusType === "InActive" && m?.isActive) return false;
       return true;
     });
   }, [teamMembers, filters]);
@@ -253,13 +260,13 @@ const UserTab = () => {
   };
 
   const clearFilters = () => {
-    setFilters({ search: "", dateType: "", dateFrom: "", dateTo: "", xDays: "" });
+    setFilters({ search: "", dateType: "",statusType: "", dateFrom: "", dateTo: "", xDays: "" });
     setCurrentPage(1);
   };
 
   const showDateInputs = ["on", "before", "after", "between"].includes(filters.dateType);
   const showXDaysInput = filters.dateType === "lastXDays";
-  const activeFiltersCount = [filters.search, filters.dateType].filter(Boolean).length;
+  const activeFiltersCount = [filters.search, filters.dateType,filters.statusType].filter(Boolean).length;
 
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
@@ -598,6 +605,13 @@ const UserTab = () => {
               options={DATE_FILTER_OPTIONS}
               value={filters.dateType}
               onChange={(value) => handleFilterChange("dateType", value)}
+              clearable
+            />
+            <Select
+              placeholder="Filter by Status"
+              options={STATUS_FILTER_OPTIONS}
+              value={filters.statusType}
+              onChange={(value) => handleFilterChange("statusType", value)}
               clearable
             />
             {showXDaysInput && (

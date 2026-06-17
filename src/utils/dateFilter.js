@@ -23,6 +23,10 @@ export const DATE_FILTER_OPTIONS = [
   { label: "Between", value: "between" },
   { label: "Last X Days", value: "lastXDays" },
 ];
+export const STATUS_FILTER_OPTIONS = [
+  { label: "InActive", value: "InActive" },
+  { label: "Active", value: "Active" }
+];
 
 const startOfDay = (d) => {
   const x = new Date(d);
