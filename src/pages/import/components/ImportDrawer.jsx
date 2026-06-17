@@ -1,17 +1,4 @@
-/**
- * ImportDrawer
- *
- * Right-side slider that owns the full 3-step "New Import" flow:
- *
- *   Step 1 — pick entity type + CSV file + create/update mode, see a preview
- *   Step 2 — field mapping table (auto-matched, rep can override)
- *   Step 3 — overview shown after a successful import (metadata, action
- *            buttons, Imported / Duplicates result tables)
- *
- * Owns all drawer state internally. Parent just controls open/close via the
- * `isOpen` prop and gets notified of successful imports via `onSuccess()`
- * (used to refetch the imports table behind the drawer).
- */
+
 
 import React, { useEffect, useRef, useState } from "react";
 import Papa from "papaparse";
@@ -427,7 +414,9 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
   const handleRemoveDuplicates = () =>
     runImportAction(
       "Remove Duplicates",
-      `${API_BASE}/Import/${state.importResult?.id}/action/removeDuplicates`,
+      // EspoCRM exposes this as POST /Import/{id}/removeDuplicates
+      // (no /action/ segment — that's the older convention).
+      `${API_BASE}/Import/${state.importResult?.id}/removeDuplicates`,
     );
   const handleRevertImport = () =>
     runImportAction(
@@ -468,15 +457,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
             Import
           </h2>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                toast("Import Results coming soon", { icon: "📊" })
-              }
-            >
-              Import Results
-            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -835,64 +816,63 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
                           // open down (the row below absorbs the overlap).
                           const isLastRow = idx === state.errors.length - 1;
                           return (
-                          <tr
-                            key={err.id}
-                            className="border-b border-border last:border-0"
-                          >
-                            <td className="px-4 py-2 text-foreground">
-                              {err.rowIndex ?? err.lineNumber ?? "—"}
-                            </td>
-                            <td className="px-4 py-2 text-foreground">
-                              {err.type || "—"}
-                            </td>
-                            <td className="px-4 py-2 relative">
-                              {/* Arrow button toggles the dropdown for
+                            <tr
+                              key={err.id}
+                              className="border-b border-border last:border-0"
+                            >
+                              <td className="px-4 py-2 text-foreground">
+                                {err.rowIndex ?? err.lineNumber ?? "—"}
+                              </td>
+                              <td className="px-4 py-2 text-foreground">
+                                {err.type || "—"}
+                              </td>
+                              <td className="px-4 py-2 relative">
+                                {/* Arrow button toggles the dropdown for
                                   this specific row. `relative` on the cell
                                   + `absolute` on the menu keeps the
                                   positioning local. */}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => toggleErrorDropdown(err.id)}
-                                aria-label="Error actions"
-                              >
-                                <Icon name="ChevronDown" size={16} />
-                              </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => toggleErrorDropdown(err.id)}
+                                  aria-label="Error actions"
+                                >
+                                  <Icon name="ChevronDown" size={16} />
+                                </Button>
 
-                              {state.openErrorRowId === err.id && (
-                                <>
-                                  {/* Click-outside backdrop */}
-                                  <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => toggleErrorDropdown(err.id)}
-                                    aria-hidden
-                                  />
-                                  <div
-                                    className={`absolute right-2 w-32 bg-popover border border-border rounded-md shadow-lg z-20 py-1 ${
-                                      isLastRow
-                                        ? "bottom-full mb-1"
-                                        : "top-full mt-1"
-                                    }`}
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => viewError(err)}
-                                      className="block w-full text-left px-3 py-2 text-sm text-popover-foreground hover:bg-muted"
+                                {state.openErrorRowId === err.id && (
+                                  <>
+                                    {/* Click-outside backdrop */}
+                                    <div
+                                      className="fixed inset-0 z-10"
+                                      onClick={() => toggleErrorDropdown(err.id)}
+                                      aria-hidden
+                                    />
+                                    <div
+                                      className={`absolute right-2 w-32 bg-popover border border-border rounded-md shadow-lg z-20 py-1 ${isLastRow
+                                          ? "bottom-full mb-1"
+                                          : "top-full mt-1"
+                                        }`}
                                     >
-                                      View
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeError(err)}
-                                      className="block w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50"
-                                    >
-                                      Remove
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </td>
-                          </tr>
+                                      <button
+                                        type="button"
+                                        onClick={() => viewError(err)}
+                                        className="block w-full text-left px-3 py-2 text-sm text-popover-foreground hover:bg-muted"
+                                      >
+                                        View
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeError(err)}
+                                        className="block w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </td>
+                            </tr>
                           );
                         })}
                       </tbody>
@@ -994,207 +974,207 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
           return found?.label || code;
         };
         return (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
-            onClick={closeErrorDetail}
-            aria-hidden
-          />
-          <div
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-xl max-h-[85vh] overflow-hidden bg-background border border-border rounded-xl shadow-2xl flex flex-col"
-            role="dialog"
-            aria-labelledby="import-error-title"
-          >
-            {/* Header — rose accent strip + icon + contextual subtitle.
+          <>
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+              onClick={closeErrorDetail}
+              aria-hidden
+            />
+            <div
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-xl max-h-[85vh] overflow-hidden bg-background border border-border rounded-xl shadow-2xl flex flex-col"
+              role="dialog"
+              aria-labelledby="import-error-title"
+            >
+              {/* Header — rose accent strip + icon + contextual subtitle.
                 Subtitle saves the rep a glance down: "Row 1 · Validation"
                 tells them what they're looking at before they read on. */}
-            <div className="relative">
-              <div className="absolute inset-x-0 top-0 h-1 bg-rose-500" />
-              <div className="flex items-start justify-between gap-3 p-5 pt-6 border-b border-border">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
-                    <Icon
-                      name="AlertOctagon"
-                      size={20}
-                      className="text-rose-600"
-                    />
+              <div className="relative">
+                <div className="absolute inset-x-0 top-0 h-1 bg-rose-500" />
+                <div className="flex items-start justify-between gap-3 p-5 pt-6 border-b border-border">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0">
+                      <Icon
+                        name="AlertOctagon"
+                        size={20}
+                        className="text-rose-600"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <h3
+                        id="import-error-title"
+                        className="text-base font-semibold text-foreground"
+                      >
+                        Import Error
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        Row {lineNumber} could not be imported · {errType}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3
-                      id="import-error-title"
-                      className="text-base font-semibold text-foreground"
-                    >
-                      Import Error
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      Row {lineNumber} could not be imported · {errType}
-                    </p>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={closeErrorDetail}
+                    aria-label="Close error detail"
+                    className="shrink-0"
+                  >
+                    <Icon name="X" size={18} />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={closeErrorDetail}
-                  aria-label="Close error detail"
-                  className="shrink-0"
-                >
-                  <Icon name="X" size={18} />
-                </Button>
               </div>
-            </div>
 
-            <div className="overflow-y-auto p-5 space-y-5 text-sm">
-              {/* Quick-stats pill row. Compact, scannable — replaces the
+              <div className="overflow-y-auto p-5 space-y-5 text-sm">
+                {/* Quick-stats pill row. Compact, scannable — replaces the
                   old two-column "Line Number / Export Line Number / Type"
                   block. Type pill is rose-tinted so the error category
                   stands out from neutral metadata. */}
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border">
-                  <Icon
-                    name="Hash"
-                    size={12}
-                    className="text-muted-foreground"
-                  />
-                  <span className="text-xs text-muted-foreground">Line</span>
-                  <span className="text-xs font-semibold text-foreground">
-                    {lineNumber}
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border">
+                    <Icon
+                      name="Hash"
+                      size={12}
+                      className="text-muted-foreground"
+                    />
+                    <span className="text-xs text-muted-foreground">Line</span>
+                    <span className="text-xs font-semibold text-foreground">
+                      {lineNumber}
+                    </span>
                   </span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border">
-                  <Icon
-                    name="FileText"
-                    size={12}
-                    className="text-muted-foreground"
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    Export Line
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border">
+                    <Icon
+                      name="FileText"
+                      size={12}
+                      className="text-muted-foreground"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Export Line
+                    </span>
+                    <span className="text-xs font-semibold text-foreground">
+                      {exportLine}
+                    </span>
                   </span>
-                  <span className="text-xs font-semibold text-foreground">
-                    {exportLine}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200">
+                    <Icon
+                      name="AlertCircle"
+                      size={12}
+                      className="text-rose-600"
+                    />
+                    <span className="text-xs font-semibold text-rose-700">
+                      {errType}
+                    </span>
                   </span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-200">
-                  <Icon
-                    name="AlertCircle"
-                    size={12}
-                    className="text-rose-600"
-                  />
-                  <span className="text-xs font-semibold text-rose-700">
-                    {errType}
-                  </span>
-                </span>
-              </div>
+                </div>
 
-              {/* What went wrong — each validation failure gets its own
+                {/* What went wrong — each validation failure gets its own
                   card with the friendly field label, raw code, and a
                   reason chip. Card has a rose left border so a wall of
                   multiple failures still feels grouped under the error
                   identity without being overwhelming. */}
-              {failures.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <Icon
-                      name="ShieldAlert"
-                      size={14}
-                      className="text-rose-600"
-                    />
-                    <h4 className="text-sm font-semibold text-foreground">
-                      What went wrong
-                    </h4>
-                    <span className="text-xs text-muted-foreground">
-                      ({failures.length})
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {failures.map((vf, i) => {
-                      const code = vf.field || vf.attribute || "";
-                      const label = fieldLabel(code);
-                      const reason =
-                        vf.type || vf.validation || vf.message || "invalid";
-                      return (
-                        <div
-                          key={i}
-                          className="border-l-2 border-rose-400 bg-rose-50/40 rounded-r-md px-3 py-2.5"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">
-                                {label}
-                              </p>
-                              {code && code !== label && (
-                                <p className="text-[11px] font-mono text-muted-foreground mt-0.5 truncate">
-                                  {code}
+                {failures.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Icon
+                        name="ShieldAlert"
+                        size={14}
+                        className="text-rose-600"
+                      />
+                      <h4 className="text-sm font-semibold text-foreground">
+                        What went wrong
+                      </h4>
+                      <span className="text-xs text-muted-foreground">
+                        ({failures.length})
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {failures.map((vf, i) => {
+                        const code = vf.field || vf.attribute || "";
+                        const label = fieldLabel(code);
+                        const reason =
+                          vf.type || vf.validation || vf.message || "invalid";
+                        return (
+                          <div
+                            key={i}
+                            className="border-l-2 border-rose-400 bg-rose-50/40 rounded-r-md px-3 py-2.5"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {label}
                                 </p>
-                              )}
+                                {code && code !== label && (
+                                  <p className="text-[11px] font-mono text-muted-foreground mt-0.5 truncate">
+                                    {code}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-semibold uppercase tracking-wide shrink-0">
+                                {reason}
+                              </span>
                             </div>
-                            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-semibold uppercase tracking-wide shrink-0">
-                              {reason}
-                            </span>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Row data — when EspoCRM gives us an array, render as a
+                {/* Row data — when EspoCRM gives us an array, render as a
                   numbered list of cell values so the rep can match column
                   index to the failing field. String shape (whole CSV
                   line) falls back to a mono block. */}
-              {err.row && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <Icon
-                      name="Table"
-                      size={14}
-                      className="text-muted-foreground"
-                    />
-                    <h4 className="text-sm font-semibold text-foreground">
-                      Row data
-                    </h4>
-                  </div>
-                  <div className="border border-border rounded-md overflow-hidden">
-                    {Array.isArray(err.row) ? (
-                      err.row.map((v, i) => (
-                        <div
-                          key={i}
-                          className="grid grid-cols-[44px_1fr] border-b border-border last:border-0 text-xs"
-                        >
-                          <div className="bg-muted/40 px-2 py-2 text-muted-foreground text-right tabular-nums border-r border-border">
-                            {i + 1}
+                {err.row && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Icon
+                        name="Table"
+                        size={14}
+                        className="text-muted-foreground"
+                      />
+                      <h4 className="text-sm font-semibold text-foreground">
+                        Row data
+                      </h4>
+                    </div>
+                    <div className="border border-border rounded-md overflow-hidden">
+                      {Array.isArray(err.row) ? (
+                        err.row.map((v, i) => (
+                          <div
+                            key={i}
+                            className="grid grid-cols-[44px_1fr] border-b border-border last:border-0 text-xs"
+                          >
+                            <div className="bg-muted/40 px-2 py-2 text-muted-foreground text-right tabular-nums border-r border-border">
+                              {i + 1}
+                            </div>
+                            <div className="px-3 py-2 text-foreground font-mono break-all">
+                              {v ? (
+                                v
+                              ) : (
+                                <span className="text-muted-foreground italic">
+                                  empty
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="px-3 py-2 text-foreground font-mono break-all">
-                            {v ? (
-                              v
-                            ) : (
-                              <span className="text-muted-foreground italic">
-                                empty
-                              </span>
-                            )}
-                          </div>
+                        ))
+                      ) : (
+                        <div className="bg-muted/30 p-3 text-foreground whitespace-pre-wrap font-mono text-xs">
+                          {err.row}
                         </div>
-                      ))
-                    ) : (
-                      <div className="bg-muted/30 p-3 text-foreground whitespace-pre-wrap font-mono text-xs">
-                        {err.row}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            {/* Footer — Close button kept for keyboard / mouse users
+              {/* Footer — Close button kept for keyboard / mouse users
                 who'd rather not aim for the small X. Right-aligned to
                 follow the convention used elsewhere in the drawer. */}
-            <div className="border-t border-border px-5 py-3 flex justify-end">
-              <Button variant="outline" onClick={closeErrorDetail}>
-                Close
-              </Button>
+              <div className="border-t border-border px-5 py-3 flex justify-end">
+                <Button variant="outline" onClick={closeErrorDetail}>
+                  Close
+                </Button>
+              </div>
             </div>
-          </div>
-        </>
+          </>
         );
       })()}
     </>

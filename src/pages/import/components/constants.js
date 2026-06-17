@@ -68,14 +68,6 @@ export const ACTION_MAP = {
   updateOnly: "update",
 };
 
-// Lead-entity mapping targets. Labels match the EspoCRM admin UI; values are
-// EspoCRM's camelCase attribute keys so the import POST `attributeList` is
-// build-time-safe (no second translation pass needed). Empty string = the
-// "-Skip-" option (column ignored at import time).
-//
-// Custom-field values keep the `c` prefix (e.g. cNextContactAt) and respect
-// the existing typos in this backend (`cLeatReceivedAt` — not a frontend
-// mistake to fix).
 export const FIELD_OPTIONS = [
   { value: "", label: "-Skip-" },
   { value: "accountName", label: "Account Name" },
@@ -83,7 +75,9 @@ export const FIELD_OPTIONS = [
   { value: "assignedUserId", label: "Assigned User (ID)" },
   { value: "campaignId", label: "Campaign (ID)" },
   { value: "campaignName", label: "Campaign (Name)" },
+  { value: "cCampaignName", label: "CampaignName" },
   { value: "addressCity", label: "City" },
+  { value: "cClientNomen", label: "ClientNomen" },
   { value: "convertedAt", label: "Converted At" },
   { value: "addressCountry", label: "Country" },
   { value: "createdAt", label: "Created At" },
@@ -96,6 +90,9 @@ export const FIELD_OPTIONS = [
   { value: "createdOpportunityId", label: "Opportunity (ID)" },
   { value: "createdOpportunityName", label: "Opportunity (Name)" },
   { value: "description", label: "Description" },
+  // `title` shows in the EspoCRM admin dropdown as "Designation" — keep
+  // the label in sync so the error-modal field-label lookup matches.
+  { value: "title", label: "Designation" },
   { value: "doNotCall", label: "Do Not Call" },
   { value: "emailAddress", label: "Email" },
   { value: "emailAddressData", label: "Email Address Data" },
@@ -108,7 +105,9 @@ export const FIELD_OPTIONS = [
   { value: "id", label: "ID" },
   { value: "industry", label: "Industry" },
   { value: "lastName", label: "Last Name" },
+  { value: "cLeadId", label: "Lead Id" },
   { value: "cLeatReceivedAt", label: "Lead Received At" },
+  { value: "cLeadSource", label: "Lead Source" },
   { value: "middleName", label: "Middle Name" },
   { value: "modifiedAt", label: "Modified At" },
   { value: "modifiedById", label: "Modified By (ID)" },
@@ -125,10 +124,15 @@ export const FIELD_OPTIONS = [
   { value: "phoneNumberOther", label: "Phone (Other)" },
   { value: "phoneNumberIsInvalid", label: "Phone Number is Invalid" },
   { value: "phoneNumberIsOptedOut", label: "Phone Number is Opted-Out" },
+  { value: "cPlatform", label: "Platform" },
   { value: "addressPostalCode", label: "Postal Code" },
   { value: "cPreference", label: "Preference" },
   { value: "cProject", label: "Project" },
+  { value: "cProjectBudget", label: "Project Budget" },
+  { value: "cProjectLocation", label: "Project Location" },
   { value: "cProjectName", label: "Project Name" },
+  { value: "cProjectType", label: "Project Type" },
+  { value: "cProjectNomen", label: "ProjectNomen" },
   { value: "salutationName", label: "Salutation" },
   { value: "cSiteVisitAt", label: "Site Visit At" },
   { value: "source", label: "Source" },
@@ -140,9 +144,10 @@ export const FIELD_OPTIONS = [
   { value: "targetListId", label: "Target List (ID)" },
   { value: "targetListName", label: "Target List (Name)" },
   { value: "teamsIds", label: "Teams (IDs)" },
-  { value: "title", label: "Title" },
   { value: "website", label: "Website" },
   { value: "cWhatsapp", label: "Whatsapp" },
+  { value: "cWhatsappTemplate", label: "Whatsapp Template" },
+  { value: "cWhatsapp1", label: "Whatsapp1" },
 ];
 
 // Per-lead status pill palette for the overview tables. Matches the deals
