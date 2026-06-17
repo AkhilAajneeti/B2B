@@ -21,7 +21,6 @@ export const fetchRoles=async()=>{
 }
 
 export const createUser = async (payload) => {
-  console.log(payload);
   const token = localStorage.getItem("auth_token");
   const res = await fetch("https://gateway.aajneetiadvertising.com/User", {
     method: "POST",
@@ -29,11 +28,10 @@ export const createUser = async (payload) => {
 
     body: JSON.stringify(payload),
   });
-  const text = await res.text();
   if (!res.ok) {
     console.error("API ERROR:", text);
     throw new Error("User is not created", text);
   }
   // EspoCRM returns array
-  return text ? JSON.parse(text) : null;
+  return await res.json();
 };

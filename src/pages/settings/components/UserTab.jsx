@@ -823,9 +823,19 @@ const UserTab = () => {
                             label="User Name"
                             type="text"
                             value={inviteData?.userName}
-                            onChange={(e) =>
-                              handleInviteChange("userName", e?.target?.value)
-                            }
+                            onChange={(e) => {
+                              // Normalize as the rep types: lowercase + any
+                              // run of whitespace → single underscore. So
+                              // "Akhil Kumar" turns into "akhil_kumar"
+                              // without an extra cleanup step. \s+ collapses
+                              // double-spaces so "Akhil  Kumar" doesn't
+                              // become "akhil__kumar".
+                              const raw = e?.target?.value || "";
+                              const normalized = raw
+                                .toLowerCase()
+                                .replace(/\s+/g, "_");
+                              handleInviteChange("userName", normalized);
+                            }}
                             placeholder="username"
                             required
                           />
