@@ -31,6 +31,10 @@ const Y_AXIS_WIDTH = 180;
 const CHART_CHROME = 60;
 // Hard floor — just enough to render one bar, axis ticks, and legend cleanly.
 const MIN_CHART_HEIGHT = 140;
+// Ceiling — beyond this the scroll wrapper kicks in. Set so VISIBLE_ROWS
+// reps render without scrolling; team 8+ scrolls inside the card instead
+// of stretching the card itself taller as the team grows.
+const MAX_CHART_HEIGHT = VISIBLE_ROWS * ROW_HEIGHT + CHART_CHROME;
 // Cap on bar segment thickness — prevents a one-rep view from rendering a huge chunky bar.
 const MAX_BAR_SIZE = 36;
 
@@ -387,6 +391,11 @@ const AssignedUserChartComponent = ({ filters = {}, enabled = true }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
+            // maxHeight caps the visible window at VISIBLE_ROWS reps. The
+            // inner div still renders at chartHeight (full team) so the
+            // overflow-y-auto produces a real scrollbar instead of the
+            // card itself stretching.
+            style={{ maxHeight: MAX_CHART_HEIGHT }}
             className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full"
           >
             <div className="min-h-full" style={{ height: chartHeight }}>
