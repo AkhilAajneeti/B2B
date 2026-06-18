@@ -924,7 +924,7 @@ const DealDrawer = ({
                             <p className="text-md text-muted-foreground">
                               Followers
                             </p>
-                            <p className="text-primary font-medium">
+                            <p className="text-primary font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                               {deal?.collaboratorsNames &&
                                 Object.values(deal?.collaboratorsNames).join(
                                   " , ",

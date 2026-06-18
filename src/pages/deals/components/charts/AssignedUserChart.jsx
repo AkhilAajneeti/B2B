@@ -31,9 +31,7 @@ const Y_AXIS_WIDTH = 180;
 const CHART_CHROME = 60;
 // Hard floor — just enough to render one bar, axis ticks, and legend cleanly.
 const MIN_CHART_HEIGHT = 140;
-// Ceiling — beyond this the scroll wrapper kicks in. Set so VISIBLE_ROWS
-// reps render without scrolling; team 8+ scrolls inside the card instead
-// of stretching the card itself taller as the team grows.
+
 const MAX_CHART_HEIGHT = VISIBLE_ROWS * ROW_HEIGHT + CHART_CHROME;
 // Cap on bar segment thickness — prevents a one-rep view from rendering a huge chunky bar.
 const MAX_BAR_SIZE = 36;
@@ -121,8 +119,8 @@ const CustomTooltip = ({ active, payload }) => {
             const isOther = seg.key === "other";
             const breakdown = isOther
               ? Object.entries(row.otherBreakdown || {}).sort(
-                  (a, b) => b[1] - a[1],
-                )
+                (a, b) => b[1] - a[1],
+              )
               : [];
 
             return (

@@ -398,7 +398,7 @@ const DealsTable = ({
                         deal?.status,
                       )}`}
                     >
-                      <span className={`text-sm text-foreg roundunded-full `}>
+                      <span className={`text-sm text-foreg rounded-full `}>
                         {deal?.status}
                       </span>
                     </div>
