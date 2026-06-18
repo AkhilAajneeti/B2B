@@ -721,15 +721,15 @@ const DealDrawer = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                           {/* Client Nomen */}
-                          {isSupAdmin() && 
-                          <div className="col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              Client Nomen
-                            </p>
-                            <p className="text-foreground font-medium mt-1">
-                              {deal?.clientNomen || "none"}
-                            </p>
-                          </div>}
+                          {isSupAdmin() &&
+                            <div className="col-span-2">
+                              <p className="text-sm text-muted-foreground">
+                                Client Nomen
+                              </p>
+                              <p className="text-foreground font-medium mt-1">
+                                {deal?.clientNomen || "none"}
+                              </p>
+                            </div>}
 
                           {/* Project Nomen */}
                           <div>
@@ -921,15 +921,21 @@ const DealDrawer = ({
 
                           {/* Followers */}
                           <div>
-                            <p className="text-md text-muted-foreground">
+                            <p className="text-md text-muted-foreground mb-2">
                               Followers
                             </p>
-                            <p className="text-primary font-medium ">
+
+                            <div className="flex flex-wrap gap-2">
                               {deal?.collaboratorsNames &&
-                                Object.values(deal?.collaboratorsNames).join(
-                                  " , ",
-                                )}
-                            </p>
+                                Object.values(deal.collaboratorsNames).map((name, index) => (
+                                  <span
+                                    key={index}
+                                    className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-3 py-1 text-sm font-medium text-orange-600"
+                                  >
+                                   {name}
+                                  </span>
+                                ))}
+                            </div>
                           </div>
                         </div>
                       </div>
