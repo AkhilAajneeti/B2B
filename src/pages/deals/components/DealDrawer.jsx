@@ -1478,7 +1478,7 @@ const DealDrawer = ({
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 City
                               </p>
-                              <p className="text-sm text-foreground font-medium">
+                              <p className="text-sm text-foreground font-medium capitalize">
                                 {deal?.addressCity || "None"}
                               </p>
                             </div>
@@ -1647,20 +1647,7 @@ const DealDrawer = ({
                               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
                                 {(() => {
                                   if (!deal?.description) return "None";
-                                  // Split the description into text +
-                                  // URL chunks so we can wrap each URL
-                                  // in an <a>. Capturing group keeps the
-                                  // matched URLs in the resulting array
-                                  // — odd-indexed entries are the URLs,
-                                  // but we re-test each chunk anyway
-                                  // since the capturing-group ordering
-                                  // can shift if the description starts
-                                  // with a URL. `[^\s)]+` stops at
-                                  // whitespace and `)` so a URL inside
-                                  // parens doesn't swallow the closing
-                                  // paren. EspoCRM crm.../#Lead/view/id
-                                  // URLs work because the regex doesn't
-                                  // stop on `#`.
+                                 
                                   const URL_RE = /(https?:\/\/[^\s)]+)/g;
                                   const parts =
                                     deal.description.split(URL_RE);
@@ -1898,10 +1885,7 @@ const DealDrawer = ({
                         </div>
                         <div className="p-6">
                           {leadData?.assignedUserName ? (() => {
-                            // Look up the full user record so we can
-                            // surface role/email/phone. Match by id
-                            // (preferred) with a name-fallback in case
-                            // assignedUserId isn't on the lead record.
+                           
                             const rep =
                               users.find(
                                 (u) => u.id === leadData.assignedUserId,
@@ -1909,21 +1893,7 @@ const DealDrawer = ({
                               users.find(
                                 (u) => u.name === leadData.assignedUserName,
                               );
-                            // EspoCRM `type` enum → human label. Most
-                            // common case is "regular" which reads better
-                            // as "Rep" than "Regular".
-                            const roleLabel =
-                              rep?.type === "admin"
-                                ? "Admin"
-                                : rep?.role
-                                  ? "Rep"
-                                  : rep?.type
-                                    ? rep.type.charAt(0).toUpperCase() +
-                                    rep.type.slice(1)
-                                    : null;
-                            const teamName =
-                              leadData?.teamsNames &&
-                              Object.values(leadData.teamsNames)[0];
+
                             return (
                               <div className="flex items-start gap-4">
                                 <div className="relative shrink-0">
@@ -1943,27 +1913,6 @@ const DealDrawer = ({
                                   <h4 className="text-base font-semibold text-slate-900 truncate">
                                     {leadData.assignedUserName}
                                   </h4>
-
-                                
-                                  {(roleLabel || teamName) && (
-                                    <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 flex-wrap">
-                                      {roleLabel && (
-                                        <span className="inline-flex items-center gap-1">
-                                          <Icon name="Shield" size={11} />
-                                          {roleLabel}
-                                        </span>
-                                      )}
-                                      {roleLabel && teamName && (
-                                        <span className="text-slate-300">·</span>
-                                      )}
-                                      {teamName && (
-                                        <span className="inline-flex items-center gap-1">
-                                          <Icon name="Users" size={11} />
-                                          {teamName}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
 
                                   {(rep?.emailAddress || rep?.phoneNumber) && (
                                     <div className="mt-3 space-y-1.5">

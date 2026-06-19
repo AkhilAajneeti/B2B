@@ -105,8 +105,10 @@ const DealDrawer = ({
         const res = await taskStreamById(id);
         setmockStream(res.list || []);
       } catch (err) {
+        // Stream is a secondary feature — fail silently like the meeting drawer
+        // does (which uses React Query and handles errors without toasting).
+        // Users don't need an error every time they open a task.
         console.error("Failed to fetch streams", err);
-        toast.error("Failed to load activity");
       }
     };
 
