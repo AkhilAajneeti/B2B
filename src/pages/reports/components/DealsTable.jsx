@@ -264,7 +264,7 @@ const DealsTable = ({
                   className="hover:bg-muted/30 cursor-pointer transition-smooth"
                 >
                   <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-foreground capitalize">
                       {deal?.name}
                     </div>
                   </td>
@@ -325,7 +325,7 @@ const DealsTable = ({
               <div className="flex-1 min-w-0">
                 {/* Top Row */}
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-foreground truncate">
+                  <h3 className="font-semibold text-foreground truncate capitalize">
                     {deal?.name}
                   </h3>
 
@@ -350,7 +350,7 @@ const DealsTable = ({
                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                     <Icon name="User" size={12} />
                     Assigned to{" "}
-                    <span className="truncate">{deal?.assignedUserName}</span>
+                    <span className="truncate capitalize">{deal?.assignedUserName}</span>
                   </div>
                 )}
 

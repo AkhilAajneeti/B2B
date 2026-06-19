@@ -72,18 +72,11 @@ const Activities = () => {
     setPage(1);
   };
 
-  const handleAddActivity = async (payload) => {
-    try {
-      const createdActivity = await createActivity(payload);
-
-      // add new activity at top (timeline style)
-      setActivities((prev) => [createdActivity, ...prev]);
-
-      return createdActivity; // 👈 important for QuickAddActivity
-    } catch (error) {
-      console.error("Failed to create activity:", error);
-      throw error;
-    }
+  // The modal (QuickAddActivity) already calls createCall/createMeeting itself,
+  // so this handler just appends the created entity to the top of the timeline.
+  const handleAddActivity = (createdActivity) => {
+    if (!createdActivity) return;
+    setActivities((prev) => [createdActivity, ...prev]);
   };
   const handleEditActivity = (activity) => {
     // In a real app, this would open an edit modal

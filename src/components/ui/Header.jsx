@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
@@ -62,6 +62,19 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
     handleDropdownClose();
   };
   const { open, setOpen, setNotifications } = useNotification();
+  const notificationRef = useRef(null);
+
+  // Close the notification dropdown when clicking anywhere outside the bell + dropdown area.
+  useEffect(() => {
+    if (!open) return;
+    const handleOutsideClick = (e) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [open, setOpen]);
 
   const handleClick = async () => {
     setOpen(!open);
@@ -122,7 +135,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
           {/* Right Section - Actions & User */}
           <div className="flex items-center space-x-2">
-            <div className="relative">
+            <div className="relative" ref={notificationRef}>
               {/* Notifications */}
               <Button
                 variant="ghost"

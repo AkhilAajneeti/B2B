@@ -390,7 +390,7 @@ const DealsTable = ({
                     />
                   </td>
                   <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-foreground capitalize">
                       {deal?.name}
                     </div>
                   </td>
@@ -399,7 +399,7 @@ const DealsTable = ({
 
                   </td>
                   <td className="px-4 py-4">
-                    <div className={`font-medium flex justify-center items-center space-x-2 rounded-full ${getSourceColor(deal?.cSubSource)}`}>
+                    <div className={`font-medium flex justify-center items-center space-x-2 py-1 px-2 rounded-full ${getSourceColor(deal?.cSubSource)}`}>
                       {deal?.cSubSource
                         ? deal?.cSubSource
                         : deal?.source?.toLowerCase() === "acl"
@@ -441,7 +441,7 @@ const DealsTable = ({
                         >
                           {getInitials(deal.assignedUserName)}
                         </span>
-                        <span className="text-sm font-medium text-slate-700 truncate">
+                        <span className="text-sm font-medium text-slate-700 truncate capitalize">
                           {deal.assignedUserName}
                         </span>
                       </div>
@@ -548,7 +548,7 @@ const DealsTable = ({
                   {/* Top */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-sm text-foreground truncate">
+                      <h3 className="font-semibold text-sm text-foreground truncate capitalize">
                         {deal?.name}
                       </h3>
 
@@ -579,7 +579,7 @@ const DealsTable = ({
                       {deal?.assignedUserName && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Icon name="User2" size={12} />
-                          <span className="truncate">
+                          <span className="truncate capitalize">
                             {deal?.assignedUserName}
                           </span>
                         </div>

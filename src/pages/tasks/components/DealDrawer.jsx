@@ -464,9 +464,9 @@ const DealDrawer = ({
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border">
+          <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-br from-slate-50/60 to-transparent">
             <div className="flex items-center space-x-3">
-              <h2 className="text-xl font-semibold text-foreground">
+              <h2 className="text-xl font-semibold text-foreground capitalize">
                 {isMassUpdate
                   ? "Mass Update Tasks"
                   : mode === "add"
@@ -630,7 +630,7 @@ const DealDrawer = ({
 
                   {/* ================= Actions ================= */}
                   <div className="flex justify-end gap-3">
-                    <Button type="submit">Save Lead</Button>
+                    <Button type="submit">Save Task</Button>
                   </div>
                 </form>
               </div>
@@ -662,122 +662,154 @@ const DealDrawer = ({
                   {activeTab === "overview" && (
                     <div className="space-y-6">
                       {/* ================= Overview ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="Calendar" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">Overview</h3>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Name */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Name
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.name || "—"}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <Icon name="Type" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Name
+                              </p>
+                              <p className="text-sm text-foreground font-medium capitalize">
+                                {deal?.name || "—"}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Phone */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Parent Name
-                            </p>
-                            {deal?.parentName ? (
-                              <p className="text-primary hover:underline">
-                                {deal.parentName}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Link2" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Parent Name
                               </p>
-                            ) : (
-                              <p className="text-foreground">—</p>
-                            )}
+                              {deal?.parentName ? (
+                                <p className="text-sm text-primary hover:underline font-medium capitalize">
+                                  {deal.parentName}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-foreground">—</p>
+                              )}
+                            </div>
                           </div>
 
                           {/* Email */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Status
-                            </p>
-                            {deal?.status ? (
-                              <p className="text-primary hover:underline break-all">
-                                {deal.status}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Activity" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Status
                               </p>
-                            ) : (
-                              <p className="text-foreground">—</p>
-                            )}
+                              {deal?.status ? (
+                                <p className="text-sm text-primary hover:underline break-all font-medium">
+                                  {deal.status}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-foreground">—</p>
+                              )}
+                            </div>
                           </div>
 
                           {/* WhatsApp */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Priority
-                            </p>
-                            {deal?.priority ? (
-                              <p className="text-primary hover:underline break-all">
-                                {deal.priority}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Flag" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Priority
                               </p>
-                            ) : (
-                              <p className="text-foreground">—</p>
-                            )}
+                              {deal?.priority ? (
+                                <p className="text-sm text-primary hover:underline break-all font-medium">
+                                  {deal.priority}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-foreground">—</p>
+                              )}
+                            </div>
                           </div>
 
                           {/* Next Contact */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Date Start
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.dateStart
-                                ? formatDate(deal.dateStart)
-                                : "—"}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <Icon name="Calendar" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Date Start
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.dateStart
+                                  ? formatDate(deal.dateStart)
+                                  : "—"}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Next Contact */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Date Complete
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.dateEnd ? formatDate(deal.dateEnd) : "—"}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <Icon name="CalendarCheck" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Date Complete
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.dateEnd ? formatDate(deal.dateEnd) : "—"}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       {/* ================= Details ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <h3 className="text-base font-semibold text-foreground mb-6">
-                          Details
-                        </h3>
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="Info" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">Details</h3>
+                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Status */}
                           {/* Project Name */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Created By
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.createdByName || "—"}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <Icon name="UserCircle" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Created By
+                              </p>
+                              <p className="text-sm text-foreground font-medium capitalize">
+                                {deal?.createdByName || "—"}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Preference */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Created At
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.createdAt
-                                ? formatDate(deal.createdAt)
-                                : "—"}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <Icon name="Clock" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Created At
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.createdAt
+                                  ? formatDate(deal.createdAt)
+                                  : "—"}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Description */}
-                          <div className="md:col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              Description
-                            </p>
-                            <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.description}
-                            </p>
+                          <div className="md:col-span-2 flex items-start gap-3">
+                            <Icon name="AlignLeft" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Description
+                              </p>
+                              <p className="text-sm text-foreground leading-relaxed first-letter:uppercase">
+                                {deal?.description || "—"}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -787,31 +819,39 @@ const DealDrawer = ({
                   {activeTab === "AssignedUsers" && (
                     <div className="space-y-6">
                       {/* ================= Assigned User ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="Users" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">Assignment</h3>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Assigned User */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Assigned User
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.assignedUserName || "—"}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <Icon name="UserCircle" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Assigned User
+                              </p>
+                              <p className="text-sm text-foreground font-medium capitalize">
+                                {deal?.assignedUserName || "—"}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Followers */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Followers
-                            </p>
-                            <p className="text-foreground font-medium">
+                          <div className="flex items-start gap-3">
+                            <Icon name="UserPlus" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Followers
+                              </p>
                               {deal?.followersNames ? (
                                 <div className="flex flex-wrap gap-2">
                                   {Object.entries(deal.followersNames).map(
                                     ([id, name]) => (
                                       <span
                                         key={id}
-                                        className="text-sm text-primary font-medium"
+                                        className="text-sm text-primary font-medium capitalize"
                                       >
                                         {name}
                                       </span>
@@ -819,42 +859,49 @@ const DealDrawer = ({
                                   )}
                                 </div>
                               ) : (
-                                <span>—</span>
+                                <span className="text-sm text-foreground">—</span>
                               )}
-                            </p>
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       {/* ================= Audit Information ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <h3 className="text-base font-semibold text-foreground mb-6">
-                          Audit Information
-                        </h3>
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="History" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">Audit Information</h3>
+                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Created */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Created
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.createdAt
-                                ? `${formatDate(deal.createdAt)} by ${deal?.createdByName || "—"}`
-                                : "—"}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <Icon name="PlusCircle" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Created
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.createdAt
+                                  ? `${formatDate(deal.createdAt)} by ${deal?.createdByName || "—"}`
+                                  : "—"}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Modified */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Last Modified
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.modifiedAt
-                                ? `${formatDate(deal.modifiedAt)} by ${deal?.modifiedByName || "—"}`
-                                : "—"}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <Icon name="Edit" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Last Modified
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.modifiedAt
+                                  ? `${formatDate(deal.modifiedAt)} by ${deal?.modifiedByName || "—"}`
+                                  : "—"}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -870,6 +917,7 @@ const DealDrawer = ({
                         <Button
                           variant="outline"
                           size="sm"
+                          className={"bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white hover:text-white border-0"}
                           onClick={createStream}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
@@ -916,6 +964,32 @@ const DealDrawer = ({
                               </Button>
                             </div>
                           </form>
+                        )}
+                        {(!mockStream || mockStream.length === 0) && (
+                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/40 via-white to-indigo-50/30 p-8 text-center">
+                            <div className="absolute -top-12 -right-12 w-40 h-40 bg-violet-200/40 rounded-full blur-3xl pointer-events-none" />
+                            <div className="relative inline-flex">
+                              <div className="absolute inset-0 bg-gradient-to-br from-violet-400 to-indigo-500 rounded-2xl blur-md opacity-40 animate-pulse" />
+                              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                                <Icon name="MessageSquare" size={28} className="text-white" />
+                              </div>
+                            </div>
+                            <h4 className="mt-4 text-lg font-bold text-slate-900">No conversations yet</h4>
+                            <p className="mt-1.5 text-sm text-slate-500 max-w-sm mx-auto">
+                              Notes, updates, and team mentions about this task live here as a timeline.
+                            </p>
+                            <div className="mt-5 flex flex-wrap justify-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-violet-700 bg-violet-100/70 rounded-full">
+                                <Icon name="Sparkles" size={10} />Quick notes
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-indigo-700 bg-indigo-100/70 rounded-full">
+                                <Icon name="AtSign" size={10} />Mention teammates
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-700 bg-slate-100 rounded-full">
+                                <Icon name="Clock" size={10} />Auto-timestamped
+                              </span>
+                            </div>
+                          </div>
                         )}
                         {mockStream?.map((stream) => (
                           <div

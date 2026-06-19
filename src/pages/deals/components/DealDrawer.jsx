@@ -257,6 +257,96 @@ const DealDrawer = ({
     });
   };
 
+  // --- Avatar helpers — same palette/hash as DealsTable so the rep's
+  //     color stays consistent across the table and this drawer.
+  const ASSIGNEE_PALETTE = [
+    "#6366F1", "#22C55E", "#F59E0B", "#EF4444",
+    "#06B6D4", "#8B5CF6", "#EC4899", "#14B8A6",
+  ];
+  const getNameColor = (name = "") => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i)) >>> 0;
+    return ASSIGNEE_PALETTE[hash % ASSIGNEE_PALETTE.length];
+  };
+  const getInitials = (name = "") => {
+    const parts = name.trim().split(/\s+/);
+    if (!parts[0]) return "?";
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase();
+  };
+
+  const getNextContactStatus = (value) => {
+    if (!value) {
+      return { tone: "muted", text: "No follow-up scheduled" };
+    }
+    const safe =
+      typeof value === "string" && value.length > 10
+        ? `${value.replace(" ", "T")}Z`
+        : value;
+    const date = new Date(safe);
+    if (isNaN(date.getTime())) {
+      return { tone: "muted", text: "Next contact not set" };
+    }
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffDays = Math.round(diffMs / 86400000);
+    const diffHours = Math.round(diffMs / 3600000);
+    const timeStr = date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const dayStr = date.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+    if (diffMs < 0) {
+      const overdueDays = Math.abs(diffDays);
+      return {
+        tone: "rose",
+        text:
+          overdueDays > 0
+            ? `Overdue by ${overdueDays} day${overdueDays === 1 ? "" : "s"}`
+            : `Overdue by ${Math.abs(diffHours)}h`,
+      };
+    }
+    // Same calendar day → "Today at 6:03 PM (in 3h)"
+    if (date.toDateString() === now.toDateString()) {
+      return {
+        tone: "amber",
+        text: `Today at ${timeStr}${diffHours >= 1 ? ` (in ${diffHours}h)` : ""}`,
+      };
+    }
+    return { tone: "emerald", text: `${dayStr}, ${timeStr}` };
+  };
+
+  // --- Build the wa.me URL once so the header Quick Actions button and
+  //     the Overview link share the exact same logic. Returns null when
+  //     no phone/whatsapp data is present, so the caller can decide
+  //     whether to disable the action.
+  const buildWhatsappUrl = (d) => {
+    if (!d?.cWhatsapp && !d?.phoneNumber) return null;
+    const base = d?.cWhatsapp
+      ? `https://${d.cWhatsapp.replace(/^https?:\/\//, "")}`
+      : `https://wa.me/${(d?.phoneNumber || "").replace(/\D/g, "")}`;
+    if (d?.cWhatsappTemplate) {
+      try {
+        const raw = decodeURIComponent(
+          d.cWhatsappTemplate.replace(/^\?text=/, ""),
+        );
+        return `${base}?text=${encodeURIComponent(raw)}`;
+      } catch {
+        // Malformed %XX in the backend template — fall through to the
+        // generic intro below so the rep still gets a pre-filled
+        // message they can edit before sending.
+      }
+    }
+    const fallback = `Hello *${d?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`;
+    return `${base}?text=${encodeURIComponent(fallback)}`;
+  };
+
   const getStageColor = (stage) => {
     const colors = {
       New: "bg-blue-100 text-blue-800",
@@ -606,7 +696,9 @@ const DealDrawer = ({
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
       )}
-      {/* Drawer */}
+      {/* Drawer — bumped from max-w-2xl to max-w-3xl so the redesigned
+          two-column sections (Contact / Interest / Lifecycle) have room
+          to breathe without label/value pairs wrapping. */}
       <div
         className={`
           fixed top-0 right-0 h-full w-full max-w-2xl bg-background border-l border-border z-50
@@ -615,27 +707,74 @@ const DealDrawer = ({
         `}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border">
-            <div className="flex items-center space-x-3">
-              <h2 className="text-xl font-semibold text-foreground">
-                {mode === "mass-update"
-                  ? `Mass Update (${selectedIds.length}) Leads`
-                  : mode === "add"
-                    ? "Add Lead"
-                    : isEditing
-                      ? "Edit Lead"
-                      : deal?.name}
-              </h2>
-              <span
-                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStageColor(
-                  deal?.status,
-                )}`}
-              >
-                {mode !== "view" && deal && <span>{deal.status}</span>}
-              </span>
+          {/* Header — hero strip with avatar, name, working status pill.
+              In add/edit/mass-update modes we just show the title, since
+              there's no lead identity to render yet. */}
+          <div className="flex items-start justify-between p-4 sm:p-6 border-b border-border bg-gradient-to-br from-slate-50/60 to-transparent">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              {mode === "view" && deal ? (
+                <>
+                  {/* Avatar — large, stable color from the name hash so
+                      it matches the table avatar pill. */}
+                  <div
+                    className="w-10 h-10 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-white text-sm sm:text-lg font-bold shrink-0 shadow-sm"
+                    style={{ backgroundColor: getNameColor(deal?.name) }}
+                  >
+                    {getInitials(deal?.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-base sm:text-xl font-semibold text-foreground truncate capitalize">
+                      {deal?.name}
+                    </h2>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {/* Status pill — previously only rendered when
+                          mode !== "view" (so it was always empty in the
+                          view we're actually looking at). Fixed: render
+                          whenever deal.status is set. */}
+                      {deal?.status && (
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${getStageColor(
+                            deal.status,
+                          )}`}
+                        >
+                          {deal.status}
+                        </span>
+                      )}
+                      {deal?.source && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-slate-600 bg-slate-100 rounded-full">
+                          <Icon name="Tag" size={10} />
+                          {deal.source}
+                        </span>
+                      )}
+                      {deal?.assignedUserName && (
+                        <span className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full bg-white border border-slate-200 text-xs text-slate-700">
+                          <span
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+                            style={{
+                              backgroundColor: getNameColor(deal.assignedUserName),
+                            }}
+                          >
+                            {getInitials(deal.assignedUserName)}
+                          </span>
+                          {deal.assignedUserName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <h2 className="text-xl font-semibold text-foreground">
+                  {mode === "mass-update"
+                    ? `Mass Update (${selectedIds.length}) Leads`
+                    : mode === "add"
+                      ? "Add Lead"
+                      : isEditing
+                        ? "Edit Lead"
+                        : deal?.name}
+                </h2>
+              )}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 shrink-0">
               {mode == "view" && canEditDeal(deal) && (
                 <Button
                   variant="outline"
@@ -655,6 +794,88 @@ const DealDrawer = ({
               </Button>
             </div>
           </div>
+
+          {/* Quick Actions + Next Contact strip — only in view mode.
+              Three primary actions (Call / WhatsApp / Email) and a
+              tone-aware "next follow-up" banner. The most-used surfaces
+              for a sales rep, surfaced before the tabs. */}
+          {mode === "view" && deal && !isEditing && (
+            <div className="border-b border-border">
+              <div className="px-6 py-3 flex flex-wrap gap-2 hidden sm:flex">
+                <a
+                  href={deal?.phoneNumber ? `tel:${deal.phoneNumber}` : undefined}
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
+                    ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
+                    : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
+                    }`}
+                >
+                  <Icon name="Phone" size={14} />
+                  Call
+                </a>
+                {(() => {
+                  const waUrl = buildWhatsappUrl(deal);
+                  return (
+                    <a
+                      href={waUrl || undefined}
+                      target={waUrl ? "_blank" : undefined}
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${waUrl
+                        ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                        : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
+                        }`}
+                    >
+                      <Icon name="MessageCircle" size={14} />
+                      WhatsApp
+                    </a>
+                  );
+                })()}
+                <a
+                  href={
+                    deal?.emailAddress ? `mailto:${deal.emailAddress}` : undefined
+                  }
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.emailAddress
+                    ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                    : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
+                    }`}
+                >
+                  <Icon name="Mail" size={14} />
+                  Email
+                </a>
+              </div>
+
+              {/* Tone strip — color follows the descriptor's tone so
+                  overdue is rose, today amber, future emerald, none
+                  muted. Most actionable date on the screen. */}
+              {(() => {
+                const ncs = getNextContactStatus(deal?.cNextContactAt);
+                const toneMap = {
+                  rose:
+                    "bg-rose-50 border-rose-200 text-rose-700",
+                  amber:
+                    "bg-amber-50 border-amber-200 text-amber-800",
+                  emerald:
+                    "bg-emerald-50 border-emerald-200 text-emerald-700",
+                  muted:
+                    "bg-slate-50 border-slate-200 text-slate-500",
+                };
+                const iconMap = {
+                  rose: "AlertCircle",
+                  amber: "Clock",
+                  emerald: "Calendar",
+                  muted: "CalendarOff",
+                };
+                return (
+                  <div
+                    className={`px-6 py-2.5 border-t flex items-center gap-2 text-sm ${toneMap[ncs.tone]}`}
+                  >
+                    <Icon name={iconMap[ncs.tone]} size={14} />
+                    <span className="font-medium">Next contact:</span>
+                    <span>{ncs.text}</span>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto">
             {showForm && !isMassUpdate && (
               <div className="p-6">
@@ -1029,184 +1250,85 @@ const DealDrawer = ({
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6">
                   {activeTab === "overview" && (
-                    <div className="space-y-6">
-                      {/* ================= Overview ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Name */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Name
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.name || "None"}
-                            </p>
-                          </div>
+                    <div className="space-y-5">
 
+
+                      {/* ============ Contact ============ */}
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="UserCircle" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Contact
+                          </h3>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Phone */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Phone
-                            </p>
-                            {deal?.phoneNumber ? (
-                              <a
-                                href={`tel:${deal.phoneNumber}`}
-                                className="text-primary hover:underline"
-                              >
-                                {deal.phoneNumber}
-                              </a>
-                            ) : (
-                              <p className="text-foreground">None</p>
-                            )}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Phone" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Phone
+                              </p>
+                              {deal?.phoneNumber ? (
+                                <a
+                                  href={`tel:${deal.phoneNumber}`}
+                                  className="text-sm text-primary hover:underline font-medium break-all"
+                                >
+                                  {deal.phoneNumber}
+                                </a>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">None</p>
+                              )}
+                            </div>
                           </div>
 
                           {/* Email */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Email
-                            </p>
-                            {deal?.emailAddress ? (
-                              <a
-                                href={`mailto:${deal.emailAddress}`}
-                                className="text-primary hover:underline break-all"
-                              >
-                                {deal.emailAddress}
-                              </a>
-                            ) : (
-                              <p className="text-foreground">None</p>
-                            )}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Mail" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Email
+                              </p>
+                              {deal?.emailAddress ? (
+                                <a
+                                  href={`mailto:${deal.emailAddress}`}
+                                  className="text-sm text-primary hover:underline font-medium break-all"
+                                >
+                                  {deal.emailAddress}
+                                </a>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">None</p>
+                              )}
+                            </div>
                           </div>
 
-                          {/* WhatsApp */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Whatsapp Template
-                            </p>
-                            {deal?.cWhatsapp || deal?.phoneNumber ? (
-                              <a
-                                href={(() => {
-                                  // URL base — prefer the wa.me link the backend
-                                  // already curated; fall back to building one
-                                  // from phoneNumber. Strip any existing protocol
-                                  // so https:// only gets applied once.
-                                  const base = deal?.cWhatsapp
-                                    ? `https://${deal.cWhatsapp.replace(/^https?:\/\//, "")}`
-                                    : `https://wa.me/${(deal?.phoneNumber || "").replace(/\D/g, "")}`;
-
-
-                                  if (deal?.cWhatsappTemplate) {
-                                    try {
-                                      const raw = decodeURIComponent(
-                                        deal.cWhatsappTemplate.replace(/^\?text=/, "")
-                                      );
-                                      return `${base}?text=${encodeURIComponent(raw)}`;
-                                    } catch {
-                                      // Malformed %XX in the backend template —
-                                      // fall through to the generic intro below.
-                                    }
-                                  }
-
-                                  // No backend template (or it was malformed) — use the
-                                  // generic intro so the rep still gets a pre-filled
-                                  // message they can edit before sending.
-                                  const fallbackText = `Hello *${deal?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`;
-                                  return `${base}?text=${encodeURIComponent(fallbackText)}`;
-                                })()}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 hover:underline transition-colors"
-                              >
-                                <img
-                                  src="/assets/whatsapp-logo.png"
-                                  alt="WhatsApp"
-                                  className="w-4 h-4 object-contain"
-                                />
-
-                                <span>{deal?.phoneNumber || deal?.cWhatsapp}</span>
-                              </a>
-                            ) : (
-                              <p className="text-foreground">None</p>
-                            )}
-                          </div>
-
-                          {/* City */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              City
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.addressCity || "None"}
-                            </p>
-                          </div>
-
-                          {/* Next Contact */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Next Contact
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.cNextContactAt
-                                ? formatDateTime(deal.cNextContactAt)
-                                : "None"}
-                            </p>
-                          </div>
-
-                          {/* Project Name */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Project Name
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.cProject || deal?.cProjectNomen || "None"}
-                            </p>
-                          </div>
-                          <div className="col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              Preference
-                            </p>
-                            <div className="text-foreground font-medium">
+                          {/* WhatsApp — uses the shared buildWhatsappUrl
+                              helper so the link logic is identical to
+                              the header Quick Action. */}
+                          <div className="flex items-start gap-3 md:col-span-2">
+                            <Icon name="MessageCircle" size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                WhatsApp
+                              </p>
                               {(() => {
-                                if (!deal?.cPreference) return "None";
-                                const parts = deal.cPreference.split(
-                                  /(<b>.*?<\/b>)/g,
-                                );
-                                const items = [];
-                                let buffer = "";
-                                for (const part of parts) {
-                                  const m = part.match(/^<b>(.*)<\/b>$/);
-                                  if (m) {
-                                    items.push({
-                                      text: buffer.trim(),
-                                      bold: m[1].trim(),
-                                    });
-                                    buffer = "";
-                                  } else {
-                                    buffer += part;
-                                  }
+                                const url = buildWhatsappUrl(deal);
+                                if (!url) {
+                                  return (
+                                    <p className="text-sm text-muted-foreground">
+                                      None
+                                    </p>
+                                  );
                                 }
-                                if (buffer.trim()) {
-                                  items.push({
-                                    text: buffer.trim(),
-                                    bold: null,
-                                  });
-                                }
-                                if (!items.length) return deal.cPreference;
                                 return (
-                                  <ul className="list-disc pl-5 space-y-1">
-                                    {items.map((it, i) => (
-                                      <li key={i}>
-                                        {it.text}
-                                        {it.bold && (
-                                          <>
-                                            {" "}
-                                            <strong className="font-semibold">
-                                              {it.bold}
-                                            </strong>
-                                          </>
-                                        )}
-                                      </li>
-                                    ))}
-                                  </ul>
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 hover:underline font-medium break-all"
+                                  >
+                                    {deal?.phoneNumber || deal?.cWhatsapp}
+                                  </a>
                                 );
                               })()}
                             </div>
@@ -1214,75 +1336,356 @@ const DealDrawer = ({
                         </div>
                       </div>
 
-                      {/* ================= Details ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <h3 className="text-base font-semibold text-foreground mb-6">
-                          Details
-                        </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                          {/* Status */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Status
-                            </p>
-                            <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
-                              {deal?.status || "None"}
-                            </span>
-                          </div>
-
-                          {/* Source — admin/manager only */}
-                          {isAdmin && (
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                Source
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="Briefcase" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Interest
+                          </h3>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {/* Project — baseline */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Layers" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Project
                               </p>
-                              <p className="text-foreground font-medium">
-                                {deal?.source || "None"}
+                              <p className="text-sm text-foreground font-medium break-words">
+                                {deal?.cProject || deal?.cProjectNomen || "None"}
                               </p>
                             </div>
-                          )}
-                          {/* Sub Source — labeled "Source" for non-admins so
-                              the underlying source/sub-source split stays
-                              internal to admins. */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              {isAdmin ? "Sub Source" : "Source"}
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.cSubSource || "None"}
-                            </p>
-                          </div>
-                          {/* Site Visit */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Site Visit
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.cSiteVisitAt
-                                ? formatDateTime(deal.cSiteVisitAt)
-                                : "None"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Lead Received At
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.cLeatReceivedAt
-                                ? formatDateTime(deal.cLeatReceivedAt)
-                                : "None"}
-                            </p>
                           </div>
 
-                          {/* Description */}
-                          <div className="md:col-span-2">
-                            <p className="text-sm text-muted-foreground">
-                              Description
-                            </p>
-                            <p className="text-foreground leading-relaxed mt-1">
-                              {deal?.description || "None"}
-                            </p>
+                          {/* Project Name — only when distinct from
+                              cProject (cProject often stores an id/code,
+                              cProjectName the human-readable label). */}
+                          {deal?.cProjectName &&
+                            deal.cProjectName !== deal?.cProject && (
+                              <div className="flex items-start gap-3">
+                                <Icon name="Building2" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-xs text-muted-foreground mb-0.5">
+                                    Project Name
+                                  </p>
+                                  <p className="text-sm text-foreground font-medium break-words">
+                                    {deal.cProjectName}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                          {/* Project Type */}
+                          {deal?.cProjectType && (
+                            <div className="flex items-start gap-3">
+                              <Icon name="LayoutGrid" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Project Type
+                                </p>
+                                <p className="text-sm text-foreground font-medium">
+                                  {deal.cProjectType}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {deal?.cProjectBudget && (
+                            <div className="flex items-start gap-3">
+                              <Icon name="IndianRupee" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Project Budget
+                                </p>
+                                <p className="text-sm text-foreground font-medium">
+                                  {deal.cProjectBudget}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Project Location — separate from City: the
+                              project's location, not the lead's. */}
+                          {deal?.cProjectLocation && (
+                            <div className="flex items-start gap-3">
+                              <Icon name="Compass" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Project Location
+                                </p>
+                                <p className="text-sm text-foreground font-medium">
+                                  {deal.cProjectLocation}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Sub Source — baseline; relabeled "Source"
+                              for non-admin reps so the source/sub-source
+                              split stays internal. Source itself appears
+                              as a pill in the hero (admin only). */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Tag" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                {isAdmin ? "Sub Source" : "Source"}
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.cSubSource || "None"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Lead Source — distinct from the top-level
+                              `source` (channel) and `cSubSource` (sub-
+                              channel). Some imports carry their own
+                              labeled source separately. */}
+                          {deal?.cLeadSource && (
+                            <div className="flex items-start gap-3">
+                              <Icon name="Megaphone" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Lead Source
+                                </p>
+                                <p className="text-sm text-foreground font-medium">
+                                  {deal.cLeadSource}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Platform — where they were reached (FB, IG,
+                              WhatsApp, Web, etc.). */}
+                          {deal?.cPlatform && (
+                            <div className="flex items-start gap-3">
+                              <Icon name="Smartphone" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Platform
+                                </p>
+                                <p className="text-sm text-foreground font-medium">
+                                  {deal.cPlatform}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* City — baseline */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="MapPin" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                City
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.addressCity || "None"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Client Nomen — internal client-code; admin
+                              only since reps don't deal with it. */}
+                          {isAdmin && deal?.cClientNomen && (
+                            <div className="flex items-start gap-3">
+                              <Icon name="Hash" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Client Nomen
+                                </p>
+                                <p className="text-sm text-foreground font-medium break-words">
+                                  {deal.cClientNomen}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Preference — full width because the parsed
+                              bullets need horizontal room. Same parser
+                              as before (splits on <b>…</b> tags). */}
+                          <div className="flex items-start gap-3 md:col-span-2">
+                            <Icon name="Heart" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Preference
+                              </p>
+                              <div className="text-sm text-foreground">
+                                {(() => {
+                                  if (!deal?.cPreference) {
+                                    return (
+                                      <span className="text-muted-foreground">
+                                        None
+                                      </span>
+                                    );
+                                  }
+                                  const parts = deal.cPreference.split(
+                                    /(<b>.*?<\/b>)/g,
+                                  );
+                                  const items = [];
+                                  let buffer = "";
+                                  for (const part of parts) {
+                                    const m = part.match(/^<b>(.*)<\/b>$/);
+                                    if (m) {
+                                      items.push({
+                                        text: buffer.trim(),
+                                        bold: m[1].trim(),
+                                      });
+                                      buffer = "";
+                                    } else {
+                                      buffer += part;
+                                    }
+                                  }
+                                  if (buffer.trim()) {
+                                    items.push({
+                                      text: buffer.trim(),
+                                      bold: null,
+                                    });
+                                  }
+                                  if (!items.length) return deal.cPreference;
+                                  return (
+                                    <ul className="list-disc pl-5 space-y-1">
+                                      {items.map((it, i) => (
+                                        <li key={i}>
+                                          {it.text}
+                                          {it.bold && (
+                                            <>
+                                              {" "}
+                                              <strong className="font-semibold">
+                                                {it.bold}
+                                              </strong>
+                                            </>
+                                          )}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ============ Lifecycle ============ */}
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="Activity" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Lifecycle
+                          </h3>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {/* Lead Received At */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Inbox" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Lead Received
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.cLeatReceivedAt
+                                  ? formatDateTime(deal.cLeatReceivedAt)
+                                  : "None"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Created At — the row's creation timestamp,
+                              distinct from when the lead was received. */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="PlusCircle" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Created
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.createdAt
+                                  ? formatDateTime(deal.createdAt)
+                                  : "None"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Next Contact — exact datetime as a reference
+                              (the smart banner above is human-readable). */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Clock" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Next Contact
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.cNextContactAt
+                                  ? formatDateTime(deal.cNextContactAt)
+                                  : "None"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Site Visit */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Home" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Site Visit
+                              </p>
+                              <p className="text-sm text-foreground font-medium">
+                                {deal?.cSiteVisitAt
+                                  ? formatDateTime(deal.cSiteVisitAt)
+                                  : "None"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Description — full width, multi-line. */}
+                          <div className="flex items-start gap-3 md:col-span-2">
+                            <Icon name="FileText" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Description
+                              </p>
+                              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
+                                {(() => {
+                                  if (!deal?.description) return "None";
+                                  // Split the description into text +
+                                  // URL chunks so we can wrap each URL
+                                  // in an <a>. Capturing group keeps the
+                                  // matched URLs in the resulting array
+                                  // — odd-indexed entries are the URLs,
+                                  // but we re-test each chunk anyway
+                                  // since the capturing-group ordering
+                                  // can shift if the description starts
+                                  // with a URL. `[^\s)]+` stops at
+                                  // whitespace and `)` so a URL inside
+                                  // parens doesn't swallow the closing
+                                  // paren. EspoCRM crm.../#Lead/view/id
+                                  // URLs work because the regex doesn't
+                                  // stop on `#`.
+                                  const URL_RE = /(https?:\/\/[^\s)]+)/g;
+                                  const parts =
+                                    deal.description.split(URL_RE);
+                                  return parts.map((part, i) => {
+                                    if (!part) return null;
+                                    if (/^https?:\/\//.test(part)) {
+                                      return (
+                                        <a
+                                          key={i}
+                                          href={part}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-primary hover:underline break-all"
+                                        >
+                                          {part}
+                                        </a>
+                                      );
+                                    }
+                                    return (
+                                      <span key={i}>{part}</span>
+                                    );
+                                  });
+                                })()}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1298,10 +1701,11 @@ const DealDrawer = ({
                         <Button
                           variant="outline"
                           size="sm"
+                          className={"bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white hover:text-white border-0"}
                           onClick={createActivity}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Add Stream
+                          Write the first stream
                         </Button>
                       </div>
                       <div className="space-y-4">
@@ -1348,6 +1752,42 @@ const DealDrawer = ({
                               </Button>
                             </div>
                           </form>
+                        )}
+
+                        {!showActivityForm && streams.length === 0 && (
+                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/40 via-white to-indigo-50/30 p-8 text-center">
+                            <div className="absolute -top-12 -right-12 w-40 h-40 bg-violet-200/40 rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-indigo-200/40 rounded-full blur-3xl pointer-events-none" />
+                            <div className="relative">
+                              <div className="relative inline-flex">
+                                <div className="absolute inset-0 bg-gradient-to-br from-violet-400 to-indigo-500 rounded-2xl blur-md opacity-40 animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                                  <Icon name="MessageSquare" size={28} className="text-white" />
+                                </div>
+                              </div>
+                              <h4 className="mt-4 text-lg font-bold text-slate-900">
+                                No conversations yet
+                              </h4>
+                              <p className="mt-1.5 text-sm text-slate-500 max-w-sm mx-auto">
+                                Notes, updates, and team mentions about this lead live here as a timeline.
+                              </p>
+                              <div className="mt-5 flex flex-wrap justify-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-violet-700 bg-violet-100/70 rounded-full">
+                                  <Icon name="Sparkles" size={10} />
+                                  Quick notes
+                                </span>
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-indigo-700 bg-indigo-100/70 rounded-full">
+                                  <Icon name="AtSign" size={10} />
+                                  Mention teammates
+                                </span>
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-600 bg-slate-100 rounded-full">
+                                  <Icon name="Clock" size={10} />
+                                  Auto-timestamped
+                                </span>
+                              </div>
+
+                            </div>
+                          </div>
                         )}
                         {streams?.map((activity) => (
                           <div
@@ -1447,77 +1887,253 @@ const DealDrawer = ({
                   )}
 
                   {activeTab === "AssignedUsers" && (
-                    <div className="space-y-6">
-                      {/* ================= Assigned User ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Assigned User */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Assigned User
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {leadData?.assignedUserName || "—"}
-                            </p>
-                          </div>
+                    <div className="space-y-5">
 
-                          {/* Followers — each name rendered as an orange pill
-                              chip with a zap icon. */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Followers
-                            </p>
-                            {leadsDetails?.followersNames &&
-                              Object.keys(leadsDetails.followersNames).length ? (
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {Object.entries(leadsDetails.followersNames).map(
-                                  ([id, name]) => (
-                                    <span
-                                      key={id}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-orange-300 bg-orange-50 text-orange-700 text-xs font-semibold"
-                                    >
-                                      <Icon name="Zap" size={12} />
-                                      {name}
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="UserCheck" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Assigned User
+                          </h3>
+                        </div>
+                        <div className="p-6">
+                          {leadData?.assignedUserName ? (() => {
+                            // Look up the full user record so we can
+                            // surface role/email/phone. Match by id
+                            // (preferred) with a name-fallback in case
+                            // assignedUserId isn't on the lead record.
+                            const rep =
+                              users.find(
+                                (u) => u.id === leadData.assignedUserId,
+                              ) ||
+                              users.find(
+                                (u) => u.name === leadData.assignedUserName,
+                              );
+                            // EspoCRM `type` enum → human label. Most
+                            // common case is "regular" which reads better
+                            // as "Rep" than "Regular".
+                            const roleLabel =
+                              rep?.type === "admin"
+                                ? "Admin"
+                                : rep?.role
+                                  ? "Rep"
+                                  : rep?.type
+                                    ? rep.type.charAt(0).toUpperCase() +
+                                    rep.type.slice(1)
+                                    : null;
+                            const teamName =
+                              leadData?.teamsNames &&
+                              Object.values(leadData.teamsNames)[0];
+                            return (
+                              <div className="flex items-start gap-4">
+                                <div className="relative shrink-0">
+                                  <div
+                                    className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md ring-4 ring-white"
+                                    style={{
+                                      backgroundColor: getNameColor(
+                                        leadData.assignedUserName,
+                                      ),
+                                    }}
+                                  >
+                                    {getInitials(leadData.assignedUserName)}
+                                  </div>
+                                  <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-base font-semibold text-slate-900 truncate">
+                                    {leadData.assignedUserName}
+                                  </h4>
+
+                                
+                                  {(roleLabel || teamName) && (
+                                    <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 flex-wrap">
+                                      {roleLabel && (
+                                        <span className="inline-flex items-center gap-1">
+                                          <Icon name="Shield" size={11} />
+                                          {roleLabel}
+                                        </span>
+                                      )}
+                                      {roleLabel && teamName && (
+                                        <span className="text-slate-300">·</span>
+                                      )}
+                                      {teamName && (
+                                        <span className="inline-flex items-center gap-1">
+                                          <Icon name="Users" size={11} />
+                                          {teamName}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {(rep?.emailAddress || rep?.phoneNumber) && (
+                                    <div className="mt-3 space-y-1.5">
+                                      {rep?.phoneNumber && (
+                                        <a
+                                          href={`tel:${rep.phoneNumber}`}
+                                          className="flex items-center gap-2 text-xs text-slate-600 hover:text-primary transition-colors"
+                                        >
+                                          <Icon name="Phone" size={12} className="text-slate-400" />
+                                          <span className="font-medium">
+                                            {rep.phoneNumber}
+                                          </span>
+                                        </a>
+                                      )}
+                                      {rep?.emailAddress && (
+                                        <a
+                                          href={`mailto:${rep.emailAddress}`}
+                                          className="flex items-center gap-2 text-xs text-slate-600 hover:text-primary transition-colors break-all"
+                                        >
+                                          <Icon name="Mail" size={12} className="text-slate-400 shrink-0" />
+                                          <span className="font-medium">
+                                            {rep.emailAddress}
+                                          </span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })() : (
+                            /* Empty state — no rep assigned. Amber not
+                               rose because this isn't a failure, just an
+                               unfilled state requiring action. */
+                            <div className="text-center py-8">
+                              <div className="inline-flex w-14 h-14 rounded-full bg-amber-50 items-center justify-center border border-amber-100">
+                                <Icon name="UserX" size={22} className="text-amber-500" />
+                              </div>
+                              <h4 className="mt-3 text-sm font-semibold text-slate-900">
+                                No rep assigned
+                              </h4>
+                              <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
+                                Assign this lead to take ownership of follow-ups.
+                              </p>
+                            </div>
+                          )}
+
+
+                          {(() => {
+                            const followers = leadsDetails?.followersNames
+                              ? Object.entries(leadsDetails.followersNames)
+                              : [];
+                            return (
+                              <div className="mt-6 pt-5 border-t border-border">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Icon name="Users" size={14} className="text-slate-500" />
+                                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                                    Followers
+                                  </h4>
+                                  {followers.length > 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      ({followers.length})
                                     </span>
-                                  ),
+                                  )}
+                                </div>
+                                {followers.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {followers.map(([id, name]) => (
+                                      <div
+                                        key={id}
+                                        className="inline-flex items-center gap-2 pl-0.5 pr-3 py-0.5 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors"
+                                      >
+                                        <div
+                                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                                          style={{ backgroundColor: getNameColor(name) }}
+                                        >
+                                          {getInitials(name)}
+                                        </div>
+                                        <span className="text-sm font-medium text-slate-700">
+                                          {name}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-400">
+                                    No followers yet.
+                                  </p>
                                 )}
                               </div>
-                            ) : (
-                              <span className="text-foreground font-medium">—</span>
-                            )}
-                          </div>
+                            );
+                          })()}
                         </div>
                       </div>
 
-                      {/* ================= Audit Information ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <h3 className="text-base font-semibold text-foreground mb-6">
-                          Audit Information
-                        </h3>
+                      {/* ============ Audit Trail ============ */}
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="History" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Audit Trail
+                          </h3>
+                        </div>
+                        <div className="p-5">
+                          {/* Vertical timeline — `pl-6` reserves the
+                              gutter, the `absolute` line + dots sit in
+                              that gutter. Created uses emerald (origin),
+                              modified uses sky (motion). */}
+                          <div className="relative pl-6">
+                            <div className="absolute left-1.5 top-2 bottom-2 w-px bg-slate-200" />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Created */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Created
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.createdAt
-                                ? `${formatDateTime(deal.createdAt)} by ${deal?.createdByName || "—"}`
-                                : "—"}
-                            </p>
-                          </div>
+                            {/* Created */}
+                            <div className="relative pb-5">
+                              <div className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-emerald-400 bg-white flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              </div>
+                              <p className="text-[10px] uppercase tracking-wider text-emerald-600 font-medium">
+                                Created
+                              </p>
+                              <p className="text-sm font-medium text-slate-900 mt-0.5">
+                                {deal?.createdAt
+                                  ? formatDateTime(deal.createdAt)
+                                  : "—"}
+                              </p>
+                              {deal?.createdByName && (
+                                <div className="mt-1 flex items-center gap-1.5">
+                                  <div
+                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
+                                    style={{
+                                      backgroundColor: getNameColor(deal.createdByName),
+                                    }}
+                                  >
+                                    {getInitials(deal.createdByName)}
+                                  </div>
+                                  <p className="text-xs text-slate-500">
+                                    by {deal.createdByName}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
 
-                          {/* Modified */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Last Modified
-                            </p>
-                            <p className="text-foreground font-medium">
-                              {deal?.modifiedAt
-                                ? `${formatDateTime(deal.modifiedAt)} by ${deal?.modifiedByName || "—"}`
-                                : "—"}
-                            </p>
+                            {/* Modified */}
+                            <div className="relative">
+                              <div className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-sky-400 bg-white flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                              </div>
+                              <p className="text-[10px] uppercase tracking-wider text-sky-600 font-medium">
+                                Last modified
+                              </p>
+                              <p className="text-sm font-medium text-slate-900 mt-0.5">
+                                {deal?.modifiedAt
+                                  ? formatDateTime(deal.modifiedAt)
+                                  : "—"}
+                              </p>
+                              {deal?.modifiedByName && (
+                                <div className="mt-1 flex items-center gap-1.5">
+                                  <div
+                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
+                                    style={{
+                                      backgroundColor: getNameColor(deal.modifiedByName),
+                                    }}
+                                  >
+                                    {getInitials(deal.modifiedByName)}
+                                  </div>
+                                  <p className="text-xs text-slate-500">
+                                    by {deal.modifiedByName}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1533,13 +2149,54 @@ const DealDrawer = ({
                         <Button
                           variant="outline"
                           size="sm"
+                          className={"bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-600 hover:to-orange-600 text-white hover:text-white border-0"}
                           onClick={() => setTaskDrawerOpen(true)}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Add Task
+                          Create first task
                         </Button>
                       </div>
                       <div className="space-y-4">
+
+                        {task.length === 0 && (
+                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-orange-200 bg-gradient-to-br from-orange-50/40 via-white to-orange-50/30 p-8 text-center">
+                            <div className="absolute -top-12 -left-12 w-40 h-40 bg-orange-200/40 rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-orange-200/40 rounded-full blur-3xl pointer-events-none" />
+                            <div className="relative">
+                              <div className="relative inline-flex">
+                                <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-500 rounded-2xl blur-md opacity-40 animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
+                                  <Icon name="ListChecks" size={28} className="text-white" />
+                                </div>
+                              </div>
+                              <h4 className="mt-4 text-lg font-bold text-slate-900">
+                                No tasks queued
+                              </h4>
+                              <p className="mt-1.5 text-sm text-slate-500 max-w-sm mx-auto">
+                                Plan your next move — follow up, schedule a callback.
+                              </p>
+                              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-rose-50 text-rose-700 border-rose-200">
+                                  <Icon name="Phone" size={12} />
+                                  Call back
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                                  <Icon name="FileText" size={12} />
+                                  Send proposal
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-teal-50 text-teal-700 border-teal-200">
+                                  <Icon name="MapPin" size={12} />
+                                  Schedule visit
+                                </span>
+                                {/* <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-sky-50 text-sky-700 border-sky-200">
+                                  <Icon name="Mail" size={12} />
+                                  Email follow-up
+                                </span> */}
+                              </div>
+
+                            </div>
+                          </div>
+                        )}
                         {task?.map((activity) => (
                           <div
                             key={activity.id}
@@ -1690,12 +2347,61 @@ const DealDrawer = ({
                           variant="outline"
                           size="sm"
                           onClick={() => setMeetingDrawerOpen(true)}
+                          className="bg-gradient-to-r from-sky-500 to-sky-700 hover:from-cyan-700 hover:to-sky-700 text-white hover:text-white border-0"
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Add Meeting
+                          Schedule Meeting
                         </Button>
                       </div>
                       <div className="space-y-4">
+
+                        {meeting.length === 0 && (
+                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-cyan-200 bg-gradient-to-br from-cyan-50/40 via-white to-sky-50/30 p-8 text-center">
+                            <div className="absolute -top-12 -right-12 w-40 h-40 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-sky-200/40 rounded-full blur-3xl pointer-events-none" />
+                            <div className="relative">
+                              <div className="relative inline-flex">
+                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-sky-500 rounded-2xl blur-md opacity-40 animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg">
+                                  <Icon name="Calendar" size={28} className="text-white" />
+                                </div>
+                              </div>
+                              <h4 className="mt-4 text-lg font-bold text-slate-900">
+                                No meetings on the books
+                              </h4>
+                              <p className="mt-1.5 text-sm text-slate-500 max-w-sm mx-auto">
+                                Schedule a touch-base, site visit, or proposal walkthrough.
+                              </p>
+                              {/* Mini week-view placeholder. Bars use a
+                                  decreasing opacity from Mon → Fri so it
+                                  reads as "upcoming days, unfilled". */}
+                              <div className="mt-5 inline-flex flex-col gap-1.5">
+                                {[
+                                  { day: "MON", width: "35%" },
+                                  { day: "WED", width: "55%" },
+                                  { day: "FRI", width: "25%" },
+                                ].map(({ day, width }) => (
+                                  <div
+                                    key={day}
+                                    className="flex items-center gap-3 px-4 py-1.5 bg-white/70 rounded-xl border border-slate-200 min-w-[220px]"
+                                  >
+                                    <span className="text-[10px] font-bold text-cyan-600 uppercase tracking-wider w-7">
+                                      {day}
+                                    </span>
+                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-gradient-to-r from-cyan-400 to-sky-400 rounded-full opacity-30"
+                                        style={{ width }}
+                                      />
+                                    </div>
+                                    <span className="text-[10px] text-slate-400">—</span>
+                                  </div>
+                                ))}
+                              </div>
+
+                            </div>
+                          </div>
+                        )}
                         {meeting?.map((meet) => (
                           <div
                             key={meet.id}
@@ -1877,3 +2583,5 @@ const DealDrawer = ({
 };
 
 export default React.memo(DealDrawer);
+
+

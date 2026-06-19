@@ -13,9 +13,11 @@ import { fetchLeads } from "services/leads.service";
 import { createCall } from "services/call.services";
 import { createMeeting } from "services/meeting.service";
 import { toEspoDateTime } from "../../pipeline/utils/dateHelpers";
+import toast from "react-hot-toast";
 
 const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
   const [formData, setFormData] = useState({
+    _scope: "Meeting",
     name: "",
     status: "Planned",
     direction: "",
@@ -143,16 +145,26 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
     };
 
     try {
+      let createdActivity;
       if (formData._scope === "Call") {
-        await createCall(payload);
+        createdActivity = await createCall(payload);
       } else if (formData._scope === "Meeting") {
-        await createMeeting(payload);
+        createdActivity = await createMeeting(payload);
+      } else {
+        toast.error("Please select an activity type");
+        return;
       }
 
+      if (createdActivity && onAdd) {
+        onAdd(createdActivity);
+      }
+
+      toast.success(`${formData._scope} added successfully`);
       handleReset();
       onClose();
     } catch (err) {
       console.error("Create activity failed", err);
+      toast.error("Failed to add activity");
     }
   };
 
@@ -204,8 +216,8 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
             // fetchStatus(),
             fetchUser(),
             fetchTeam(),
-            fetchAccounts(),
-            fetchLeads(),
+            fetchAccounts({ limit: 200, page: 1 }),
+            fetchLeads({ limit: 200, page: 1 }),
             // fetchContacts(),
           ]);
         // setStatus(statusRes.options || []);
@@ -349,12 +361,6 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
               options={durationOptions} // 5m, 15m, 30m, 1h etc.
               value={formData?.duration}
               onChange={(value) => handleInputChange("duration", value)}
-            />
-            <Select
-              label="Direction"
-              options={directionOptions} // 5m, 15m, 30m, 1h etc.
-              value={formData?.direction}
-              onChange={(value) => handleInputChange("direction", value)}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

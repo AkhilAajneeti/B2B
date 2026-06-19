@@ -64,6 +64,28 @@ const DealsTable = ({
     return "text-red-600";
   };
 
+  // Avatar palette for the assignee pill. Same colors as the deals-page
+  // DealsTable and projects table so a rep's avatar color stays the same
+  // across modules — visual continuity.
+  const ASSIGNEE_PALETTE = [
+    "#6366F1", "#22C55E", "#F59E0B", "#EF4444",
+    "#06B6D4", "#8B5CF6", "#EC4899", "#14B8A6",
+  ];
+  const getNameColor = (name = "") => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i)) >>> 0;
+    return ASSIGNEE_PALETTE[hash % ASSIGNEE_PALETTE.length];
+  };
+  const getInitials = (name = "") => {
+    const parts = name.trim().split(/\s+/);
+    if (!parts[0]) return "?";
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    // First + last initial — "Rishab Saxena" → "RS".
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase();
+  };
+
   const getSortIcon = (column) => {
     if (sortConfig?.key !== column) {
       return (
@@ -271,13 +293,23 @@ const DealsTable = ({
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <div
-                      className={`text-sm font-medium ${getProbabilityColor(
-                        deal?.assignedUserName,
-                      )}`}
-                    >
-                      {deal?.assignedUserName}
-                    </div>
+                    {deal?.assignedUserName ? (
+                      <div className="inline-flex items-center gap-2 pl-1 pr-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors max-w-full">
+                        <span
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                          style={{
+                            backgroundColor: getNameColor(deal.assignedUserName),
+                          }}
+                        >
+                          {getInitials(deal.assignedUserName)}
+                        </span>
+                        <span className="text-sm font-medium text-slate-700 truncate">
+                          {deal.assignedUserName}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-4">
                     <div
@@ -357,12 +389,26 @@ const DealsTable = ({
                   </div>
                 )}
 
-                {/* Assigned User */}
+                {/* Assigned User — same avatar pill style as desktop so the
+                    rep's color stays consistent when the layout switches. */}
                 {deal?.assignedUserName && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                    <Icon name="User" size={12} />
-                    Assigned to{" "}
-                    <span className="truncate">{deal?.assignedUserName}</span>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      Assigned to
+                    </span>
+                    <div className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full bg-slate-50 border border-slate-200 min-w-0">
+                      <span
+                        className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0"
+                        style={{
+                          backgroundColor: getNameColor(deal.assignedUserName),
+                        }}
+                      >
+                        {getInitials(deal.assignedUserName)}
+                      </span>
+                      <span className="text-xs font-medium text-slate-700 truncate">
+                        {deal.assignedUserName}
+                      </span>
+                    </div>
                   </div>
                 )}
 
