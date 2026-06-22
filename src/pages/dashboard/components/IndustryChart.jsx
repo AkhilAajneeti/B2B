@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import {
   Pie,
   PieChart,
@@ -291,4 +291,4 @@ const IndustryChart = () => {
   );
 };
 
-export default IndustryChart;
+export default memo(IndustryChart);

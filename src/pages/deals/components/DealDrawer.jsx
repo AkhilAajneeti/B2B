@@ -1128,25 +1128,70 @@ const DealDrawer = ({
             )}
             {/* mass upadte */}
             {isMassUpdate && (
-              <form className="space-y-6 p-5" onSubmit={handleBulkUpdate}>
-                <h3 className="text-lg font-semibold text-foreground">
-                  Mass Update Leads
-                </h3>
+              <form onSubmit={handleBulkUpdate}>
+                {/* Intro banner — soft rose/maroon palette matching the
+                    project's brand primary, consistent with the same
+                    banner in meeting and tasks Mass Update forms. */}
+                <div className="px-6 pt-4 pb-3">
+                  <div className="rounded-xl bg-gradient-to-r from-rose-100/80 via-pink-100/70 to-rose-100/80 border border-rose-200/60 p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/80 ring-1 ring-rose-200 flex items-center justify-center text-[#AC2334] shrink-0">
+                      <Icon name="Wand2" size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[#AC2334]">
+                        Updating {selectedIds.length} selected lead
+                        {selectedIds.length !== 1 ? "s" : ""}
+                      </p>
+                      <p className="text-xs text-rose-700/80 mt-0.5 leading-relaxed">
+                        Toggle the fields you want to change — unchecked fields stay as they are on each record.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-                <p className="text-sm text-muted-foreground">
-                  Updating {selectedIds.length} selected Leads
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Assigned User */}
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={massFields.assignedUserId}
-                      onChange={() => toggleMassField("assignedUserId")}
-                    />
-                    <div className="flex-1 min-w-0">
+                {/* Field toggle rows — each field is a self-contained
+                    card with a maroon iOS-style switch. Active cards
+                    use a rose border + white bg; inactive cards stay
+                    muted so the rep can scan which fields will be
+                    applied. */}
+                <div className="px-6 pb-4 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Assigned User */}
+                    <div
+                      className={`rounded-xl border p-3 transition-colors ${
+                        massFields.assignedUserId
+                          ? "bg-white border-rose-300 shadow-sm"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={massFields.assignedUserId}
+                          onClick={() => toggleMassField("assignedUserId")}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
+                            massFields.assignedUserId ? "bg-[#AC2334]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                              massFields.assignedUserId ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm font-medium text-foreground flex-1">
+                          Assigned User
+                        </span>
+                        <span
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${
+                            massFields.assignedUserId ? "text-[#AC2334]" : "text-slate-400"
+                          }`}
+                        >
+                          {massFields.assignedUserId ? "Will update" : "Skip"}
+                        </span>
+                      </div>
                       <Select
-                        label="Assigned User"
                         value={formData.assignedUserId}
                         options={userOptions}
                         disabled={!massFields.assignedUserId}
@@ -1154,18 +1199,43 @@ const DealDrawer = ({
                         searchable
                       />
                     </div>
-                  </div>
 
-                  {/* Team */}
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={massFields.teamId}
-                      onChange={() => toggleMassField("teamId")}
-                    />
-                    <div className="flex-1 min-w-0">
+                    {/* Team */}
+                    <div
+                      className={`rounded-xl border p-3 transition-colors ${
+                        massFields.teamId
+                          ? "bg-white border-rose-300 shadow-sm"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={massFields.teamId}
+                          onClick={() => toggleMassField("teamId")}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
+                            massFields.teamId ? "bg-[#AC2334]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                              massFields.teamId ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm font-medium text-foreground flex-1">
+                          Team
+                        </span>
+                        <span
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${
+                            massFields.teamId ? "text-[#AC2334]" : "text-slate-400"
+                          }`}
+                        >
+                          {massFields.teamId ? "Will update" : "Skip"}
+                        </span>
+                      </div>
                       <Select
-                        label="Team"
                         value={formData.teamId}
                         options={teamOptions}
                         disabled={!massFields.teamId}
@@ -1174,35 +1244,87 @@ const DealDrawer = ({
                     </div>
                   </div>
 
-                  {/* Status */}
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={massFields.status}
-                      onChange={() => toggleMassField("status")}
-                    />
-                    <div className="flex-1 min-w-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Status */}
+                    <div
+                      className={`rounded-xl border p-3 transition-colors ${
+                        massFields.status
+                          ? "bg-white border-rose-300 shadow-sm"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={massFields.status}
+                          onClick={() => toggleMassField("status")}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
+                            massFields.status ? "bg-[#AC2334]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                              massFields.status ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm font-medium text-foreground flex-1">
+                          Status
+                        </span>
+                        <span
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${
+                            massFields.status ? "text-[#AC2334]" : "text-slate-400"
+                          }`}
+                        >
+                          {massFields.status ? "Will update" : "Skip"}
+                        </span>
+                      </div>
                       <Select
-                        label="Status"
                         value={formData.status}
                         options={statusOptions}
                         disabled={!massFields.status}
                         onChange={(v) => handleChange("status", v)}
                       />
                     </div>
-                  </div>
 
-                  {/* Next Contact Date */}
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={massFields.cNextContactAt}
-                      onChange={() => toggleMassField("cNextContactAt")}
-                    />
-                    <div className="flex-1 min-w-0">
+                    {/* Next Contact Date */}
+                    <div
+                      className={`rounded-xl border p-3 transition-colors ${
+                        massFields.cNextContactAt
+                          ? "bg-white border-rose-300 shadow-sm"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={massFields.cNextContactAt}
+                          onClick={() => toggleMassField("cNextContactAt")}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
+                            massFields.cNextContactAt ? "bg-[#AC2334]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                              massFields.cNextContactAt ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm font-medium text-foreground flex-1">
+                          Next Contact
+                        </span>
+                        <span
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${
+                            massFields.cNextContactAt ? "text-[#AC2334]" : "text-slate-400"
+                          }`}
+                        >
+                          {massFields.cNextContactAt ? "Will update" : "Skip"}
+                        </span>
+                      </div>
                       <Input
                         type="datetime-local"
-                        label="Next Contact"
                         step={900}
                         value={fromEspoToLocalInput(formData.cNextContactAt)}
                         disabled={!massFields.cNextContactAt}
@@ -1214,12 +1336,19 @@ const DealDrawer = ({
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button variant="ghost" onClick={onClose}>
+                {/* Footer — Cancel + maroon-gradient submit (uses
+                    project's `linearbg-1` class to match every other
+                    primary CTA across the app). */}
+                <div className="px-6 py-4 border-t border-border flex justify-end gap-3 bg-card">
+                  <Button type="button" variant="outline" onClick={onClose}>
                     Cancel
                   </Button>
-                  <Button type="submit">
-                    Update {selectedIds.length} Leads
+                  <Button
+                    type="submit"
+                    className="linearbg-1 text-white hover:text-white border-0"
+                  >
+                    Update {selectedIds.length} Lead
+                    {selectedIds.length !== 1 ? "s" : ""}
                   </Button>
                 </div>
               </form>

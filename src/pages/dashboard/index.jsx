@@ -1,18 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
 import KPICard from "./components/KPICard";
-import PipelineChart from "./components/PipelineChart";
 import Icon from "../../components/AppIcon";
-import RightRail from "./components/RightRail";
 import DashboardSummaryAlert from "./components/DashboardSummaryAlert";
 import { fetchLeads } from "services/leads.service";
-import MultiLineChart from "./components/MultiLineChart";
 import { fetchMeeting } from "services/meeting.service";
 import Button from "../../components/ui/Button";
 import { useLeadsCount } from "hooks/useLeads";
 import { useQuery } from "@tanstack/react-query";
+
+// Heavy chart components — lazy so the dashboard shell paints instantly.
+// Each chart pulls in recharts + framer-motion + its own per-bucket
+// fetch loop; loading them up front blocks first paint. Splitting into
+// per-chart chunks lets Vite stream them in parallel, and Suspense
+// shows a skeleton in their place until the chunk + first data arrive.
+// KPICard and DashboardSummaryAlert stay eager (above the fold).
+const PipelineChart = lazy(() => import("./components/PipelineChart"));
+const MultiLineChart = lazy(() => import("./components/MultiLineChart"));
+const RightRail = lazy(() => import("./components/RightRail"));
+
+// Skeleton placeholder for a chart card — same outer card shape as the
+// real chart so there's no layout shift when the real one slots in.
+const ChartSkeleton = ({ height = 320 }) => (
+  <div className="bg-card border border-border rounded-xl p-4 sm:p-6 animate-pulse">
+    <div className="h-4 w-40 bg-slate-200 rounded mb-4" />
+    <div className="bg-slate-100 rounded-lg" style={{ height }} />
+  </div>
+);
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeInsight, setActiveInsight] = useState(null);
@@ -320,12 +336,17 @@ const Dashboard = () => {
             >
 
 
-              {/* Pipeline Chart */}
+              {/* Pipeline Chart — lazy. Suspense shows a skeleton card
+                  until the chunk downloads + the chart's first render. */}
               <div className="sm:m-5 py-3">
-                <PipelineChart leads={leads} />
+                <Suspense fallback={<ChartSkeleton />}>
+                  <PipelineChart leads={leads} />
+                </Suspense>
               </div>
               <div className="sm:m-5 py-3">
-                <MultiLineChart leads={leads} />
+                <Suspense fallback={<ChartSkeleton />}>
+                  <MultiLineChart leads={leads} />
+                </Suspense>
               </div>
 
 
@@ -645,9 +666,13 @@ hover:shadow-lg transition-all duration-300 flex items-center justify-between mi
             </motion.div>
           </div>
 
-          {/* Right Rail */}
+          {/* Right Rail — lazy. Contains StatusChart + IndustryChart
+              which each fire ~17 and ~30 per-bucket fetches respectively;
+              keeping them out of the initial chunk is a big TTI win. */}
           <div className="hidden xl:block max-w-96 p-6 border-l border-border bg-background">
-            <RightRail leads={leads} />
+            <Suspense fallback={<ChartSkeleton height={420} />}>
+              <RightRail leads={leads} />
+            </Suspense>
           </div>
         </div>
       </main>

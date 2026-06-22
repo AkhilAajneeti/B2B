@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -499,4 +499,4 @@ const MultiLineChart = ({ leads = [] }) => {
   );
 };
 
-export default MultiLineChart;
+export default memo(MultiLineChart);

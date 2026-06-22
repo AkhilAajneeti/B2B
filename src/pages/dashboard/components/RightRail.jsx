@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import IndustryChart from "./IndustryChart";
 import StatusChart from "./StatusChart";
 
@@ -14,4 +14,4 @@ const RightRail = ({ leads = [] }) => {
   );
 };
 
-export default RightRail;
+export default memo(RightRail);

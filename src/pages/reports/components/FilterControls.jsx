@@ -12,12 +12,10 @@ const FilterControls = ({
   onFiltersChange,
   onClearFilters,
   dealCount,
-  onBulkAction,
   selectedCount,
   toggleAnalytics,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
 
   const daysOptions = [
@@ -45,10 +43,6 @@ const FilterControls = ({
       .catch((err) => console.error("User fetch failed", err));
   }, []);
 
-  const handleBulkActionSelect = (action) => {
-    onBulkAction(action);
-    setShowBulkActions(false);
-  };
   const showDateInputs = [
     "between",
     "after",
@@ -56,9 +50,11 @@ const FilterControls = ({
     "on"
   ].includes(filters?.dateType);
 
-  const activeFiltersCount = Object.values(filters)?.filter(
-    (value) => value !== "" && value !== null && value !== undefined,
-  )?.length;
+  const activeFiltersCount = Object.values(filters)?.filter((value) => {
+    if (value === "" || value === null || value === undefined) return false;
+    if (Array.isArray(value) && value.length === 0) return false;
+    return true;
+  })?.length;
   const assignUserOptions = assignUser.map((acc) => ({
     value: acc.id, // 👈 important (ID use karo)
     label: acc.name,
@@ -95,99 +91,169 @@ const FilterControls = ({
     { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
     { value: "Switch Off", label: "Switch Off" },
   ];
-  return (
-    <div className="bg-card border border-border rounded-lg p-4 mb-6">
-      {/* Header Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            leads ({dealCount?.toLocaleString()})
-          </h2>
-          {activeFiltersCount > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""}{" "}
-                active
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearFilters}
-                className="text-xs"
-              >
-                Clear all
-              </Button>
-            </div>
-          )}
-        </div>
 
-        <div className="flex items-center space-x-2">
-          {selectedCount > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">
+  // Active filter pills — one per applied filter. Each pill has its
+  // own onRemove closure so removing one doesn't disturb the others.
+  // Date pill clears dateType + closeDateFrom + closeDateTo together
+  // so the form never ends up with orphan dates and no date type.
+  const activePills = (() => {
+    const pills = [];
+    if (filters?.search) {
+      pills.push({
+        key: "search",
+        label: "Search",
+        value: filters.search,
+        onRemove: () => handleFilterChange("search", ""),
+      });
+    }
+    if (filters?.status) {
+      const m = statusOptions.find((o) => o.value === filters.status);
+      pills.push({
+        key: "status",
+        label: "Status",
+        value: m?.label || filters.status,
+        onRemove: () => handleFilterChange("status", ""),
+      });
+    }
+    if (filters?.source) {
+      const m = sourceOptions.find((o) => o.value === filters.source);
+      pills.push({
+        key: "source",
+        label: "Source",
+        value: m?.label || filters.source,
+        onRemove: () => handleFilterChange("source", ""),
+      });
+    }
+    if (filters?.assignUser) {
+      const m = assignUserOptions.find((o) => o.value === filters.assignUser);
+      pills.push({
+        key: "assignUser",
+        label: "Assigned",
+        value: m?.label || filters.assignUser,
+        onRemove: () => handleFilterChange("assignUser", ""),
+      });
+    }
+    if (filters?.dateType) {
+      const m = daysOptions.find((o) => o.value === filters.dateType);
+      let display = m?.label || filters.dateType;
+      if (
+        filters.closeDateFrom &&
+        filters.closeDateTo &&
+        filters.dateType === "between"
+      ) {
+        display = `${filters.closeDateFrom} → ${filters.closeDateTo}`;
+      } else if (filters.closeDateFrom) {
+        display = `${display}: ${filters.closeDateFrom}`;
+      }
+      pills.push({
+        key: "dateType",
+        label: "Date",
+        value: display,
+        onRemove: () =>
+          onFiltersChange({
+            ...filters,
+            dateType: "",
+            closeDateFrom: "",
+            closeDateTo: "",
+          }),
+      });
+    }
+    return pills;
+  })();
+
+  // No `overflow-hidden` on the wrapper — that was clipping the Select
+  // dropdown panels. Header strip below gets its own `rounded-t-xl` so
+  // the tinted gradient still hugs the outer card's rounded top corners.
+  // Reports doesn't have bulk update / delete actions wired (the
+  // selection toolbar from other modules is omitted); a small selected-
+  // count badge inside the header gives the rep feedback instead.
+  return (
+    <div className="bg-card border border-border rounded-xl mb-6 shadow-sm">
+      {/* Header strip — soft slate gradient + BarChart icon + count.
+          Active filter pills wrap inline so even many pills don't
+          break the layout. */}
+      <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 via-slate-50/30 to-transparent border-b border-border rounded-t-xl">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+          <div className="flex items-start gap-3 flex-wrap flex-1 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Icon name="BarChart3" size={14} className="text-primary" />
+              </div>
+              <h2 className="text-base font-semibold text-foreground">
+                Leads
+                <span className="ml-1.5 text-sm font-medium text-muted-foreground tabular-nums">
+                  ({dealCount?.toLocaleString?.() ?? dealCount})
+                </span>
+              </h2>
+            </div>
+            {/* Active filter pills — one per applied filter. Each pill
+                has an X that removes that specific filter without
+                touching the others. */}
+            {activePills.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {activePills.map((pill) => (
+                  <span
+                    key={pill.key}
+                    className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full border border-primary/20"
+                  >
+                    <span className="text-primary/60">{pill.label}:</span>
+                    <span className="text-primary font-semibold">
+                      {pill.value}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={pill.onRemove}
+                      className="ml-0.5 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                      aria-label={`Remove ${pill.label} filter`}
+                    >
+                      <Icon name="X" size={10} />
+                    </button>
+                  </span>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClearFilters}
+                  className="text-xs h-7 px-2 text-muted-foreground hover:text-foreground"
+                >
+                  Clear all
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Selection count badge — reports has no bulk-update / mass
+                delete flow, so this is a feedback chip only (no action
+                buttons). Soft violet matches the "selection mode" tone
+                used in deals/meeting/tasks toolbars. */}
+            {selectedCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-100/80 text-violet-700 text-xs font-medium rounded-full border border-violet-200/60">
+                <Icon name="CheckCircle2" size={12} />
                 {selectedCount} selected
               </span>
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowBulkActions(!showBulkActions)}
-                >
-                  <Icon name="MoreHorizontal" size={16} className="mr-1" />
-                  Actions
-                </Button>
-
-                {showBulkActions && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowBulkActions(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded-lg shadow-elevation-2 z-50">
-                      <div className="py-1">
-                        {bulkActions?.map((action) => (
-                          <button
-                            key={action?.value}
-                            onClick={() =>
-                              handleBulkActionSelect(action?.value)
-                            }
-                            className="flex items-center w-full px-3 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                          >
-                            <Icon
-                              name={action?.icon}
-                              size={16}
-                              className="mr-2"
-                            />
-                            {action?.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="lg:hidden w-full"
-          >
-            <Icon name="Filter" size={16} className="mr-1" />
-            Filters
-            <Icon
-              name="ChevronDown"
-              size={16}
-              className={`ml-1 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-            />
-          </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="lg:hidden w-full"
+            >
+              <Icon name="SlidersHorizontal" size={14} className="mr-1.5" />
+              Filters
+              <Icon
+                name="ChevronDown"
+                size={14}
+                className={`ml-1 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+              />
+            </Button>
+          </div>
         </div>
       </div>
-      {/* Filters */}
+
+      {/* Filters grid — same controls, tighter spacing in its own zone. */}
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 ${isExpanded ? "block" : "hidden lg:grid"}`}
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 p-4 ${isExpanded ? "block" : "hidden lg:grid"}`}
       >
         <Input
           type="search"
@@ -225,8 +291,11 @@ const FilterControls = ({
           searchable
         />
       </div>
-      {/* Advanced Filters Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mt-4 pt-4 border-t border-border">
+
+      {/* Date conditional + Report Analytics — sits below the filter
+          grid inside the card. Uses px-4 pb-4 to align with the new
+          padding-less wrapper. */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-4 pb-4 border-t border-border pt-4">
         <div className="flex flex-col sm:flex-row gap-3 w-full">
           {showDateInputs && (
             <div className="flex gap-2">

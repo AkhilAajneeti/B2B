@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Image from "../../../components/AppImage";
@@ -158,4 +158,4 @@ const RecentActivities = ({ activities = [] }) => {
   );
 };
 
-export default RecentActivities;
+export default memo(RecentActivities);

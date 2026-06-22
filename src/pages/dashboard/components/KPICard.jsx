@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Icon from '../../../components/AppIcon';
 
 const KPICard = ({
@@ -63,4 +63,4 @@ const KPICard = ({
   );
 };
 
-export default KPICard;
+export default memo(KPICard);

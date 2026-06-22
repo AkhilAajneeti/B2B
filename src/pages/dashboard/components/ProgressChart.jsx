@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { memo, useMemo, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -185,4 +185,4 @@ const ProgressChart = ({ leads = [] }) => {
   );
 };
 
-export default ProgressChart;
+export default memo(ProgressChart);

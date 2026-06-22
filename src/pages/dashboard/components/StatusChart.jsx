@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import {
   Pie,
   PieChart,
@@ -368,4 +368,4 @@ const StatusChart = () => {
   );
 };
 
-export default StatusChart;
+export default memo(StatusChart);

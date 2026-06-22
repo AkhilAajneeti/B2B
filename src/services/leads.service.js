@@ -300,11 +300,26 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
   }
 
   if (filters.status) {
-    where.push({
-      type: "equals",
-      attribute: "status",
-      value: filters.status,
-    });
+    // Status is now multi-select — rep can pick e.g. ["Interested",
+    // "Follow up"]. EspoCRM exposes an `in` operator that matches any
+    // value in the supplied array. Falls back to the legacy `equals`
+    // shape if a single string somehow arrives (saved filter from
+    // before the multi-select migration).
+    if (Array.isArray(filters.status)) {
+      if (filters.status.length > 0) {
+        where.push({
+          type: "in",
+          attribute: "status",
+          value: filters.status,
+        });
+      }
+    } else {
+      where.push({
+        type: "equals",
+        attribute: "status",
+        value: filters.status,
+      });
+    }
   }
 
   if (filters.source) {

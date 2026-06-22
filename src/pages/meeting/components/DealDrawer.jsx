@@ -1354,89 +1354,227 @@ const DealDrawer = ({
             )}
 
             {isMassUpdate && (
-              <>
-                <p className="text-sm text-muted-foreground text-center pt-4 fw-bold">
-                  Updating {selectedIds.length} selected Meeting
-                </p>
-                <form className="space-y-6 p-6" onSubmit={handleBulkUpdate}>
-                  <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                    <div className="grid grid-cols-2">
-                      <div className="flex gap-3 items-center">
-                        <input
-                          type="checkbox"
-                          checked={massFields.status}
-                          onChange={() => toggleMassField("status")}
-                        />
-                        <Select
-                          label="Status"
-                          value={formData.status}
-                          options={STATUS_OPTIONS}
-                          disabled={!massFields.status}
-                          onChange={(v) => handleChange("status", v)}
-                        />
+              <form onSubmit={handleBulkUpdate}>
+                
+                <div className="px-6 pt-4 pb-3">
+                  <div className="rounded-xl bg-gradient-to-r from-rose-100/80 via-pink-100/70 to-rose-100/80 border border-rose-200/60 p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/80 ring-1 ring-rose-200 flex items-center justify-center text-[#AC2334] shrink-0">
+                      <Icon name="Wand2" size={18} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[#AC2334]">
+                        Updating {selectedIds.length} selected meeting
+                        {selectedIds.length !== 1 ? "s" : ""}
+                      </p>
+                      <p className="text-xs text-rose-700/80 mt-0.5 leading-relaxed">
+                        Toggle the fields you want to change — unchecked fields stay as they are on each record.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Field toggle rows — each field is a self-contained
+                    card with a left toggle pill, a label, a will-update/
+                    skip status hint, and the input below. Active cards
+                    use a violet border + white bg; inactive cards stay
+                    muted so the rep can scan at a glance which fields
+                    will be touched. */}
+                <div className="px-6 pb-4 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Status */}
+                    <div
+                      className={`rounded-xl border p-3 transition-colors ${
+                        massFields.status
+                          ? "bg-white border-rose-300 shadow-sm"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={massFields.status}
+                          onClick={() => toggleMassField("status")}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
+                            massFields.status ? "bg-[#AC2334]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                              massFields.status ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm font-medium text-foreground flex-1">
+                          Status
+                        </span>
+                        <span
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${
+                            massFields.status ? "text-[#AC2334]" : "text-slate-400"
+                          }`}
+                        >
+                          {massFields.status ? "Will update" : "Skip"}
+                        </span>
                       </div>
-                      <div className="flex gap-3 items-center">
-                        <input
-                          type="checkbox"
-                          checked={massFields.assignedUserId}
-                          onChange={() => toggleMassField("assignedUserId")}
-                        />
-                        <Select
-                          label="Assigned User"
-                          value={formData.assignedUserId}
-                          options={userOptions}
-                          disabled={!massFields.assignedUserId}
-                          onChange={(v) => handleChange("assignedUserId", v)}
-                        />
+                      <Select
+                        value={formData.status}
+                        options={STATUS_OPTIONS}
+                        disabled={!massFields.status}
+                        onChange={(v) => handleChange("status", v)}
+                      />
+                    </div>
+
+                    {/* Assigned User */}
+                    <div
+                      className={`rounded-xl border p-3 transition-colors ${
+                        massFields.assignedUserId
+                          ? "bg-white border-rose-300 shadow-sm"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={massFields.assignedUserId}
+                          onClick={() => toggleMassField("assignedUserId")}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
+                            massFields.assignedUserId ? "bg-[#AC2334]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                              massFields.assignedUserId ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm font-medium text-foreground flex-1">
+                          Assigned User
+                        </span>
+                        <span
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${
+                            massFields.assignedUserId ? "text-[#AC2334]" : "text-slate-400"
+                          }`}
+                        >
+                          {massFields.assignedUserId ? "Will update" : "Skip"}
+                        </span>
                       </div>
+                      <Select
+                        value={formData.assignedUserId}
+                        options={userOptions}
+                        disabled={!massFields.assignedUserId}
+                        onChange={(v) => handleChange("assignedUserId", v)}
+                      />
                     </div>
                   </div>
 
-                  <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                    <div className="grid grid-cols-2">
-                      <div className="flex gap-3 items-center">
-                        <input
-                          type="checkbox"
-                          checked={massFields.startDate}
-                          onChange={() => toggleMassField("startDate")}
-                        />
-
-                        <Input
-                          type="datetime-local"
-                          label="Start Date"
-                          value={formData.startDate}
-                          disabled={!massFields.dueDate}
-                          onChange={(e) =>
-                            handleChange("startDate", e.target.value)
-                          }
-                        />
-                        <input
-                          type="checkbox"
-                          checked={massFields.dueDate}
-                          onChange={() => toggleMassField("dueDate")}
-                        />
-                        <Input
-                          type="datetime-local"
-                          label="End Date"
-                          value={formData.dueDate}
-                          disabled={!massFields.dueDate}
-                          onChange={(e) =>
-                            handleChange("dueDate", e.target.value)
-                          }
-                        />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Start Date — previously its disabled check was
+                        reading massFields.dueDate (swap bug). Fixed
+                        here: disabled iff its own toggle is off. */}
+                    <div
+                      className={`rounded-xl border p-3 transition-colors ${
+                        massFields.startDate
+                          ? "bg-white border-rose-300 shadow-sm"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={massFields.startDate}
+                          onClick={() => toggleMassField("startDate")}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
+                            massFields.startDate ? "bg-[#AC2334]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                              massFields.startDate ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm font-medium text-foreground flex-1">
+                          Start Date
+                        </span>
+                        <span
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${
+                            massFields.startDate ? "text-[#AC2334]" : "text-slate-400"
+                          }`}
+                        >
+                          {massFields.startDate ? "Will update" : "Skip"}
+                        </span>
                       </div>
+                      <Input
+                        type="datetime-local"
+                        value={formData.startDate}
+                        disabled={!massFields.startDate}
+                        onChange={(e) => handleChange("startDate", e.target.value)}
+                      />
+                    </div>
+
+                    {/* End Date — same swap-bug fix. */}
+                    <div
+                      className={`rounded-xl border p-3 transition-colors ${
+                        massFields.dueDate
+                          ? "bg-white border-rose-300 shadow-sm"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={massFields.dueDate}
+                          onClick={() => toggleMassField("dueDate")}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
+                            massFields.dueDate ? "bg-[#AC2334]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                              massFields.dueDate ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                        <span className="text-sm font-medium text-foreground flex-1">
+                          End Date
+                        </span>
+                        <span
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${
+                            massFields.dueDate ? "text-[#AC2334]" : "text-slate-400"
+                          }`}
+                        >
+                          {massFields.dueDate ? "Will update" : "Skip"}
+                        </span>
+                      </div>
+                      <Input
+                        type="datetime-local"
+                        value={formData.dueDate}
+                        disabled={!massFields.dueDate}
+                        onChange={(e) => handleChange("dueDate", e.target.value)}
+                      />
                     </div>
                   </div>
-                  <div className="flex justify-end gap-3">
-                    <Button type="button" variant="ghost" onClick={onClose}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      Update {selectedIds.length} Meeting
-                    </Button>
-                  </div>
-                </form>
-              </>
+                </div>
+
+                {/* Footer — same row as before but the CTA gets the
+                    violet→pink gradient for visual continuity with the
+                    banner above. */}
+                <div className="px-6 py-4 border-t border-border flex justify-end gap-3 bg-card">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="linearbg-1 text-white hover:text-white border-0"
+                  >
+                    Update {selectedIds.length} Meeting
+                    {selectedIds.length !== 1 ? "s" : ""}
+                  </Button>
+                </div>
+              </form>
             )}
           </div>
         </div>

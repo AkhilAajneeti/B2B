@@ -7,6 +7,7 @@ import { fetchUser } from "services/user.service";
 import RoleGuard from "components/RoleGuard";
 import { useTeams } from "hooks/useTeams";
 import { todayLocal } from "../../../utils/dateFilter";
+import { isSupAdmin } from "utils/permission";
 
 const DealsFilters = ({
   filters,
@@ -21,10 +22,15 @@ const DealsFilters = ({
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
 
+  // Delete action is destructive and irreversible — admin-only. The
+  // `isSupAdmin()` check returns true only when user.type === "admin"
+  // (owners/managers don't qualify). Builds the list conditionally so
+  // non-admins never see the Delete button at all.
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
-    // { value: "export", label: "Export Selected", icon: "Download" },
-    // { value: "delete", label: "Delete Selected", icon: "Trash2" },
+    ...(isSupAdmin()
+      ? [{ value: "delete", label: "Delete Selected", icon: "Trash2", destructive: true }]
+      : []),
   ];
 
 
@@ -130,19 +136,6 @@ const DealsFilters = ({
     onFiltersChange(updated);
   };
 
-  // Renders the conditional inputs (X Days + Date Range) that appear when
-  // a date-mode filter is set. Used for both `dateType` (createdAt-based)
-  // and `nextContactType` (cNextContact-based) so we don't repeat the
-  // ~50-line block twice.
-  //
-  // Params:
-  //   type          - the currently picked filter type (e.g. "between")
-  //   fromKey/toKey - state keys for the From/To dates
-  //   xDaysKey      - state key for the "Enter days" input
-  //   maxToday      - when true, both pickers cap at today (useful for
-  //                   activity-date filters where future dates make no
-  //                   sense; nextContact pickers leave this off so the
-  //                   rep can pick a future follow-up date).
   const renderDateConditional = ({
     type,
     fromKey,
@@ -221,9 +214,13 @@ const DealsFilters = ({
     setShowBulkActions(false);
   };
 
-  const activeFiltersCount = Object.values(filters)?.filter(
-    (value) => value !== "" && value !== null && value !== undefined,
-  )?.length;
+  const activeFiltersCount = Object.values(filters)?.filter((value) => {
+    if (value === "" || value === null || value === undefined) return false;
+    // Multi-select fields (e.g. status) carry an array — empty array
+    // means no filter applied, so don't count it as active.
+    if (Array.isArray(value) && value.length === 0) return false;
+    return true;
+  })?.length;
   const assignUserOptions = assignUser.map((acc) => ({
     value: acc.id, // 👈 important (ID use karo)
     label: acc.name,
@@ -235,99 +232,290 @@ const DealsFilters = ({
     value: t.id,
     label: t.name,
   }));
+
+  // Build a flat list of "pills" — one per active filter — so the
+  // header can show actual filter values + per-pill X to remove them,
+  // instead of an opaque "3 filters active" count. Each pill has its
+  // own `onRemove` closure so removing one doesn't touch the others.
+  //
+  // Status is a multi-select: emit ONE pill per selected value so the
+  // rep can drop "Follow up" while keeping "Interested" applied.
+  //
+  // The two date filters (dateType for createdAt, nextContactType for
+  // cNextContact) compose with multiple dependent fields (from/to/
+  // xDays). Removing the date pill clears all of its dependents in
+  // one onFiltersChange so the form doesn't end up with an orphaned
+  // "From" date and no date type.
+  const activePills = (() => {
+    const pills = [];
+
+    if (filters?.search) {
+      pills.push({
+        key: "search",
+        label: "Search",
+        value: filters.search,
+        onRemove: () => handleFilterChange("search", ""),
+      });
+    }
+
+    // Status — array → one pill per value
+    if (Array.isArray(filters?.status) && filters.status.length > 0) {
+      filters.status.forEach((s) => {
+        pills.push({
+          key: `status-${s}`,
+          label: "Status",
+          value: s,
+          onRemove: () =>
+            handleFilterChange(
+              "status",
+              filters.status.filter((x) => x !== s),
+            ),
+        });
+      });
+    } else if (typeof filters?.status === "string" && filters.status) {
+      // Legacy string shape (saved tabState from before multi-select).
+      pills.push({
+        key: "status",
+        label: "Status",
+        value: filters.status,
+        onRemove: () => handleFilterChange("status", []),
+      });
+    }
+
+    if (filters?.cProject) {
+      pills.push({
+        key: "cProject",
+        label: "Project",
+        value: filters.cProject,
+        onRemove: () => handleFilterChange("cProject", ""),
+      });
+    }
+
+    if (filters?.source) {
+      const labelMatch = sourceOptions.find(
+        (o) => o.value === filters.source,
+      );
+      pills.push({
+        key: "source",
+        label: "Source",
+        value: labelMatch?.label || filters.source,
+        onRemove: () => handleFilterChange("source", ""),
+      });
+    }
+
+    if (filters?.assignUser) {
+      const userMatch = assignUserOptions.find(
+        (o) => o.value === filters.assignUser,
+      );
+      pills.push({
+        key: "assignUser",
+        label: "Assigned",
+        value: userMatch?.label || filters.assignUser,
+        onRemove: () => handleFilterChange("assignUser", ""),
+      });
+    }
+
+    if (filters?.team) {
+      const teamMatch = teamOptions.find((o) => o.value === filters.team);
+      pills.push({
+        key: "team",
+        label: "Team",
+        value: teamMatch?.label || filters.team,
+        onRemove: () => handleFilterChange("team", ""),
+      });
+    }
+
+    // Helper — formats a date-filter group (dateType + from/to/xDays)
+    // into a human-readable value string. Returns just the date-type
+    // label when no dependent fields are set yet.
+    const formatDateValue = (typeKey, fromKey, toKey, xDaysKey) => {
+      const dateLabel =
+        ACTIVITY_DATE_FILTERS.find((o) => o.value === filters[typeKey])
+          ?.label || filters[typeKey];
+      if (
+        filters[xDaysKey] &&
+        ["lastXDays", "afterXDays"].includes(filters[typeKey])
+      ) {
+        return `${dateLabel}: ${filters[xDaysKey]} days`;
+      }
+      if (
+        filters[fromKey] &&
+        filters[toKey] &&
+        filters[typeKey] === "between"
+      ) {
+        return `${filters[fromKey]} → ${filters[toKey]}`;
+      }
+      if (filters[fromKey]) {
+        return `${dateLabel}: ${filters[fromKey]}`;
+      }
+      return dateLabel;
+    };
+
+    if (filters?.dateType) {
+      pills.push({
+        key: "dateType",
+        label: "Created",
+        value: formatDateValue(
+          "dateType",
+          "closeDateFrom",
+          "closeDateTo",
+          "xDays",
+        ),
+        onRemove: () =>
+          onFiltersChange({
+            ...filters,
+            dateType: "",
+            closeDateFrom: "",
+            closeDateTo: "",
+            xDays: "",
+          }),
+      });
+    }
+
+    if (filters?.nextContactType) {
+      pills.push({
+        key: "nextContactType",
+        label: "Next Contact",
+        value: formatDateValue(
+          "nextContactType",
+          "nextContactFrom",
+          "nextContactTo",
+          "nextContactXDays",
+        ),
+        onRemove: () =>
+          onFiltersChange({
+            ...filters,
+            nextContactType: "",
+            nextContactFrom: "",
+            nextContactTo: "",
+            nextContactXDays: "",
+          }),
+      });
+    }
+
+    return pills;
+  })();
+
+  // No `overflow-hidden` on the wrapper — that was clipping the Select
+  // dropdown panels. Header strip below gets its own `rounded-t-xl` so
+  // the tinted gradient still hugs the outer card's rounded top corners.
   return (
-    <div className="bg-card border border-border rounded-lg p-4 mb-6">
-      {/* Header Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Leads ({total})
-          </h2>
-          {activeFiltersCount > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""}{" "}
-                active
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearFilters}
-                className="text-xs"
-              >
-                Clear all
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {selectedCount > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">
-                {selectedCount} selected
-              </span>
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowBulkActions(!showBulkActions)}
-                >
-                  <Icon name="MoreHorizontal" size={16} className="mr-1" />
-                  Actions
-                </Button>
-
-                {showBulkActions && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowBulkActions(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded-lg shadow-elevation-2 z-50">
-                      <div className="py-1">
-                        {bulkActions?.map((action) => (
-                          <button
-                            key={action?.value}
-                            onClick={() =>
-                              handleBulkActionSelect(action?.value)
-                            }
-                            className="flex items-center w-full px-3 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                          >
-                            <Icon
-                              name={action?.icon}
-                              size={16}
-                              className="mr-2"
-                            />
-                            {action?.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
+    <div className="bg-card border border-border rounded-xl mb-6 shadow-sm">
+      {/* Header strip — soft slate gradient + Target icon + count.
+          Active filter pills wrap onto the second visual row inside
+          the strip so even 10+ pills don't break the layout. */}
+      <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 via-slate-50/30 to-transparent border-b border-border rounded-t-xl">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+          <div className="flex items-start gap-3 flex-wrap flex-1 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Icon name="Target" size={14} className="text-primary" />
               </div>
+              <h2 className="text-base font-semibold text-foreground">
+                Leads
+                <span className="ml-1.5 text-sm font-medium text-muted-foreground tabular-nums">
+                  ({total?.toLocaleString?.() ?? total})
+                </span>
+              </h2>
             </div>
-          )}
+            {/* Active filter pills — one per applied filter (or per
+                array value for Status). Each pill has an X that removes
+                that specific filter without touching the others. */}
+            {activePills.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {activePills.map((pill) => (
+                  <span
+                    key={pill.key}
+                    className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full border border-primary/20"
+                  >
+                    <span className="text-primary/60">{pill.label}:</span>
+                    <span className="text-primary font-semibold">
+                      {pill.value}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={pill.onRemove}
+                      className="ml-0.5 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                      aria-label={`Remove ${pill.label} filter`}
+                    >
+                      <Icon name="X" size={10} />
+                    </button>
+                  </span>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClearFilters}
+                  className="text-xs h-7 px-2 text-muted-foreground hover:text-foreground"
+                >
+                  Clear all
+                </Button>
+              </div>
+            )}
+          </div>
 
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="lg:hidden w-full"
+            className="lg:hidden w-full shrink-0"
           >
-            <Icon name="Filter" size={16} className="mr-1" />
+            <Icon name="SlidersHorizontal" size={14} className="mr-1.5" />
             Filters
             <Icon
               name="ChevronDown"
-              size={16}
+              size={14}
               className={`ml-1 transition-transform ${isExpanded ? "rotate-180" : ""}`}
             />
           </Button>
         </div>
       </div>
-      {/* Filters */}
+
+      {/* Selection toolbar — slides in when checkboxes are selected.
+          Soft pastel violet so it reads as "active mode" without neon
+          saturation. Destructive actions get a rose treatment so reps
+          don't fire delete by accident; Mass Update keeps the neutral
+          white-on-violet pill. */}
+      {selectedCount > 0 && (
+        <div className="relative px-5 py-3 bg-gradient-to-r from-violet-100/80 via-fuchsia-100/70 to-pink-100/80 border-b border-violet-200/60">
+          <div className="relative flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-white/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600">
+                <Icon name="CheckCircle2" size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight text-violet-900">
+                  {selectedCount} lead{selectedCount !== 1 ? "s" : ""} selected
+                </p>
+                <p className="text-[11px] text-violet-700/70 leading-tight mt-0.5">
+                  Pick an action to apply to all
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {bulkActions?.map((action) => (
+                <Button
+                  key={action.value}
+                  size="sm"
+                  onClick={() => handleBulkActionSelect(action.value)}
+                  className={
+                    action.destructive
+                      ? "bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-300 shadow-sm"
+                      : "bg-white/90 hover:bg-white text-violet-700 hover:text-violet-800 border border-violet-300 shadow-sm"
+                  }
+                >
+                  <Icon name={action.icon} size={14} className="mr-1.5" />
+                  {action.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters grid — same controls, tighter spacing in its own zone. */}
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 ${isExpanded ? "" : "hidden lg:grid"}`}
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 p-4 ${isExpanded ? "" : "hidden lg:grid"}`}
       >
         <Input
           type="search"
@@ -340,8 +528,21 @@ const DealsFilters = ({
         <Select
           placeholder="Status"
           options={statusOptions}
-          value={filters?.status || ""}
-          onChange={(value) => handleFilterChange("status", value)}
+          // Multi-select — rep can pick more than one status (e.g.
+          // Interested + Follow up) without losing the other one.
+          // Normalize legacy string-shaped persisted value into an
+          // array at render time so older saved tabState still works.
+          multiple
+          searchable
+          clearable
+          value={
+            Array.isArray(filters?.status)
+              ? filters.status
+              : filters?.status
+                ? [filters.status]
+                : []
+          }
+          onChange={(value) => handleFilterChange("status", value || [])}
         />
 
         <Input
@@ -417,8 +618,11 @@ const DealsFilters = ({
         </div>
       </div>
 
+      {/* Date conditional grids — sit inside the card directly under
+          the filter grid. The outer wrapper no longer has padding, so
+          these get their own `px-4 pb-4` to stay aligned. */}
       {showDateConditional && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 px-4 pb-4">
           {renderDateConditional({
             type: filters?.dateType,
             fromKey: "closeDateFrom",
@@ -429,8 +633,7 @@ const DealsFilters = ({
         </div>
       )}
       {showNextContactConditional && (
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 px-4 pb-4">
           {renderDateConditional({
             type: filters?.nextContactType,
             fromKey: "nextContactFrom",

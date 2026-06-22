@@ -4,7 +4,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
-// import { fetchStatus } from "services/others.service";
+import { isSupAdmin } from "utils/permission";
 
 const DealsFilters = ({
   filters,
@@ -15,7 +15,6 @@ const DealsFilters = ({
   selectedCount,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
   // const [status, setStatus] = useState([]);
 
@@ -56,10 +55,15 @@ const DealsFilters = ({
     { value: "High", label: "High" },
     { value: "Urgent", label: "Urgent" },
   ];
+  // Delete action is destructive and irreversible — admin-only. The
+  // `isSupAdmin()` check returns true only when user.type === "admin"
+  // (owners/managers don't qualify). Builds the list conditionally so
+  // non-admins never see the Delete button at all.
   const bulkActions = [
     { value: "massupdate", label: "Mass Update", icon: "Update" },
-    // { value: "export", label: "Export Selected", icon: "Download" },
-    // { value: "delete", label: "Delete Selected", icon: "Trash2" },
+    ...(isSupAdmin()
+      ? [{ value: "delete", label: "Delete Selected", icon: "Trash2", destructive: true }]
+      : []),
   ];
 
   const handleFilterChange = (key, value) => {
@@ -71,7 +75,6 @@ const DealsFilters = ({
 
   const handleBulkActionSelect = (action) => {
     onBulkAction(action);
-    setShowBulkActions(false);
   };
   useEffect(() => {
     fetchUser()
@@ -99,99 +102,106 @@ const DealsFilters = ({
     value: acc.id, // 👈 important (ID use karo)
     label: acc.name,
   }));
+  // No `overflow-hidden` on the wrapper — that was clipping the
+  // Select dropdown panels when they opened past the card's bottom.
+  // Header strip below gets its own `rounded-t-xl` so the tinted
+  // gradient still hugs the outer card's rounded top corners.
   return (
-    <div className="bg-card border border-border rounded-lg p-4 mb-6">
-      {/* Header Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Deals ({dealCount})
-          </h2>
+    <div className="bg-card border border-border rounded-xl mb-6 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-5 py-3 bg-gradient-to-r from-slate-50/80 via-slate-50/30 to-transparent border-b border-border rounded-t-xl">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Icon name="ListChecks" size={14} className="text-primary" />
+            </div>
+            <h2 className="text-base font-semibold text-foreground">
+              Tasks
+              <span className="ml-1.5 text-sm font-medium text-muted-foreground tabular-nums">
+                ({dealCount?.toLocaleString?.() ?? dealCount})
+              </span>
+            </h2>
+          </div>
           {activeFiltersCount > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""}{" "}
-                active
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                <Icon name="Sparkles" size={10} />
+                {activeFiltersCount} active
               </span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClearFilters}
-                className="text-xs"
+                className="text-xs h-7 px-2 text-muted-foreground hover:text-foreground"
               >
-                Clear all
+                Clear
               </Button>
             </div>
           )}
         </div>
 
-        <div className="flex items-center space-x-2">
-          {selectedCount > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">
-                {selectedCount} selected
-              </span>
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowBulkActions(!showBulkActions)}
-                >
-                  <Icon name="MoreHorizontal" size={16} className="mr-1" />
-                  Actions
-                </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="lg:hidden"
+        >
+          <Icon name="SlidersHorizontal" size={14} className="mr-1.5" />
+          Filters
+          <Icon
+            name="ChevronDown"
+            size={14}
+            className={`ml-1 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+          />
+        </Button>
+      </div>
 
-                {showBulkActions && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowBulkActions(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded-lg shadow-elevation-2 z-50">
-                      <div className="py-1">
-                        {bulkActions?.map((action) => (
-                          <button
-                            key={action?.value}
-                            onClick={() =>
-                              handleBulkActionSelect(action?.value)
-                            }
-                            className="flex items-center w-full px-3 py-2 text-sm text-popover-foreground hover:bg-muted transition-smooth"
-                          >
-                            <Icon
-                              name={action?.icon}
-                              size={16}
-                              className="mr-2"
-                            />
-                            {action?.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
+      {/* Selection toolbar — slides in when checkboxes are selected.
+          Soft pastel violet→fuchsia→pink so it reads as "active mode"
+          without neon saturation. Dark violet text + ring accents keep
+          enough contrast against the light background. Destructive
+          actions get a rose treatment; everything else uses a neutral
+          white-on-violet pill so reps don't fire delete by accident. */}
+      {selectedCount > 0 && (
+        <div className="relative px-5 py-3 bg-gradient-to-r from-violet-100/80 via-fuchsia-100/70 to-pink-100/80 border-y border-violet-200/60">
+          <div className="relative flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-white/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600">
+                <Icon name="CheckCircle2" size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight text-violet-900">
+                  {selectedCount} task{selectedCount !== 1 ? "s" : ""} selected
+                </p>
+                <p className="text-[11px] text-violet-700/70 leading-tight mt-0.5">
+                  Pick an action to apply to all
+                </p>
               </div>
             </div>
-          )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="lg:hidden"
-          >
-            <Icon name="Filter" size={16} className="mr-1" />
-            Filters
-            <Icon
-              name="ChevronDown"
-              size={16}
-              className={`ml-1 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-            />
-          </Button>
+            <div className="flex items-center gap-2">
+              {bulkActions?.map((action) => (
+                <Button
+                  key={action.value}
+                  size="sm"
+                  onClick={() => handleBulkActionSelect(action.value)}
+                  className={
+                    action.destructive
+                      ? "bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-300 shadow-sm"
+                      : "bg-white/90 hover:bg-white text-violet-700 hover:text-violet-800 border border-violet-300 shadow-sm"
+                  }
+                >
+                  <Icon name={action.icon} size={14} className="mr-1.5" />
+                  {action.label}
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-      {/* Filters */}
+      )}
+
+      {/* Filters grid — same controls, slightly tighter spacing
+          (gap-3 vs gap-4) so the card feels less chunky. */}
       <div
-        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 ${isExpanded ? "block" : "hidden lg:grid"}`}
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 p-4 ${isExpanded ? "block" : "hidden lg:grid"}`}
       >
         <Input
           type="search"

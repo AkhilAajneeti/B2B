@@ -99,7 +99,9 @@ const DealsPage = () => {
   const DEALS_STATE_KEY = "deals.tableState";
   const DEFAULT_FILTERS = {
     search: "",
-    status: "",
+    // Multi-select — rep can pick e.g. ["Interested", "Follow up"].
+    // Empty array = no status filter applied.
+    status: [],
     sector: "",
     cProject: "",
     source: "",
@@ -374,7 +376,7 @@ const DealsPage = () => {
   const handleClearFilters = () => {
     setFilters({
       search: "",
-      status: "",
+      status: [],
       sector: "",
       cProject: "",
       source: "",

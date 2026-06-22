@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -361,4 +361,4 @@ const PipelineChart = ({ leads = [] }) => {
   );
 };
 
-export default PipelineChart;
+export default memo(PipelineChart);
