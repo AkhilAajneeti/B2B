@@ -132,7 +132,27 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
     });
   }
   if (filters.status && !omit.has("status")) {
-    where.push({ type: "equals", attribute: "status", value: filters.status });
+    // Status is multi-select (array) from the page filter. Empty array
+    // → no filter applied → skip the clause entirely (a previous
+    // version pushed `{type: "equals", value: []}` which EspoCRM
+    // interpreted as "status equals empty string" → 0 records).
+    // Populated array → `in` operator. Legacy string → `equals`
+    // fallback for any older persisted state.
+    if (Array.isArray(filters.status)) {
+      if (filters.status.length > 0) {
+        where.push({
+          type: "in",
+          attribute: "status",
+          value: filters.status,
+        });
+      }
+    } else {
+      where.push({
+        type: "equals",
+        attribute: "status",
+        value: filters.status,
+      });
+    }
   }
   if (filters.source && !omit.has("source")) {
     // Match the table: case-insensitive contains on cSubSource (reps fill it
