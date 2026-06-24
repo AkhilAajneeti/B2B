@@ -375,10 +375,10 @@ const DealsTable = ({
             ) : (
               paginatedDeals?.map((deal) => (
                 <tr
-                  key={deal?.id}
+                  key={deal?.id}now ap
                   onMouseEnter={() => setHoveredRow(deal?.id)}
                   onMouseLeave={() => setHoveredRow(null)}
-                  className="hover:bg-muted/30 cursor-pointer transition-smooth"
+                  className="hover:bg-sky-50 cursor-pointer transition-smooth"
                 >
                   <td className="px-4 py-4">
                     <Checkbox

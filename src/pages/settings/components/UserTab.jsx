@@ -392,6 +392,42 @@ const UserTab = () => {
     );
   };
 
+  // Avatar palette — same hash + colors as the deals/projects/charts
+  // avatar pills so a user's color stays consistent across the app.
+  const ASSIGNEE_PALETTE = [
+    "#6366F1", "#22C55E", "#F59E0B", "#EF4444",
+    "#06B6D4", "#8B5CF6", "#EC4899", "#14B8A6",
+  ];
+  const getNameColor = (name = "") => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i)) >>> 0;
+    return ASSIGNEE_PALETTE[hash % ASSIGNEE_PALETTE.length];
+  };
+  const getInitials = (name = "") => {
+    const parts = name.trim().split(/[\s_]+/);
+    if (!parts[0]) return "?";
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase();
+  };
+
+  // EspoCRM `type` enum → pill palette. Admin gets a strong rose tint
+  // (matches the brand maroon — signals elevated permission). Manager
+  // and owner are commented as future-proofing in case the schema
+  // changes; everything else falls back to slate.
+  const getRolePillClass = (type) => {
+    const map = {
+      admin: "bg-rose-50 text-rose-700 border-rose-200",
+      manager: "bg-indigo-50 text-indigo-700 border-indigo-200",
+      owner: "bg-amber-50 text-amber-700 border-amber-200",
+      regular: "bg-slate-50 text-slate-700 border-slate-200",
+      portal: "bg-cyan-50 text-cyan-700 border-cyan-200",
+      api: "bg-violet-50 text-violet-700 border-violet-200",
+    };
+    return map[type] || "bg-gray-50 text-gray-700 border-gray-200";
+  };
+
   const totalPages = Math.ceil(filteredMembers?.length / itemsPerPage);
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -722,14 +758,36 @@ const UserTab = () => {
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <span className="text-sm text-card-foreground">
-                        {member?.type}
-                      </span>
+                      {member?.type ? (
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide border ${getRolePillClass(
+                            member.type,
+                          )}`}
+                        >
+                          {member.type}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
-                      <span className="text-sm text-card-foreground">
-                        {member?.userName}
-                      </span>
+                      {member?.userName ? (
+                        <div className="inline-flex items-center gap-2 pl-1 pr-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors max-w-full">
+                          <span
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                            style={{
+                              backgroundColor: getNameColor(member.userName),
+                            }}
+                          >
+                            {getInitials(member.userName)}
+                          </span>
+                          <span className="text-sm font-medium text-slate-700 truncate">
+                            {member.userName}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       {getStatusBadge(member?.isActive ? "Active" : "InActive")}

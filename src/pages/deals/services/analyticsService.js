@@ -1,18 +1,6 @@
-/**
- * Lead-analytics data-access layer.
- *
- * Pattern: ONE list-fetch per (filters × range) instead of 6N count fetches.
- * Backend builds the slice via ESPO `whereGroup`, frontend does cheap O(N)
- * grouping for the chart.
- *
- * Cache: localStorage layer keyed by (filters, range). Survives reloads.
- * React Query uses this as `initialData` for instant render, then refetches
- * fresh data in the background.
- */
 
 const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
 
-// Business-only sales statuses — drives both the IN filter and the chart segments.
 export const BUSINESS_STATUSES = [
   "New",
   "Interested",
