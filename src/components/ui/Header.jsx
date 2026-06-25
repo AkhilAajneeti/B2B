@@ -63,6 +63,15 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
       "isAuthenticated",
     ].forEach((k) => localStorage.removeItem(k));
 
+    // Also flush any per-user count caches set by leads.service.js
+    // (key shape: `leads_count_cache_<userId>`). Even though the cache
+    // is namespaced per user now, leaving previous-session entries
+    // around just bloats localStorage and could resurrect stale data
+    // if the same user logs in again within the TTL.
+    Object.keys(localStorage).forEach((k) => {
+      if (k.startsWith("leads_count_cache_")) localStorage.removeItem(k);
+    });
+
     handleDropdownClose();
     navigate("/login", { replace: true });
   };

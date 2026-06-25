@@ -1,7 +1,17 @@
 // cache services?
+// Per-user cache namespace. The previous version read
+// `localStorage.getItem("userId")` which was never set anywhere in the
+// codebase, so every user collapsed onto the same `_guest` bucket and
+// inherited the previous session's cached counts on the next login.
+// Now reads the real id from `login_object` (set by LoginForm) and
+// falls back to `_guest` only when no user is logged in.
 const getCacheKey = () => {
-  const userId = localStorage.getItem("userId") || "guest";
-  return `leads_count_cache_${userId}`;
+  try {
+    const userId = JSON.parse(localStorage.getItem("login_object"))?.id;
+    return `leads_count_cache_${userId || "guest"}`;
+  } catch {
+    return "leads_count_cache_guest";
+  }
 };
 const CACHE_TTL = 1000 * 60 * 10; // 10 min
 const leadsCountCache = new Map();
@@ -25,13 +35,17 @@ const setLocalCache = (key, value) => {
 
 //industry chart
 export const fetchLeadsCount = async (filters = []) => {
-  // 🔥 Stable cache key (prevents order issues)
-  const cacheKey = JSON.stringify(
+  // 🔥 Stable cache key — prefixed with the per-user namespace so the
+  // in-memory Map can't cross-pollute across logout/login within the
+  // same tab. Without the prefix, both users' filter combinations hash
+  // to the same key and serve each other's data until the tab reloads.
+  const userScope = getCacheKey();
+  const cacheKey = `${userScope}::${JSON.stringify(
     filters.map((f) => ({
       ...f,
       value: Array.isArray(f.value) ? [...f.value].sort() : f.value,
     }))
-  );
+  )}`;
 
   // ✅ 1. MEMORY CACHE
   const cached = leadsCountCache.get(cacheKey);
