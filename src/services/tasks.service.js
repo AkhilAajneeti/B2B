@@ -71,13 +71,26 @@ export const fetchAllTasks = async ({ limit, page, filters = {} }) => {
     });
   }
 
-  // 📌 STATUS
+  // 📌 STATUS — array-aware (multi-select-ready). Skips empty arrays;
+  // uses `in` when populated; legacy string → `equals`. Same pattern
+  // as leads.service.js so a future multi-select migration here
+  // doesn't repeat the "0 records returned" bug.
   if (filters.status) {
-    where.push({
-      type: "equals",
-      attribute: "status",
-      value: filters.status,
-    });
+    if (Array.isArray(filters.status)) {
+      if (filters.status.length > 0) {
+        where.push({
+          type: "in",
+          attribute: "status",
+          value: filters.status,
+        });
+      }
+    } else {
+      where.push({
+        type: "equals",
+        attribute: "status",
+        value: filters.status,
+      });
+    }
   }
 
   // ⚡ PRIORITY
@@ -141,7 +154,11 @@ export const fetchAllTasks = async ({ limit, page, filters = {} }) => {
         f.value.forEach((v) => {
           q += `&whereGroup[${i}][value][]=${encodeURIComponent(v)}`;
         });
-      } else {
+      } else if (f.value !== undefined && f.value !== null) {
+        // Guard against emitting `value=undefined` — date filters like
+        // `currentMonth` carry no `value` and previously serialized
+        // as "&whereGroup[i][value]=undefined" which the backend
+        // either rejected or matched literally.
         q += `&whereGroup[${i}][value]=${encodeURIComponent(f.value)}`;
       }
 

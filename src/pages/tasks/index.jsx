@@ -21,7 +21,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasks, useTasksAll } from "hooks/useTasks";
 import { useTask } from "hooks/useTask";
-import { canCreate, canDelete, canEdit } from "utils/permission";
+import { canCreate, canDelete, canDeleteRecord, canEdit } from "utils/permission";
 const TaskPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
@@ -152,6 +152,12 @@ const TaskPage = () => {
 
   //deletion delete
   const handleDeleteLead = async (id) => {
+    // Record-level guard — see meeting/index.jsx for full rationale.
+    const record = (data?.list || []).find((t) => t.id === id);
+    if (record && !canDeleteRecord("Task", record)) {
+      toast.error("You do not have permission to delete this task");
+      return;
+    }
     try {
       toast.loading("Deleting task...", { id: "delete-task" });
       await deleteTasks(id); // API call
@@ -238,6 +244,11 @@ const TaskPage = () => {
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
+    // The live query + pagination component read `page`, not the
+    // legacy `currentPage`. Reset both so future cleanup of the dead
+    // state doesn't reintroduce the "filter applied → still on page 5"
+    // empty-table bug.
+    setPage(1);
     setCurrentPage(1);
   };
 
@@ -251,6 +262,7 @@ const TaskPage = () => {
       endDate: "",
       dateType: "",
     });
+    setPage(1);
     setCurrentPage(1);
   };
 

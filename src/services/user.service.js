@@ -58,6 +58,11 @@ export const updateUser = async (id, payload) => {
 
   console.log("response from User.service.js", res);
   if (!res.ok) {
+    // `text` was previously referenced before declaration → throwing
+    // here raised `ReferenceError: text is not defined`, swallowing
+    // the real EspoCRM error body. Read it now so the thrown message
+    // surfaces the actual backend reason.
+    const text = await res.text().catch(() => "");
     throw new Error(text || "User update failed");
   }
 

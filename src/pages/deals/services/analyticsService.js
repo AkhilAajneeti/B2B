@@ -191,9 +191,19 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
 // ---------------------------------------------------------------------------
 
 const stableFiltersKey = (filters = {}) => {
-  // Normalise key order so {a:1,b:2} and {b:2,a:1} hit the same cache entry.
+  // Normalise key order AND array-value order so {a:1,b:2} matches
+  // {b:2,a:1}, and `status: ["A","B"]` matches `status: ["B","A"]`.
+  // Without the array sort, the same logical filter applied in
+  // different selection order produced different cache keys → cache
+  // misses + redundant API calls + localStorage bloat (recently
+  // introduced by the multi-select status migration).
   const keys = Object.keys(filters).sort();
-  return JSON.stringify(keys.map((k) => [k, filters[k]]));
+  return JSON.stringify(
+    keys.map((k) => {
+      const v = filters[k];
+      return [k, Array.isArray(v) ? [...v].sort() : v];
+    }),
+  );
 };
 
 // onDate is only meaningful when range === "on" — collapse otherwise so

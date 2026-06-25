@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { canCreate, canEntityRecord, canRead, getStoredAcl, getStoredUser, isAdminOrManager, isOwnRecord, isSupAdmin } from "../../utils/permission.js";
+import { canCreate, canDeleteRecord, canEntityRecord, canRead, getStoredAcl, getStoredUser, isAdminOrManager, isOwnRecord, isSupAdmin } from "../../utils/permission.js";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import Header from "../../components/ui/Header";
@@ -161,6 +161,12 @@ const ProjectsPage = () => {
 
   //deletion delete
   const handleDeleteLead = async (id) => {
+    // Record-level guard — see meeting/index.jsx for full rationale.
+    const record = projects.find((p) => p.id === id);
+    if (record && !canDeleteRecord("Project", record)) {
+      toast.error("You do not have permission to delete this project");
+      return;
+    }
     try {
       toast.loading("Deleting Project...", { id: "delete-project" });
       await deleteProject(id); // API call

@@ -50,6 +50,11 @@ const DealDrawer = ({
     startDate: "",
     dueDate: "",
     description: "",
+    // ⚠️ NAMING GOTCHA — same inversion as meeting/DealDrawer.jsx.
+    //   - `parentName` (state) → parentType (API entity type)
+    //   - `parentType` (state) → parentId   (API record id)
+    // Payload mapping in handleSubmit swaps them back so the wire
+    // format is correct. Rename the STATE keys on next refactor.
     parentName: "",
     parentType: "",
   });
@@ -267,11 +272,15 @@ const DealDrawer = ({
       return "Task updated";
     }
 
-    if (activity._scope === "Call") {
-      return `${activity.direction || "Call"} call scheduled`;
+    // The function param is named `stream` — the previous `activity.*`
+    // references would throw `ReferenceError: activity is not defined`
+    // and blank the Stream panel as soon as a Call- or Meeting-scoped
+    // entry rendered.
+    if (stream._scope === "Call") {
+      return `${stream.direction || "Call"} call scheduled`;
     }
 
-    if (activity._scope === "Meeting") {
+    if (stream._scope === "Meeting") {
       return "Meeting scheduled";
     }
 
@@ -348,8 +357,14 @@ const DealDrawer = ({
       toast.error("Select at least one field to update");
       return;
     }
-    onBulkUpdate(selectedIds, payload);
-    onClose();
+    // Await so a failure can surface while the drawer is still mounted
+    // and the error toast renders against a live tree.
+    try {
+      await onBulkUpdate(selectedIds, payload);
+      onClose();
+    } catch (err) {
+      console.error("Bulk update failed", err);
+    }
   };
 
   // activity operation -------

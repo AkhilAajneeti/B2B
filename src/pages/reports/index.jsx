@@ -83,9 +83,13 @@ const Reports = () => {
     }
   };
   const handleFiltersChange = (newFilters) => {
-
     setFilters(newFilters);
-
+    // Reset pagination so a filter change doesn't leave the user on
+    // an empty page 5 of the new (smaller) result set. The query +
+    // pagination component bind to `page`; `currentPage` is legacy
+    // state kept in sync until removed.
+    setPage(1);
+    setCurrentPage(1);
   };
 
   // Close sidebar on route change or outside click

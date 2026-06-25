@@ -95,9 +95,14 @@ const DealsFilters = ({
     { label: "Last Month", value: "lastMonth" },
   ];
   const showDateInputs = ["between", "after", "before"].includes(filters?.dateType);
-  const activeFiltersCount = Object.values(filters)?.filter(
-    (value) => value !== "" && value !== null && value !== undefined,
-  )?.length;
+  const activeFiltersCount = Object.values(filters)?.filter((value) => {
+    if (value === "" || value === null || value === undefined) return false;
+    // Empty arrays (multi-select with nothing picked) should NOT count
+    // as active filters — they're truthy in JS but represent "no
+    // filter applied".
+    if (Array.isArray(value) && value.length === 0) return false;
+    return true;
+  })?.length;
   const assignUserOptions = assignUser.map((acc) => ({
     value: acc.id, // 👈 important (ID use karo)
     label: acc.name,

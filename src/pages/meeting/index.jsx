@@ -21,7 +21,7 @@ import {
   updateMeeting,
 } from "services/meeting.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
-import { canCreate, canDelete, canEdit } from "utils/permission";
+import { canCreate, canDelete, canDeleteRecord, canEdit } from "utils/permission";
 import { useLocation } from "react-router-dom";
 
 const MeetingPage = () => {
@@ -111,6 +111,17 @@ const MeetingPage = () => {
   };
 
   const handleDeleteMeeting = async (id) => {
+    // Record-level permission guard — the delete BUTTON is hidden when
+    // the rep can't delete, but the handler could still fire via a
+    // programmatic event (keyboard shortcut, drawer action). Mirrors
+    // the leads-page pattern so silent unauthorized deletes can't
+    // sneak through. Backend would 403 anyway, but the success toast
+    // would have fired first.
+    const record = (data?.list || []).find((m) => m.id === id);
+    if (record && !canDeleteRecord("Meeting", record)) {
+      toast.error("You do not have permission to delete this meeting");
+      return;
+    }
     try {
       toast.loading("Deleting meeting...", { id: "delete-lead" });
       await deleteMeeting(id);
@@ -169,6 +180,11 @@ const MeetingPage = () => {
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
+    // The live query + pagination component read `page`, not the
+    // legacy `currentPage`. Reset both so future cleanup of the dead
+    // state doesn't reintroduce the "filter applied → still on page 5"
+    // empty-table bug.
+    setPage(1);
     setCurrentPage(1);
   };
 
@@ -182,6 +198,7 @@ const MeetingPage = () => {
       endDate: "",
       dateType: "",
     });
+    setPage(1);
     setCurrentPage(1);
   };
 

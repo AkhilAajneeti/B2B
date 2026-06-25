@@ -473,7 +473,7 @@ const DealDrawer = ({
       console.error("Failed to save lead", error);
     }
   };
-  const handleBulkUpdate = (e) => {
+  const handleBulkUpdate = async (e) => {
     e.preventDefault();
 
     const payload = {};
@@ -496,8 +496,17 @@ const DealDrawer = ({
       return;
     }
 
-    onBulkUpdate(payload);
-    onClose();
+    // Await the parent's bulk mutation so a failure surfaces while the
+    // drawer is still mounted. Previously `onBulkUpdate(payload); onClose();`
+    // ran sync — drawer closed before the Promise.all resolved and any
+    // error toast fired against an unmounted tree.
+    try {
+      await onBulkUpdate(payload);
+      onClose();
+    } catch (err) {
+      console.error("Bulk update failed", err);
+      // Keep drawer open; parent already toasts the error.
+    }
   };
 
   const handleDelete = async (e, activity) => {
@@ -780,7 +789,17 @@ const DealDrawer = ({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (isEditing) setFormData(deal);
+                    // Cancel: rehydrate via the same teamsIds[0]→teamId
+                    // mapping the mount effect uses, otherwise the next
+                    // Edit click renders datetime-local inputs blank
+                    // (`deal` carries raw EspoCRM datetime strings) and
+                    // the Team dropdown loses its selection.
+                    if (isEditing) {
+                      setFormData({
+                        ...deal,
+                        teamId: deal.teamId || deal.teamsIds?.[0] || "",
+                      });
+                    }
                     setIsEditing(!isEditing);
                   }}
                 >
@@ -949,7 +968,7 @@ const DealDrawer = ({
                         />
                       ) : (
                         <Input
-                          label="Project Name"
+                          label="Project Name (read-only)"
                           value={formData.cProject || ""}
                           onChange={(e) =>
                             handleChange("cProject", e.target.value)
@@ -984,7 +1003,7 @@ const DealDrawer = ({
                         />
                       ) : (
                         <Input
-                          label="Preference"
+                          label="Preference (read-only)"
                           value={formData.cPreference || ""}
                           onChange={(e) =>
                             handleChange("cPreference", e.target.value)
@@ -1053,7 +1072,7 @@ const DealDrawer = ({
                         />
                       ) : (
                         <Select
-                          label="Source"
+                          label="Source (read-only)"
                           value={formData.source || ""}
                           options={sourceOptions}
                           onChange={(value) => handleChange("source", value)}
@@ -1066,7 +1085,11 @@ const DealDrawer = ({
                           edit mode — write-once at creation, same rule as
                           the Source field. */}
                       <Input
-                        label={isAdmin ? "Sub Source" : "Source"}
+                        label={
+                          mode === "add"
+                            ? (isAdmin ? "Sub Source" : "Source")
+                            : (isAdmin ? "Sub Source (read-only)" : "Source (read-only)")
+                        }
                         value={formData.cSubSource || ""}
                         onChange={(e) =>
                           handleChange("cSubSource", e.target.value)
@@ -1095,7 +1118,7 @@ const DealDrawer = ({
                       ) : (
                         <Input
                           type="datetime-local"
-                          label="Lead Received At"
+                          label="Lead Received At (read-only)"
                           value={fromEspoToLocalInput(formData.cLeatReceivedAt)}
                           onChange={(e) =>
                             handleChange("cLeatReceivedAt", e.target.value)

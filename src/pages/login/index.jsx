@@ -9,10 +9,22 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const isAuthenticated = localStorage.getItem("auth_token");
-    if (isAuthenticated === "true") {
-      navigate("/dashboard");
+    // Already-authenticated short-circuit. The token is a base64
+    // payload, NOT the literal string "true" — the old check
+    // (`isAuthenticated === "true"`) was always false, so this
+    // redirect never fired and authenticated users would briefly see
+    // the login form before LoginForm's own redirect caught it.
+    // Match the same condition ProtectedRoute uses for a valid session.
+    const token = localStorage.getItem("auth_token");
+    const raw = localStorage.getItem("login_object");
+    let hasUser = false;
+    try {
+      hasUser = Boolean(raw && JSON.parse(raw)?.id);
+    } catch {
+      hasUser = false;
+    }
+    if (token && hasUser) {
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate]);
 

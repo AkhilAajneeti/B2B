@@ -10,8 +10,19 @@ import { useNotificationCount } from "hooks/useNotificationCount";
 import Avatar from "react-avatar";
 import { useQueryClient } from "@tanstack/react-query";
 const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
+  // `login_object` may be missing (fresh tab, mid-logout race) or
+  // malformed (manual clear). Default to an empty object so the
+  // unguarded `(LogInuser.username || "User")` reads below return undefined
+  // instead of throwing and crashing the whole authenticated layout.
+  // try/catch covers the malformed-JSON case where the bare
+  // `JSON.parse` would throw a SyntaxError.
   const LogInuserstr = localStorage.getItem("login_object");
-  const LogInuser = LogInuserstr ? JSON.parse(LogInuserstr) : null;
+  let LogInuser = {};
+  try {
+    LogInuser = LogInuserstr ? JSON.parse(LogInuserstr) || {} : {};
+  } catch {
+    LogInuser = {};
+  }
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
@@ -35,17 +46,24 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   };
 
   const handleLogout = () => {
-
-    // ✅ Clear react-query cache
+    // Clear react-query cache
     queryClient.clear();
 
-    // ✅ Clear all local storage
-    localStorage.clear();
+    // Explicit removes instead of `localStorage.clear()`. Wiping
+    // everything also nuked unrelated keys: the
+    // `followup_fired_*` dedupe set (so the same followup
+    // reminders re-fire on next login), theme/sidebar prefs, and
+    // any persisted React Query cache. List the auth-related keys
+    // explicitly so additions don't accidentally clobber unrelated
+    // state.
+    [
+      "auth_token",
+      "login_object",
+      "acl",
+      "isAuthenticated",
+    ].forEach((k) => localStorage.removeItem(k));
 
-    // ✅ Close dropdown
     handleDropdownClose();
-
-    // ✅ Redirect
     navigate("/login", { replace: true });
   };
 
@@ -162,12 +180,12 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
               >
                 <div className="w-8 h-8 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-primary-foreground">
-                    <Avatar name={LogInuser.username} size="32" round={true} />
+                    <Avatar name={(LogInuser.username || "User")} size="32" round={true} />
                   </span>
                 </div>
                 <div className="hidden sm:block text-left">
                   <div className="text-sm font-medium text-foreground">
-                    {LogInuser.username}
+                    {(LogInuser.username || "User")}
                   </div>
                  
                 </div>
@@ -195,7 +213,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                         {/* avatar */}
                         <div className="relative shrink-0">
                           <Avatar
-                            name={LogInuser.username}
+                            name={(LogInuser.username || "User")}
                             size="46"
                             round={true}
                           />
@@ -206,7 +224,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                         {/* user info */}
                         <div className="min-w-0">
                           <h3 className="text-sm font-semibold text-slate-900 truncate">
-                            {LogInuser.username}
+                            {(LogInuser.username || "User")}
                           </h3>
 
                           <p className="text-xs text-slate-500 truncate mt-0.5">

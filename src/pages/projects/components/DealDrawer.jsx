@@ -281,18 +281,27 @@ const DealDrawer = ({
 
     const payload = {};
 
-    if (massFields.status) payload.status = formData.status;
-    if (massFields.priority) payload.priority = formData.priority;
+    // Projects (Campaigns) only expose `assignedUserId` in the mass-
+    // update UI. The previous branches for `status` / `priority` /
+    // `dueDate` were dead because their toggles never render — but
+    // they would have written `undefined` to the payload, since
+    // `formData.{status,priority,dueDate}` are never initialised on
+    // Project. Remove them so the form can never accidentally null
+    // those fields if the UI is ever extended without re-checking.
     if (massFields.assignedUserId)
       payload.assignedUserId = formData.assignedUserId;
-    if (massFields.dueDate) payload.dateEnd = toEspoDateTime(formData.dueDate);
 
     if (!Object.keys(payload).length) {
       toast.error("Select at least one field to update");
       return;
     }
-    onBulkUpdate(selectedIds, payload);
-    onClose();
+    // Await so a failure surfaces while the drawer is still mounted.
+    try {
+      await onBulkUpdate(selectedIds, payload);
+      onClose();
+    } catch (err) {
+      console.error("Bulk update failed", err);
+    }
   };
 
   useEffect(() => {

@@ -96,6 +96,13 @@ const DealDrawer = ({
     startDate: "",
     dueDate: "",
     description: "",
+    // ⚠️ NAMING GOTCHA — these two state fields are INVERTED relative
+    // to the EspoCRM API. The payload mapping (search "FINAL Meeting
+    // PAYLOAD") flips them back, so the wire format is correct:
+    //   - `parentName` (state)   →  parentType  (API: the ENTITY type "Lead"/"Account")
+    //   - `parentType` (state)   →  parentId    (API: the record id)
+    // When refactoring, rename the STATE keys (not the payload) so the
+    // labels stop lying about what they hold.
     parentName: "",
     parentType: "",
     attendeeUsers: [],
@@ -129,7 +136,11 @@ const DealDrawer = ({
       setFormData({
         name: deal.name || "",
         assignedUserId: deal.assignedUserId || "",
-        teamId: deal.teamId?.[0] || "",
+        // EspoCRM stores team relations on `teamsIds` (plural). The
+        // previous `deal.teamId?.[0]` read the first character of a
+        // string id (or undefined), leaving Team blank on edit and
+        // potentially nulling the team on save.
+        teamId: deal.teamId || deal.teamsIds?.[0] || "",
         status: deal.status || "",
         priority: deal.priority || "",
         // Derive the duration option from the saved start/end gap so the
@@ -154,7 +165,11 @@ const DealDrawer = ({
   }, [deal, mode]);
 
   const { data: streamData } = useQuery({
-    queryKey: ["meetingStream", deal?.id],
+    // `isOpen` participates in the key so closing+reopening a different
+    // deal can't briefly flash the previous deal's stream entries
+    // before the refetch finishes — `enabled` alone gates the query
+    // but doesn't invalidate the cache slot.
+    queryKey: ["meetingStream", deal?.id, isOpen],
     queryFn: () => meetingStreamById(deal.id),
     enabled: isOpen && !!deal?.id,
   });
@@ -339,7 +354,12 @@ const DealDrawer = ({
     const payload = {
       // ✅ TASK REQUIRED
       name: formData.name.trim(),
-      status: formData.status || "Not Started",
+      // Meeting status enum is Planned / Held / Not Held — the previous
+      // `"Not Started"` fallback was an invalid enum bleed-through from
+      // the Task drawer copy-paste; EspoCRM would reject the create or
+      // silently store a bad value. Default to `Planned` (the natural
+      // initial state for a new meeting).
+      status: formData.status || "Planned",
       priority: formData.priority || "Normal",
 
       assignedUserId: formData.assignedUserId || null,
@@ -391,8 +411,19 @@ const DealDrawer = ({
     const payload = {};
 
     if (massFields.status) payload.status = formData.status;
-    if (massFields.usersIds)
-      payload.attendeesUsersIds = formData.attendeeUsers.map((u) => u.value);
+    if (massFields.usersIds) {
+      // EspoCRM Meeting attendees are stored on `usersIds` (+ the
+      // per-attendee `usersColumns` status map). The previous
+      // `attendeesUsersIds` key was a typo — bulk-update toast said
+      // success while the backend silently ignored the field, so
+      // attendees were never updated.
+      const ids = formData.attendeeUsers.map((u) => u.value);
+      payload.usersIds = ids;
+      payload.usersColumns = ids.reduce((acc, id) => {
+        acc[id] = { status: "Accepted" };
+        return acc;
+      }, {});
+    }
     if (massFields.startDate)
       payload.dateStart = toEspoDateTime(formData.startDate);
     if (massFields.dueDate) payload.dateEnd = toEspoDateTime(formData.dueDate);
@@ -401,8 +432,13 @@ const DealDrawer = ({
       toast.error("Select at least one field to update");
       return;
     }
-    onBulkUpdate(payload);
-    onClose();
+    // Await so failures surface while the drawer is still mounted.
+    try {
+      await onBulkUpdate(payload);
+      onClose();
+    } catch (err) {
+      console.error("Bulk update failed", err);
+    }
   };
 
   // activity operation -------
@@ -526,6 +562,26 @@ const DealDrawer = ({
     if (!isOpen) {
       setIsEditing(false);
       setActiveTab("overview");
+      // Reset formData on close so the next open (especially in "add"
+      // mode after editing meeting A) doesn't carry A's parent,
+      // attendees, or other fields. The previous reset cleared only
+      // tab + edit flag, leaving stale form values when the same
+      // drawer instance reopened in a different mode.
+      setFormData({
+        name: "",
+        assignedUserId: "",
+        teamId: "",
+        status: "",
+        priority: "",
+        duration: "",
+        startDate: "",
+        dueDate: "",
+        description: "",
+        parentName: "",
+        parentType: "",
+        attendeeUsers: [],
+        attendeeLeads: [],
+      });
     }
   }, [isOpen]);
   return (
@@ -727,7 +783,6 @@ const DealDrawer = ({
                       <div className="flex flex-col gap-y-1">
                         <label className="text-sm font-medium">User</label>
                         <ReactSelect
-                          label="eeee"
                           isMulti
                           closeMenuOnSelect={false}
                           components={animatedComponents}

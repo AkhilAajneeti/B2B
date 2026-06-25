@@ -22,13 +22,26 @@ export const fetchProjects = async ({
     });
   }
 
-  // 🔹 STATUS
+  // 🔹 STATUS — array-aware. Projects don't expose status in the UI
+  // today, but the legacy `equals` shape would silently break the day
+  // someone wires the UI to a multi-select array. Matches the pattern
+  // used in leads/tasks/meeting/analytics services.
   if (filters.status) {
-    where.push({
-      type: "equals",
-      attribute: "status",
-      value: filters.status,
-    });
+    if (Array.isArray(filters.status)) {
+      if (filters.status.length > 0) {
+        where.push({
+          type: "in",
+          attribute: "status",
+          value: filters.status,
+        });
+      }
+    } else {
+      where.push({
+        type: "equals",
+        attribute: "status",
+        value: filters.status,
+      });
+    }
   }
 
   // 🔹 PRIORITY

@@ -33,11 +33,21 @@ const DealsTable = ({
       year: "numeric",
     })?.format(new Date(date));
   };
-  const currentUser = JSON.parse(localStorage.getItem("login_object"));
+  // Read the logged-in user safely — bare JSON.parse(null) throws, and the
+  // bug below previously compared an entire user OBJECT to an assignedUserId
+  // STRING, which is always false → edit button hidden for everyone.
+  // `currentUserId` extracted explicitly to fix both at once.
+  const currentUserId = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("login_object"))?.id || null;
+    } catch {
+      return null;
+    }
+  })();
 
   const canEditDeal = (deal) =>
     canEditRecord("Task", deal) &&
-    deal?.assignedUserId === currentUser;
+    deal?.assignedUserId === currentUserId;
   const getStageColor = (stage) => {
     const colors = {
       Started: "bg-blue-100 text-blue-800",

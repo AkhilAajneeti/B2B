@@ -62,9 +62,6 @@ const DealsPage = () => {
   const [mode, setMode] = useState("view");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  // const canCreateLead = canCreate("Lead");
-  // const canEditLead = canEdit("Lead");
-  // const canDeleteLead = canDelete("Lead");
   const location = useLocation();
   const canCreateLead = canCreate("Lead");
 

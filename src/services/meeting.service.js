@@ -156,11 +156,26 @@ export const fetchAllMeeting = async ({ limit, page, filters }) => {
   }
 
   if (filters.status) {
-    where.push({
-      type: "equals",
-      attribute: "status",
-      value: filters.status,
-    });
+    // Array-aware status — when the meeting page migrates to
+    // multi-select like the leads page, `value: []` would otherwise
+    // produce a broken `equals` clause that EspoCRM treats as
+    // "status = empty string" → 0 records. Skips empty arrays;
+    // uses `in` for populated arrays; `equals` for legacy strings.
+    if (Array.isArray(filters.status)) {
+      if (filters.status.length > 0) {
+        where.push({
+          type: "in",
+          attribute: "status",
+          value: filters.status,
+        });
+      }
+    } else {
+      where.push({
+        type: "equals",
+        attribute: "status",
+        value: filters.status,
+      });
+    }
   }
 
   if (filters.source) {
@@ -180,14 +195,20 @@ export const fetchAllMeeting = async ({ limit, page, filters }) => {
   }
   const query = where
     .map((f, i) => {
-      let q = `where[${i}][type]=${f.type}&where[${i}][attribute]=${f.attribute}`;
+      // Migrated `where[i]` → `whereGroup[i]` for consistency with the
+      // rest of the codebase (leads, tasks, projects, analytics all
+      // use `whereGroup`, EspoCRM's canonical logical-AND group).
+      // Plain `where[]` is the older shape and behaves differently in
+      // some EspoCRM versions; the rename here makes the meeting
+      // filter follow the same evaluation rules as every other module.
+      let q = `whereGroup[${i}][type]=${f.type}&whereGroup[${i}][attribute]=${f.attribute}`;
 
       if (Array.isArray(f.value)) {
         f.value.forEach((v) => {
-          q += `&where[${i}][value][]=${encodeURIComponent(v)}`;
+          q += `&whereGroup[${i}][value][]=${encodeURIComponent(v)}`;
         });
       } else if (f.value !== undefined) {
-        q += `&where[${i}][value]=${encodeURIComponent(f.value)}`;
+        q += `&whereGroup[${i}][value]=${encodeURIComponent(f.value)}`;
       }
 
       return q;

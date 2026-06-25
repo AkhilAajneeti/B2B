@@ -21,7 +21,7 @@ import {
 } from "../../services/call.services";
 import { useAllCalls } from "../../hooks/useCalls";
 import { useQueryClient } from "@tanstack/react-query";
-import { canCreate, canEntityRecord } from "../../utils/permission";
+import { canCreate, canDeleteRecord, canEntityRecord } from "../../utils/permission";
 
 const CallPage = () => {
   const queryClient = useQueryClient();
@@ -115,6 +115,12 @@ const CallPage = () => {
   };
 
   const handleDeleteMeeting = async (id) => {
+    // Record-level guard — see meeting/index.jsx for full rationale.
+    const record = (leads || []).find((c) => c.id === id);
+    if (record && !canDeleteRecord("Call", record)) {
+      toast.error("You do not have permission to delete this call");
+      return;
+    }
     try {
       toast.loading("Deleting Call...", { id: "delete-lead" });
       await deleteCall(id);
