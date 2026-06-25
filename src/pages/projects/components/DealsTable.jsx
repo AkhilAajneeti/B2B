@@ -228,7 +228,7 @@ const DealsTable = ({
                 key={deal?.id}
                 onMouseEnter={() => setHoveredRow(deal?.id)}
                 onMouseLeave={() => setHoveredRow(null)}
-                className="hover:bg-muted/30 cursor-pointer transition-smooth"
+                className="hover:bg-sky-50 cursor-pointer transition-smooth"
               >
                 <td className="px-4 py-4">
                   <Checkbox
@@ -279,25 +279,41 @@ const DealsTable = ({
                 <td className="px-4 py-4">
                   <div
                     className={`flex items-center space-x-1 transition-opacity`} >
-                    {isOwnRecord(deal, getStoredUser()) && (
+                    {isOwnRecord(deal, getStoredUser()) ? (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleQuickAction(e, "edit", deal)}
+                          className="h-8 w-8"
+                        >
+                          <Icon name="Edit" size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDelete(e, deal)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Icon name="Trash2" size={14} />
+                        </Button>
+                      </>
+                    ) : (
+                      // Non-owner fallback — gives the column SOMETHING
+                      // to click instead of empty space. Opens the same
+                      // overview drawer that clicking the project name
+                      // does (via the shared onDealClick handler).
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={(e) => handleQuickAction(e, "edit", deal)}
-                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDealClick(deal);
+                        }}
+                        className="h-8 w-8 text-sky-600 hover:text-sky-700"
+                        aria-label="View project"
                       >
-                        <Icon name="Edit" size={14} />
-                      </Button>
-                    )}
-
-                    {isOwnRecord(deal, getStoredUser()) && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleDelete(e, deal)}
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                      >
-                        <Icon name="Trash2" size={14} />
+                        <Icon name="Eye" size={14} />
                       </Button>
                     )}
                   </div>
@@ -314,7 +330,7 @@ const DealsTable = ({
           <div
             key={deal?.id}
             onClick={() => onDealClick(deal)}
-            className="p-4 border-b border-border bg-background hover:bg-muted/30 transition"
+            className="p-4 border-b border-border bg-background hover:bg-sky-50 transition"
           >
             <div className="flex items-start gap-3">
               {/* Checkbox */}
