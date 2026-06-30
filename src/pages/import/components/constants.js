@@ -164,6 +164,7 @@ export const LEAD_STATUS_PILL = {
   "Site Visit Scheduled": "bg-sky-50 text-sky-700",
   "Site Visit Done": "bg-teal-50 text-teal-700",
   Purchased: "bg-green-50 text-green-700",
+  QDTD: "bg-fuchsia-50 text-fuchsia-700",
 };
 
 // Drawer initial state. Used by ImportDrawer on mount and to reset state on

@@ -78,6 +78,10 @@ const DealsTable = ({
         "bg-gradient-to-br from-sky-50/70 to-background border-sky-100",
       "Switch Off":
         "bg-gradient-to-br from-neutral-100/70 to-background border-neutral-200",
+      // Qualify Due To Delay — stalled/pending qualification. Fuchsia
+      // keeps it distinct from Broker (violet), Irrelevant (orange),
+      // and Fake Lead (pink).
+      QDTD: "bg-gradient-to-br from-fuchsia-50/70 to-background border-fuchsia-100",
     };
 
     return (
@@ -125,6 +129,8 @@ const DealsTable = ({
         "bg-sky-50 text-sky-700 border border-sky-200",
       "Switch Off":
         "bg-neutral-100 text-neutral-700 border border-neutral-300",
+      QDTD:
+        "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
     };
 
     return (

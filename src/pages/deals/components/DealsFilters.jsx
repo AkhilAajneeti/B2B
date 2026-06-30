@@ -40,10 +40,7 @@ const DealsFilters = ({
     { value: "Existing Customer", label: "Existing Customer" },
     { value: "Partner", label: "Partner" },
     { value: "Public Relations", label: "Public Relations" },
-    // value must match the actual cSubSource string stored on leads (matched
-    // case-insensitively as a `like %value%` on the backend). "Web Site" keeps
-    // its space; "Aajneeti" replaces the old "ACL" code so it matches the
-    // stored "aajneeti".
+
     { value: "Web Site", label: "Web Site" },
     { value: "Campaign", label: "Campaign" },
     { value: "Aajneeti", label: "Aajneeti" },
@@ -52,6 +49,7 @@ const DealsFilters = ({
   ];
   const statusOptions = [
     { value: "Broker", label: "Broker" },
+    { value: "QDTD", label: "Qualify Due To Delay" },
     { value: "Call Later", label: "Call Later" },
     { value: "Call Not Connecting", label: "Call Not Connecting" },
     { value: "Call Not Picked", label: "Call Not Picked" },

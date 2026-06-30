@@ -72,6 +72,7 @@ const FilterControls = ({
   ];
   const statusOptions = [
     { value: "Broker", label: "Broker" },
+    { value: "QDTD", label: "Qualify Due To Delay" },
     { value: "Call Later", label: "Call Later" },
     { value: "Call Not Connecting", label: "Call Not Connecting" },
     { value: "Call Not Picked", label: "Call Not Picked" },

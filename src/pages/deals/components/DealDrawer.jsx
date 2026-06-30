@@ -357,6 +357,7 @@ const DealDrawer = ({
       Broker: "bg-purple-100 text-purple-800",
       "Call Not Picked": "bg-red-100 text-red-800",
       Invalid: "bg-gray-100 text-gray-700",
+      QDTD: "bg-fuchsia-100 text-fuchsia-800",
     };
     return colors?.[stage] || "bg-gray-100 text-gray-800";
   };

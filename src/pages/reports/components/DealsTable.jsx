@@ -66,6 +66,8 @@ const DealsTable = ({
         "bg-sky-50 text-sky-700 border border-sky-200",
       "Switch Off":
         "bg-neutral-100 text-neutral-700 border border-neutral-300",
+      QDTD:
+        "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
     };
 
     return (
