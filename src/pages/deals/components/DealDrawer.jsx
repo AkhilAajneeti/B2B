@@ -362,6 +362,15 @@ const DealDrawer = ({
     return colors?.[stage] || "bg-gray-100 text-gray-800";
   };
 
+  // Map cryptic status codes to human-readable labels for display.
+  // Color lookups still use the raw code (see getStageColor).
+  const getStatusLabel = (status) => {
+    const labels = {
+      QDTD: "Qualify Due To Delay",
+    };
+    return labels?.[status] || status;
+  };
+
   const tabs = [
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
@@ -737,17 +746,14 @@ const DealDrawer = ({
                       {deal?.name}
                     </h2>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {/* Status pill — previously only rendered when
-                          mode !== "view" (so it was always empty in the
-                          view we're actually looking at). Fixed: render
-                          whenever deal.status is set. */}
+
                       {deal?.status && (
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${getStageColor(
                             deal.status,
                           )}`}
                         >
-                          {deal.status}
+                          {getStatusLabel(deal.status)}
                         </span>
                       )}
                       {deal?.source && (
@@ -1182,11 +1188,10 @@ const DealDrawer = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Assigned User */}
                     <div
-                      className={`rounded-xl border p-3 transition-colors ${
-                        massFields.assignedUserId
+                      className={`rounded-xl border p-3 transition-colors ${massFields.assignedUserId
                           ? "bg-white border-rose-300 shadow-sm"
                           : "bg-slate-50/60 border-slate-200"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <button
@@ -1194,23 +1199,20 @@ const DealDrawer = ({
                           role="switch"
                           aria-checked={massFields.assignedUserId}
                           onClick={() => toggleMassField("assignedUserId")}
-                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
-                            massFields.assignedUserId ? "bg-[#AC2334]" : "bg-slate-300"
-                          }`}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${massFields.assignedUserId ? "bg-[#AC2334]" : "bg-slate-300"
+                            }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
-                              massFields.assignedUserId ? "translate-x-5" : "translate-x-1"
-                            }`}
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${massFields.assignedUserId ? "translate-x-5" : "translate-x-1"
+                              }`}
                           />
                         </button>
                         <span className="text-sm font-medium text-foreground flex-1">
                           Assigned User
                         </span>
                         <span
-                          className={`text-[9px] uppercase font-semibold tracking-wider ${
-                            massFields.assignedUserId ? "text-[#AC2334]" : "text-slate-400"
-                          }`}
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${massFields.assignedUserId ? "text-[#AC2334]" : "text-slate-400"
+                            }`}
                         >
                           {massFields.assignedUserId ? "Will update" : "Skip"}
                         </span>
@@ -1226,11 +1228,10 @@ const DealDrawer = ({
 
                     {/* Team */}
                     <div
-                      className={`rounded-xl border p-3 transition-colors ${
-                        massFields.teamId
+                      className={`rounded-xl border p-3 transition-colors ${massFields.teamId
                           ? "bg-white border-rose-300 shadow-sm"
                           : "bg-slate-50/60 border-slate-200"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <button
@@ -1238,23 +1239,20 @@ const DealDrawer = ({
                           role="switch"
                           aria-checked={massFields.teamId}
                           onClick={() => toggleMassField("teamId")}
-                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
-                            massFields.teamId ? "bg-[#AC2334]" : "bg-slate-300"
-                          }`}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${massFields.teamId ? "bg-[#AC2334]" : "bg-slate-300"
+                            }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
-                              massFields.teamId ? "translate-x-5" : "translate-x-1"
-                            }`}
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${massFields.teamId ? "translate-x-5" : "translate-x-1"
+                              }`}
                           />
                         </button>
                         <span className="text-sm font-medium text-foreground flex-1">
                           Team
                         </span>
                         <span
-                          className={`text-[9px] uppercase font-semibold tracking-wider ${
-                            massFields.teamId ? "text-[#AC2334]" : "text-slate-400"
-                          }`}
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${massFields.teamId ? "text-[#AC2334]" : "text-slate-400"
+                            }`}
                         >
                           {massFields.teamId ? "Will update" : "Skip"}
                         </span>
@@ -1271,11 +1269,10 @@ const DealDrawer = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Status */}
                     <div
-                      className={`rounded-xl border p-3 transition-colors ${
-                        massFields.status
+                      className={`rounded-xl border p-3 transition-colors ${massFields.status
                           ? "bg-white border-rose-300 shadow-sm"
                           : "bg-slate-50/60 border-slate-200"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <button
@@ -1283,23 +1280,20 @@ const DealDrawer = ({
                           role="switch"
                           aria-checked={massFields.status}
                           onClick={() => toggleMassField("status")}
-                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
-                            massFields.status ? "bg-[#AC2334]" : "bg-slate-300"
-                          }`}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${massFields.status ? "bg-[#AC2334]" : "bg-slate-300"
+                            }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
-                              massFields.status ? "translate-x-5" : "translate-x-1"
-                            }`}
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${massFields.status ? "translate-x-5" : "translate-x-1"
+                              }`}
                           />
                         </button>
                         <span className="text-sm font-medium text-foreground flex-1">
                           Status
                         </span>
                         <span
-                          className={`text-[9px] uppercase font-semibold tracking-wider ${
-                            massFields.status ? "text-[#AC2334]" : "text-slate-400"
-                          }`}
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${massFields.status ? "text-[#AC2334]" : "text-slate-400"
+                            }`}
                         >
                           {massFields.status ? "Will update" : "Skip"}
                         </span>
@@ -1314,11 +1308,10 @@ const DealDrawer = ({
 
                     {/* Next Contact Date */}
                     <div
-                      className={`rounded-xl border p-3 transition-colors ${
-                        massFields.cNextContactAt
+                      className={`rounded-xl border p-3 transition-colors ${massFields.cNextContactAt
                           ? "bg-white border-rose-300 shadow-sm"
                           : "bg-slate-50/60 border-slate-200"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <button
@@ -1326,23 +1319,20 @@ const DealDrawer = ({
                           role="switch"
                           aria-checked={massFields.cNextContactAt}
                           onClick={() => toggleMassField("cNextContactAt")}
-                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${
-                            massFields.cNextContactAt ? "bg-[#AC2334]" : "bg-slate-300"
-                          }`}
+                          className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${massFields.cNextContactAt ? "bg-[#AC2334]" : "bg-slate-300"
+                            }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
-                              massFields.cNextContactAt ? "translate-x-5" : "translate-x-1"
-                            }`}
+                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${massFields.cNextContactAt ? "translate-x-5" : "translate-x-1"
+                              }`}
                           />
                         </button>
                         <span className="text-sm font-medium text-foreground flex-1">
                           Next Contact
                         </span>
                         <span
-                          className={`text-[9px] uppercase font-semibold tracking-wider ${
-                            massFields.cNextContactAt ? "text-[#AC2334]" : "text-slate-400"
-                          }`}
+                          className={`text-[9px] uppercase font-semibold tracking-wider ${massFields.cNextContactAt ? "text-[#AC2334]" : "text-slate-400"
+                            }`}
                         >
                           {massFields.cNextContactAt ? "Will update" : "Skip"}
                         </span>
@@ -1800,7 +1790,7 @@ const DealDrawer = ({
                               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
                                 {(() => {
                                   if (!deal?.description) return "None";
-                                 
+
                                   const URL_RE = /(https?:\/\/[^\s)]+)/g;
                                   const parts =
                                     deal.description.split(URL_RE);
@@ -2038,7 +2028,7 @@ const DealDrawer = ({
                         </div>
                         <div className="p-6">
                           {leadData?.assignedUserName ? (() => {
-                           
+
                             const rep =
                               users.find(
                                 (u) => u.id === leadData.assignedUserId,
