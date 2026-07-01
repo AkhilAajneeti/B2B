@@ -62,6 +62,24 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Neutralize Chrome's autofill tint on the login inputs — force a white
+     background with dark text so our brand focus border/ring shows through
+     instead of the browser's mint-blue autofill styling. */
+  .login-input:-webkit-autofill,
+  .login-input:-webkit-autofill:hover,
+  .login-input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+    -webkit-text-fill-color: #333333;
+    caret-color: #333333;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+  .login-input:-webkit-autofill:focus {
+    -webkit-box-shadow:
+      0 0 0 1000px #ffffff inset,
+      0 0 0 4px rgba(172, 35, 52, 0.12);
+    border-color: #ac2334;
+  }
 }
 
 @layer utilities {
