@@ -17,6 +17,7 @@ import { usePipelineFilters } from "./hooks/usePipelineFilters";
 import { usePipelineStats } from "./hooks/usePipelineStats";
 import { usePipelineActions } from "./hooks/usePipelineActions";
 import { PIPELINE_COLUMNS } from "./utils/pipelineConstants";
+import LeadFunnel from "./components/LeadFunnel";
 
 /**
  * Pipeline - smart, action-based sales pipeline.
@@ -127,6 +128,9 @@ const Pipeline = () => {
 
             </div>
           </div>
+
+          {/* Lead-stage funnel */}
+          <LeadFunnel deals={deals} />
 
           {/* Login summary banner */}
           <PipelineSummaryAlert stats={stats} />

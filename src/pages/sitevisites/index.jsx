@@ -10,17 +10,6 @@ import { updateSiteVisit } from "services/sitevisite.service";
 import DateTimePicker from "./components/DateTimePicker";
 import ScheduleVisitDialog from "./components/ScheduleVisitDialog";
 
-/* ------------------------------------------------------------------ *
- * Site Visits — fully backend-driven. A single fetch of every
- * site-visit lead (status IN Site Visit Scheduled / Site Visit Done)
- * feeds the hero metrics, the tab counts, and the table, so all
- * sections stay consistent.
- *
- * Status mapping (backend has only two site-visit statuses):
- *   "Site Visit Scheduled" → Scheduled  (needs confirming)
- *   "Site Visit Done"      → Visited    (outcome)
- * Confirmed / Rescheduled / No-show have no backend field yet.
- * ------------------------------------------------------------------ */
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
