@@ -76,11 +76,19 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: null,
     },
     {
-      label: "Meeting",
-      path: "/meeting",
-      icon: "Projector",
-
+      label: "Site Visites",
+      path: "/sitevisite",
+      icon: "CalendarCheck",
+      // Temporarily hidden from reps while the section is being built —
+      // visible to admin / owner / manager only. Remove this once done.
+      adminOnly: true,
     },
+    // {
+    //   label: "Meeting",
+    //   path: "/meeting",
+    //   icon: "Projector",
+
+    // },
     {
       label: "Task",
       path: "/tasks",

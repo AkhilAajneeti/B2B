@@ -10,6 +10,7 @@ import ProtectedRoute from "routes/ProtectedRoute";
 // the page they're trying to log into. NotFound is tiny so eager is fine.
 import Login from "./pages/login";
 import NotFound from "pages/NotFound";
+import SiteVisitePage from "pages/sitevisites";
 
 // Lazy: every protected page becomes its own chunk loaded on demand.
 // Reps land on /leads and stay there 90% of the session — no reason to
@@ -167,6 +168,14 @@ const Routes = () => {
               element={
                 <ProtectedRoute>
                   <MeetingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sitevisite"
+              element={
+                <ProtectedRoute>
+                  <SiteVisitePage />
                 </ProtectedRoute>
               }
             />
