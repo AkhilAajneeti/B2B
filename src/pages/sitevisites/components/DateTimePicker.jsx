@@ -42,10 +42,27 @@ const buildCells = (y, m) => {
   return cells;
 };
 
-// Compact number field — type a value OR step with the ▲/▼ arrows (wraps).
+// A styled select with a right-aligned chevron (native arrow suppressed).
+const Select = ({ value, onChange, children }) => (
+  <div className="relative">
+    <select
+      value={value}
+      onChange={onChange}
+      className="appearance-none rounded-lg border border-slate-200 bg-none py-1.5 pl-3 pr-9 text-sm font-medium text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-[#AC2334]"
+    >
+      {children}
+    </select>
+    <Icon
+      name="ChevronDown"
+      size={15}
+      className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+    />
+  </div>
+);
+
+// Type a value OR step with the ▲/▼ arrows (wraps around).
 const Stepper = ({ value, onChange, min, max, step = 1 }) => {
   const [text, setText] = useState(String(value).padStart(2, "0"));
-  // Keep the visible text in sync when the value changes via arrows/presets.
   useEffect(() => setText(String(value).padStart(2, "0")), [value]);
 
   const wrap = (v) => (v > max ? min : v < min ? max : v);
@@ -56,8 +73,6 @@ const Stepper = ({ value, onChange, min, max, step = 1 }) => {
     const n = parseInt(raw, 10);
     if (!isNaN(n) && n >= min && n <= max) onChange(n);
   };
-
-  // On blur, clamp whatever's there back into range and re-pad.
   const handleBlur = () => {
     let n = parseInt(text, 10);
     if (isNaN(n)) n = min;
@@ -66,13 +81,12 @@ const Stepper = ({ value, onChange, min, max, step = 1 }) => {
     setText(String(n).padStart(2, "0"));
   };
 
+  const arrowCls =
+    "grid h-6 w-12 place-items-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#AC2334]";
+
   return (
-    <div className="flex flex-col items-center">
-      <button
-        type="button"
-        onClick={() => onChange(wrap(value + step))}
-        className="text-slate-400 transition-colors hover:text-[#AC2334]"
-      >
+    <div className="flex flex-col items-center gap-0.5">
+      <button type="button" onClick={() => onChange(wrap(value + step))} className={arrowCls}>
         <Icon name="ChevronUp" size={16} />
       </button>
       <input
@@ -80,18 +94,24 @@ const Stepper = ({ value, onChange, min, max, step = 1 }) => {
         onChange={handleType}
         onBlur={handleBlur}
         inputMode="numeric"
-        className="w-10 rounded-lg border border-slate-200 py-1 text-center text-sm font-semibold tabular-nums text-slate-800 outline-none focus:border-[#AC2334]"
+        className="w-12 rounded-lg border border-slate-200 py-2 text-center text-base font-semibold tabular-nums text-slate-800 outline-none transition-colors focus:border-[#AC2334]"
       />
-      <button
-        type="button"
-        onClick={() => onChange(wrap(value - step))}
-        className="text-slate-400 transition-colors hover:text-[#AC2334]"
-      >
+      <button type="button" onClick={() => onChange(wrap(value - step))} className={arrowCls}>
         <Icon name="ChevronDown" size={16} />
       </button>
     </div>
   );
 };
+
+const NavBtn = ({ name, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+  >
+    <Icon name={name} size={16} />
+  </button>
+);
 
 const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose }) => {
   const base = value ? new Date(value) : new Date();
@@ -129,24 +149,22 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[120] grid place-items-center bg-black/30 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/30 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="w-full max-w-[560px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200"
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-          <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h3 className="text-base font-semibold text-slate-800">{title}</h3>
+          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600">
             <Icon name="X" size={18} />
           </button>
         </div>
 
         <div className="flex flex-col sm:flex-row">
           {/* Presets */}
-          <div className="flex flex-col gap-1 border-b border-slate-100 p-4 sm:w-40 sm:border-b-0 sm:border-r">
+          <div className="flex flex-row flex-wrap gap-1 border-b border-slate-100 p-3 sm:w-36 sm:flex-col sm:border-b-0 sm:border-r">
             {PRESETS.map((p) => {
               const active = sameYMD(selected, addDays(new Date(), p.days));
               return (
@@ -155,7 +173,7 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
                   onClick={() => applyPreset(p.days)}
                   className={`rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                     active
-                      ? "border border-slate-200 font-medium text-slate-800 shadow-sm"
+                      ? "bg-[#AC2334]/10 font-semibold text-[#AC2334]"
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                   }`}
                 >
@@ -166,51 +184,21 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
           </div>
 
           {/* Calendar */}
-          <div className="flex-1 p-4">
-            {/* Month / year nav */}
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <select
-                    value={view.m}
-                    onChange={(e) => setView({ ...view, m: Number(e.target.value) })}
-                    className="appearance-none rounded-lg border border-slate-200 py-1.5 pl-3 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
-                  >
-                    {MONTH_NAMES.map((mn, i) => (
-                      <option key={mn} value={i}>{mn}</option>
-                    ))}
-                  </select>
-                  <Icon
-                    name="ChevronDown"
-                    size={14}
-                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                </div>
-                <div className="relative">
-                  <select
-                    value={view.y}
-                    onChange={(e) => setView({ ...view, y: Number(e.target.value) })}
-                    className="appearance-none rounded-lg border border-slate-200 py-1.5 pl-3 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
-                  >
-                    {years.map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                  <Icon
-                    name="ChevronDown"
-                    size={14}
-                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => shift(-1)} className="grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-slate-100">
-                  <Icon name="ChevronLeft" size={16} />
-                </button>
-                <button onClick={() => shift(1)} className="grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-slate-100">
-                  <Icon name="ChevronRight" size={16} />
-                </button>
-              </div>
+          <div className="flex-1 p-5">
+            {/* Month / year + nav (grouped so arrows feel attached) */}
+            <div className="mb-4 flex items-center gap-2">
+              <NavBtn name="ChevronLeft" onClick={() => shift(-1)} />
+              <Select value={view.m} onChange={(e) => setView({ ...view, m: Number(e.target.value) })}>
+                {MONTH_NAMES.map((mn, i) => (
+                  <option key={mn} value={i}>{mn}</option>
+                ))}
+              </Select>
+              <Select value={view.y} onChange={(e) => setView({ ...view, y: Number(e.target.value) })}>
+                {years.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </Select>
+              <NavBtn name="ChevronRight" onClick={() => shift(1)} />
             </div>
 
             {/* Weekday header */}
@@ -221,7 +209,7 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
             </div>
 
             {/* Day grid */}
-            <div className="grid grid-cols-7 gap-y-1 text-center text-sm">
+            <div className="grid grid-cols-7 gap-1 text-center text-sm">
               {cells.map(({ date, cur }, i) => {
                 const isSel = sameYMD(date, selected);
                 const isToday = sameYMD(date, new Date());
@@ -229,13 +217,13 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
                   <button
                     key={i}
                     onClick={() => setSelected(date)}
-                    className={`mx-auto grid h-9 w-9 place-items-center rounded-full transition-colors ${
+                    className={`mx-auto grid h-9 w-9 place-items-center rounded-lg transition-colors ${
                       isSel
-                        ? "bg-[#AC2334] font-semibold text-white"
+                        ? "bg-[#AC2334] font-semibold text-white shadow-sm"
                         : cur
                           ? "text-slate-700 hover:bg-slate-100"
                           : "text-slate-300 hover:bg-slate-50"
-                    } ${!isSel && isToday ? "ring-1 ring-[#AC2334]/40" : ""}`}
+                    } ${!isSel && isToday ? "ring-1 ring-inset ring-[#AC2334]/50" : ""}`}
                   >
                     {date.getDate()}
                   </button>
@@ -244,10 +232,10 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
             </div>
 
             {/* Time + actions */}
-            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
               <div className="flex items-center gap-2">
                 <Stepper value={hour} onChange={setHour} min={1} max={12} />
-                <span className="text-sm font-semibold text-slate-400">:</span>
+                <span className="text-lg font-semibold text-slate-300">:</span>
                 <Stepper value={minute} onChange={setMinute} min={0} max={59} step={5} />
                 <div className="ml-1 inline-flex overflow-hidden rounded-lg border border-slate-200 text-sm font-medium">
                   {["AM", "PM"].map((x) => (
@@ -255,10 +243,8 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
                       key={x}
                       type="button"
                       onClick={() => setAmpm(x)}
-                      className={`px-3 py-1.5 transition-colors ${
-                        ampm === x
-                          ? "bg-[#AC2334] text-white"
-                          : "text-slate-600 hover:bg-slate-50"
+                      className={`px-3.5 py-2 transition-colors ${
+                        ampm === x ? "bg-[#AC2334] text-white" : "text-slate-600 hover:bg-slate-50"
                       }`}
                     >
                       {x}
@@ -268,13 +254,13 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
               </div>
 
               <div className="flex items-center gap-2">
-                <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100">
+                <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100">
                   Cancel
                 </button>
                 <button
                   onClick={handleApply}
                   disabled={!selected}
-                  className="rounded-lg bg-[#AC2334] px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-[#961e2d] disabled:opacity-50"
+                  className="rounded-lg bg-[#AC2334] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#961e2d] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Apply
                 </button>
