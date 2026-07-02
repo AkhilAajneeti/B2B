@@ -130,7 +130,7 @@ const Pipeline = () => {
           </div>
 
           {/* Lead-stage funnel */}
-          <LeadFunnel deals={deals} />
+          <LeadFunnel />
 
           {/* Login summary banner */}
           <PipelineSummaryAlert stats={stats} />

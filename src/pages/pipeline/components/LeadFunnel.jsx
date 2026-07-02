@@ -1,5 +1,7 @@
-import React, { useMemo } from "react";
+import React from "react";
+import { useQueries } from "@tanstack/react-query";
 import Icon from "../../../components/AppIcon";
+import { fetchLeadsCount } from "services/leads.service";
 
 /* ------------------------------------------------------------------ *
  * Sales-stage funnel. The app's lead statuses don't map 1:1 to a clean
@@ -28,44 +30,46 @@ const STAGES = [
   { key: "won", label: "Closed · won", sub: "booked", color: "#6d1420", statuses: ["Purchased", "Converted", "Booked"] },
 ];
 
-const LeadFunnel = ({ deals = [] }) => {
-  const rows = useMemo(() => {
-    const byStatus = {};
-    deals.forEach((d) => {
-      const s = d?.status || "";
-      byStatus[s] = (byStatus[s] || 0) + 1;
-    });
+const LeadFunnel = () => {
+  // One count query per stage, across ALL leads (not just the pipeline's
+  // follow-up window) so "New / uncontacted" and every stage are accurate.
+  const results = useQueries({
+    queries: STAGES.map((st) => ({
+      queryKey: ["funnel-count", st.key, st.statuses],
+      queryFn: () =>
+        fetchLeadsCount([{ type: "in", attribute: "status", value: st.statuses }]),
+      staleTime: 1000 * 60 * 5,
+    })),
+  });
 
-    const counts = STAGES.map((st) =>
-      st.statuses.reduce((sum, s) => sum + (byStatus[s] || 0), 0),
-    );
-    const max = Math.max(...counts, 1);
+  const counts = results.map((r) => r.data || 0);
+  const isLoading = results.some((r) => r.isLoading);
+  const max = Math.max(...counts, 1);
 
-    // "biggest drop" = the transition that loses the most leads.
-    let biggestIdx = -1;
-    let biggestDrop = -1;
-    counts.forEach((c, i) => {
-      if (i === 0) return;
-      const drop = counts[i - 1] - c;
-      if (drop > biggestDrop) {
-        biggestDrop = drop;
-        biggestIdx = i;
-      }
-    });
+  // "biggest drop" = the transition that loses the most leads.
+  let biggestIdx = -1;
+  let biggestDrop = -1;
+  counts.forEach((c, i) => {
+    if (i === 0) return;
+    const drop = counts[i - 1] - c;
+    if (drop > biggestDrop) {
+      biggestDrop = drop;
+      biggestIdx = i;
+    }
+  });
 
-    return STAGES.map((st, i) => {
-      const count = counts[i];
-      const prev = i > 0 ? counts[i - 1] : null;
-      const conv = prev ? Math.round((count / prev) * 100) : null;
-      return {
-        ...st,
-        count,
-        conv,
-        biggest: i === biggestIdx,
-        widthPct: Math.max((count / max) * 100, 5),
-      };
-    });
-  }, [deals]);
+  const rows = STAGES.map((st, i) => {
+    const count = counts[i];
+    const prev = i > 0 ? counts[i - 1] : null;
+    const conv = prev && prev > 0 ? Math.round((count / prev) * 100) : null;
+    return {
+      ...st,
+      count,
+      conv,
+      biggest: i === biggestIdx,
+      widthPct: Math.max((count / max) * 100, 5),
+    };
+  });
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
@@ -76,7 +80,7 @@ const LeadFunnel = ({ deals = [] }) => {
         <span className="text-sm text-muted-foreground">All open leads · by stage</span>
       </div>
 
-      <div className="space-y-3">
+      <div className={`space-y-3 transition-opacity ${isLoading ? "opacity-50" : ""}`}>
         {rows.map((r) => (
           <div key={r.key} className="flex items-center gap-4">
             {/* Stage label */}
