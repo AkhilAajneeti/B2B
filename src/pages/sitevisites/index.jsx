@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -109,7 +109,8 @@ const IconAction = ({ name, label, href }) => {
   );
 };
 
-const RowActions = ({ visit, onMarkVisited, saving }) => {
+const RowActions = ({ visit, onMarkVisited, onReschedule, saving }) => {
+  const dateRef = useRef(null);
   const tel = visit.phone ? `tel:${visit.phone.replace(/\s/g, "")}` : undefined;
   const waNum = visit.whatsapp?.replace(/\D/g, "");
   const wa = waNum ? `https://wa.me/${waNum}` : undefined;
@@ -123,11 +124,33 @@ const RowActions = ({ visit, onMarkVisited, saving }) => {
     );
   }
 
-  // Scheduled → let the rep mark the visit as done (the one real transition).
+  const openPicker = () => {
+    const el = dateRef.current;
+    if (!el) return;
+    // showPicker() is the clean native way; fall back to focus for older browsers.
+    if (typeof el.showPicker === "function") el.showPicker();
+    else el.focus();
+  };
+
+  // Scheduled → reschedule (change the visit date) or mark the visit done.
   return (
     <div className="flex items-center justify-end gap-2">
       <IconAction name="Phone" label="Call" href={tel} />
       <IconAction name="MessageCircle" label="WhatsApp" href={wa} />
+
+      <input
+        ref={dateRef}
+        type="datetime-local"
+        className="sr-only"
+        onChange={(e) => e.target.value && onReschedule(visit, e.target.value)}
+      />
+      <button
+        onClick={openPicker}
+        disabled={saving}
+        className="rounded-lg border border-slate-200 px-3.5 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-60"
+      >
+        Reschedule
+      </button>
       <button
         onClick={() => onMarkVisited(visit)}
         disabled={saving}
@@ -273,6 +296,24 @@ const SiteVisitePage = () => {
     } catch (err) {
       console.error(err);
       toast.error("Could not update the visit");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  // `value` is a datetime-local string ("YYYY-MM-DDTHH:mm"); convert to the
+  // backend datetime shape and write it to the site-visit date field.
+  const handleReschedule = async (visit, value) => {
+    try {
+      setSavingId(visit.id);
+      const when = `${value.replace("T", " ")}:00`;
+      await updateSiteVisit(visit.id, { cSiteVisitAt: when });
+      queryClient.invalidateQueries({ queryKey: ["site-visits"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["leads"], exact: false });
+      toast.success("Visit rescheduled");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not reschedule the visit");
     } finally {
       setSavingId(null);
     }
@@ -476,6 +517,7 @@ const SiteVisitePage = () => {
                             <RowActions
                               visit={v}
                               onMarkVisited={handleMarkVisited}
+                              onReschedule={handleReschedule}
                               saving={savingId === v.id}
                             />
                           </td>
