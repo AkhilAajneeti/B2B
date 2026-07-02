@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Icon from "../../../components/AppIcon";
 
 const DOW = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -42,9 +42,30 @@ const buildCells = (y, m) => {
   return cells;
 };
 
-// Compact up/down number stepper (wraps around) — avoids long native dropdowns.
+// Compact number field — type a value OR step with the ▲/▼ arrows (wraps).
 const Stepper = ({ value, onChange, min, max, step = 1 }) => {
+  const [text, setText] = useState(String(value).padStart(2, "0"));
+  // Keep the visible text in sync when the value changes via arrows/presets.
+  useEffect(() => setText(String(value).padStart(2, "0")), [value]);
+
   const wrap = (v) => (v > max ? min : v < min ? max : v);
+
+  const handleType = (e) => {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 2);
+    setText(raw);
+    const n = parseInt(raw, 10);
+    if (!isNaN(n) && n >= min && n <= max) onChange(n);
+  };
+
+  // On blur, clamp whatever's there back into range and re-pad.
+  const handleBlur = () => {
+    let n = parseInt(text, 10);
+    if (isNaN(n)) n = min;
+    n = Math.min(max, Math.max(min, n));
+    onChange(n);
+    setText(String(n).padStart(2, "0"));
+  };
+
   return (
     <div className="flex flex-col items-center">
       <button
@@ -54,9 +75,13 @@ const Stepper = ({ value, onChange, min, max, step = 1 }) => {
       >
         <Icon name="ChevronUp" size={16} />
       </button>
-      <span className="w-10 rounded-lg border border-slate-200 py-1 text-center text-sm font-semibold tabular-nums text-slate-800">
-        {String(value).padStart(2, "0")}
-      </span>
+      <input
+        value={text}
+        onChange={handleType}
+        onBlur={handleBlur}
+        inputMode="numeric"
+        className="w-10 rounded-lg border border-slate-200 py-1 text-center text-sm font-semibold tabular-nums text-slate-800 outline-none focus:border-[#AC2334]"
+      />
       <button
         type="button"
         onClick={() => onChange(wrap(value - step))}
@@ -145,24 +170,38 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
             {/* Month / year nav */}
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <select
-                  value={view.m}
-                  onChange={(e) => setView({ ...view, m: Number(e.target.value) })}
-                  className="rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
-                >
-                  {MONTH_NAMES.map((mn, i) => (
-                    <option key={mn} value={i}>{mn}</option>
-                  ))}
-                </select>
-                <select
-                  value={view.y}
-                  onChange={(e) => setView({ ...view, y: Number(e.target.value) })}
-                  className="rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={view.m}
+                    onChange={(e) => setView({ ...view, m: Number(e.target.value) })}
+                    className="appearance-none rounded-lg border border-slate-200 py-1.5 pl-3 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
+                  >
+                    {MONTH_NAMES.map((mn, i) => (
+                      <option key={mn} value={i}>{mn}</option>
+                    ))}
+                  </select>
+                  <Icon
+                    name="ChevronDown"
+                    size={14}
+                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                </div>
+                <div className="relative">
+                  <select
+                    value={view.y}
+                    onChange={(e) => setView({ ...view, y: Number(e.target.value) })}
+                    className="appearance-none rounded-lg border border-slate-200 py-1.5 pl-3 pr-8 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
+                  >
+                    {years.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                  <Icon
+                    name="ChevronDown"
+                    size={14}
+                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => shift(-1)} className="grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-slate-100">
@@ -209,7 +248,7 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
               <div className="flex items-center gap-2">
                 <Stepper value={hour} onChange={setHour} min={1} max={12} />
                 <span className="text-sm font-semibold text-slate-400">:</span>
-                <Stepper value={minute} onChange={setMinute} min={0} max={55} step={5} />
+                <Stepper value={minute} onChange={setMinute} min={0} max={59} step={5} />
                 <div className="ml-1 inline-flex overflow-hidden rounded-lg border border-slate-200 text-sm font-medium">
                   {["AM", "PM"].map((x) => (
                     <button
