@@ -80,6 +80,21 @@ export const createSiteVisit = (payload = {}) =>
 
 export const updateSiteVisit = (id, payload) => updateLead(id, payload);
 
+// Schedule a site visit for an EXISTING lead: move it into the site-visit
+// stage with a date and (optionally) an assigned rep. `when` is a Date.
+export const scheduleSiteVisit = (leadId, { when, assignedUserId } = {}) => {
+  const p = (n) => String(n).padStart(2, "0");
+  const d = when instanceof Date ? when : new Date(when);
+  const cSiteVisitAt = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(
+    d.getDate(),
+  )} ${p(d.getHours())}:${p(d.getMinutes())}:00`;
+  return updateSiteVisit(leadId, {
+    status: DEFAULT_SITE_VISIT_STATUS,
+    cSiteVisitAt,
+    ...(assignedUserId ? { assignedUserId } : {}),
+  });
+};
+
 export const deleteSiteVisit = (id) => deleteLead(id);
 
 export const bulkDeleteSiteVisits = (ids = []) => bulkDeleteleads(ids);

@@ -8,6 +8,7 @@ import Icon from "../../components/AppIcon";
 import { useSiteVisits } from "hooks/useSiteVisits";
 import { updateSiteVisit } from "services/sitevisite.service";
 import DateTimePicker from "./components/DateTimePicker";
+import ScheduleVisitDialog from "./components/ScheduleVisitDialog";
 
 /* ------------------------------------------------------------------ *
  * Site Visits — fully backend-driven. A single fetch of every
@@ -184,8 +185,10 @@ const SiteVisitePage = () => {
   const [repFilter, setRepFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [savingId, setSavingId] = useState(null);
-  // Date-time picker: { open, visit } — visit is null when scheduling a new one.
+  // Reschedule date-time picker: { open, visit }.
   const [picker, setPicker] = useState({ open: false, visit: null });
+  // "Schedule visit" (new, for an existing lead) dialog.
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Single source of truth: every site-visit lead (service scopes the query
@@ -296,11 +299,15 @@ const SiteVisitePage = () => {
     }
   };
 
-  // Open the designed date-time picker — for an existing visit (reschedule)
-  // or a brand-new one (top "Schedule visit" button).
   const openReschedule = (visit) => setPicker({ open: true, visit });
-  const openSchedule = () => setPicker({ open: true, visit: null });
+  const openSchedule = () => setScheduleOpen(true);
   const closePicker = () => setPicker({ open: false, visit: null });
+
+  // A visit was scheduled for an existing lead — refresh the list + metrics.
+  const handleScheduled = () => {
+    queryClient.invalidateQueries({ queryKey: ["site-visits"], exact: false });
+    queryClient.invalidateQueries({ queryKey: ["leads"], exact: false });
+  };
 
   // Format a Date to EspoCRM's "YYYY-MM-DD HH:mm:00" shape.
   const toBackendDate = (d) => {
@@ -326,14 +333,7 @@ const SiteVisitePage = () => {
   const handlePickerApply = (date) => {
     const { visit } = picker;
     closePicker();
-    if (visit) {
-      doReschedule(visit, date);
-    } else {
-      // No create flow yet — a new visit needs a lead to attach to.
-      toast("Scheduling a new visit is linked to a lead — coming soon", {
-        icon: "📅",
-      });
-    }
+    if (visit) doReschedule(visit, date);
   };
 
   return (
@@ -564,9 +564,16 @@ const SiteVisitePage = () => {
         {picker.open && (
           <DateTimePicker
             value={picker.visit?.visitDate || null}
-            title={picker.visit ? "Reschedule site visit" : "Schedule site visit"}
+            title="Reschedule site visit"
             onApply={handlePickerApply}
             onClose={closePicker}
+          />
+        )}
+
+        {scheduleOpen && (
+          <ScheduleVisitDialog
+            onClose={() => setScheduleOpen(false)}
+            onScheduled={handleScheduled}
           />
         )}
       </div>
