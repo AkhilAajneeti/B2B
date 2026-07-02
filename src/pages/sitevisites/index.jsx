@@ -180,12 +180,12 @@ const SiteVisitePage = () => {
 
   // Single source of truth: every site-visit lead (service scopes the query
   // to the site-visit statuses). High page size so metrics are accurate.
-  const { data, isLoading } = useSiteVisits({ limit: 500, page: 1, filters: {} });
+  const { data, isLoading } = useSiteVisits({ limit: 200, page: 1, filters: {} });
 
   const visits = useMemo(
     () =>
       (data?.list || []).map((lead) => {
-        const d = parseDate(lead.cSiteVisitAt);
+        const d = parseDate(lead.cSiteVisitAt || lead.cNextContactAt);
         return {
           id: lead.id,
           lead: lead.name || "Unnamed lead",
