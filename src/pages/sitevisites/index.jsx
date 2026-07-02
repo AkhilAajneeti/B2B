@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import Sidebar from "../../components/ui/Sidebar";
 import Icon from "../../components/AppIcon";
 import { useSiteVisits } from "hooks/useSiteVisits";
 import { updateSiteVisit } from "services/sitevisite.service";
+import DateTimePicker from "./components/DateTimePicker";
 
 /* ------------------------------------------------------------------ *
  * Site Visits — fully backend-driven. A single fetch of every
@@ -110,7 +111,6 @@ const IconAction = ({ name, label, href }) => {
 };
 
 const RowActions = ({ visit, onMarkVisited, onReschedule, saving }) => {
-  const dateRef = useRef(null);
   const tel = visit.phone ? `tel:${visit.phone.replace(/\s/g, "")}` : undefined;
   const waNum = visit.whatsapp?.replace(/\D/g, "");
   const wa = waNum ? `https://wa.me/${waNum}` : undefined;
@@ -124,28 +124,13 @@ const RowActions = ({ visit, onMarkVisited, onReschedule, saving }) => {
     );
   }
 
-  const openPicker = () => {
-    const el = dateRef.current;
-    if (!el) return;
-    // showPicker() is the clean native way; fall back to focus for older browsers.
-    if (typeof el.showPicker === "function") el.showPicker();
-    else el.focus();
-  };
-
   // Scheduled → reschedule (change the visit date) or mark the visit done.
   return (
     <div className="flex items-center justify-end gap-2">
       <IconAction name="Phone" label="Call" href={tel} />
       <IconAction name="MessageCircle" label="WhatsApp" href={wa} />
-
-      <input
-        ref={dateRef}
-        type="datetime-local"
-        className="sr-only"
-        onChange={(e) => e.target.value && onReschedule(visit, e.target.value)}
-      />
       <button
-        onClick={openPicker}
+        onClick={() => onReschedule(visit)}
         disabled={saving}
         className="rounded-lg border border-slate-200 px-3.5 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-60"
       >
@@ -199,6 +184,8 @@ const SiteVisitePage = () => {
   const [repFilter, setRepFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [savingId, setSavingId] = useState(null);
+  // Date-time picker: { open, visit } — visit is null when scheduling a new one.
+  const [picker, setPicker] = useState({ open: false, visit: null });
   const queryClient = useQueryClient();
 
   // Single source of truth: every site-visit lead (service scopes the query
@@ -283,8 +270,16 @@ const SiteVisitePage = () => {
   const doneOf = (list) => list.filter((v) => v.status === "Visited").length;
   const weekendDone = doneOf(weekendVisits);
   const weekendPending = weekendVisits.length - weekendDone;
-  const isFriday = now.getDay() === 5;
   const weekendLabel = `${weekend.sat.getDate()}–${weekend.sun.getDate()} ${MONTHS[weekend.sun.getMonth()]}`;
+  // Always-visible status pill, worded for the actual day of week.
+  const dayBadge = (() => {
+    const day = now.getDay();
+    if (day === 5) return "It's Friday — confirmation day";
+    if (day === 6) return "It's Saturday — visit day";
+    if (day === 0) return "It's Sunday — visit day";
+    const toFri = (5 - day + 7) % 7;
+    return `${toFri} day${toFri > 1 ? "s" : ""} to confirmation day`;
+  })();
 
   const handleMarkVisited = async (visit) => {
     try {
@@ -301,13 +296,22 @@ const SiteVisitePage = () => {
     }
   };
 
-  // `value` is a datetime-local string ("YYYY-MM-DDTHH:mm"); convert to the
-  // backend datetime shape and write it to the site-visit date field.
-  const handleReschedule = async (visit, value) => {
+  // Open the designed date-time picker — for an existing visit (reschedule)
+  // or a brand-new one (top "Schedule visit" button).
+  const openReschedule = (visit) => setPicker({ open: true, visit });
+  const openSchedule = () => setPicker({ open: true, visit: null });
+  const closePicker = () => setPicker({ open: false, visit: null });
+
+  // Format a Date to EspoCRM's "YYYY-MM-DD HH:mm:00" shape.
+  const toBackendDate = (d) => {
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:00`;
+  };
+
+  const doReschedule = async (visit, date) => {
     try {
       setSavingId(visit.id);
-      const when = `${value.replace("T", " ")}:00`;
-      await updateSiteVisit(visit.id, { cSiteVisitAt: when });
+      await updateSiteVisit(visit.id, { cSiteVisitAt: toBackendDate(date) });
       queryClient.invalidateQueries({ queryKey: ["site-visits"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["leads"], exact: false });
       toast.success("Visit rescheduled");
@@ -316,6 +320,19 @@ const SiteVisitePage = () => {
       toast.error("Could not reschedule the visit");
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handlePickerApply = (date) => {
+    const { visit } = picker;
+    closePicker();
+    if (visit) {
+      doReschedule(visit, date);
+    } else {
+      // No create flow yet — a new visit needs a lead to attach to.
+      toast("Scheduling a new visit is linked to a lead — coming soon", {
+        icon: "📅",
+      });
     }
   };
 
@@ -339,7 +356,10 @@ const SiteVisitePage = () => {
                   Confirm scheduled visits and track who actually shows up.
                 </p>
               </div>
-              <button className="inline-flex items-center gap-2 self-start rounded-lg bg-[#AC2334] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#961e2d]">
+              <button
+                onClick={openSchedule}
+                className="inline-flex items-center gap-2 self-start rounded-lg bg-[#AC2334] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#961e2d]"
+              >
                 <Icon name="Plus" size={16} />
                 Schedule visit
               </button>
@@ -363,12 +383,10 @@ const SiteVisitePage = () => {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
                   This weekend · {weekendLabel}
                 </span>
-                {isFriday && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/85">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
-                    It&apos;s Friday — confirmation day
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/85">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+                  {dayBadge}
+                </span>
               </div>
 
               <div className="relative flex flex-wrap items-center justify-between gap-6">
@@ -529,7 +547,7 @@ const SiteVisitePage = () => {
                             <RowActions
                               visit={v}
                               onMarkVisited={handleMarkVisited}
-                              onReschedule={handleReschedule}
+                              onReschedule={openReschedule}
                               saving={savingId === v.id}
                             />
                           </td>
@@ -542,6 +560,15 @@ const SiteVisitePage = () => {
             </div>
           </div>
         </main>
+
+        {picker.open && (
+          <DateTimePicker
+            value={picker.visit?.visitDate || null}
+            title={picker.visit ? "Reschedule site visit" : "Schedule site visit"}
+            onApply={handlePickerApply}
+            onClose={closePicker}
+          />
+        )}
       </div>
     </>
   );
