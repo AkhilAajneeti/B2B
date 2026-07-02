@@ -188,7 +188,7 @@ const DayCard = ({ day, count, confirmed }) => (
   <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-center">
     <p className="text-[10px] font-semibold uppercase tracking-wider text-white/60">{day}</p>
     <p className="text-2xl font-bold leading-tight">{count}</p>
-    <p className="text-[11px] text-white/60">{confirmed} done</p>
+    <p className="text-[11px] text-white/60">{confirmed} confirmed</p>
   </div>
 );
 
@@ -347,7 +347,13 @@ const SiteVisitePage = () => {
 
             {/* Weekend confirmation hero */}
             <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#7a1420] via-[#5a0f18] to-[#360a10] p-6 text-white shadow-lg">
-              <div className="mb-5 flex flex-wrap items-center gap-3">
+              {/* Subtle graph-paper grid pattern */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:34px_34px]"
+              />
+
+              <div className="relative mb-5 flex flex-wrap items-center gap-3">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/70">
                   This weekend · {weekendLabel}
                 </span>
@@ -359,16 +365,16 @@ const SiteVisitePage = () => {
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-6">
+              <div className="relative flex flex-wrap items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <DayCard day="Sat" count={satVisits.length} confirmed={doneOf(satVisits)} />
                   <DayCard day="Sun" count={sunVisits.length} confirmed={doneOf(sunVisits)} />
                   <div className="flex items-center gap-3 pl-2">
                     <ProgressRing done={weekendDone} total={weekendVisits.length} />
                     <div>
-                      <p className="font-semibold">Weekend visits</p>
+                      <p className="font-semibold">Weekend confirmations</p>
                       <p className="text-sm text-white/60">
-                        {weekendDone} of {weekendVisits.length} completed
+                        {weekendDone} of {weekendVisits.length} visits locked in
                       </p>
                     </div>
                   </div>
@@ -380,11 +386,11 @@ const SiteVisitePage = () => {
                     <span className="grid h-6 min-w-6 place-items-center rounded-full bg-amber-400/90 px-1.5 text-xs font-bold text-[#5a0f18]">
                       {weekendPending}
                     </span>
-                    <span className="text-white/85">still to visit</span>
+                    <span className="text-white/85">still need confirming</span>
                   </div>
                   <button className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[#7a1420] transition-colors hover:bg-white/90">
                     <Icon name="Phone" size={15} />
-                    Start weekend calls
+                    Start Friday calls
                   </button>
                 </div>
               </div>
