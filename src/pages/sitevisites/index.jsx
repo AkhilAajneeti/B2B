@@ -347,10 +347,16 @@ const SiteVisitePage = () => {
 
             {/* Weekend confirmation hero */}
             <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#7a1420] via-[#5a0f18] to-[#360a10] p-6 text-white shadow-lg">
-              {/* Subtle graph-paper grid pattern */}
+              {/* Subtle graph-paper grid pattern (inline style so the nested
+                  commas in the gradients compile reliably) */}
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:34px_34px]"
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
+                  backgroundSize: "34px 34px",
+                }}
               />
 
               <div className="relative mb-5 flex flex-wrap items-center gap-3">
