@@ -77,12 +77,6 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
     onApply(d);
   };
 
-  const clampNum = (v, min, max) => {
-    const n = parseInt(v, 10);
-    if (isNaN(n)) return min;
-    return Math.min(max, Math.max(min, n));
-  };
-
   return (
     <div
       className="fixed inset-0 z-[120] grid place-items-center bg-black/30 p-4"
@@ -186,22 +180,26 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
 
             {/* Time + actions */}
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700">
-                  <input
-                    value={String(hour).padStart(2, "0")}
-                    onChange={(e) => setHour(clampNum(e.target.value, 1, 12))}
-                    className="w-6 bg-transparent text-center outline-none"
-                    inputMode="numeric"
-                  />
-                  <span className="text-slate-400">:</span>
-                  <input
-                    value={String(minute).padStart(2, "0")}
-                    onChange={(e) => setMinute(clampNum(e.target.value, 0, 59))}
-                    className="w-6 bg-transparent text-center outline-none"
-                    inputMode="numeric"
-                  />
-                </div>
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={hour}
+                  onChange={(e) => setHour(Number(e.target.value))}
+                  className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                    <option key={h} value={h}>{String(h).padStart(2, "0")}</option>
+                  ))}
+                </select>
+                <span className="font-semibold text-slate-400">:</span>
+                <select
+                  value={minute}
+                  onChange={(e) => setMinute(Number(e.target.value))}
+                  className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
+                >
+                  {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+                    <option key={m} value={m}>{String(m).padStart(2, "0")}</option>
+                  ))}
+                </select>
                 <select
                   value={ampm}
                   onChange={(e) => setAmpm(e.target.value)}
