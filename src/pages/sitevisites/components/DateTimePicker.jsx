@@ -42,6 +42,32 @@ const buildCells = (y, m) => {
   return cells;
 };
 
+// Compact up/down number stepper (wraps around) — avoids long native dropdowns.
+const Stepper = ({ value, onChange, min, max, step = 1 }) => {
+  const wrap = (v) => (v > max ? min : v < min ? max : v);
+  return (
+    <div className="flex flex-col items-center">
+      <button
+        type="button"
+        onClick={() => onChange(wrap(value + step))}
+        className="text-slate-400 transition-colors hover:text-[#AC2334]"
+      >
+        <Icon name="ChevronUp" size={16} />
+      </button>
+      <span className="w-10 rounded-lg border border-slate-200 py-1 text-center text-sm font-semibold tabular-nums text-slate-800">
+        {String(value).padStart(2, "0")}
+      </span>
+      <button
+        type="button"
+        onClick={() => onChange(wrap(value - step))}
+        className="text-slate-400 transition-colors hover:text-[#AC2334]"
+      >
+        <Icon name="ChevronDown" size={16} />
+      </button>
+    </div>
+  );
+};
+
 const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose }) => {
   const base = value ? new Date(value) : new Date();
   const [view, setView] = useState({ y: base.getFullYear(), m: base.getMonth() });
@@ -49,7 +75,7 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
 
   const init12 = ((base.getHours() % 12) || 12);
   const [hour, setHour] = useState(init12);
-  const [minute, setMinute] = useState(base.getMinutes());
+  const [minute, setMinute] = useState((Math.round(base.getMinutes() / 5) * 5) % 60);
   const [ampm, setAmpm] = useState(base.getHours() >= 12 ? "PM" : "AM");
 
   const cells = useMemo(() => buildCells(view.y, view.m), [view]);
@@ -180,34 +206,26 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
 
             {/* Time + actions */}
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
-              <div className="flex items-center gap-1.5">
-                <select
-                  value={hour}
-                  onChange={(e) => setHour(Number(e.target.value))}
-                  className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                    <option key={h} value={h}>{String(h).padStart(2, "0")}</option>
+              <div className="flex items-center gap-2">
+                <Stepper value={hour} onChange={setHour} min={1} max={12} />
+                <span className="text-sm font-semibold text-slate-400">:</span>
+                <Stepper value={minute} onChange={setMinute} min={0} max={55} step={5} />
+                <div className="ml-1 inline-flex overflow-hidden rounded-lg border border-slate-200 text-sm font-medium">
+                  {["AM", "PM"].map((x) => (
+                    <button
+                      key={x}
+                      type="button"
+                      onClick={() => setAmpm(x)}
+                      className={`px-3 py-1.5 transition-colors ${
+                        ampm === x
+                          ? "bg-[#AC2334] text-white"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {x}
+                    </button>
                   ))}
-                </select>
-                <span className="font-semibold text-slate-400">:</span>
-                <select
-                  value={minute}
-                  onChange={(e) => setMinute(Number(e.target.value))}
-                  className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
-                >
-                  {Array.from({ length: 60 }, (_, i) => i).map((m) => (
-                    <option key={m} value={m}>{String(m).padStart(2, "0")}</option>
-                  ))}
-                </select>
-                <select
-                  value={ampm}
-                  onChange={(e) => setAmpm(e.target.value)}
-                  className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm font-medium text-slate-700 outline-none focus:border-[#AC2334]"
-                >
-                  <option>AM</option>
-                  <option>PM</option>
-                </select>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
