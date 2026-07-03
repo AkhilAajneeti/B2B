@@ -23,6 +23,7 @@
  */
 import gettingStarted from "./gettingStarted";
 import leads from "./leads";
+import pipeline from "./pipeline";
 import meetings from "./meetings";
 import tasks from "./tasks";
 import reports from "./reports";
@@ -55,6 +56,14 @@ export const CATEGORIES = [
     accent: "indigo",
     description: "Capture, qualify and move leads through your pipeline.",
     articles: leads,
+  },
+  {
+    id: "pipeline",
+    name: "Pipeline",
+    icon: "Filter",
+    accent: "rose",
+    description: "Work your follow-ups by urgency and read the lead funnel.",
+    articles: pipeline,
   },
   {
     id: "meetings",

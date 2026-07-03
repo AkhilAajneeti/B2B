@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet";
 import { Droppable, DragDropContext } from "@hello-pangea/dnd";
 import Header from "../../components/ui/Header";
@@ -33,6 +33,12 @@ const Pipeline = () => {
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const [selectedDealForHistory, setSelectedDealForHistory] = useState(null);
   const [selectedStage, setSelectedStage] = useState(null);
+  // KPI card → single-column filter. null = show every column.
+  const [activeKpi, setActiveKpi] = useState(null);
+  const toggleKpi = useCallback(
+    (category) => setActiveKpi((cur) => (cur === category ? null : category)),
+    [],
+  );
 
   // --- data + derived state (all logic lives in hooks) ---------------------
   const { deals, isLoading, isError, isFetching, refetch } = usePipelineData();
@@ -46,6 +52,12 @@ const Pipeline = () => {
   } = usePipelineFilters(deals);
   const stats = usePipelineStats(filteredDeals);
   const { moveDeal, deleteDeal } = usePipelineActions();
+
+  // When a KPI is active, show only its matching column.
+  const visibleColumns = activeKpi
+    ? PIPELINE_COLUMNS.filter((c) => c.id === activeKpi)
+    : PIPELINE_COLUMNS;
+  const activeColumnName = PIPELINE_COLUMNS.find((c) => c.id === activeKpi)?.name;
 
   // --- handlers ------------------------------------------------------------
   const handleSidebarToggle = useCallback(
@@ -107,11 +119,37 @@ const Pipeline = () => {
           {/* Page header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Sales Pipeline
+              {/* Eyebrow */}
+              <div className="mb-2 flex items-center gap-2">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#AC2334] text-white">
+                  <Icon name="BarChart3" size={15} />
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#AC2334]">
+                  Sales Pipeline
+                </span>
+              </div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Your leads today
               </h1>
-              <p className="text-muted-foreground">
-                Track follow-ups, manage urgency and never miss a lead.
+              <p className="mt-1.5 text-muted-foreground">
+                <span className="font-semibold text-foreground">
+                  {stats.dueToday} follow-up{stats.dueToday === 1 ? "" : "s"}
+                </span>{" "}
+                {stats.dueToday === 1 ? "is" : "are"} due today and{" "}
+                <span className="font-semibold text-foreground">
+                  {stats.overdue} {stats.overdue === 1 ? "is" : "are"} overdue
+                </span>
+                {stats.overdue === 0 ? (
+                  <span className="font-medium text-emerald-600">
+                    {" "}— you're on top of it.
+                  </span>
+                ) : (
+                  <span className="font-medium text-[#AC2334]">
+                    {" "}— clear the overdue first.
+                  </span>
+                )}
+                <br />
+                Work the list below, top priority first.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -136,7 +174,11 @@ const Pipeline = () => {
           <PipelineSummaryAlert stats={stats} />
 
           {/* Summary cards */}
-          <PipelineStats stats={stats} />
+          <PipelineStats
+            stats={stats}
+            activeCategory={activeKpi}
+            onSelect={toggleKpi}
+          />
 
           {/* Filters */}
           <PipelineFilters
@@ -160,6 +202,36 @@ const Pipeline = () => {
                 </span>
               )}
             </div>
+
+            {/* Active KPI filter indicator */}
+            <AnimatePresence>
+              {activeKpi && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2 }}
+                  className="mb-4 flex flex-wrap items-center gap-2"
+                >
+                  <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
+                    Showing: {activeColumnName}
+                    <button
+                      onClick={() => setActiveKpi(null)}
+                      aria-label="Clear filter"
+                      className="grid h-5 w-5 place-items-center rounded-full transition-colors hover:bg-primary/20"
+                    >
+                      <Icon name="X" size={13} />
+                    </button>
+                  </span>
+                  <button
+                    onClick={() => setActiveKpi(null)}
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Clear Filter
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -188,15 +260,23 @@ const Pipeline = () => {
             ) : (
               <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="overflow-x-auto">
-                  <div className="flex gap-6 min-h-[600px] w-max min-w-full">
-                    {PIPELINE_COLUMNS.map((column, index) => (
-                      <motion.div
-                        key={column.id}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.08 }}
-                        className="flex-shrink-0 w-80 h-full"
-                      >
+                  <div
+                    className={`flex min-h-[600px] ${
+                      activeKpi ? "" : "gap-6 w-max min-w-full"
+                    }`}
+                  >
+                    <AnimatePresence initial={false}>
+                      {visibleColumns.map((column, index) => (
+                        <motion.div
+                          key={column.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.25, delay: index * 0.05 }}
+                          className={`h-full flex-shrink-0 ${
+                            activeKpi ? "w-full max-w-3xl" : "w-80"
+                          }`}
+                        >
                         <Droppable droppableId={column.id}>
                           {(provided, snapshot) => (
                             <div
@@ -217,8 +297,9 @@ const Pipeline = () => {
                             </div>
                           )}
                         </Droppable>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </div>
               </DragDropContext>

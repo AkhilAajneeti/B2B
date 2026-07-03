@@ -79,7 +79,7 @@ const articles = [
           "Use the This Month / Last Month toggle in the chart header to compare two periods quickly.",
       },
     ],
-    related: ["reading-the-win-rate"],
+    related: ["reading-the-win-rate", "pipeline:pipeline-lead-funnel"],
   },
   {
     id: "filtering-reports",
