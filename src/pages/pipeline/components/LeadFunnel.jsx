@@ -9,25 +9,27 @@ import { fetchLeadsCount } from "services/leads.service";
  * so the mapping below is explicit and meant to be tuned. Each stage
  * counts the leads whose `status` falls in its `statuses` list.
  * ------------------------------------------------------------------ */
+// Single-hue crimson ramp, light → dark (sequential, on-brand). Every step is
+// dark enough to keep the white count label readable.
 const STAGES = [
-  { key: "new", label: "New lead", sub: "uncontacted", color: "#7d8aa3", statuses: ["New"] },
+  { key: "new", label: "New lead", sub: "uncontacted", color: "#c65f7a", statuses: ["New"] },
   {
     key: "contacted",
     label: "Contacted",
     sub: "reached out",
-    color: "#6f7ca6",
+    color: "#b44d69",
     statuses: ["Follow up", "Call Later", "Call Not Connecting", "Call Not Picked"],
   },
-  { key: "interested", label: "Interested", sub: "qualified", color: "#8b6a83", statuses: ["Interested", "Low Interest"] },
+  { key: "interested", label: "Interested", sub: "qualified", color: "#a03c59", statuses: ["Interested", "Low Interest"] },
   {
     key: "sitevisit",
     label: "Site visit",
     sub: "property shown",
-    color: "#9c5560",
+    color: "#892c48",
     statuses: ["Site Visit Scheduled", "Site Visit Done"],
   },
-  { key: "negotiation", label: "Negotiation", sub: "discussing terms", color: "#8e3947", statuses: ["QDTD", "Low Budget"] },
-  { key: "won", label: "Closed · won", sub: "booked", color: "#6d1420", statuses: ["Purchased", "Converted", "Booked"] },
+  { key: "negotiation", label: "Negotiation", sub: "discussing terms", color: "#701d37", statuses: ["QDTD", "Low Budget"] },
+  { key: "won", label: "Closed · won", sub: "booked", color: "#521228", statuses: ["Purchased", "Converted", "Booked"] },
 ];
 
 const LeadFunnel = () => {
