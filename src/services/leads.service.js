@@ -439,6 +439,47 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
 
   return await res.json();
 };
+// Paginated lead search for the combobox. Empty query → most-recent leads.
+// Non-empty → OR match across name / phone / email / project (contains).
+// Returns { list, total } so callers can drive infinite scroll.
+export const searchLeads = async ({ query = "", limit = 15, offset = 0 } = {}) => {
+  const token = localStorage.getItem("auth_token");
+  const params = new URLSearchParams();
+  params.append("maxSize", String(limit));
+  params.append("offset", String(offset));
+  params.append("orderBy", "createdAt");
+  params.append("order", "desc");
+
+  const q = query.trim();
+  if (q) {
+    const fields = ["name", "phoneNumber", "emailAddress", "cProject"];
+    params.append("whereGroup[0][type]", "or");
+    fields.forEach((f, i) => {
+      params.append(`whereGroup[0][value][${i}][type]`, "contains");
+      params.append(`whereGroup[0][value][${i}][attribute]`, f);
+      params.append(`whereGroup[0][value][${i}][value]`, q);
+    });
+  }
+  params.append(
+    "attributeSelect",
+    "name,phoneNumber,emailAddress,cProject,cProjectName,assignedUserId,assignedUserName,status",
+  );
+
+  const res = await fetch(
+    `https://gateway.aajneetiadvertising.com/Lead?${params.toString()}`,
+    { method: "GET", headers: { "Content-Type": "application/json", token } },
+  );
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    throw new Error("Failed to search leads");
+  }
+  return res.json();
+};
+
 export const fetchLeadsById = async (id) => {
   const token = localStorage.getItem("auth_token");
 

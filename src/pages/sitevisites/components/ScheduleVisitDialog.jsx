@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 import Icon from "../../../components/AppIcon";
 import { useUsers } from "hooks/useUsers";
-import { fetchNewLeads } from "services/leads.service";
 import { scheduleSiteVisit } from "services/sitevisite.service";
 import DateTimePicker from "./DateTimePicker";
+import LeadCombobox from "./LeadCombobox";
 
 const fmtWhen = (d) =>
   d
@@ -21,50 +21,15 @@ const ScheduleVisitDialog = ({ onClose, onScheduled }) => {
   const { data: usersData } = useUsers();
   const reps = usersData?.list || [];
 
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-
   const [lead, setLead] = useState(null);
   const [repId, setRepId] = useState("");
   const [when, setWhen] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Debounced lead search by name.
-  useEffect(() => {
-    const q = query.trim();
-    if (lead || q.length < 2) {
-      setResults([]);
-      return;
-    }
-    let active = true;
-    setSearching(true);
-    const t = setTimeout(async () => {
-      try {
-        const data = await fetchNewLeads({
-          limit: 8,
-          page: 1,
-          filters: { search: q },
-        });
-        if (active) setResults(data?.list || []);
-      } catch {
-        if (active) setResults([]);
-      } finally {
-        if (active) setSearching(false);
-      }
-    }, 300);
-    return () => {
-      active = false;
-      clearTimeout(t);
-    };
-  }, [query, lead]);
-
-  const pickLead = (l) => {
+  const handleLeadChange = (l) => {
     setLead(l);
-    setRepId(l.assignedUserId || "");
-    setResults([]);
-    setQuery("");
+    setRepId(l?.assignedUserId || "");
   };
 
   const handleSchedule = async () => {
@@ -102,60 +67,10 @@ const ScheduleVisitDialog = ({ onClose, onScheduled }) => {
         </div>
 
         <div className="space-y-4 p-5">
-          {/* Lead search / selection */}
+          {/* Lead */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Lead</label>
-            {lead ? (
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-800">{lead.name}</p>
-                  <p className="truncate text-xs text-slate-500">
-                    {(lead.cProject || lead.cProjectName || "—")}
-                    {lead.phoneNumber ? ` · ${lead.phoneNumber}` : ""}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setLead(null)}
-                  className="ml-2 shrink-0 rounded-md px-2 py-1 text-xs font-medium text-[#AC2334] hover:bg-[#AC2334]/10"
-                >
-                  Change
-                </button>
-              </div>
-            ) : (
-              <div className="relative">
-                <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search a lead by name…"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#AC2334] focus:ring-2 focus:ring-[#AC2334]/10"
-                />
-                {(searching || results.length > 0) && query.trim().length >= 2 && (
-                  <div className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
-                    {searching && (
-                      <p className="px-3 py-2 text-sm text-slate-400">Searching…</p>
-                    )}
-                    {!searching && results.length === 0 && (
-                      <p className="px-3 py-2 text-sm text-slate-400">No leads found</p>
-                    )}
-                    {results.map((l) => (
-                      <button
-                        key={l.id}
-                        onClick={() => pickLead(l)}
-                        className="flex w-full flex-col items-start gap-0.5 border-b border-slate-50 px-3 py-2 text-left last:border-0 hover:bg-slate-50"
-                      >
-                        <span className="text-sm font-medium text-slate-800">{l.name}</span>
-                        <span className="text-xs text-slate-500">
-                          {(l.cProject || l.cProjectName || "—")}
-                          {l.phoneNumber ? ` · ${l.phoneNumber}` : ""}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            <LeadCombobox value={lead} onChange={handleLeadChange} />
           </div>
 
           {/* Assigned rep */}
