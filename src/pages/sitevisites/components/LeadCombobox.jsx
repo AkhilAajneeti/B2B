@@ -146,7 +146,6 @@ const LeadCombobox = ({ value, onChange }) => {
         aria-autocomplete="list"
         aria-activedescendant={open && items[activeIndex] ? `lead-opt-${activeIndex}` : undefined}
         value={query}
-        autoFocus
         onFocus={() => setOpen(true)}
         onChange={(e) => {
           setQuery(e.target.value);
