@@ -59,7 +59,7 @@ const Chip = ({ item, count, active, onClick }) => (
 
 const PipelineStats = ({ stats = {}, activeCategory = null, onSelect }) => (
   <div className="rounded-xl border border-border bg-card p-4">
-    <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-10">
+    <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between md:gap-8">
       {GROUPS.map((group) => (
         <div key={group.heading}>
           <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
