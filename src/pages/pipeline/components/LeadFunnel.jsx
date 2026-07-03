@@ -80,19 +80,19 @@ const LeadFunnel = () => {
         <span className="text-sm text-muted-foreground">All open leads · by stage</span>
       </div>
 
-      <div className={`space-y-3 transition-opacity ${isLoading ? "opacity-50" : ""}`}>
+      <div className={`space-y-2.5 transition-opacity ${isLoading ? "opacity-50" : ""}`}>
         {rows.map((r) => (
-          <div key={r.key} className="flex items-center gap-4">
+          <div key={r.key} className="flex items-center gap-3 sm:gap-4">
             {/* Stage label */}
-            <div className="w-28 shrink-0 text-right">
+            <div className="w-20 shrink-0 text-right sm:w-28">
               <p className="text-sm font-semibold leading-tight text-foreground">{r.label}</p>
               <p className="text-xs text-muted-foreground">{r.sub}</p>
             </div>
 
-            {/* Bar */}
-            <div className="min-w-0 flex-1">
+            {/* Bar — centered within its track to form a true funnel shape */}
+            <div className="flex min-w-0 flex-1 justify-center">
               <div
-                className="flex h-9 items-center rounded-lg px-3 text-sm font-semibold text-white transition-all duration-500"
+                className="flex h-10 items-center justify-center rounded-xl px-3 text-sm font-semibold text-white shadow-sm transition-[width] duration-700 ease-out"
                 style={{ width: `${r.widthPct}%`, minWidth: "2.75rem", backgroundColor: r.color }}
               >
                 {r.count}
@@ -100,7 +100,7 @@ const LeadFunnel = () => {
             </div>
 
             {/* Conversion + biggest-drop badge */}
-            <div className="w-28 shrink-0">
+            <div className="w-20 shrink-0 sm:w-28">
               {r.conv !== null && (
                 <div className="flex flex-col items-start gap-1">
                   <span
