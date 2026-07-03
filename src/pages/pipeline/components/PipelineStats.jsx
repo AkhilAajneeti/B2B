@@ -1,59 +1,87 @@
 import React, { memo } from "react";
-import { motion } from "framer-motion";
-import Icon from "../../../components/AppIcon";
 import { STAT_CARDS } from "../utils/pipelineConstants";
 
 /**
  * PipelineStats
  *
- * Six summary cards. Each card is also a toggle filter: clicking it selects
- * its category (the parent then shows only that column); clicking the active
- * card clears it. `activeCategory` drives the highlighted state.
+ * Compact filter chips grouped into two sections. Each chip toggles its
+ * category as the board filter; the active chip is highlighted with the
+ * primary brand color. Counts come pre-computed from usePipelineStats.
  */
+
+// category id per stat key, sourced from the shared config.
+const CATEGORY_BY_KEY = Object.fromEntries(
+  STAT_CARDS.map((c) => [c.key, c.category]),
+);
+
+const GROUPS = [
+  {
+    heading: "Follow-ups · when to call",
+    items: [
+      { key: "overdue", label: "Overdue", dot: "bg-red-500" },
+      { key: "dueToday", label: "Due today", dot: "bg-amber-500" },
+      { key: "upcoming", label: "Upcoming", dot: "bg-blue-500" },
+    ],
+  },
+  {
+    heading: "Watch list · needs a look",
+    items: [
+      { key: "active", label: "Active", dot: "bg-emerald-500" },
+      { key: "stale", label: "Stale", dot: "bg-slate-400" },
+      { key: "budgetIssue", label: "Budget issue", dot: "bg-[#AC2334]" },
+    ],
+  },
+];
+
+const Chip = ({ item, count, active, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={active}
+    title={active ? `Clear ${item.label} filter` : `Show only ${item.label}`}
+    className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all ${
+      active
+        ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/40"
+        : "border-border bg-background text-foreground hover:border-slate-300 hover:bg-slate-50"
+    }`}
+  >
+    <span className={`h-2 w-2 rounded-full ${item.dot}`} />
+    {item.label}
+    <span
+      className={`font-semibold ${
+        count > 0 ? "text-foreground" : "text-muted-foreground"
+      }`}
+    >
+      {count}
+    </span>
+  </button>
+);
+
 const PipelineStats = ({ stats = {}, activeCategory = null, onSelect }) => (
-  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-    {STAT_CARDS.map((card, index) => {
-      const active = card.category === activeCategory;
-      return (
-        <motion.button
-          key={card.key}
-          type="button"
-          onClick={() => onSelect?.(card.category)}
-          aria-pressed={active}
-          title={active ? `Clear ${card.title} filter` : `Show only ${card.title}`}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          className={`${card.bgColor} rounded-xl border p-4 text-left transition-shadow ${
-            active
-              ? "border-primary shadow-md ring-2 ring-primary/60"
-              : "border-border hover:shadow-md"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className={`h-11 w-11 ${card.color} flex flex-shrink-0 items-center justify-center rounded-xl`}
-            >
-              <Icon name={card.icon} size={20} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-2xl font-bold leading-none text-foreground">
-                {stats[card.key] ?? 0}
-              </div>
-              <div
-                className={`mt-1 truncate text-xs ${
-                  active ? "font-medium text-primary" : "text-muted-foreground"
-                }`}
-              >
-                {card.title}
-              </div>
-            </div>
+  <div className="rounded-xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-10">
+      {GROUPS.map((group) => (
+        <div key={group.heading}>
+          <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {group.heading}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {group.items.map((item) => {
+              const category = CATEGORY_BY_KEY[item.key];
+              return (
+                <Chip
+                  key={item.key}
+                  item={item}
+                  count={stats[item.key] ?? 0}
+                  active={category === activeCategory}
+                  onClick={() => onSelect?.(category)}
+                />
+              );
+            })}
           </div>
-        </motion.button>
-      );
-    })}
+        </div>
+      ))}
+    </div>
   </div>
 );
 
