@@ -222,14 +222,10 @@ const DealDrawer = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name?.trim()) {
-      toast.error("Project name is required");
-      return;
-    }
-
     const payload = {
-      // ✅ Project REQUIRED
-      name: formData.name.trim(),
+      // Name is optional and hidden from the form — derive it so the record
+      // still has a label. Falls back to the project nomen, then "Default".
+      name: formData.name?.trim() || formData.projectNomen?.trim() || "Default",
       // New identifiers — clientNomen / projectNomen / whatsappTemplate were
       // wired through the form + view but never made it into the save
       // payload (this object is hand-built, not spread), so the inputs were
@@ -507,12 +503,6 @@ const DealDrawer = ({
                         onChange={(e) => handleChange("projectNomen", e.target.value)}
                         disabled={!isSupAdmin()}
                       />
-                      {isSupAdmin() && <Input
-                        label="Name *"
-                        value={formData.name || ""}
-                        onChange={(e) => handleChange("name", e.target.value)}
-
-                      />}
                       <Input
                         label="Address"
                         value={formData.address || ""}
