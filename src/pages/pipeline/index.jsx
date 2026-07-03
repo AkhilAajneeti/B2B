@@ -172,6 +172,14 @@ const Pipeline = () => {
 
           {/* Login summary banner */}
           <PipelineSummaryAlert stats={stats} />
+           {/* Filters */}
+          <PipelineFilters
+            filters={filters}
+            deals={deals}
+            onFilterChange={setFilter}
+            onReset={resetFilters}
+            activeFilterCount={activeFilterCount}
+          />
 
           {/* Summary cards */}
           <PipelineStats
@@ -180,14 +188,7 @@ const Pipeline = () => {
             onSelect={toggleKpi}
           />
 
-          {/* Filters */}
-          <PipelineFilters
-            filters={filters}
-            deals={deals}
-            onFilterChange={setFilter}
-            onReset={resetFilters}
-            activeFilterCount={activeFilterCount}
-          />
+         
 
           {/* Pipeline board */}
           <div className="bg-card border border-border rounded-xl p-3">
