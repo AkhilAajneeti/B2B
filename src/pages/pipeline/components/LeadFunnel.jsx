@@ -9,28 +9,68 @@ import { fetchLeadsCount } from "services/leads.service";
  * so the mapping below is explicit and meant to be tuned. Each stage
  * counts the leads whose `status` falls in its `statuses` list.
  * ------------------------------------------------------------------ */
-// Single-hue crimson ramp, light → dark (sequential, on-brand). Every step is
-// dark enough to keep the white count label readable.
+// Each stage borrows the color family of its representative status, using the
+// app's soft tinted-gradient + colored-border style (bg light → background).
+// Text is a dark shade of the same hue so it stays readable on the light fill.
 const STAGES = [
-  { key: "new", label: "New lead", sub: "uncontacted", color: "#c65f7a", statuses: ["New"] },
+  {
+    key: "new",
+    label: "New lead",
+    sub: "uncontacted",
+    grad: "bg-gradient-to-br from-blue-200 to-background border-blue-200",
+    text: "text-blue-700",
+    statuses: ["New"],
+  },
   {
     key: "contacted",
     label: "Contacted",
     sub: "reached out",
-    color: "#b44d69",
+    grad: "bg-gradient-to-br from-indigo-200 to-background border-indigo-200",
+    text: "text-indigo-700",
     statuses: ["Follow up", "Call Later", "Call Not Connecting", "Call Not Picked"],
   },
-  { key: "interested", label: "Interested", sub: "qualified", color: "#a03c59", statuses: ["Interested", "Low Interest"] },
+  {
+    key: "interested",
+    label: "Interested",
+    sub: "qualified",
+    grad: "bg-gradient-to-br from-emerald-200 to-background border-emerald-200",
+    text: "text-emerald-700",
+    statuses: ["Interested", "Low Interest"],
+  },
   {
     key: "sitevisit",
     label: "Site visit",
     sub: "property shown",
-    color: "#892c48",
+    grad: "bg-gradient-to-br from-sky-200 to-background border-sky-200",
+    text: "text-sky-700",
     statuses: ["Site Visit Scheduled", "Site Visit Done"],
   },
-  { key: "negotiation", label: "Negotiation", sub: "discussing terms", color: "#701d37", statuses: ["QDTD", "Low Budget"] },
-  { key: "won", label: "Closed · won", sub: "booked", color: "#521228", statuses: ["Purchased", "Converted", "Booked"] },
+  {
+    key: "negotiation",
+    label: "Negotiation",
+    sub: "discussing terms",
+    grad: "bg-gradient-to-br from-fuchsia-200 to-background border-fuchsia-200",
+    text: "text-fuchsia-700",
+    statuses: ["QDTD", "Low Budget"],
+  },
+  {
+    key: "won",
+    label: "Closed · won",
+    sub: "booked",
+    grad: "bg-gradient-to-br from-amber-200 to-background border-amber-200",
+    text: "text-amber-700",
+    statuses: ["Purchased", "Converted", "Booked"],
+  },
 ];
+
+// Drop-severity styling for the conversion pill. High conversion = minor drop
+// (neutral); low conversion = major drop (red). Snapshot growth (>100%) reads
+// as neutral, not alarming.
+const dropSeverity = (conv) => {
+  if (conv == null || conv >= 70) return "bg-slate-100 text-slate-600";
+  if (conv >= 40) return "bg-amber-50 text-amber-700";
+  return "bg-red-50 text-red-600";
+};
 
 const LeadFunnel = () => {
   // One count query per stage, across ALL leads (not just the pipeline's
@@ -94,8 +134,8 @@ const LeadFunnel = () => {
             {/* Bar — centered within its track to form a true funnel shape */}
             <div className="flex min-w-0 flex-1 justify-center">
               <div
-                className="flex h-10 items-center justify-center rounded-xl px-3 text-sm font-semibold text-white shadow-sm transition-[width] duration-700 ease-out"
-                style={{ width: `${r.widthPct}%`, minWidth: "2.75rem", backgroundColor: r.color }}
+                className={`flex h-10 items-center justify-center rounded-xl border px-3 text-sm font-semibold shadow-sm transition-[width] duration-700 ease-out ${r.grad} ${r.text}`}
+                style={{ width: `${r.widthPct}%`, minWidth: "2.75rem" }}
               >
                 {r.count}
               </div>
@@ -104,17 +144,17 @@ const LeadFunnel = () => {
             {/* Conversion + biggest-drop badge */}
             <div className="w-20 shrink-0 sm:w-28">
               {r.conv !== null && (
-                <div className="flex flex-col items-start gap-1">
+                <div className="flex flex-col items-start gap-1.5">
                   <span
-                    className={`inline-flex items-center gap-1 text-sm font-medium ${
-                      r.biggest ? "text-[#AC2334]" : "text-muted-foreground"
-                    }`}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${dropSeverity(
+                      r.conv,
+                    )}`}
                   >
-                    <Icon name="ArrowDown" size={13} />
+                    <Icon name="ArrowDown" size={12} />
                     {r.conv}%
                   </span>
                   {r.biggest && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#AC2334]/10 px-2 py-0.5 text-[11px] font-medium text-[#AC2334]">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#AC2334]/[0.08] px-2 py-0.5 text-[11px] font-medium text-[#AC2334]">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#AC2334]" />
                       biggest drop
                     </span>
