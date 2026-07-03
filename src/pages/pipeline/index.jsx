@@ -7,6 +7,7 @@ import Sidebar from "../../components/ui/Sidebar";
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import PipelineColumn from "./components/PipelineColumn";
+import DealCard from "./components/DealCard";
 import PipelineFilters from "./components/PipelineFilters";
 import PipelineStats from "./components/PipelineStats";
 import PipelineSummaryAlert from "./components/PipelineSummaryAlert";
@@ -53,11 +54,9 @@ const Pipeline = () => {
   const stats = usePipelineStats(filteredDeals);
   const { moveDeal, deleteDeal } = usePipelineActions();
 
-  // When a KPI is active, show only its matching column.
-  const visibleColumns = activeKpi
-    ? PIPELINE_COLUMNS.filter((c) => c.id === activeKpi)
-    : PIPELINE_COLUMNS;
+  // When a KPI is active we switch to a card grid of just that category.
   const activeColumnName = PIPELINE_COLUMNS.find((c) => c.id === activeKpi)?.name;
+  const filteredDealsForGrid = activeKpi ? groupedDeals[activeKpi] || [] : [];
 
   // --- handlers ------------------------------------------------------------
   const handleSidebarToggle = useCallback(
@@ -259,51 +258,91 @@ const Pipeline = () => {
                 </Button>
               </div>
             ) : (
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <div className="overflow-x-auto">
-                  <div
-                    className={`flex min-h-[600px] ${
-                      activeKpi ? "" : "gap-6 w-max min-w-full"
-                    }`}
+              <AnimatePresence mode="wait" initial={false}>
+                {activeKpi ? (
+                  /* Filtered → responsive card grid, natural page scroll */
+                  <motion.div
+                    key="grid"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <AnimatePresence initial={false}>
-                      {visibleColumns.map((column, index) => (
-                        <motion.div
-                          key={column.id}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.25, delay: index * 0.05 }}
-                          className={`h-full flex-shrink-0 ${
-                            activeKpi ? "w-full max-w-3xl" : "w-80"
-                          }`}
-                        >
-                        <Droppable droppableId={column.id}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`h-full rounded-xl transition-colors ${snapshot.isDraggingOver
-                                  ? "ring-2 ring-primary/40"
-                                  : ""
-                                }`}
+                    {filteredDealsForGrid.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                          <Icon name="Inbox" size={24} className="text-muted-foreground" />
+                        </div>
+                        <p className="text-sm font-medium text-foreground">
+                          No leads in {activeColumnName}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        {filteredDealsForGrid.map((deal, index) => (
+                          <motion.div
+                            key={deal.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.2) }}
+                          >
+                            <DealCard
+                              deal={deal}
+                              onDelete={handleDeleteDeal}
+                              onViewHistory={handleViewHistory}
+                            />
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                ) : (
+                  /* Default → multi-column Kanban */
+                  <motion.div
+                    key="kanban"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <div className="overflow-x-auto">
+                        <div className="flex min-h-[600px] w-max min-w-full gap-6">
+                          {PIPELINE_COLUMNS.map((column, index) => (
+                            <motion.div
+                              key={column.id}
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.06 }}
+                              className="h-full w-80 flex-shrink-0"
                             >
-                              <PipelineColumn
-                                column={column}
-                                deals={groupedDeals[column.id] || []}
-                                onDeleteDeal={handleDeleteDeal}
-                                onViewHistory={handleViewHistory}
-                              />
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </Droppable>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </DragDropContext>
+                              <Droppable droppableId={column.id}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    className={`h-full rounded-xl transition-colors ${
+                                      snapshot.isDraggingOver ? "ring-2 ring-primary/40" : ""
+                                    }`}
+                                  >
+                                    <PipelineColumn
+                                      column={column}
+                                      deals={groupedDeals[column.id] || []}
+                                      onDeleteDeal={handleDeleteDeal}
+                                      onViewHistory={handleViewHistory}
+                                    />
+                                    {provided.placeholder}
+                                  </div>
+                                )}
+                              </Droppable>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </DragDropContext>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             )}
           </div>
         </div>
