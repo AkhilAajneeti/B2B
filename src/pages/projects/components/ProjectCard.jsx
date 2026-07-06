@@ -1,7 +1,8 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import Icon from "../../../components/AppIcon";
 import { fetchLeadsCount } from "services/leads.service";
+import { fetchProjectsById } from "services/projects.service";
 
 /* Thumbnail gradients, rotated per card (projects have no image field yet). */
 const GRADIENTS = [
@@ -48,26 +49,54 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
     project.projectNomen && project.projectNomen !== "Default"
       ? project.projectNomen
       : project.name;
-  const leadFilter = [{ type: "contains", attribute: "cProject", value: projectKey }];
 
-  const { data: total = 0, isLoading: loadingTotal } = useQuery({
-    queryKey: ["project-leads-total", project.id],
-    queryFn: () => fetchLeadsCount(leadFilter),
-    enabled: !!project.name,
-    staleTime: 1000 * 60 * 5,
+  // `cProject` spacing is inconsistent across leads ("GangaCounty" vs "Ganga
+  // County"), and LIKE can't ignore spaces — so match both the raw and spaced
+  // variants and sum. Each lead's cProject is one string, so it matches at
+  // most one variant: no double-counting.
+  const keys = [...new Set([projectKey, humanize(projectKey)].filter(Boolean))];
+
+  const totalQ = useQueries({
+    queries: keys.map((k) => ({
+      queryKey: ["project-leads-total", project.id, k],
+      queryFn: () =>
+        fetchLeadsCount([{ type: "contains", attribute: "cProject", value: k }]),
+      enabled: !!k,
+      staleTime: 1000 * 60 * 5,
+    })),
   });
-  const { data: today = 0 } = useQuery({
-    queryKey: ["project-leads-today", project.id],
-    queryFn: () =>
-      fetchLeadsCount([...leadFilter, { type: "today", attribute: "createdAt" }]),
-    enabled: !!project.name,
-    staleTime: 1000 * 60 * 5,
+  const todayQ = useQueries({
+    queries: keys.map((k) => ({
+      queryKey: ["project-leads-today", project.id, k],
+      queryFn: () =>
+        fetchLeadsCount([
+          { type: "contains", attribute: "cProject", value: k },
+          { type: "today", attribute: "createdAt" },
+        ]),
+      enabled: !!k,
+      staleTime: 1000 * 60 * 5,
+    })),
   });
+
+  const loadingTotal = totalQ.some((q) => q.isLoading);
+  const total = totalQ.reduce((s, q) => s + (q.data || 0), 0);
+  const today = todayQ.reduce((s, q) => s + (q.data || 0), 0);
+
+  // The list endpoint doesn't return collaboratorsNames, so fetch the project
+  // detail (cached) when the list item is missing it, to show the team.
+  const { data: detail } = useQuery({
+    queryKey: ["project-collaborators", project.id],
+    queryFn: () => fetchProjectsById(project.id),
+    enabled: !project.collaboratorsNames && !!project.id,
+    staleTime: 1000 * 60 * 10,
+  });
+  const collaboratorsNames =
+    project.collaboratorsNames || detail?.collaboratorsNames || {};
 
   // Project team = collaborators (projects use collaboratorsNames, not an
   // assigned user).
   const uniqueAgents = [
-    ...new Set(Object.values(project.collaboratorsNames || {}).filter(Boolean)),
+    ...new Set(Object.values(collaboratorsNames).filter(Boolean)),
   ];
 
   // Title = projectNomen (the short label); the full name goes underneath.

@@ -163,22 +163,7 @@ export const fetchProjects = async ({
     })
     .join("&");
 
-  // Explicitly select the fields the list consumers need. The link-multiple
-  // `collaborators` isn't returned by default (so cards couldn't show the
-  // team). Selecting the link field name returns both its Ids and Names.
-  const select = [
-    "id",
-    "name",
-    "projectNomen",
-    "clientNomen",
-    "address",
-    "createdAt",
-    "modifiedAt",
-    "assignedUser",
-    "collaborators",
-  ].join(",");
-
-  const url = `https://gateway.aajneetiadvertising.com/CProjects?maxSize=${limit}&offset=${offset}&orderBy=${orderBy}&order=${order}&select=${select}${query ? `&${query}` : ""
+  const url = `https://gateway.aajneetiadvertising.com/CProjects?maxSize=${limit}&offset=${offset}&orderBy=${orderBy}&order=${order}${query ? `&${query}` : ""
     }`;
 
   const res = await fetch(url, {
