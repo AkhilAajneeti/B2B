@@ -10,7 +10,8 @@ export default {
         border: 'var(--color-border)', // slate-200
         input: 'var(--color-input)', // white
         ring: 'var(--color-ring)', // violet-500
-        background: 'var(--color-background)', // white
+        background: 'var(--color-background)', // #FAF8F6 warm off-white
+        sidebar: 'var(--color-sidebar)', // #F9F9F8 neutral warm off-white
         foreground: 'var(--color-foreground)', // slate-800
         mahroon:"#fee0df",//#AC2334
         primary: {

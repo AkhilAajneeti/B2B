@@ -9,6 +9,8 @@ import Button from "../../components/ui/Button";
 import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
+import ProjectCard from "./components/ProjectCard";
+import ProjectKpis from "./components/ProjectKpis";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
 import { useProject, useProjects } from "hooks/useProjects";
@@ -29,6 +31,7 @@ const ProjectsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [mode, setMode] = useState("view");
+  const [viewMode, setViewMode] = useState("cards"); // "cards" | "table"
 
   const [sortConfig, setSortConfig] = useState({
     key: "createdAt",
@@ -66,12 +69,6 @@ const ProjectsPage = () => {
 
   const projects = data?.list || [];
   const totalItems = data?.total || 0;
-
-  // KEEP ACL permission filtering (MANDATORY)
-  // const visibleProjects = projects.filter(project =>
-  //   canEntityRecord('CProjects', 'read', project) ||
-  //   project.collaboratorsIds?.includes(currentUser.id)
-  // );
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -323,25 +320,7 @@ const ProjectsPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                {/* <Button
-                  variant="outline" className="linearbg-1 text-white hover:text-white"
-                  onClick={() =>
-                    exportLeadsToCSV(projects, "all_leads")
-                  }
-                  
-                >
-                  <Icon name="Download" size={16} className="mr-2" />
-                  Export All
-                </Button> */}
-
-               {/* Admin/manager-only — sales reps shouldn't be able to spin
-                   up new campaigns from the projects page. The previous
-                   ACL-based gate (canCreate) was permissive enough that
-                   non-admin users still saw the button; tighten it with an
-                   explicit role check on top of the ACL check. */}
-               {/* type === "admin" only. isSupAdmin is a function — must
-                   be CALLED, otherwise the truthy function reference made
-                   the button render for everyone. */}
+               
                {isSupAdmin() && (
                 <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
@@ -351,30 +330,77 @@ const ProjectsPage = () => {
               </div>
             </div>
 
-            {/* Filters */}
-            <DealsFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onClearFilters={handleClearFilters}
-              dealCount={totalItems}
-              onBulkAction={handleBulkAction}
-              selectedCount={selectedDeals?.length}
-            />
+            {/* KPI row */}
+            <ProjectKpis totalProjects={totalItems} />
 
-            {/* Deals Table */}
-            <DealsTable
-              deals={projects}
-              selectedDeals={selectedDeals}
-              onSelectDeal={handleSelectDeal}
-              onSelectAll={handleSelectAll}
-              onDealClick={handleDealClick}
-              sortConfig={sortConfig}
-              onSort={handleSort}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              onDelete={handleDeleteLead}
-              isLoading={loading}
-            />
+            {/* Filters + view toggle */}
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+              <div className="min-w-0 flex-1">
+                <DealsFilters
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onClearFilters={handleClearFilters}
+                  dealCount={totalItems}
+                  onBulkAction={handleBulkAction}
+                  selectedCount={selectedDeals?.length}
+                />
+              </div>
+              <div className="inline-flex shrink-0 rounded-lg border border-border bg-card p-0.5">
+                {["cards", "table"].map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setViewMode(v)}
+                    className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
+                      viewMode === v
+                        ? "bg-[#6E1420] text-white"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* List — cards (default) or table */}
+            {viewMode === "cards" ? (
+              loading ? (
+                <div className="flex items-center justify-center py-20 text-muted-foreground">
+                  <Icon name="Loader" size={22} className="mr-2 animate-spin" />
+                  Loading campaigns…
+                </div>
+              ) : projects.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Icon name="Layers" size={28} className="mb-2 text-muted-foreground" />
+                  <p className="text-sm font-medium text-foreground">No campaigns found</p>
+                </div>
+              ) : (
+                <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {projects.map((project, i) => (
+                    <ProjectCard
+                      key={project.id}
+                      project={project}
+                      index={i}
+                      onOpen={handleDealClick}
+                    />
+                  ))}
+                </div>
+              )
+            ) : (
+              <DealsTable
+                deals={projects}
+                selectedDeals={selectedDeals}
+                onSelectDeal={handleSelectDeal}
+                onSelectAll={handleSelectAll}
+                onDealClick={handleDealClick}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                onDelete={handleDeleteLead}
+                isLoading={loading}
+              />
+            )}
 
             {/* Pagination */}
             <TablePagination

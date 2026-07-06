@@ -7,7 +7,8 @@
 @layer base {
   :root {
     /* Core Colors */
-    --color-background: #FFFFFF; /* clean white background */
+    --color-background: #FAF8F6; /* warm off-white for the main content area — Notion / Linear feel */
+    --color-sidebar: #F9F9F8; /* neutral off-white with a hint of warmth — subtle vs main so the sidebar reads as its own surface */
     --color-foreground: #0F1419; /* even darker gray for maximum contrast */
     --color-border: #E2E8F0; /* clean light gray border */
     --color-input: #FFFFFF; /* clean white input */

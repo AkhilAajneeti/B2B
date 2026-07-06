@@ -66,7 +66,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       // role=manager. The check happens via the `isAdmin` flag computed
       // at the top of this component (see the comment there for the full
       // truth table).
-      adminOnly: true,
+      // adminOnly: true,
     },
     
         {

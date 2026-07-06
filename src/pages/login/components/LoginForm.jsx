@@ -88,11 +88,7 @@ const LoginForm = () => {
       /* STEP 2: get logged in user */
       const user = data.user;
 
-      // Helper — builds the loginObj from a user record + a rolesNames map.
-      // Used twice: once to make a wrapped token for the enrichment fetch
-      // (the gateway only accepts the base64-wrapped format we eventually
-      // store as auth_token, NOT the raw data.token), and again after
-      // enrichment with the full role info filled in.
+     
       const buildLoginObj = (u, rolesNamesMap) => ({
         id: u.id,
         username: u.userName,
@@ -115,15 +111,11 @@ const LoginForm = () => {
         assignedUserId: u.id,
       });
 
-      // Wrap once now so the role-enrichment fetch has a token the gateway
-      // accepts. (Passing `data.token` raw made the gateway return 500.)
       const wrappedToken = btoa(
         JSON.stringify(buildLoginObj(user, user.rolesNames)),
       );
 
-      // The login response returns a stripped user — `rolesNames` is empty
-      // for non-admin users. Enrich via /User/{id} so role-gated UI works.
-      // Wrapped in try/catch so a failed enrichment never blocks login.
+    
       let enrichedUser = user;
       try {
         const userRes = await fetch(
@@ -162,8 +154,6 @@ const LoginForm = () => {
         localStorage.setItem("acl", JSON.stringify(data.acl));
       }
 
-      // Fresh login → let the Dashboard summary alert re-appear (and re-chime)
-      // even if it was dismissed in a previous session that left flags behind.
       try {
         sessionStorage.removeItem("dashboardSummaryAlertDismissed");
         sessionStorage.removeItem("dashboardSummaryAlertSoundPlayed");

@@ -157,15 +157,9 @@ const DealDrawer = ({
         addressCity: "",
         cProject: "",
         cNextContactAt: "",
-        // Default Lead Received At to "right now" so it carries through to
-        // the save payload even when the rep doesn't touch the field. The
-        // form already *displayed* today's date via the input's fallback
-        // value, but that fallback never wrote back to formData — leaving
-        // an empty string to be sent at save time.
+        
         cLeatReceivedAt: fromEspoToLocalInput(new Date()),
         cPreference: "",
-        // Default the assigned user + team to the currently logged-in user —
-        // both can still be overridden from their dropdowns before saving.
         assignedUserId: currentUser?.id || "",
         teamId:
           currentUser?.teamsIds?.[0] ||
