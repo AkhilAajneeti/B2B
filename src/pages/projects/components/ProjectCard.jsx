@@ -30,8 +30,15 @@ const initials = (name = "") =>
     .join("") || "?";
 
 const ProjectCard = ({ project, index = 0, onOpen }) => {
-  // Leads link to a project via the lead's `cProject` field (project name).
-  const leadFilter = [{ type: "equals", attribute: "cProject", value: project.name }];
+  // Leads reference a project by its label in `cProject`. Use the clean
+  // projectNomen (falling back to name) with a "contains" match, so it works
+  // whether cProject stores the short label ("GangaCounty") or the full
+  // concatenated name ("ShashankVirtualRealtyGangaCounty").
+  const projectKey =
+    project.projectNomen && project.projectNomen !== "Default"
+      ? project.projectNomen
+      : project.name;
+  const leadFilter = [{ type: "contains", attribute: "cProject", value: projectKey }];
 
   const { data: total = 0, isLoading: loadingTotal } = useQuery({
     queryKey: ["project-leads-total", project.id],
@@ -59,7 +66,7 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
     project.projectNomen && project.projectNomen !== "Default"
       ? project.projectNomen
       : project.name;
-  const subtitle = project.name && project.name !== title ? project.name : null;
+  const subtitle = project.clientNomen && project.clientNomen !== title ? project.clientNomen : null;
 
   // No project-level live/paused field exists — derive from activity: a
   // campaign with leads reads as Live, one with none as Paused.
