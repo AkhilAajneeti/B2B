@@ -33,14 +33,22 @@ const STATUS_COLOR_MAP = {
   New: "#2563eb",             // blue — a lead just came in
   Interested: "#22c55e",      // green — positive intent
   "Not interested": "#ef4444", // red — negative outcome
-  Converted: "#10b981",       // emerald — closed-won
-  Purchased: "#10b981",       // same as Converted for consistency
+  // Site Visit Scheduled — sky palette matches the pill used elsewhere
+  // in the app (`bg-sky-50 text-sky-700`). Uses sky-500 as the solid
+  // fill so the segment reads as the same status family across the UI.
+  "Site Visit Scheduled": "#0ea5e9",
+  Purchased: "#10b981",       // emerald — closed-won
   "Follow Up": "#f59e0b",     // amber — pending action
   "Follow up": "#f59e0b",     // schema variant
   "Proposal Shared": "#8b5cf6", // purple
-  Qualified: "#0ea5e9",       // sky
+  Qualified: "#0ea5e9",       // sky (also unmapped statuses fall to fallback palette)
   Dead: "#64748b",            // slate — inactive
   Duplicate: "#94a3b8",       // slate-400
+  // "Others" is the catch-all bucket for statuses not in
+  // IMPORTANT_STATUSES. Neutral gray (Tailwind gray-500) reads as
+  // "miscellaneous / unclassified" — achromatic so it doesn't compete
+  // with any of the saturated segment colors above.
+  Others: "#6b7280",
 };
 
 const colorForStatus = (status, fallbackIndex = 0) =>
@@ -49,7 +57,6 @@ const STATUS_OPTIONS = [
   "Call Later",
   "Call Not Connecting",
   "Call Not Picked",
-  "Converted",
   "Dead",
   "Duplicate",
   "Follow Up",
@@ -62,6 +69,10 @@ const STATUS_OPTIONS = [
   "Not interested",
   "Proposal Shared",
   "Qualified",
+  // Replaces "Converted" — the CRM tracks Site Visit Scheduled as a
+  // meaningful funnel milestone (rep booked a physical visit), whereas
+  // "Converted" wasn't a real Lead status in this backend.
+  "Site Visit Scheduled",
   "Webinar",
 ];
 
@@ -213,8 +224,14 @@ const StatusChart = () => {
       [key]: value,
     }));
   };
+  // Which statuses each become their own donut segment. Everything
+  // outside this list rolls up into "Others" via the total - known
+  // reconciliation below. Replaced "Converted" with "Site Visit
+  // Scheduled" — the EspoCRM backend never had a Converted status, so
+  // that segment was always 0; Site Visit Scheduled is a real funnel
+  // milestone that reps care about.
   const IMPORTANT_STATUSES = [
-    "Converted",
+    "Site Visit Scheduled",
     "Proposal Shared",
     "Interested",
     "Follow Up",
