@@ -76,7 +76,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: null,
     },
     {
-      label: "Site Visites",
+      label: "Site Visits",
       path: "/sitevisite",
       icon: "CalendarCheck",
       // Temporarily hidden from reps while the section is being built —
@@ -172,7 +172,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-background border-r border-border z-50 lg:z-30
+          fixed top-0 left-0 h-full w-64 bg-sidebar border-r border-border z-50 lg:z-30
           transform transition-transform duration-300 ease-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `} >
