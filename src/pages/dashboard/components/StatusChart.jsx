@@ -13,17 +13,38 @@ import Select from "../../../components/ui/Select";
 import Input from "../../../components/ui/Input";
 import { fetchLeadsCount } from "services/leads.service";
 
+// Fallback palette for any status not covered by STATUS_COLOR_MAP below.
+// Used only when a new/unmapped status arrives from the backend.
 const COLORS = [
   "#06b6d4", // cyan
   "#8b5cf6", // purple
-  "#2563eb", // blue
   "#f59e0b", // amber
-  "#ef4444", // red
-  "#10b981", // green
   "#f97316", // orange
-  "#22c55e", // light green
   "#e11d48", // rose
+  "#14b8a6", // teal
 ];
+
+// Per-status color assignments. Uses status name as the key so a color
+// always sticks to its meaning regardless of which statuses appear in
+// the chart on a given day. Previously colors were assigned by array
+// INDEX, which caused e.g. "New" to appear red because it happened to
+// land at position 4 in that day's data.
+const STATUS_COLOR_MAP = {
+  New: "#2563eb",             // blue — a lead just came in
+  Interested: "#22c55e",      // green — positive intent
+  "Not interested": "#ef4444", // red — negative outcome
+  Converted: "#10b981",       // emerald — closed-won
+  Purchased: "#10b981",       // same as Converted for consistency
+  "Follow Up": "#f59e0b",     // amber — pending action
+  "Follow up": "#f59e0b",     // schema variant
+  "Proposal Shared": "#8b5cf6", // purple
+  Qualified: "#0ea5e9",       // sky
+  Dead: "#64748b",            // slate — inactive
+  Duplicate: "#94a3b8",       // slate-400
+};
+
+const colorForStatus = (status, fallbackIndex = 0) =>
+  STATUS_COLOR_MAP[status] || COLORS[fallbackIndex % COLORS.length];
 const STATUS_OPTIONS = [
   "Call Later",
   "Call Not Connecting",
@@ -330,7 +351,11 @@ const StatusChart = () => {
                 (entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={isEmpty ? "#d1d5db" : COLORS[index % COLORS.length]}
+                    fill={
+                      isEmpty
+                        ? "#d1d5db"
+                        : colorForStatus(entry.name, index)
+                    }
                     opacity={isEmpty ? 0.4 : 1}
                   />
                 ),
@@ -353,7 +378,7 @@ const StatusChart = () => {
           <div key={item.name} className="flex items-center space-x-2">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+              style={{ backgroundColor: colorForStatus(item.name, index) }}
             />
             <span>{item.name}</span>
           </div>

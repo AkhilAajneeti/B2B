@@ -47,11 +47,19 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const agents = [
-    project.assignedUserName,
-    ...Object.values(project.collaboratorsNames || {}),
-  ].filter(Boolean);
-  const uniqueAgents = [...new Set(agents)];
+  // Project team = collaborators (projects use collaboratorsNames, not an
+  // assigned user).
+  const uniqueAgents = [
+    ...new Set(Object.values(project.collaboratorsNames || {}).filter(Boolean)),
+  ];
+
+  // Title = projectNomen (the short label); the full name goes underneath.
+  // Falls back to name when projectNomen is empty or the "Default" placeholder.
+  const title =
+    project.projectNomen && project.projectNomen !== "Default"
+      ? project.projectNomen
+      : project.name;
+  const subtitle = project.name && project.name !== title ? project.name : null;
 
   // No project-level live/paused field exists — derive from activity: a
   // campaign with leads reads as Live, one with none as Paused.
@@ -84,11 +92,19 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
 
       {/* Body */}
       <div className="flex-1 px-4 pt-4">
-        <h3 className="text-[17px] font-bold tracking-tight text-foreground">
-          {project.name}
+        <h3
+          className="truncate text-[17px] font-bold tracking-tight text-foreground"
+          title={title}
+        >
+          {title}
         </h3>
-        {project.projectNomen && project.projectNomen !== "Default" && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{project.projectNomen}</p>
+        {subtitle && (
+          <p
+            className="mt-0.5 truncate text-xs text-muted-foreground"
+            title={subtitle}
+          >
+            {subtitle}
+          </p>
         )}
         {project.parentName && (
           <p className="mt-2 text-sm font-semibold text-[#6E1420]">{project.parentName}</p>
