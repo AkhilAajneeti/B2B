@@ -29,6 +29,16 @@ const initials = (name = "") =>
     .map((w) => w[0]?.toUpperCase())
     .join("") || "?";
 
+// Split run-together PascalCase / camelCase labels into words for display.
+// "GangaCounty" → "Ganga County"; "ShashankVirtualRealty" → "Shashank Virtual
+// Realty". Already-spaced names pass through unchanged.
+const humanize = (s = "") =>
+  s
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const ProjectCard = ({ project, index = 0, onOpen }) => {
   // Leads reference a project by its label in `cProject`. Use the clean
   // projectNomen (falling back to name) with a "contains" match, so it works
@@ -62,11 +72,15 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
 
   // Title = projectNomen (the short label); the full name goes underneath.
   // Falls back to name when projectNomen is empty or the "Default" placeholder.
-  const title =
+  const rawTitle =
     project.projectNomen && project.projectNomen !== "Default"
       ? project.projectNomen
       : project.name;
-  const subtitle = project.clientNomen && project.clientNomen !== title ? project.clientNomen : null;
+  const title = humanize(rawTitle);
+  const subtitle =
+    project.clientNomen && project.clientNomen !== rawTitle
+      ? humanize(project.clientNomen)
+      : null;
 
   // No project-level live/paused field exists — derive from activity: a
   // campaign with leads reads as Live, one with none as Paused.
