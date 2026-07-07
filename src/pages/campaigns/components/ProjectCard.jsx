@@ -41,23 +41,24 @@ const humanize = (s = "") =>
     .trim();
 
 const ProjectCard = ({ project, index = 0, onOpen }) => {
-  // Leads carry the clean project label in `cProjectNomen` (== the project's
-  // projectNomen) and the client in `cClientNomen` (== clientNomen). Match on
-  // those — exact, per-campaign — instead of the messy free-text `cProject`.
-  // clientNomen scopes it (handles the "Default" projectNomen case and any
-  // cross-client duplicate projectNomen); falls back to a cProject search only
-  // when neither identifier is available.
+  // Lead↔campaign linkage is inconsistent: some leads carry the clean label in
+  // `cProjectNomen` (with a messy `cProject`), others have it in `cProject`
+  // (with a null `cProjectNomen`). So match EITHER — cProjectNomen equals OR
+  // cProject contains the projectNomen. For "Default" projectNomen (no real
+  // per-campaign label) scope by `cClientNomen` (client-level) instead.
   const hasNomen = project.projectNomen && project.projectNomen !== "Default";
-  const countFilter =
-    project.clientNomen || hasNomen
-      ? [
-          ...(project.clientNomen
-            ? [{ type: "equals", attribute: "cClientNomen", value: project.clientNomen }]
-            : []),
-          ...(hasNomen
-            ? [{ type: "equals", attribute: "cProjectNomen", value: project.projectNomen }]
-            : []),
-        ]
+  const countFilter = hasNomen
+    ? [
+        {
+          type: "or",
+          value: [
+            { type: "equals", attribute: "cProjectNomen", value: project.projectNomen },
+            { type: "contains", attribute: "cProject", value: project.projectNomen },
+          ],
+        },
+      ]
+    : project.clientNomen
+      ? [{ type: "equals", attribute: "cClientNomen", value: project.clientNomen }]
       : [{ type: "contains", attribute: "cProject", value: project.name }];
 
   const filterKey = JSON.stringify(countFilter);

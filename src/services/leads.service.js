@@ -78,6 +78,22 @@ export const fetchLeadsCount = async (filters = []) => {
 
   const query = filters
     .map((f, i) => {
+      // Nested OR group — `{ type: "or", value: [ {type,attribute,value}, … ] }`.
+      // Serialized as whereGroup[i][value][j][…] for each sub-clause.
+      if (f.type === "or" && Array.isArray(f.value)) {
+        let q = `whereGroup[${i}][type]=or`;
+        f.value.forEach((sub, j) => {
+          q += `&whereGroup[${i}][value][${j}][type]=${sub.type}`;
+          if (sub.attribute) {
+            q += `&whereGroup[${i}][value][${j}][attribute]=${sub.attribute}`;
+          }
+          if (sub.value != null && sub.value !== "") {
+            q += `&whereGroup[${i}][value][${j}][value]=${encodeURIComponent(sub.value)}`;
+          }
+        });
+        return q;
+      }
+
       let q = `whereGroup[${i}][type]=${f.type}&whereGroup[${i}][attribute]=${f.attribute}`;
 
       // ✅ value handling
