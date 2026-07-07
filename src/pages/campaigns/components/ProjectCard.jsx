@@ -1,5 +1,5 @@
 import React from "react";
-import { useQuery, useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Icon from "../../../components/AppIcon";
 import { fetchLeadsCount } from "services/leads.service";
 import { fetchProjectsById } from "services/projects.service";
@@ -41,46 +41,38 @@ const humanize = (s = "") =>
     .trim();
 
 const ProjectCard = ({ project, index = 0, onOpen }) => {
-  // Leads reference a project by its label in `cProject`. Use the clean
-  // projectNomen (falling back to name) with a "contains" match, so it works
-  // whether cProject stores the short label ("GangaCounty") or the full
-  // concatenated name ("ShashankVirtualRealtyGangaCounty").
-  const projectKey =
-    project.projectNomen && project.projectNomen !== "Default"
-      ? project.projectNomen
-      : project.name;
+  // Leads carry the clean project label in `cProjectNomen` (== the project's
+  // projectNomen) and the client in `cClientNomen` (== clientNomen). Match on
+  // those — exact, per-campaign — instead of the messy free-text `cProject`.
+  // clientNomen scopes it (handles the "Default" projectNomen case and any
+  // cross-client duplicate projectNomen); falls back to a cProject search only
+  // when neither identifier is available.
+  const hasNomen = project.projectNomen && project.projectNomen !== "Default";
+  const countFilter =
+    project.clientNomen || hasNomen
+      ? [
+          ...(project.clientNomen
+            ? [{ type: "equals", attribute: "cClientNomen", value: project.clientNomen }]
+            : []),
+          ...(hasNomen
+            ? [{ type: "equals", attribute: "cProjectNomen", value: project.projectNomen }]
+            : []),
+        ]
+      : [{ type: "contains", attribute: "cProject", value: project.name }];
 
-  // `cProject` spacing is inconsistent across leads ("GangaCounty" vs "Ganga
-  // County"), and LIKE can't ignore spaces — so match both the raw and spaced
-  // variants and sum. Each lead's cProject is one string, so it matches at
-  // most one variant: no double-counting.
-  const keys = [...new Set([projectKey, humanize(projectKey)].filter(Boolean))];
+  const filterKey = JSON.stringify(countFilter);
 
-  const totalQ = useQueries({
-    queries: keys.map((k) => ({
-      queryKey: ["project-leads-total", project.id, k],
-      queryFn: () =>
-        fetchLeadsCount([{ type: "contains", attribute: "cProject", value: k }]),
-      enabled: !!k,
-      staleTime: 1000 * 60 * 5,
-    })),
+  const { data: total = 0, isLoading: loadingTotal } = useQuery({
+    queryKey: ["project-leads-total", project.id, filterKey],
+    queryFn: () => fetchLeadsCount(countFilter),
+    staleTime: 1000 * 60 * 5,
   });
-  const todayQ = useQueries({
-    queries: keys.map((k) => ({
-      queryKey: ["project-leads-today", project.id, k],
-      queryFn: () =>
-        fetchLeadsCount([
-          { type: "contains", attribute: "cProject", value: k },
-          { type: "today", attribute: "createdAt" },
-        ]),
-      enabled: !!k,
-      staleTime: 1000 * 60 * 5,
-    })),
+  const { data: today = 0 } = useQuery({
+    queryKey: ["project-leads-today", project.id, filterKey],
+    queryFn: () =>
+      fetchLeadsCount([...countFilter, { type: "today", attribute: "createdAt" }]),
+    staleTime: 1000 * 60 * 5,
   });
-
-  const loadingTotal = totalQ.some((q) => q.isLoading);
-  const total = totalQ.reduce((s, q) => s + (q.data || 0), 0);
-  const today = todayQ.reduce((s, q) => s + (q.data || 0), 0);
 
   // The list endpoint doesn't return collaboratorsNames, so fetch the project
   // detail (cached) when the list item is missing it, to show the team.
