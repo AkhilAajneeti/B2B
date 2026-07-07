@@ -10,15 +10,19 @@ export const fetchProjects = async ({
 
   let where = [];
 
-  // 🔍 SEARCH — backend filter now hits `projectNomen` (the rep-facing
-  // identifier shown in the table) rather than the raw `name` field, which
-  // is internal/admin-only. The DealsFilters placeholder ("Search Campaign…")
-  // stays the same so the rep's mental model is unchanged.
+  // 🔍 SEARCH — matches EITHER `projectNomen` (the rep-facing
+  // identifier) OR `name` (the campaign name shown in the table).
+  // Uses EspoCRM's `or` operator so a single input can search both
+  // fields at once. The query builder below serializes nested `or`
+  // clauses via `whereGroup[i][value][j][...]`.
   if (filters.search?.trim()) {
+    const q = `%${filters.search.trim()}%`;
     where.push({
-      type: "like",
-      attribute: "projectNomen",
-      value: `%${filters.search.trim()}%`,
+      type: "or",
+      value: [
+        { type: "like", attribute: "projectNomen", value: q },
+        { type: "like", attribute: "name", value: q },
+      ],
     });
   }
 
@@ -130,6 +134,26 @@ export const fetchProjects = async ({
   // 🔥 BUILD QUERY (same pattern as Leads)
   const query = where
     .map((f, i) => {
+      // Nested OR clause — used by the search filter to match any of
+      // several fields with the same value. Serialized as
+      // whereGroup[i][type]=or&whereGroup[i][value][j][type]=like&
+      //   whereGroup[i][value][j][attribute]=<field>&
+      //   whereGroup[i][value][j][value]=<val>
+      // for each sub-clause `j`. No top-level `attribute` on an OR.
+      if (f.type === "or" && Array.isArray(f.value)) {
+        let q = `whereGroup[${i}][type]=or`;
+        f.value.forEach((sub, j) => {
+          q += `&whereGroup[${i}][value][${j}][type]=${sub.type}`;
+          if (sub.attribute) {
+            q += `&whereGroup[${i}][value][${j}][attribute]=${sub.attribute}`;
+          }
+          if (sub.value !== undefined && sub.value !== "") {
+            q += `&whereGroup[${i}][value][${j}][value]=${encodeURIComponent(sub.value)}`;
+          }
+        });
+        return q;
+      }
+
       let q = `whereGroup[${i}][type]=${f.type}`;
 
       const attribute = f.attribute || "createdAt";
