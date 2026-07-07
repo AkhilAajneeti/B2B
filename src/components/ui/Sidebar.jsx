@@ -60,7 +60,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
     },
     {
       label: "My Campaigns",
-      path: "/projects",
+      path: "/campaigns",
       icon: "Layers",
       // Visible only to elevated users — type=admin, role=owner, or
       // role=manager. The check happens via the `isAdmin` flag computed

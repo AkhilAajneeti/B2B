@@ -29,7 +29,7 @@ const MeetingPage     = lazy(() => import("pages/meeting"));
 const ImportPage      = lazy(() => import("pages/import"));
 const CallPage        = lazy(() => import("./pages/call"));
 const Pipeline        = lazy(() => import("pages/pipeline"));
-const ProjectsPage    = lazy(() => import("pages/projects"));
+const ProjectsPage    = lazy(() => import("pages/campaigns"));
 const SalesTeam       = lazy(() => import("pages/sales-team"));
 const HelpPage        = lazy(() => import("pages/help"));
 
@@ -108,7 +108,7 @@ const Routes = () => {
               }
             />
             <Route
-              path="/projects"
+              path="/campaigns"
               element={
                 <ProtectedRoute>
                   <ProjectsPage />

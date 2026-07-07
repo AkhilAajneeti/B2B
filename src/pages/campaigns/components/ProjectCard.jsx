@@ -111,10 +111,6 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
       ? humanize(project.clientNomen)
       : null;
 
-  // No project-level live/paused field exists — derive from activity: a
-  // campaign with leads reads as Live, one with none as Paused.
-  const paused = !loadingTotal && total === 0;
-
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       {/* Thumbnail */}
@@ -122,16 +118,6 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
         className="relative flex h-32 items-end p-3"
         style={{ backgroundImage: GRADIENTS[index % GRADIENTS.length] }}
       >
-        <span
-          className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-            paused ? "text-slate-500" : "text-emerald-600"
-          }`}
-        >
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${paused ? "bg-slate-400" : "bg-emerald-500"}`}
-          />
-          {paused ? "Paused" : "Live"}
-        </span>
         {project.address && (
           <span className="flex items-center gap-1 text-xs font-semibold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.5)]">
             <Icon name="MapPin" size={13} />

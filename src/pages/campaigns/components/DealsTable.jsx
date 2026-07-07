@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { isOwnRecord, getStoredUser } from "../../../utils/permission.js";
+import { isOwnRecord, getStoredUser, isSupAdmin } from "../../../utils/permission.js";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
@@ -243,6 +243,12 @@ const DealsTable = ({
                   <div className="font-medium text-foreground">
                     {deal?.projectNomen || "Default"}
                   </div>
+                  {/* Client nomen — admins only (type=admin). */}
+                  {isSupAdmin() && deal?.clientNomen && (
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {deal.clientNomen}
+                    </div>
+                  )}
                 </td>
 
                 <td className="px-4 py-4">
