@@ -184,8 +184,8 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
               <span className="text-xs text-muted-foreground">Unassigned</span>
             )}
           </div>
-          <span className="text-xs font-medium text-muted-foreground">
-            {uniqueAgents.length} agent{uniqueAgents.length === 1 ? "" : "s"}
+          <span className="inline-flex items-center rounded-full border border-[#6E1420]/20 bg-[#6E1420]/5 px-2.5 py-0.5 text-xs font-medium text-[#6E1420]">
+            {uniqueAgents.length} user{uniqueAgents.length === 1 ? "" : "s"}
           </span>
         </div>
       </div>
