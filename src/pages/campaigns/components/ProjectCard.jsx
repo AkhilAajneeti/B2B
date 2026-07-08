@@ -112,7 +112,7 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
   const subtitle =
     project.clientNomen && project.clientNomen !== rawTitle
       ? humanize(project.clientNomen)
-      : "Lead Pipeline Campaign";
+      : "Campaign";
 
   // "Active" the moment a lead lands today; otherwise the campaign is warm but
   // idle. There is no `status` field on Project that the UI reads today.
