@@ -45,8 +45,15 @@ export const useNewLeads = ({ limit, page, filters }) => {
         staleTime: 1000 * 60 * 2,
         gcTime: 1000 * 60 * 10,
         retry: 1,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-        refetchOnMount: false,
+        // Leads change from under the user (other reps, imports), so this list
+        // has to self-refresh. `placeholderData` above keeps the previous rows
+        // on screen during a background refetch, so none of this flickers.
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        refetchOnMount: true,
+        // Poll once a minute. Only the mounted page+filter combo polls, and
+        // `refetchIntervalInBackground: false` stops hidden tabs from firing.
+        refetchInterval: 60 * 1000,
+        refetchIntervalInBackground: false,
     })
 }

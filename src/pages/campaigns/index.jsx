@@ -375,7 +375,7 @@ const ProjectsPage = () => {
                   <p className="text-sm font-medium text-foreground">No campaigns found</p>
                 </div>
               ) : (
-                <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-4 grid grid-cols-1 gap-[26px] sm:grid-cols-2 xl:grid-cols-3">
                   {projects.map((project, i) => (
                     <ProjectCard
                       key={project.id}

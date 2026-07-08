@@ -83,9 +83,15 @@ export default {
         'elevation-1': '0 1px 3px rgba(0, 0, 0, 0.1)',
         'elevation-2': '0 4px 6px rgba(0, 0, 0, 0.1)',
       },
+      transitionTimingFunction: {
+        // Shared easing for premium micro-interactions (ProjectCard et al).
+        premium: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+      },
       animation: {
         'fade-in': 'fadeIn 200ms ease-out',
         'slide-in': 'slideIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+        // Expanding halo behind the "Active" status dot on ProjectCard.
+        'pulse-ring': 'pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
         fadeIn: {
@@ -95,6 +101,11 @@ export default {
         slideIn: {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(0)' },
+        },
+        pulseRing: {
+          '0%': { transform: 'scale(1)', opacity: '0.55' },
+          '70%': { transform: 'scale(2.6)', opacity: '0' },
+          '100%': { transform: 'scale(2.6)', opacity: '0' },
         },
       },
       spacing: {

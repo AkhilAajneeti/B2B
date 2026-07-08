@@ -518,7 +518,7 @@ const DealDrawer = ({
     const ok = window.confirm(`Delete Stream ${activity?.createdByName}?`);
     if (!ok) return;
     await onDelete(activity.id); // 👈 parent ko bol rahe ho
-    queryClient.invalidateQueries(["lead-stream", deal.id]);
+    queryClient.invalidateQueries({ queryKey: ["lead-stream", deal.id] });
   };
   const createActivity = async () => {
     //post activity
@@ -540,7 +540,7 @@ const DealDrawer = ({
         const updated = await updateStream(editingActivityId, {
           post: activityText,
         });
-        queryClient.invalidateQueries(["lead-stream", deal.id]);
+        queryClient.invalidateQueries({ queryKey: ["lead-stream", deal.id] });
 
 
         toast.success("Activity updated");
@@ -556,7 +556,7 @@ const DealDrawer = ({
         };
 
         await createLeadActivity(payload);
-        queryClient.invalidateQueries(["lead-stream", deal.id]);
+        queryClient.invalidateQueries({ queryKey: ["lead-stream", deal.id] });
         // setmockStream((prev) => [newActivity, ...prev]);
 
         toast.success("Activity posted");

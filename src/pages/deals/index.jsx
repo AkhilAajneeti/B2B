@@ -163,7 +163,7 @@ const DealsPage = () => {
     mutationFn: createLead,
     onSuccess: () => {
       toast.success("Lead created");
-      queryClient.invalidateQueries(["leads"]);
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
   });
   const deleteLeadMutation = useMutation({
@@ -172,7 +172,7 @@ const DealsPage = () => {
       // Pass the same id as the loading toast so this replaces it instead
       // of stacking on top — otherwise the spinner stays on screen forever.
       toast.success("Deleted", { id: "delete-lead" });
-      queryClient.invalidateQueries(["leads"]);
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
     },
     onError: (err) => {
       console.error("Delete failed", err);
@@ -308,7 +308,7 @@ const DealsPage = () => {
     }
 
     await updateLead(id, payload);
-    queryClient.invalidateQueries(["leads"]);
+    queryClient.invalidateQueries({ queryKey: ["leads"] });
   };
 
   const handleDeleteLead = async (id) => {
@@ -451,7 +451,7 @@ const DealsPage = () => {
       return Promise.all(ids.map((id) => deleteLead(id)));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["leads"]);
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Selected leads deleted");
     },
   });
@@ -510,7 +510,7 @@ const DealsPage = () => {
       });
 
       // setLeads(data.list);
-      queryClient.invalidateQueries(["leads"]);
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
 
       setSelectedDeals([]);
       setIsDrawerOpen(false);

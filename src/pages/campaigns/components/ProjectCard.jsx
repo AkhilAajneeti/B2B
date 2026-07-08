@@ -3,23 +3,27 @@ import { useQuery } from "@tanstack/react-query";
 import Icon from "../../../components/AppIcon";
 import { fetchLeadsCount } from "services/leads.service";
 import { fetchProjectsById } from "services/projects.service";
+import { getLastActivityLabel } from "pages/pipeline/utils/dateHelpers";
 
-/* Thumbnail gradients, rotated per card (projects have no image field yet). */
-const GRADIENTS = [
-  "linear-gradient(135deg,#7E1524,#B5533A)",
-  "linear-gradient(135deg,#264F4A,#5B9187)",
-  "linear-gradient(135deg,#7A5A22,#C79A4A)",
-  "linear-gradient(135deg,#4A3550,#8B6FA0)",
-  "linear-gradient(135deg,#2C4A6E,#6C93BE)",
-  "linear-gradient(135deg,#5C6B2A,#9CB05A)",
+/* Per-card accent pair, rotated by index. `tint` is the hover border colour,
+   `glow` the halo shadow. Index 0 is the brand maroon. */
+const ACCENTS = [
+  { from: "#7E1524", to: "#B5533A", tint: "rgba(126,21,36,0.28)", glow: "rgba(126,21,36,0.22)" },
+  { from: "#264F4A", to: "#5B9187", tint: "rgba(38,79,74,0.28)", glow: "rgba(38,79,74,0.22)" },
+  { from: "#7A5A22", to: "#C79A4A", tint: "rgba(122,90,34,0.28)", glow: "rgba(122,90,34,0.22)" },
+  { from: "#4A3550", to: "#8B6FA0", tint: "rgba(74,53,80,0.28)", glow: "rgba(74,53,80,0.22)" },
+  { from: "#2C4A6E", to: "#6C93BE", tint: "rgba(44,74,110,0.28)", glow: "rgba(44,74,110,0.22)" },
+  { from: "#5C6B2A", to: "#9CB05A", tint: "rgba(92,107,42,0.28)", glow: "rgba(92,107,42,0.22)" },
 ];
 
+/* Solid fills for the avatar stack — deliberately not the accent pairs, so the
+   team reads as its own visual system rather than more card chrome. */
 const AVATAR_COLORS = [
-  "bg-[#6E1420]",
-  "bg-teal-600",
-  "bg-amber-600",
-  "bg-indigo-600",
-  "bg-rose-600",
+  "#6E1420",
+  "#0F766E",
+  "#B45309",
+  "#4338CA",
+  "#BE123C",
 ];
 
 const initials = (name = "") =>
@@ -40,7 +44,11 @@ const humanize = (s = "") =>
     .replace(/\s+/g, " ")
     .trim();
 
+const MAX_AVATARS = 4;
+
 const ProjectCard = ({ project, index = 0, onOpen }) => {
+  const accent = ACCENTS[index % ACCENTS.length];
+
   // Lead↔campaign linkage is inconsistent: some leads carry the clean label in
   // `cProjectNomen` (with a messy `cProject`), others have it in `cProject`
   // (with a null `cProjectNomen`). So match EITHER — cProjectNomen equals OR
@@ -91,6 +99,8 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
   const uniqueAgents = [
     ...new Set(Object.values(collaboratorsNames).filter(Boolean)),
   ];
+  const shownAgents = uniqueAgents.slice(0, MAX_AVATARS);
+  const overflow = uniqueAgents.length - shownAgents.length;
 
   // Title = projectNomen (the short label); the full name goes underneath.
   // Falls back to name when projectNomen is empty or the "Default" placeholder.
@@ -102,98 +112,238 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
   const subtitle =
     project.clientNomen && project.clientNomen !== rawTitle
       ? humanize(project.clientNomen)
-      : null;
+      : "Lead Pipeline Campaign";
+
+  // "Active" the moment a lead lands today; otherwise the campaign is warm but
+  // idle. There is no `status` field on Project that the UI reads today.
+  const isActive = today > 0;
+
+  // Momentum = share of the campaign's lifetime leads that arrived today. Both
+  // operands are real counts, so this is not illustrative. It's naturally tiny
+  // on mature campaigns (2/500 = 0.4%), so the *bar* floors at 4% to stay
+  // visible while the *label* prints the true figure.
+  const momentum = total > 0 ? (today / total) * 100 : 0;
+  const momentumBar = momentum > 0 ? Math.min(100, Math.max(4, momentum)) : 0;
+  const momentumLabel =
+    momentum > 0 && momentum < 10 ? momentum.toFixed(1) : Math.round(momentum);
+
+  // EspoCRM stamps `modifiedAt` on every entity; the list payload may omit it,
+  // in which case the cached detail fetch above fills it in. `createdAt` is the
+  // last resort, and getLastActivityLabel renders "No activity" for null.
+  const lastActivity = getLastActivityLabel(
+    project.modifiedAt || detail?.modifiedAt || project.createdAt,
+  );
+
+  const accentVars = {
+    "--accent-from": accent.from,
+    "--accent-to": accent.to,
+    "--accent-tint": accent.tint,
+    "--accent-glow": accent.glow,
+  };
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
-      {/* Thumbnail */}
+    <article
+      style={accentVars}
+      className="group relative flex flex-col overflow-hidden rounded-[20px] border border-[rgba(20,20,30,0.08)] bg-card shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_6px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:border-[color:var(--accent-tint)] hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_18px_40px_-12px_var(--accent-glow)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+    >
+      {/* 3px accent rule across the top */}
       <div
-        className="relative flex h-32 items-end p-3"
-        style={{ backgroundImage: GRADIENTS[index % GRADIENTS.length] }}
-      >
-        {project.address && (
-          <span className="flex items-center gap-1 text-xs font-semibold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.5)]">
-            <Icon name="MapPin" size={13} />
-            {project.address}
-          </span>
-        )}
-      </div>
+        aria-hidden="true"
+        className="h-[3px] w-full bg-gradient-to-r from-[color:var(--accent-from)] to-[color:var(--accent-to)]"
+      />
 
-      {/* Body */}
-      <div className="flex-1 px-4 pt-4">
-        <h3
-          className="truncate text-[17px] font-bold tracking-tight text-foreground"
-          title={title}
-        >
-          {title}
-        </h3>
-        {subtitle && (
-          <p
-            className="mt-0.5 truncate text-xs text-muted-foreground"
-            title={subtitle}
+      <div className="flex flex-1 flex-col gap-4 p-5">
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <header className="flex items-start gap-3">
+          <div
+            aria-hidden="true"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-gradient-to-br from-[color:var(--accent-from)] to-[color:var(--accent-to)] text-[13px] font-bold tracking-tight text-white shadow-[0_2px_6px_rgba(16,24,40,.12)]"
           >
-            {subtitle}
-          </p>
-        )}
-        {project.parentName && (
-          <p className="mt-2 text-sm font-semibold text-[#6E1420]">{project.parentName}</p>
-        )}
-
-        {/* Lead stats */}
-        <div className="mt-3 flex items-end gap-6">
-          <div>
-            <div className="text-2xl font-bold leading-none text-foreground">
-              {loadingTotal ? "—" : total}
-            </div>
-            <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Total leads
-            </div>
+            {initials(title)}
           </div>
-          <div>
-            <div className="text-sm font-bold leading-none text-emerald-600">
-              {today > 0 ? `+${today}` : "0"}
-            </div>
-            <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Today
-            </div>
-          </div>
-        </div>
 
-        {/* Agents */}
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-          <div className="flex items-center">
-            {uniqueAgents.slice(0, 4).map((a, i) => (
-              <span
-                key={i}
-                className={`-ml-1.5 grid h-7 w-7 place-items-center rounded-full border-2 border-card text-[10px] font-semibold text-white first:ml-0 ${
-                  AVATAR_COLORS[i % AVATAR_COLORS.length]
-                }`}
-                title={a}
-              >
-                {initials(a)}
+          <div className="min-w-0 flex-1">
+            <h3
+              className="truncate text-[14.5px] font-bold leading-tight tracking-[-0.01em] text-foreground"
+              title={title}
+            >
+              {title}
+            </h3>
+            <p
+              className="mt-0.5 truncate text-[11.5px] leading-tight text-muted-foreground"
+              title={subtitle}
+            >
+              {subtitle}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-[3px] text-[10.5px] font-bold uppercase tracking-[0.06em] ${
+                isActive
+                  ? "border-emerald-600/20 bg-emerald-50 text-emerald-700"
+                  : "border-slate-300/60 bg-slate-50 text-slate-500"
+              }`}
+            >
+              <span className="relative grid h-1.5 w-1.5 place-items-center">
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute h-full w-full rounded-full bg-emerald-500 animate-pulse-ring motion-reduce:hidden"
+                  />
+                )}
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    isActive ? "bg-emerald-500" : "bg-slate-400"
+                  }`}
+                />
               </span>
-            ))}
-            {uniqueAgents.length === 0 && (
-              <span className="text-xs text-muted-foreground">Unassigned</span>
+              {isActive ? "Active" : "Steady"}
+            </span>
+            <span className="text-[10px] leading-none text-muted-foreground">
+              {lastActivity}
+            </span>
+          </div>
+        </header>
+
+        {/* Address / parent survive the redesign — the old thumbnail that
+            carried them is gone. Both are optional on Project. */}
+        {(project.address || project.parentName) && (
+          <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            {project.address && (
+              <span className="inline-flex min-w-0 items-center gap-1">
+                <Icon name="MapPin" size={11} className="shrink-0" />
+                <span className="truncate">{project.address}</span>
+              </span>
+            )}
+            {project.parentName && (
+              <span className="truncate font-semibold text-[color:var(--accent-from)]">
+                {project.parentName}
+              </span>
             )}
           </div>
-          <span className="inline-flex items-center rounded-full border border-[#6E1420]/20 bg-[#6E1420]/5 px-2.5 py-0.5 text-xs font-medium text-[#6E1420]">
-            {uniqueAgents.length} user{uniqueAgents.length === 1 ? "" : "s"}
-          </span>
-        </div>
-      </div>
+        )}
 
-      {/* Actions */}
-      <div className="mt-3 flex gap-2 border-t border-border p-3">
-        <button
-          onClick={() => onOpen(project)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#6E1420] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#57101a]"
-        >
-          <Icon name="ArrowUpRight" size={15} />
-          Open
-        </button>
+        {/* ── Metrics panel ──────────────────────────────────────── */}
+        <div className="rounded-[14px] border border-[rgba(20,20,30,0.07)] bg-gradient-to-b from-slate-50/80 to-white p-3.5">
+          <dl className="flex items-stretch">
+            <div className="flex-1 pr-3.5">
+              <dt className="text-[9.5px] font-extrabold uppercase tracking-[0.09em] text-muted-foreground">
+                Total Leads
+              </dt>
+              <dd className="mt-1 text-[22px] font-bold leading-none tabular-nums tracking-tight text-foreground">
+                {loadingTotal ? "—" : total.toLocaleString("en-IN")}
+              </dd>
+            </div>
+
+            <div aria-hidden="true" className="w-px shrink-0 bg-[rgba(20,20,30,0.08)]" />
+
+            <div className="flex-1 pl-3.5">
+              <dt className="text-[9.5px] font-extrabold uppercase tracking-[0.09em] text-muted-foreground">
+                New Today
+              </dt>
+              <dd
+                className={`mt-1 flex items-center gap-1 text-[22px] font-bold leading-none tabular-nums tracking-tight ${
+                  isActive ? "text-emerald-600" : "text-foreground"
+                }`}
+              >
+                {today > 0 ? `+${today}` : "0"}
+                {isActive && (
+                  <Icon
+                    name="TrendingUp"
+                    size={13}
+                    className="mb-px shrink-0"
+                    aria-hidden="true"
+                  />
+                )}
+              </dd>
+            </div>
+          </dl>
+
+          {/* Momentum */}
+          <div className="mt-3.5">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[9.5px] font-extrabold uppercase tracking-[0.09em] text-muted-foreground">
+                Momentum
+              </span>
+              <span className="text-[10.5px] font-bold tabular-nums text-foreground">
+                {momentumLabel}%
+              </span>
+            </div>
+            <div
+              className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[rgba(20,20,30,0.07)]"
+              role="progressbar"
+              aria-valuenow={Math.round(momentum)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Momentum: ${momentumLabel}% of leads arrived today`}
+            >
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[color:var(--accent-from)] to-[color:var(--accent-to)] transition-[width] duration-700 ease-premium motion-reduce:transition-none"
+                style={{ width: `${momentumBar}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Footer ─────────────────────────────────────────────── */}
+        <footer className="mt-auto flex items-center justify-between gap-3 pt-1">
+          {uniqueAgents.length === 0 ? (
+            <span className="text-[11px] text-muted-foreground">Unassigned</span>
+          ) : (
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex transition-transform duration-300 ease-premium group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0">
+                {shownAgents.map((a) => (
+                  <span
+                    key={a}
+                    title={a}
+                    style={{
+                      backgroundColor:
+                        AVATAR_COLORS[
+                          [...a].reduce((h, c) => h + c.charCodeAt(0), 0) %
+                            AVATAR_COLORS.length
+                        ],
+                    }}
+                    className="-ml-2 grid h-7 w-7 place-items-center rounded-full text-[9.5px] font-bold text-white ring-2 ring-card first:ml-0"
+                  >
+                    {initials(a)}
+                  </span>
+                ))}
+                {overflow > 0 && (
+                  <span className="-ml-2 grid h-7 w-7 place-items-center rounded-full bg-slate-100 text-[9.5px] font-bold text-slate-600 ring-2 ring-card">
+                    +{overflow}
+                  </span>
+                )}
+              </div>
+              <span className="truncate text-[10.5px] font-semibold text-muted-foreground">
+                {uniqueAgents.length} member{uniqueAgents.length === 1 ? "" : "s"}
+              </span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onOpen(project)}
+            aria-label={`Open ${title}`}
+            className="group/cta relative inline-flex shrink-0 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-[color:var(--accent-from)] to-[color:var(--accent-to)] py-1.5 pl-4 pr-1.5 text-[12px] font-bold text-white transition-all duration-300 ease-premium hover:-translate-y-0.5 hover:shadow-[0_8px_18px_-6px_var(--accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent-to)] focus-visible:ring-offset-2 focus-visible:ring-offset-card motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+          >
+            {/* diagonal light sweep */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 -left-8 w-8 -skew-x-12 bg-white/25 opacity-0 transition-transform duration-700 ease-premium group-hover/cta:translate-x-[220px] group-hover/cta:opacity-100 motion-reduce:hidden"
+            />
+            <span className="relative">Open</span>
+            <span
+              aria-hidden="true"
+              className="relative grid h-5 w-5 place-items-center rounded-full bg-white/20 transition-transform duration-300 ease-premium group-hover/cta:translate-x-0.5 motion-reduce:transition-none"
+            >
+              <Icon name="ArrowRight" size={12} />
+            </span>
+          </button>
+        </footer>
       </div>
-    </div>
+    </article>
   );
 };
 
