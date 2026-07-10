@@ -1,157 +1,76 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import Icon from "../../../components/AppIcon";
-import Button from "../../../components/ui/Button";
-import { Checkbox } from "../../../components/ui/Checkbox";
-import { deleteLead } from "services/leads.service";
 
-const DealsTable = ({
-  deals,
-  selectedDeals,
-  onDealClick,
-  sortConfig,
-  onSort,
-  isLoading,
-}) => {
-  const [hoveredRow, setHoveredRow] = useState(null);
-
+/**
+ * Read-only leads table for the Reports page. Acting on a lead (open/edit/
+ * delete) lives on the Deals page — this surface is purely for scanning,
+ * comparing, and sorting. No row click, no checkboxes, no bulk actions.
+ */
+const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
   const formatDate = (date) => {
-    if (!date) return "—"; // null / undefined / empty
-
-    const parsedDate = new Date(date);
-
-    if (isNaN(parsedDate.getTime())) return "—"; // invalid date
+    if (!date) return "—";
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "—";
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    })?.format(new Date(date));
+    }).format(d);
   };
 
-  const getStageColor = (stage) => {
+  const getStatusTag = (status) => {
     const colors = {
-      New: "bg-blue-50 text-blue-700 border border-blue-200",
-      Interested:
-        "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      "Follow up":
-        "bg-indigo-50 text-indigo-700 border border-indigo-200",
-      "Call Later":
-        "bg-amber-50 text-amber-700 border border-amber-200",
-      "Call Not Connecting":
-        "bg-rose-50 text-rose-700 border border-rose-200",
-      "Call Not Picked":
-        "bg-red-50 text-red-700 border border-red-200",
-      Broker:
-        "bg-violet-50 text-violet-700 border border-violet-200",
-      Dead:
-        "bg-slate-100 text-slate-700 border border-slate-300",
-      "Fake Lead":
-        "bg-pink-50 text-pink-700 border border-pink-200",
-      "Invalid Number":
-        "bg-gray-100 text-gray-700 border border-gray-300",
-      "Irrelevant Lead":
-        "bg-orange-50 text-orange-700 border border-orange-200",
-      "Low Budget":
-        "bg-yellow-50 text-yellow-700 border border-yellow-200",
-      "Low Interest":
-        "bg-lime-50 text-lime-700 border border-lime-200",
-      "Not Interested":
-        "bg-red-50 text-red-700 border border-red-200",
-      "Other Location":
-        "bg-cyan-50 text-cyan-700 border border-cyan-200",
-      Purchased:
-        "bg-green-50 text-green-700 border border-green-200 shadow-sm",
-      "Site Visit Done":
-        "bg-teal-50 text-teal-700 border border-teal-200",
-      "Site Visit Scheduled":
-        "bg-sky-50 text-sky-700 border border-sky-200",
-      "Switch Off":
-        "bg-neutral-100 text-neutral-700 border border-neutral-300",
-      QDTD:
-        "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
+      New: "bg-blue-50 text-blue-700 border-blue-200",
+      Interested: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      "Follow up": "bg-indigo-50 text-indigo-700 border-indigo-200",
+      "Call Later": "bg-amber-50 text-amber-700 border-amber-200",
+      "Call Not Connecting": "bg-rose-50 text-rose-700 border-rose-200",
+      "Call Not Picked": "bg-red-50 text-red-700 border-red-200",
+      Broker: "bg-violet-50 text-violet-700 border-violet-200",
+      Dead: "bg-slate-100 text-slate-600 border-slate-300",
+      "Fake Lead": "bg-pink-50 text-pink-700 border-pink-200",
+      "Invalid Number": "bg-gray-100 text-gray-600 border-gray-300",
+      "Irrelevant Lead": "bg-orange-50 text-orange-700 border-orange-200",
+      "Low Budget": "bg-yellow-50 text-yellow-700 border-yellow-200",
+      "Low Interest": "bg-lime-50 text-lime-700 border-lime-200",
+      "Not Interested": "bg-red-50 text-red-700 border-red-200",
+      "Other Location": "bg-cyan-50 text-cyan-700 border-cyan-200",
+      Purchased: "bg-green-50 text-green-700 border-green-200",
+      "Site Visit Done": "bg-teal-50 text-teal-700 border-teal-200",
+      "Site Visit Scheduled": "bg-sky-50 text-sky-700 border-sky-200",
+      "Switch Off": "bg-neutral-100 text-neutral-600 border-neutral-300",
+      QDTD: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
+      Duplicate: "bg-slate-100 text-slate-600 border-slate-300",
     };
-
-    return (
-      colors?.[stage] ||
-      "bg-gray-100 text-gray-700 border border-gray-200"
-    );
+    return colors?.[status] || "bg-gray-100 text-gray-600 border-gray-200";
   };
-  const getSourceColor = (source) => {
+
+  const getSourceTag = (source) => {
     const colors = {
-      Call: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      Email: "bg-blue-50 text-blue-700 border border-blue-200",
-      "Existing Customer":
-        "bg-violet-50 text-violet-700 border border-violet-200",
-      Partner:
-        "bg-orange-50 text-orange-700 border border-orange-200",
-      "Public Relations":
-        "bg-pink-50 text-pink-700 border border-pink-200",
-      "Web Site":
-        "bg-cyan-50 text-cyan-700 border border-cyan-200",
-      Campaign:
-        "bg-amber-50 text-amber-700 border border-amber-200",
-      Other:
-        "bg-slate-100 text-slate-700 border border-slate-200",
-      ACL:
-        "bg-gradient-to-r from-fuchsia-50 to-violet-50 text-violet-700 border border-violet-200 shadow-sm",
+      Call: "bg-emerald-50 text-emerald-700",
+      Email: "bg-blue-50 text-blue-700",
+      "Existing Customer": "bg-violet-50 text-violet-700",
+      Partner: "bg-orange-50 text-orange-700",
+      "Public Relations": "bg-pink-50 text-pink-700",
+      "Web Site": "bg-cyan-50 text-cyan-700",
+      Campaign: "bg-amber-50 text-amber-700",
+      facebook: "bg-blue-50 text-blue-700",
+      IVR: "bg-slate-100 text-slate-600",
+      Other: "bg-slate-100 text-slate-600",
+      ACL: "bg-violet-50 text-violet-700",
     };
-    return (
-      colors?.[source] ||
-      "bg-gray-100 text-gray-700 border border-gray-200"
-    );
+    return colors?.[source] || "bg-slate-100 text-slate-600";
   };
 
-  const getStageGradient = (stage) => {
-    const gradients = {
-      New: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
-      Interested:
-        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
-      "Follow up":
-        "bg-gradient-to-br from-indigo-50/70 to-background border-indigo-100",
-      "Call Later":
-        "bg-gradient-to-br from-amber-50/70 to-background border-amber-100",
-      "Call Not Connecting":
-        "bg-gradient-to-br from-rose-50/70 to-background border-rose-100",
-      "Call Not Picked":
-        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
-      Broker:
-        "bg-gradient-to-br from-violet-50/70 to-background border-violet-100",
-      Dead: "bg-gradient-to-br from-slate-100/70 to-background border-slate-200",
-      "Fake Lead":
-        "bg-gradient-to-br from-pink-50/70 to-background border-pink-100",
-      "Invalid Number":
-        "bg-gradient-to-br from-gray-100/70 to-background border-gray-200",
-      "Irrelevant Lead":
-        "bg-gradient-to-br from-orange-50/70 to-background border-orange-100",
-      "Low Budget":
-        "bg-gradient-to-br from-yellow-50/70 to-background border-yellow-100",
-      "Low Interest":
-        "bg-gradient-to-br from-lime-50/70 to-background border-lime-100",
-      "Not Interested":
-        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
-      "Other Location":
-        "bg-gradient-to-br from-cyan-50/70 to-background border-cyan-100",
-      Purchased:
-        "bg-gradient-to-br from-green-50/70 to-background border-green-100",
-      "Site Visit Done":
-        "bg-gradient-to-br from-teal-50/70 to-background border-teal-100",
-      "Site Visit Scheduled":
-        "bg-gradient-to-br from-sky-50/70 to-background border-sky-100",
-      "Switch Off":
-        "bg-gradient-to-br from-neutral-100/70 to-background border-neutral-200",
-    };
-
-    return (
-      gradients?.[stage] ||
-      "bg-gradient-to-br from-background to-muted/20 border-border/50"
-    );
-  };
-
+  const AVATAR = ["#6E1420", "#0F766E", "#B45309", "#4338CA", "#BE123C", "#0369A1"];
+  const initials = (name = "") =>
+    name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "?";
+  const avatarColor = (name = "") =>
+    AVATAR[[...name].reduce((h, c) => h + c.charCodeAt(0), 0) % AVATAR.length];
 
   const getSortIcon = (column) => {
     if (sortConfig?.key !== column) {
-      return (
-        <Icon name="ArrowUpDown" size={16} className="text-muted-foreground" />
-      );
+      return <Icon name="ArrowUpDown" size={16} className="text-muted-foreground" />;
     }
     return sortConfig?.direction === "asc" ? (
       <Icon name="ArrowUp" size={16} className="text-primary" />
@@ -160,136 +79,130 @@ const DealsTable = ({
     );
   };
 
-  const handleQuickAction = (e, action, deal) => {
-    e?.stopPropagation();
-    onDealClick(deal);
-    console.log(`${action} action for deal:`, deal?.id);
-  };
-  const handleDelete = async (e, deal) => {
-    e.stopPropagation();
-    const ok = window.confirm(`Delete lead ${deal?.name}?`);
-    if (!ok) return;
+  const SortHeader = ({ label, column, align = "left" }) => (
+    <th className={`px-6 py-4 ${align === "right" ? "text-right" : "text-left"}`}>
+      <button
+        type="button"
+        onClick={() => onSort?.(column)}
+        className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.05em] text-muted-foreground transition-colors hover:text-foreground ${
+          align === "right" ? "flex-row-reverse" : ""
+        }`}
+      >
+        <span>{label}</span>
+        {getSortIcon(column)}
+      </button>
+    </th>
+  );
 
-    await onDelete(deal.id); // 👈 parent ko bol rahe ho
-  };
+  const rows = useMemo(() => deals || [], [deals]);
 
-  // `deals` is already a single page of results from the backend
-  // (parent fetches via `useNewLeads({ limit, page, filters })`). Slicing it
-  // again with currentPage/itemsPerPage was double-paginating — page 2 was
-  // trying to slice indices [10..20] of a 10-item page array, giving []
-  // back and rendering an empty table. Use `deals` as-is.
-  const paginatedDeals = useMemo(() => deals || [], [deals]);
-
-  const isAllSelected =
-    selectedDeals?.length === paginatedDeals?.length &&
-    paginatedDeals?.length > 0;
-  const isIndeterminate =
-    selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
   const SkeletonRow = () => (
     <tr className="animate-pulse">
-      <td className="px-4 py-4">
-        <div className="h-4 w-24 bg-gray-300/70 rounded"></div>
-      </td>
-      <td className="px-4 py-4">
-        <div className="h-4 w-32 bg-gray-300/60 rounded"></div>
-      </td>
-      <td className="px-4 py-4">
-        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
-      </td>
-      <td className="px-4 py-4">
-        <div className="h-5 w-16 bg-gray-300/60 rounded-full"></div>
-      </td>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <td key={i} className="px-6 py-5">
+          <div className={`h-4 rounded bg-muted ${i === 0 ? "w-36" : "w-24"}`} />
+        </td>
+      ))}
     </tr>
   );
+
+  const StatusTag = ({ status }) => (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold ${getStatusTag(status)}`}
+    >
+      <span className="h-2 w-2 rounded-full bg-current opacity-70" />
+      {status || "—"}
+    </span>
+  );
+
+  const SourceTag = ({ source }) =>
+    source ? (
+      <span className={`inline-flex items-center rounded-lg px-3 py-1.5 text-[13px] font-semibold ${getSourceTag(source)}`}>
+        {source === "ACL" ? "Aajneeti" : source}
+      </span>
+    ) : (
+      <span className="text-sm text-muted-foreground">—</span>
+    );
+
+  const Assignee = ({ name }) =>
+    name ? (
+      <div className="flex items-center gap-2.5">
+        <span
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white shadow-sm"
+          style={{ backgroundColor: avatarColor(name) }}
+        >
+          {initials(name)}
+        </span>
+        <span className="truncate text-[14px] font-medium capitalize text-foreground">{name}</span>
+      </div>
+    ) : (
+      <span className="text-sm text-muted-foreground">Unassigned</span>
+    );
+
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-muted">
+        <Icon name="SearchX" size={26} className="text-muted-foreground/60" />
+      </span>
+      <p className="text-sm text-muted-foreground">No leads match these filters</p>
+    </div>
+  );
+
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
-      {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-muted/50 border-b border-border">
+    <div className="bg-card">
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full border-collapse">
+          <thead className="border-b border-border bg-muted/50">
             <tr>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("name")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Name</span>
-                  {getSortIcon("name")}
-                </button>
+              <SortHeader label="Name" column="name" />
+              <th className="px-6 py-4 text-left">
+                <span className="text-xs font-bold uppercase tracking-[0.05em] text-muted-foreground">
+                  Project
+                </span>
               </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("account")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Project Name</span>
-                  {getSortIcon("Project Name")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("Source")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Source</span>
-                  {getSortIcon("value")}
-                </button>
-              </th>
-              <th className="d-flex justify-content-center px-4 py-3">
-                <button
-                  onClick={() => onSort("Status")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Status</span>
-                  {getSortIcon("owner")}
-                </button>
-              </th>
+              <SortHeader label="Source" column="source" />
+              <SortHeader label="Status" column="status" />
+              <SortHeader label="Assigned" column="assignedUserName" />
+              <SortHeader label="Created" column="createdAt" align="right" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody>
             {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-            ) : !paginatedDeals?.length ? (
+              Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
+            ) : !rows.length ? (
               <tr>
-                <td colSpan="4">
-                  <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
-                    No leads available
-                  </div>
+                <td colSpan="6">
+                  <EmptyState />
                 </td>
               </tr>
             ) : (
-              paginatedDeals?.map((deal) => (
+              rows.map((deal) => (
                 <tr
                   key={deal?.id}
-                  onMouseEnter={() => setHoveredRow(deal?.id)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                  className="hover:bg-sky-50 cursor-pointer transition-smooth"
+                  className="border-b border-border/60 transition-colors even:bg-muted/[0.18] last:border-b-0 hover:bg-sky-50"
                 >
-                  <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
-                    <div className="font-medium text-foreground capitalize">
+                  <td className="px-6 py-4">
+                    <span className="text-[17px] font-semibold capitalize text-foreground">
                       {deal?.name}
-                    </div>
+                    </span>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="text-foreground">{deal?.cProjectName || deal?.cProject || "None"}</div>
+                  <td className="px-6 py-4">
+                    <span className="text-[14px] text-muted-foreground">
+                      {deal?.cProjectName || deal?.cProject || "—"}
+                    </span>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getSourceColor(
-                      deal?.source,
-                    )}`}>
-                      {deal?.source === "ACL" ? "Aajneeti" : deal?.source}
-                    </div>
+                  <td className="px-6 py-4">
+                    <SourceTag source={deal?.source} />
                   </td>
-                  <td className="px-4 py-4">
-                    <div
-                      className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
-                        deal?.status,
-                      )}`}
-                    >
-                      <span className={`text-sm text-foreg roundunded-full `}>
-                        {deal?.status}
-                      </span>
-                    </div>
+                  <td className="px-6 py-4">
+                    <StatusTag status={deal?.status} />
+                  </td>
+                  <td className="px-6 py-4">
+                    <Assignee name={deal?.assignedUserName} />
+                  </td>
+                  <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">
+                    {formatDate(deal?.createdAt)}
                   </td>
                 </tr>
               ))
@@ -297,75 +210,46 @@ const DealsTable = ({
           </tbody>
         </table>
       </div>
-      {/* Mobile Cards */}
 
-      <div className="md:hidden">
-        {paginatedDeals?.map((deal) => (
-          <div
-            key={deal?.id}
-            onClick={() => onDealClick(deal)}
-            className={`
-    mx-3 my-2 p-4 rounded-2xl border
-    ${getStageGradient(deal?.status)}
-    hover:shadow-md
-    active:scale-[0.99]
-    transition-all duration-200
-  `}
-          >
-            <div className="flex items-start gap-3">
-              {/* Checkbox */}
-              <Checkbox
-                checked={selectedDeals?.includes(deal?.id)}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  onSelectDeal(deal?.id, e.target.checked);
-                }}
-                className="mt-1"
-              />
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                {/* Top Row */}
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-foreground truncate capitalize">
-                    {deal?.name}
-                  </h3>
-
-                  <span
-                    className={`px-2 py-0.5 text-xs rounded-full ${getStageColor(
-                      deal?.status,
-                    )}`}
-                  >
-                    {deal?.status}
-                  </span>
-                </div>
-
-                {/* Project Name */}
-                {deal?.cProject && (
-                  <div className="text-sm text-muted-foreground mt-1 truncate">
-                    {deal?.cProject}
-                  </div>
-                )}
-
-                {/* Assigned User */}
-                {deal?.assignedUserName && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                    <Icon name="User" size={12} />
-                    Assigned to{" "}
-                    <span className="truncate capitalize">{deal?.assignedUserName}</span>
-                  </div>
-                )}
-
-                {/* Created At */}
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                  <Icon name="Calendar" size={12} />
-                  Created: {formatDate(deal?.createdAt)}
-                </div>
-              </div>
-              
+      {/* Mobile cards */}
+      <div className="divide-y divide-border/60 md:hidden">
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="animate-pulse p-5">
+              <div className="mb-2.5 h-4 w-36 rounded bg-muted" />
+              <div className="h-3.5 w-28 rounded bg-muted" />
             </div>
-          </div>
-        ))}
+          ))
+        ) : !rows.length ? (
+          <EmptyState />
+        ) : (
+          rows.map((deal) => (
+            <div key={deal?.id} className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="min-w-0 flex-1 truncate text-[17px] font-semibold capitalize text-foreground">
+                  {deal?.name}
+                </h3>
+                <StatusTag status={deal?.status} />
+              </div>
+
+              {(deal?.cProjectName || deal?.cProject) && (
+                <div className="mt-1 truncate text-[13px] text-muted-foreground">
+                  {deal?.cProjectName || deal?.cProject}
+                </div>
+              )}
+
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <SourceTag source={deal?.source} />
+                <Assignee name={deal?.assignedUserName} />
+              </div>
+
+              <div className="mt-3 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                <Icon name="Calendar" size={13} />
+                Created {formatDate(deal?.createdAt)}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -3,11 +3,11 @@ import { motion } from "framer-motion";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
 import KPICard from "./components/KPICard";
-import Icon from "../../components/AppIcon";
+import ActivityFunnel from "./components/ActivityFunnel";
+import InsightSheet from "./components/InsightSheet";
 import DashboardSummaryAlert from "./components/DashboardSummaryAlert";
 import { fetchLeads } from "services/leads.service";
 import { fetchMeeting } from "services/meeting.service";
-import Button from "../../components/ui/Button";
 import { useLeadsCount } from "hooks/useLeads";
 import { useQuery } from "@tanstack/react-query";
 
@@ -255,6 +255,47 @@ const Dashboard = () => {
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
+  // Opens the drill-down sheet for a funnel stage. Each stage filters a
+  // different source (meetings vs. leads-by-status), all scoped to today.
+  const openInsight = (key) => {
+    let filtered = [];
+    if (key === "meetings") {
+      filtered = meetingsList
+        .filter((m) => {
+          const createdToday = m.createdAt && isToday(m.createdAt);
+          const scheduledToday = m.dateStart && isToday(m.dateStart);
+          return createdToday || scheduledToday;
+        })
+        .map((m) => {
+          const createdToday = m.createdAt && isToday(m.createdAt);
+          const scheduledToday = m.dateStart && isToday(m.dateStart);
+          return {
+            ...m,
+            insightType:
+              createdToday && scheduledToday
+                ? "Created & Scheduled Today"
+                : createdToday
+                  ? "Created Today"
+                  : "Scheduled Today",
+          };
+        });
+    } else if (key === "purchased") {
+      filtered = leads.filter(
+        (l) => l.status === "Purchased" && isToday(l.modifiedAt),
+      );
+    } else if (key === "visits") {
+      filtered = leads.filter(
+        (l) => l.status === "Site Visit Done" && isToday(l.modifiedAt),
+      );
+    } else if (key === "siteVisitsScheduled") {
+      filtered = leads.filter(
+        (l) => l.status === "Site Visit Scheduled" && isToday(l.modifiedAt),
+      );
+    }
+    setInsightData(filtered);
+    setActiveInsight(key);
+  };
+
   const kpiData = [
     {
       title: "This Month Leads",
@@ -264,27 +305,32 @@ const Dashboard = () => {
       icon: "Users",
       iconBg: "bg-blue-100",
       iconColor: "#3B82F6",
-      comparisonLabel: "compared to last month",
+      comparisonLabel: "last month",
     },
     {
       title: "Today Leads",
       value: today,
+      // Day-over-day is an absolute count, not a %: daily percentages are too
+      // noisy to be meaningful. The "vs yesterday" label marks it as a count.
       change: todayDiff >= 0 ? `+${todayDiff}` : `${todayDiff}`,
       changeType: todayDiff >= 0 ? "positive" : "negative",
       icon: "Calendar",
       iconBg: "bg-green-100",
       iconColor: "#10B981",
-      comparisonLabel: "since yesterday",
+      comparisonLabel: "yesterday",
     },
     {
-      title: "Interested Leads (This Month)",
+      // Shortened from "Interested Leads (This Month)" — the parenthetical
+      // forced a 3-line wrap on the compact card and knocked the number off
+      // the row's baseline. "vs last month" already implies the period.
+      title: "Interested",
       value: interested,
       change: `${interestedGrowth}%`,
       changeType: interestedGrowth >= 0 ? "positive" : "negative",
       icon: "Star",
       iconBg: "bg-yellow-100",
       iconColor: "#F59E0B",
-      comparisonLabel: "compared to last month",
+      comparisonLabel: "last month",
     },
   ];
 
@@ -309,16 +355,20 @@ const Dashboard = () => {
           <DashboardSummaryAlert />
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5 m-3 sm:m-5">
+        {/* KPI Cards — responsive by design, never orphans the 3rd card:
+              • md+  : 3 equal columns (hero drops to col-span-1)
+              • < md : 2-col grid; hero (index 0) spans full width on top,
+                       the two secondary metrics share the row below. */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 m-3 sm:m-5">
           {kpiData?.map((kpi, index) => (
             <motion.div
               key={index}
+              className={`h-full ${index === 0 ? 'col-span-2 md:col-span-1' : 'col-span-1'}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <KPICard {...kpi} isLoading={
+              <KPICard {...kpi} featured={index === 0} isLoading={
                 thisMonthQuery.isLoading ||
                 todayQuery.isLoading ||
                 interestedQuery.isLoading
@@ -350,319 +400,27 @@ const Dashboard = () => {
               </div>
 
 
-              {/* Recent Activities */}
+              {/* Today's Activity funnel */}
               <div className="sm:m-5 py-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {/* Meetings Held */}
-                  <div
-                    onClick={() => {
-                      const filtered = meetingsList
-                        .filter((m) => {
-                          const createdToday =
-                            m.createdAt &&
-                            isToday(m.createdAt);
-
-                          const scheduledToday =
-                            m.dateStart &&
-                            isToday(m.dateStart);
-
-                          return createdToday || scheduledToday;
-                        })
-                        .map((m) => {
-                          const createdToday =
-                            m.createdAt &&
-                            isToday(m.createdAt);
-
-                          const scheduledToday =
-                            m.dateStart &&
-                            isToday(m.dateStart);
-
-                          return {
-                            ...m,
-                            insightType:
-                              createdToday && scheduledToday
-                                ? "Created & Scheduled Today"
-                                : createdToday
-                                  ? "Created Today"
-                                  : "Scheduled Today",
-                          };
-                        });
-
-                      setInsightData(filtered);
-                      setActiveInsight("meetings");
-                    }}
-                    className="cursor-pointer bg-blue-50 border border-blue-100 rounded-2xl p-6 
-  hover:shadow-lg transition-all duration-300 
-  flex items-center justify-between min-h-[110px]"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium tracking-wide text-blue-700 uppercase">
-                        Meetings Scheduling
-                      </p>
-                      <p className="text-3xl font-bold text-blue-600">
-                        {meetings}
-                      </p>
-                    </div>
-
-                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                      <Icon
-                        name="Calendar"
-                        size={22}
-                        className="text-blue-600"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Purchased — closed-won leads moved to "Purchased" today */}
-                  <div
-                    onClick={() => {
-                      const filtered = leads.filter(
-                        (l) =>
-                          l.status === "Purchased" && isToday(l.modifiedAt),
-                      );
-
-                      setInsightData(filtered);
-                      setActiveInsight("purchased");
-                    }}
-                    className="cursor-pointer bg-emerald-50 border border-emerald-100 rounded-2xl p-6
-hover:shadow-lg transition-all duration-300 flex items-center justify-between min-h-[110px]"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium tracking-wide text-emerald-700 uppercase">
-                        Purchased
-                      </p>
-                      <p className="text-3xl font-bold text-emerald-600">
-                        {purchased}
-                      </p>
-                    </div>
-
-                    <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                      <Icon
-                        name="BadgeCheck"
-                        size={22}
-                        className="text-emerald-600"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Site Visits */}
-                  <div
-                    onClick={() => {
-                      const filtered = leads.filter(
-                        (l) =>
-                          l.status === "Site Visit Done" &&
-                          isToday(l.modifiedAt),
-                      );
-
-                      setInsightData(filtered);
-                      setActiveInsight("visits");
-                    }}
-                    className="cursor-pointer bg-amber-50 border border-amber-100 rounded-2xl p-6 
-hover:shadow-lg transition-all duration-300 flex items-center justify-between min-h-[110px]"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium tracking-wide text-amber-700 uppercase">
-                        Site Visits
-                      </p>
-                      <p className="text-3xl font-bold text-amber-600">
-                        {siteVisits}
-                      </p>
-                    </div>
-
-                    <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                      <Icon
-                        name="MapPin"
-                        size={22}
-                        className="text-amber-600"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Site Visit Scheduled — new bookings made today */}
-                  <div
-                    onClick={() => {
-                      const filtered = leads.filter(
-                        (l) =>
-                          l.status === "Site Visit Scheduled" &&
-                          isToday(l.modifiedAt),
-                      );
-
-                      setInsightData(filtered);
-                      setActiveInsight("siteVisitsScheduled");
-                    }}
-                    className="cursor-pointer bg-sky-50 border border-sky-100 rounded-2xl p-6
-hover:shadow-lg transition-all duration-300 flex items-center justify-between min-h-[110px]"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium tracking-wide text-sky-700 uppercase">
-                        Site Visit Scheduled
-                      </p>
-                      <p className="text-3xl font-bold text-sky-600">
-                        {siteVisitsScheduled}
-                      </p>
-                    </div>
-
-                    <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center">
-                      <Icon
-                        name="CalendarCheck"
-                        size={22}
-                        className="text-sky-600"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <ActivityFunnel
+                  values={{
+                    meetings,
+                    siteVisitsScheduled,
+                    visits: siteVisits,
+                    purchased,
+                  }}
+                  activeInsight={activeInsight}
+                  onSelect={openInsight}
+                />
                 {/* <RecentActivities activities={activities} /> */}
               </div>
-              {activeInsight && (
-                <div className="m-5 bg-card border border-border rounded-lg overfl ow-hidden">
-                  {/* Header */}
-                  <div className="flex justify-between items-center px-6 py-4 border-b border-border bg-muted/40">
-                    <h3 className="text-base font-semibold text-foreground">
-                      {activeInsight === "meetings" && "Today's Meetings"}
-                      {activeInsight === "purchased" && "Purchased Today"}
-                      {activeInsight === "visits" && "Site Visits"}
-                      {activeInsight === "siteVisitsScheduled" &&
-                        "Site Visits Scheduled Today"}
-                    </h3>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setActiveInsight(null)}
-                    >
-                      Close
-                    </Button>
-                  </div>
-
-                  {insightData.length === 0 ? (
-                    <div className="p-6 text-center text-muted-foreground text-sm">
-                      No records found.
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-muted/50 border-b border-border">
-                          <tr>
-                            <th className="text-left px-6 py-3 text-sm font-medium">
-                              Name
-                            </th>
-
-                            {activeInsight === "meetings" ? (
-                              <>
-                                <th className="text-left px-6 py-3 text-sm font-medium">
-                                  Join URL
-                                </th>
-                                <th className="text-left px-6 py-3 text-sm font-medium">
-                                  Start
-                                </th>
-                                <th className="text-left px-6 py-3 text-sm font-medium">
-                                  End
-                                </th>
-                                <th className="text-left px-6 py-3 text-sm font-medium">
-                                  Type
-                                </th>
-                              </>
-                            ) : (
-                              <>
-                                <th className="text-left px-6 py-3 text-sm font-medium">
-                                  Assigned User
-                                </th>
-                                <th className="text-left px-6 py-3 text-sm font-medium">
-                                  Created By
-                                </th>
-                                <th className="text-left px-6 py-3 text-sm font-medium">
-                                  Created
-                                </th>
-                              </>
-                            )}
-                          </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-border">
-                          {insightData.map((item) => (
-                            <tr
-                              key={item.id}
-                              className="hover:bg-muted/30 transition"
-                            >
-                              {/* Name */}
-                              <td className="px-6 py-4">
-                                <div className="font-medium text-foreground">
-                                  {item.name}
-                                </div>
-                              </td>
-
-                              {/* Dynamic Column */}
-                              {activeInsight === "meetings" ? (
-                                <>
-                                  <td className="px-6 py-4">
-                                    {item.joinUrl ? (
-                                      <div className="flex items-center gap-2 max-w-xs">
-                                        <a
-                                          href={item.joinUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-primary text-sm truncate hover:underline"
-                                        >
-                                          {item.joinUrl}
-                                        </a>
-
-                                        <button
-                                          onClick={() => {
-                                            navigator.clipboard.writeText(
-                                              item.joinUrl,
-                                            );
-                                          }}
-                                          className="p-1 rounded hover:bg-muted transition"
-                                        >
-                                          <Icon name="Copy" size={16} />
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      "—"
-                                    )}
-                                  </td>
-
-                                  <td className="px-6 py-4 text-sm">
-                                    {formatTime(item.dateStart)}
-                                  </td>
-
-                                  <td className="px-6 py-4 text-sm">
-                                    {formatTime(item.dateEnd)}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <span
-                                      className={`px-2 py-1 rounded-full text-xs font-medium ${item.insightType === "Created Today"
-                                        ? "bg-blue-100 text-blue-700"
-                                        : "bg-green-100 text-green-700"
-                                        }`}
-                                    >
-                                      {item.insightType}
-                                    </span>
-                                  </td>
-                                </>
-                              ) : (
-                                <>
-                                  <td className="px-6 py-4 text-sm">
-                                    {item.assignedUserName || "—"}
-                                  </td>
-
-                                  <td className="px-6 py-4 text-sm">
-                                    {item.createdByName || "—"}
-                                  </td>
-
-                                  <td className="px-6 py-4 text-sm">
-                                    {formatDate(item.createdAt)}
-                                  </td>
-                                </>
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
+              <InsightSheet
+                activeInsight={activeInsight}
+                data={insightData}
+                onClose={() => setActiveInsight(null)}
+                formatDate={formatDate}
+                formatTime={formatTime}
+              />
             </motion.div>
           </div>
 

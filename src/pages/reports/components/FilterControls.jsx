@@ -169,11 +169,11 @@ const FilterControls = ({
   // selection toolbar from other modules is omitted); a small selected-
   // count badge inside the header gives the rep feedback instead.
   return (
-    <div className="bg-card border border-border rounded-xl mb-6 shadow-sm">
+    <div className="bg-card border border-[rgba(20,20,30,0.08)] rounded-2xl mb-6 shadow-[0_1px_2px_rgba(16,24,40,.04),0_4px_16px_rgba(16,24,40,.06)]">
       {/* Header strip — soft slate gradient + BarChart icon + count.
           Active filter pills wrap inline so even many pills don't
           break the layout. */}
-      <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 via-slate-50/30 to-transparent border-b border-border rounded-t-xl">
+      <div className="px-5 py-3 bg-gradient-to-r from-slate-50/80 via-slate-50/30 to-transparent border-b border-border rounded-t-2xl">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
           <div className="flex items-start gap-3 flex-wrap flex-1 min-w-0">
             <div className="flex items-center gap-2 shrink-0">
@@ -195,19 +195,17 @@ const FilterControls = ({
                 {activePills.map((pill) => (
                   <span
                     key={pill.key}
-                    className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full border border-primary/20"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(20,20,30,0.1)] bg-muted/60 py-1 pl-3 pr-1.5 text-xs font-medium text-foreground"
                   >
-                    <span className="text-primary/60">{pill.label}:</span>
-                    <span className="text-primary font-semibold">
-                      {pill.value}
-                    </span>
+                    <span className="text-muted-foreground">{pill.label}:</span>
+                    <span className="font-semibold">{pill.value}</span>
                     <button
                       type="button"
                       onClick={pill.onRemove}
-                      className="ml-0.5 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                      className="ml-0.5 grid place-items-center rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
                       aria-label={`Remove ${pill.label} filter`}
                     >
-                      <Icon name="X" size={10} />
+                      <Icon name="X" size={11} />
                     </button>
                   </span>
                 ))}

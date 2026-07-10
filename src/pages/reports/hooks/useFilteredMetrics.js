@@ -6,11 +6,12 @@
  *
  * The query includes:
  *   - base filters (date, source, assigned user, search)
- *   - the page-level status filter (if set) AND the card's own status
+ *   - the card's own status
  *
- * If the page-level status filter conflicts with a card's status, ESPO returns 0
- * for that card — which is exactly what we want ("the filtered dataset has no
- * leads of this kind").
+ * The cards deliberately DO NOT inherit the page-level status filter: each card
+ * *is* a status, so a status filter is theirs to own. Selecting a card (which
+ * sets the page status to drive the table) must not zero out the sibling cards.
+ * The cards stay a stable at-a-glance breakdown; only the table below filters.
  *
  * Caching: React Query keeps results for 2 min and silently refetches when stale.
  * `fetchLeadsCount` has its own 10-min in-memory + localStorage cache underneath
@@ -21,33 +22,42 @@ import { useQueries } from "@tanstack/react-query";
 import { fetchLeadsCount } from "services/leads.service";
 
 // Card definitions — single source of truth for what each tile means.
+// Each status gets a distinct hue + a two-stop "burst" gradient for the icon
+// tile (matching the dashboard funnel's treatment). Four separate hues —
+// green / amber / violet / rose — so the four cards never read as similar.
+// (Call Not Picked moved red→amber: a missed call is "retry", not "dead", and
+// it keeps it distinct from the red Not Interested card.)
 export const METRIC_DEFS = [
   {
     title: "Follow Up",
     status: "Follow up",
     icon: "TrendingUp",
-    iconColor: "bg-success",
+    from: "#10B981",
+    to: "#059669",
     description: "Leads awaiting action",
   },
   {
     title: "Call Not Picked",
     status: "Call Not Picked",
     icon: "PhoneOff",
-    iconColor: "bg-primary",
+    from: "#F59E0B",
+    to: "#F97316",
     description: "Leads not reachable on call",
   },
   {
     title: "Call Later",
     status: "Call Later",
     icon: "Clock",
-    iconColor: "bg-purple-400",
+    from: "#8B5CF6",
+    to: "#7C3AED",
     description: "Leads scheduled for future follow-up",
   },
   {
     title: "Not Interested",
     status: "Not interested",
     icon: "XCircle",
-    iconColor: "bg-red-400",
+    from: "#F43F5E",
+    to: "#E11D48",
     description: "Leads marked as not interested",
   },
 ];
@@ -120,16 +130,13 @@ const buildBaseWhere = (filters = {}) => {
 
 export const useFilteredMetrics = ({ filters, enabled = true }) => {
   const baseWhere = useMemo(() => buildBaseWhere(filters), [filters]);
-  const filterStatus = filters?.status || "";
 
   const queries = useMemo(() => {
     return METRIC_DEFS.map((m) => {
-      // Compose the card's where clause:
-      //   base + (global status if set) + card status
+      // Compose the card's where clause: base filters + the card's OWN status.
+      // The page-level status filter is intentionally excluded so selecting one
+      // card doesn't zero out the others.
       const where = [...baseWhere];
-      if (filterStatus) {
-        where.push({ type: "equals", attribute: "status", value: filterStatus });
-      }
       where.push({ type: "equals", attribute: "status", value: m.status });
 
       return {
@@ -146,18 +153,20 @@ export const useFilteredMetrics = ({ filters, enabled = true }) => {
         retry: 1,
       };
     });
-  }, [baseWhere, filterStatus, enabled]);
+  }, [baseWhere, enabled]);
 
   const results = useQueries({ queries });
 
   const metricsData = useMemo(() => {
     return METRIC_DEFS.map((m, i) => ({
       title: m.title,
+      status: m.status, // used by the Reports page to filter the table on click
       value: results[i]?.data ?? 0,
       change: "—",
       changeType: "positive",
       icon: m.icon,
-      iconColor: m.iconColor,
+      from: m.from,
+      to: m.to,
       description: m.description,
     }));
   }, [results]);

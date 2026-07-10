@@ -178,7 +178,13 @@ export const fetchLeads = async ({ limit = 100, page = 1 }) => {
 
   return await res.json();
 };
-export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
+export const fetchNewLeads = async ({
+  limit,
+  page,
+  filters = {},
+  orderBy = "createdAt",
+  order = "desc",
+}) => {
   const token = localStorage.getItem("auth_token");
   const offset = (page - 1) * limit;
 
@@ -436,7 +442,12 @@ export const fetchNewLeads = async ({ limit, page, filters = {} }) => {
     })
     .join("&");
 
-  const baseUrl = `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc`;
+  // Whitelist sortable attributes so a stray column key can't produce a bad
+  // orderBy the backend rejects. Falls back to createdAt/desc.
+  const SORTABLE = ["name", "source", "status", "assignedUserName", "createdAt"];
+  const safeOrderBy = SORTABLE.includes(orderBy) ? orderBy : "createdAt";
+  const safeOrder = order === "asc" ? "asc" : "desc";
+  const baseUrl = `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=${safeOrderBy}&order=${safeOrder}`;
 
   const url = query ? `${baseUrl}&${query}` : baseUrl;
 

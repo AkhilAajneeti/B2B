@@ -92,6 +92,19 @@ const Reports = () => {
     setCurrentPage(1);
   };
 
+  // Tapping a metric card toggles the page status filter — the single source
+  // of truth that drives BOTH the cards and the table below. Tapping the
+  // active card again clears it. Reset pagination so we don't land on an empty
+  // page of the newly filtered set.
+  const handleMetricClick = (status) => {
+    setFilters((prev) => ({
+      ...prev,
+      status: prev.status === status ? "" : status,
+    }));
+    setPage(1);
+    setCurrentPage(1);
+  };
+
   // Close sidebar on route change or outside click
   useEffect(() => {
     const handleResize = () => {
@@ -120,7 +133,13 @@ const Reports = () => {
   //   loadStatus();
   // }, []);
 
-  const { data: leadsData, isLoading } = useNewLeads({ limit, page, filters });
+  const { data: leadsData, isLoading } = useNewLeads({
+    limit,
+    page,
+    filters,
+    orderBy: sortConfig.key,
+    order: sortConfig.direction,
+  });
   const leads = leadsData?.list || [];
   const total = leadsData?.total || 0;
   const isWithinSelectedDays = (createdAt, selectedDay) => {
@@ -179,6 +198,10 @@ const Reports = () => {
           ? "desc"
           : "asc",
     }));
+    // Re-sorting reorders the whole result set, so jump back to page 1 —
+    // otherwise you can land on a page that no longer exists.
+    setPage(1);
+    setCurrentPage(1);
   };
 
   // Filter-aware metrics — each card runs its own backend count against the
@@ -236,18 +259,19 @@ const Reports = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8"
+              className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-8"
             >
-              {metricsData?.map((metric, index) => (
+              {metricsData?.map((metric) => (
                 <MetricsCard
                   key={metric?.title}
                   title={metric?.title}
                   value={metric?.value}
-                  change={metric?.change}
-                  changeType={metric?.changeType}
                   icon={metric?.icon}
-                  iconColor={metric?.iconColor}
+                  from={metric?.from}
+                  to={metric?.to}
                   description={metric?.description}
+                  selected={filters.status === metric?.status}
+                  onClick={() => handleMetricClick(metric?.status)}
                 />
               ))}
             </motion.div>
@@ -289,27 +313,30 @@ const Reports = () => {
                 </div>
               </>
             )}
-            {/* table */}
-            <DealsTable
-              deals={leads}
-              sortConfig={sortConfig}
-              onSelectDeal={handleSelectDeal}
-              onSort={handleSort}
-              currentPage={page}
-              itemsPerPage={limit}
-              isLoading={isLoading}
-            />
-            <TablePagination
-              currentPage={page}
-              totalPages={totalPages}
-              totalItems={total}
-              itemsPerPage={limit}
-              onPageChange={(p) => setPage(p)}
-              onItemsPerPageChange={(val) => {
-                setLimit(val);
-                setPage(1);
-              }}
-            />
+            {/* table + pagination — one rounded card: table is the body,
+                pagination is the footer, sharing border/shadow/corners. */}
+            <div className="overflow-hidden rounded-2xl border border-[rgba(20,20,30,0.08)] shadow-[0_1px_2px_rgba(16,24,40,.04),0_4px_16px_rgba(16,24,40,.06)]">
+              <DealsTable
+                deals={leads}
+                sortConfig={sortConfig}
+                onSelectDeal={handleSelectDeal}
+                onSort={handleSort}
+                currentPage={page}
+                itemsPerPage={limit}
+                isLoading={isLoading}
+              />
+              <TablePagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={total}
+                itemsPerPage={limit}
+                onPageChange={(p) => setPage(p)}
+                onItemsPerPageChange={(val) => {
+                  setLimit(val);
+                  setPage(1);
+                }}
+              />
+            </div>
 
             {/* Revenue Forecasting - Full Width */}
             {/* <div className="mb-8">
