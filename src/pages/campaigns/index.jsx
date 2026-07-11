@@ -387,30 +387,47 @@ const ProjectsPage = () => {
                 </div>
               )
             ) : (
-              <DealsTable
-                deals={projects}
-                selectedDeals={selectedDeals}
-                onSelectDeal={handleSelectDeal}
-                onSelectAll={handleSelectAll}
-                onDealClick={handleDealClick}
-                sortConfig={sortConfig}
-                onSort={handleSort}
-                currentPage={currentPage}
-                itemsPerPage={itemsPerPage}
-                onDelete={handleDeleteLead}
-                isLoading={loading}
-              />
+              /* Table + pagination — one rounded card: table is the body,
+                 pagination is the footer, sharing border/shadow/corners.
+                 Matches the deals & reports tables. */
+              <div className="overflow-hidden rounded-2xl border border-[rgba(20,20,30,0.08)] shadow-[0_1px_2px_rgba(16,24,40,.04),0_4px_16px_rgba(16,24,40,.06)]">
+                <DealsTable
+                  deals={projects}
+                  selectedDeals={selectedDeals}
+                  onSelectDeal={handleSelectDeal}
+                  onSelectAll={handleSelectAll}
+                  onDealClick={handleDealClick}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  currentPage={currentPage}
+                  itemsPerPage={itemsPerPage}
+                  onDelete={handleDeleteLead}
+                  isLoading={loading}
+                />
+
+                <TablePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              </div>
             )}
 
-            {/* Pagination */}
-            <TablePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
+            {/* Pagination — card view only; the table view renders its own
+                inside the card above. */}
+            {viewMode === "cards" && (
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            )}
           </div>
         </main>
 

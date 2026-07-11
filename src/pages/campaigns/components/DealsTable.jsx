@@ -33,28 +33,6 @@ const DealsTable = ({
     })?.format(new Date(date));
   };
 
-  const getStageColor = (stage) => {
-    const colors = {
-      Started: "bg-blue-100 text-blue-800",
-      Completed: "bg-green-100 text-green-800",
-      Deffered: "bg-orange-100 text-danger-800",
-      Canceled: "bg-purple-100 text-purple-800",
-      "Not Started": "bg-gray-100 text-gray-700",
-    };
-
-    return colors?.[stage] || "bg-gray-100 text-gray-800";
-  };
-  const getPrioriyColor = (stage) => {
-    const colors = {
-      Low: "bg-blue-100 text-blue-800",
-      Normal: "bg-green-100 text-green-800",
-      High: "bg-orange-100 text-danger-800",
-      Urgent: "bg-purple-100 text-purple-800",
-    };
-
-    return colors?.[stage] || "bg-gray-100 text-gray-800";
-  };
-
   // Avatar palette for the assignee pill. Same colors as the deals-page
   // DealsTable and AssignedUserChart so a rep's avatar color stays the
   // same across modules — visual continuity.
@@ -89,6 +67,22 @@ const DealsTable = ({
       <Icon name="ArrowDown" size={16} className="text-primary" />
     );
   };
+
+  // Sort key drives BOTH the click handler and the arrow indicator, so the
+  // arrow lights up on the column you actually clicked (they were mismatched
+  // before — e.g. onSort("createdAt") vs getSortIcon("closeDate")).
+  const SortHeader = ({ label, column }) => (
+    <th className="text-left px-4 py-3">
+      <button
+        type="button"
+        onClick={() => onSort?.(column)}
+        className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
+      >
+        <span className="whitespace-nowrap">{label}</span>
+        {getSortIcon(column)}
+      </button>
+    </th>
+  );
 
   const handleQuickAction = (e, action, deal) => {
     e?.stopPropagation();
@@ -160,7 +154,7 @@ const DealsTable = ({
     </tr>
   );
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
+    <div className="bg-card">
       {/* Desktop Table */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
@@ -173,38 +167,14 @@ const DealsTable = ({
                   onChange={(e) => onSelectAll(e?.target?.checked)}
                 />
               </th>
+              <SortHeader label="Campaign Name" column="name" />
               <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("name")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Campaign Name</span>
-                  {getSortIcon("name")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
                   Assigned User
                 </span>
               </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("createdAt")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Create By</span>
-                  {getSortIcon("closeDate")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("createdAt")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Modified At</span>
-                  {getSortIcon("closeDate")}
-                </button>
-              </th>
+              <SortHeader label="Created At" column="createdAt" />
+              <SortHeader label="Modified At" column="modifiedAt" />
               <th className="w-24 px-4 py-3">
                 <span className="text-sm font-medium text-foreground">
                   Actions
@@ -228,9 +198,10 @@ const DealsTable = ({
                 key={deal?.id}
                 onMouseEnter={() => setHoveredRow(deal?.id)}
                 onMouseLeave={() => setHoveredRow(null)}
+                onClick={() => onDealClick(deal)}
                 className="hover:bg-sky-50 cursor-pointer transition-smooth"
               >
-                <td className="px-4 py-4">
+                <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={selectedDeals?.includes(deal?.id)}
                     onChange={(e) => {
@@ -239,7 +210,7 @@ const DealsTable = ({
                     }}
                   />
                 </td>
-                <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
+                <td className="px-4 py-4">
                   <div className="font-medium text-foreground">
                     {deal?.projectNomen || "Default"}
                   </div>
@@ -272,17 +243,17 @@ const DealsTable = ({
                 </td>
 
                 <td className="px-4 py-4">
-                  <div className="text-sm text-foreground">
+                  <div className="text-sm text-foreground whitespace-nowrap">
                     {formatDate(deal?.createdAt)}
                   </div>
                 </td>
                 <td className="px-4 py-4">
-                  <div className="text-sm text-foreground">
+                  <div className="text-sm text-foreground whitespace-nowrap">
                     {formatDate(deal?.modifiedAt)}
                   </div>
                 </td>
 
-                <td className="px-4 py-4">
+                <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                   <div
                     className={`flex items-center space-x-1 transition-opacity`} >
                     {isOwnRecord(deal, getStoredUser()) ? (
@@ -332,7 +303,21 @@ const DealsTable = ({
       {/* Mobile Cards */}
       {/* Mobile Task / Deal Cards */}
       <div className="md:hidden">
-        {paginatedDeals?.map((deal) => (
+        {isLoading ? (
+          <div className="divide-y divide-border">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="animate-pulse p-4">
+                <div className="mb-2 h-4 w-32 rounded bg-gray-300/60" />
+                <div className="h-3 w-24 rounded bg-gray-300/50" />
+              </div>
+            ))}
+          </div>
+        ) : !paginatedDeals?.length ? (
+          <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+            No Campaigns available
+          </div>
+        ) : (
+          paginatedDeals?.map((deal) => (
           <div
             key={deal?.id}
             onClick={() => onDealClick(deal)}
@@ -398,7 +383,8 @@ const DealsTable = ({
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

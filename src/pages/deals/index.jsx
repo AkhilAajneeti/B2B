@@ -632,39 +632,41 @@ const DealsPage = () => {
               </div>
             )}
 
-            {/* Deals Table */}
-            <DealsTable
-              deals={leads}
-              selectedDeals={selectedDeals}
-              onSelectDeal={handleSelectDeal}
-              onSelectAll={handleSelectAll}
-              onDealClick={handleDealClick}
-              sortConfig={sortConfig}
-              onSort={handleSort}
-              onDelete={handleDeleteLead}
-              isLoading={isLoading}
-              page={page}
-              setPage={setPage}
-              canEdit={(deal) =>
-                canEditRecord("Lead", getPermissionRecord(deal))
-              }
-              canDelete={(deal) =>
-                canDeleteRecord("Lead", getPermissionRecord(deal))
-              }
-            />
+            {/* Table + pagination — one rounded card: table is the body,
+                pagination is the footer, sharing border/shadow/corners. */}
+            <div className="overflow-hidden rounded-2xl border border-[rgba(20,20,30,0.08)] shadow-[0_1px_2px_rgba(16,24,40,.04),0_4px_16px_rgba(16,24,40,.06)]">
+              <DealsTable
+                deals={leads}
+                selectedDeals={selectedDeals}
+                onSelectDeal={handleSelectDeal}
+                onSelectAll={handleSelectAll}
+                onDealClick={handleDealClick}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                onDelete={handleDeleteLead}
+                isLoading={isLoading}
+                page={page}
+                setPage={setPage}
+                canEdit={(deal) =>
+                  canEditRecord("Lead", getPermissionRecord(deal))
+                }
+                canDelete={(deal) =>
+                  canDeleteRecord("Lead", getPermissionRecord(deal))
+                }
+              />
 
-            {/* Pagination */}
-            <TablePagination
-              currentPage={page}
-              totalPages={totalPages}
-              totalItems={total}
-              itemsPerPage={limit}
-              onPageChange={(p) => setPage(p)}
-              onItemsPerPageChange={(val) => {
-                setLimit(val);
-                setPage(1);
-              }}
-            />
+              <TablePagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={total}
+                itemsPerPage={limit}
+                onPageChange={(p) => setPage(p)}
+                onItemsPerPageChange={(val) => {
+                  setLimit(val);
+                  setPage(1);
+                }}
+              />
+            </div>
 
             {/* Deal Drawer */}
             <DealDrawer

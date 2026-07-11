@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
-import { getStoredUser, formatUserDisplayName } from "../../../utils/permission";
 
 const DealsTable = ({
   deals,
@@ -93,51 +92,31 @@ const DealsTable = ({
   const getStageColor = (stage) => {
     const colors = {
       New: "bg-blue-50 text-blue-700 border border-blue-200",
-      Interested:
-        "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      "Follow up":
-        "bg-indigo-50 text-indigo-700 border border-indigo-200",
-      "Call Later":
-        "bg-amber-50 text-amber-700 border border-amber-200",
-      "Call Not Connecting":
-        "bg-rose-50 text-rose-700 border border-rose-200",
-      "Call Not Picked":
-        "bg-red-50 text-red-700 border border-red-200",
-      Broker:
-        "bg-violet-50 text-violet-700 border border-violet-200",
-      Dead:
-        "bg-slate-100 text-slate-700 border border-slate-300",
-      "Fake Lead":
-        "bg-pink-50 text-pink-700 border border-pink-200",
-      "Invalid Number":
-        "bg-gray-100 text-gray-700 border border-gray-300",
-      "Irrelevant Lead":
-        "bg-orange-50 text-orange-700 border border-orange-200",
-      "Low Budget":
-        "bg-yellow-50 text-yellow-700 border border-yellow-200",
-      "Low Interest":
-        "bg-lime-50 text-lime-700 border border-lime-200",
-      "Not Interested":
-        "bg-red-50 text-red-700 border border-red-200",
-      "Other Location":
-        "bg-cyan-50 text-cyan-700 border border-cyan-200",
+      Interested: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      "Follow up": "bg-indigo-50 text-indigo-700 border border-indigo-200",
+      "Call Later": "bg-amber-50 text-amber-700 border border-amber-200",
+      "Call Not Connecting": "bg-rose-50 text-rose-700 border border-rose-200",
+      "Call Not Picked": "bg-red-50 text-red-700 border border-red-200",
+      Broker: "bg-violet-50 text-violet-700 border border-violet-200",
+      Dead: "bg-slate-100 text-slate-700 border border-slate-300",
+      "Fake Lead": "bg-pink-50 text-pink-700 border border-pink-200",
+      "Invalid Number": "bg-gray-100 text-gray-700 border border-gray-300",
+      "Irrelevant Lead": "bg-orange-50 text-orange-700 border border-orange-200",
+      "Low Budget": "bg-yellow-50 text-yellow-700 border border-yellow-200",
+      "Low Interest": "bg-lime-50 text-lime-700 border border-lime-200",
+      "Not Interested": "bg-red-50 text-red-700 border border-red-200",
+      "Other Location": "bg-cyan-50 text-cyan-700 border border-cyan-200",
       Purchased:
         "bg-green-50 text-green-700 border border-green-200 shadow-sm",
-      "Site Visit Done":
-        "bg-teal-50 text-teal-700 border border-teal-200",
-      "Site Visit Scheduled":
-        "bg-sky-50 text-sky-700 border border-sky-200",
-      "Switch Off":
-        "bg-neutral-100 text-neutral-700 border border-neutral-300",
-      QDTD:
-        "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
+      "Site Visit Done": "bg-teal-50 text-teal-700 border border-teal-200",
+      "Site Visit Scheduled": "bg-sky-50 text-sky-700 border border-sky-200",
+      "Switch Off": "bg-neutral-100 text-neutral-700 border border-neutral-300",
+      QDTD: "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
     };
 
-    return (
-      colors?.[stage] ||
-      "bg-gray-100 text-gray-700 border border-gray-200"
-    );
+    return colors?.[stage] || "bg-gray-100 text-gray-700 border border-gray-200";
   };
+
   const getSourceColor = (source) => {
     // normalize value
     const normalizedSource = source
@@ -147,31 +126,16 @@ const DealsTable = ({
 
     const colors = {
       call: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-
       email: "bg-blue-50 text-blue-700 border border-blue-200",
-
       "existing customer":
         "bg-violet-50 text-violet-700 border border-violet-200",
-
-      partner:
-        "bg-orange-50 text-orange-700 border border-orange-200",
-      meta:
-        "bg-orange-100 text-orange-700 border border-orange-200",
-
-      "public relations":
-        "bg-pink-50 text-pink-700 border border-pink-200",
-
-      "web site":
-        "bg-cyan-50 text-cyan-700 border border-cyan-200",
-
-      campaign:
-        "bg-amber-50 text-amber-700 border border-amber-200",
-
-      other:
-        "bg-slate-100 text-slate-700 border border-slate-200",
-
-      acl:
-        "bg-gradient-to-r from-fuchsia-50 to-violet-50 text-violet-700 border border-violet-200 shadow-sm",
+      partner: "bg-orange-50 text-orange-700 border border-orange-200",
+      meta: "bg-orange-100 text-orange-700 border border-orange-200",
+      "public relations": "bg-pink-50 text-pink-700 border border-pink-200",
+      "web site": "bg-cyan-50 text-cyan-700 border border-cyan-200",
+      campaign: "bg-amber-50 text-amber-700 border border-amber-200",
+      other: "bg-slate-100 text-slate-700 border border-slate-200",
+      acl: "bg-gradient-to-r from-fuchsia-50 to-violet-50 text-violet-700 border border-violet-200 shadow-sm",
     };
 
     return (
@@ -179,6 +143,7 @@ const DealsTable = ({
       "bg-gray-100 text-gray-700 border border-gray-200"
     );
   };
+
   // Avatar palette for the assignee pill. Same colors as
   // AssignedUserChart so a rep's avatar stays the same across the deals
   // table and the analytics chart — visual continuity.
@@ -214,17 +179,38 @@ const DealsTable = ({
     );
   };
 
-  const handleQuickAction = (e, action, deal) => {
-    e?.stopPropagation();
-    onDealClick(deal);
-    console.log(`${action} action for deal:`, deal?.id);
-  };
+  // Sort key is used for BOTH the click handler and the arrow indicator, so
+  // the arrow actually lights up on the column you clicked (they were
+  // mismatched before — e.g. onSort("Status") vs getSortIcon("owner")).
+  const SortHeader = ({ label, column }) => (
+    <th className="text-left px-4 py-3">
+      <button
+        type="button"
+        onClick={() => onSort?.(column)}
+        className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
+      >
+        <span className="whitespace-nowrap">{label}</span>
+        {getSortIcon(column)}
+      </button>
+    </th>
+  );
+
   const handleDelete = async (e, deal) => {
     e.stopPropagation();
     const ok = window.confirm(`Delete lead ${deal?.name}?`);
     if (!ok) return;
+    await onDelete(deal.id);
+  };
 
-    await onDelete(deal.id); // 👈 parent ko bol rahe ho
+  const openWhatsapp = (e, deal) => {
+    e.stopPropagation();
+    const phone = deal?.phoneNumber?.replace(/\D/g, "");
+    if (!phone) return;
+    window.open(
+      `https://api.whatsapp.com/send/?phone=${phone}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   const paginatedDeals = deals;
@@ -233,52 +219,17 @@ const DealsTable = ({
     paginatedDeals?.length > 0;
   const isIndeterminate =
     selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
+
   const SkeletonRow = () => (
     <tr className="animate-pulse border-t border-border">
-      {/* Checkbox */}
       <td className="p-4">
         <div className="h-4 w-4 bg-gray-300/60 rounded"></div>
       </td>
-
-      {/* Company */}
-      <td className="p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gray-300/60 rounded-lg"></div>
-          <div>
-            <div className="h-4 w-24 bg-gray-300/70 rounded mb-1"></div>
-            <div className="h-3 w-32 bg-gray-300/50 rounded"></div>
-          </div>
-        </div>
-      </td>
-
-      {/* Industry */}
-      <td className="p-4">
-        <div className="h-4 w-20 bg-gray-300/60 rounded"></div>
-      </td>
-
-      {/* Type */}
-      <td className="p-4">
-        <div className="h-4 w-16 bg-gray-300/60 rounded"></div>
-      </td>
-
-      {/* status */}
-      <td className="p-4">
-        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
-      </td>
-      {/* Next Contact */}
-      <td className="p-4">
-        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
-      </td>
-      {/* Created At */}
-      <td className="p-4">
-        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
-      </td>
-      {/* Assign User */}
-      <td className="p-4">
-        <div className="h-4 w-24 bg-gray-300/60 rounded"></div>
-      </td>
-
-      {/* Actions */}
+      {Array.from({ length: 7 }).map((_, i) => (
+        <td key={i} className="p-4">
+          <div className={`h-4 bg-gray-300/60 rounded ${i === 0 ? "w-24" : "w-20"}`}></div>
+        </td>
+      ))}
       <td className="p-4">
         <div className="flex space-x-2">
           <div className="h-8 w-8 bg-gray-300/60 rounded"></div>
@@ -287,8 +238,9 @@ const DealsTable = ({
       </td>
     </tr>
   );
+
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
+    <div className="bg-card">
       {/* Desktop Table */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
@@ -301,62 +253,14 @@ const DealsTable = ({
                   onChange={(e) => onSelectAll(e?.target?.checked)}
                 />
               </th>
+              <SortHeader label="Name" column="name" />
+              <SortHeader label="Project Name" column="cProjectName" />
+              <SortHeader label="Source" column="source" />
+              <SortHeader label="Status" column="status" />
+              <SortHeader label="Next Contact" column="cNextContactAt" />
+              <SortHeader label="Create At" column="createdAt" />
               <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("name")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth max-w-[150px]"
-                >
-                  <span className="truncate">Name</span>
-                  {getSortIcon("name")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("cProjectName")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Project Name</span>
-                  {getSortIcon("Project Name")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("Source")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Source</span>
-                  {getSortIcon("value")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("Status")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Status</span>
-                  {getSortIcon("owner")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("email")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Next Contact</span>
-                  {getSortIcon("stage")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <button
-                  onClick={() => onSort("createdAt")}
-                  className="flex items-center space-x-2 text-sm font-medium text-foreground hover:text-primary transition-smooth"
-                >
-                  <span>Create At</span>
-                  {getSortIcon("closeDate")}
-                </button>
-              </th>
-              <th className="text-left px-4 py-3">
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
                   Assigned User
                 </span>
               </th>
@@ -372,7 +276,7 @@ const DealsTable = ({
               Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
             ) : !paginatedDeals?.length ? (
               <tr>
-                <td colSpan="8">
+                <td colSpan="9">
                   <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
                     No leads available
                   </div>
@@ -381,12 +285,13 @@ const DealsTable = ({
             ) : (
               paginatedDeals?.map((deal) => (
                 <tr
-                  key={deal?.id}now ap
+                  key={deal?.id}
                   onMouseEnter={() => setHoveredRow(deal?.id)}
                   onMouseLeave={() => setHoveredRow(null)}
+                  onClick={() => onDealClick(deal)}
                   className="hover:bg-sky-50 cursor-pointer transition-smooth"
                 >
-                  <td className="px-4 py-4">
+                  <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedDeals?.includes(deal?.id)}
                       onChange={(e) => {
@@ -395,17 +300,28 @@ const DealsTable = ({
                       }}
                     />
                   </td>
-                  <td className="px-4 py-4" onClick={() => onDealClick(deal)}>
+
+                  <td className="px-4 py-4">
                     <div className="font-medium text-foreground capitalize">
                       {deal?.name}
                     </div>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="text-foreground">{deal?.cProject || deal?.cProjectName || deal?.cProjectNomen || "None"}</div>
 
-                  </td>
                   <td className="px-4 py-4">
-                    <div className={`font-medium flex justify-center items-center space-x-2 py-1 px-2 rounded-full ${getSourceColor(deal?.cSubSource)}`}>
+                    <div className="text-foreground">
+                      {deal?.cProject ||
+                        deal?.cProjectName ||
+                        deal?.cProjectNomen ||
+                        "None"}
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <div
+                      className={`font-medium flex justify-center items-center space-x-2 py-1 px-2 rounded-full ${getSourceColor(
+                        deal?.cSubSource,
+                      )}`}
+                    >
                       {deal?.cSubSource
                         ? deal?.cSubSource
                         : deal?.source?.toLowerCase() === "acl"
@@ -413,29 +329,29 @@ const DealsTable = ({
                           : deal?.source}
                     </div>
                   </td>
+
                   <td className="px-4 py-4">
                     <div
                       className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
                         deal?.status,
                       )}`}
                     >
-                      <span className={`text-sm text-foreg rounded-full `}>
-                        {deal?.status}
-                      </span>
+                      <span className="text-sm">{deal?.status}</span>
                     </div>
                   </td>
+
                   <td className="px-4 py-4">
-                    <span
-                      className={`inline-flex px-1 py-1 text-xs font-medium rounded-full`}
-                    >
+                    <span className="inline-flex px-1 py-1 text-xs font-medium rounded-full whitespace-nowrap">
                       {formatDate(deal?.cNextContactAt)}
                     </span>
                   </td>
+
                   <td className="px-4 py-4">
-                    <div className="text-sm text-foreground">
+                    <div className="text-sm text-foreground whitespace-nowrap">
                       {formatDate(deal?.createdAt)}
                     </div>
                   </td>
+
                   <td className="px-4 py-4">
                     {deal?.assignedUserName ? (
                       <div className="inline-flex items-center gap-2 pl-1 pr-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors max-w-full">
@@ -455,36 +371,30 @@ const DealsTable = ({
                       <span className="text-sm text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-4">
+
+                  <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                     <div
-                      className={`flex items-center space-x-1 transition-opacity ${hoveredRow === deal?.id ? "opacity-100" : "opacity-50"
-                        }`}
+                      className={`flex items-center space-x-1 transition-opacity ${
+                        hoveredRow === deal?.id ? "opacity-100" : "opacity-50"
+                      }`}
                     >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleQuickAction(e, "edit", deal)}
-                        className="h-8 w-8"
-                      >
-                        <Icon name="Edit" size={14} />
-                      </Button>
-                      {/* whats app button */}
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
-
-                          const phone = deal?.phoneNumber?.replace(/\D/g, "");
-
-                          if (!phone) return;
-
-                          window.open(
-                            `https://api.whatsapp.com/send/?phone=${phone}`,
-                            "_blank",
-                            "noopener,noreferrer"
-                          );
+                          onDealClick(deal);
                         }}
+                        className="h-8 w-8"
+                      >
+                        <Icon name="Edit" size={14} />
+                      </Button>
+
+                      {/* WhatsApp */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => openWhatsapp(e, deal)}
                         className="h-8 w-8 rounded-full hover:bg-green-100 transition-all duration-200"
                       >
                         <img
@@ -494,14 +404,16 @@ const DealsTable = ({
                         />
                       </Button>
 
-                      {canDelete(deal) && (<Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleDelete(e, deal)}
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                      >
-                        <Icon name="Trash2" size={14} />
-                      </Button>)}
+                      {canDelete(deal) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDelete(e, deal)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Icon name="Trash2" size={14} />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -510,19 +422,22 @@ const DealsTable = ({
           </tbody>
         </table>
       </div>
-      {/* Mobile Cards */}
 
+      {/* Mobile Cards */}
       <div className="md:hidden">
         {isLoading ? (
-          Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-        ) : !paginatedDeals?.length ? (
-          <tr>
-            <td colSpan="6">
-              <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
-                No leads available
+          <div className="divide-y divide-border">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="animate-pulse p-4">
+                <div className="mb-2 h-4 w-32 rounded bg-gray-300/60" />
+                <div className="h-3 w-24 rounded bg-gray-300/50" />
               </div>
-            </td>
-          </tr>
+            ))}
+          </div>
+        ) : !paginatedDeals?.length ? (
+          <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
+            No leads available
+          </div>
         ) : (
           paginatedDeals?.map((deal) => (
             <div
@@ -594,9 +509,7 @@ const DealsTable = ({
                       {deal?.cProject && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Icon name="Building2" size={12} />
-                          <span className="truncate">
-                            {deal?.cProject}
-                          </span>
+                          <span className="truncate">{deal?.cProject}</span>
                         </div>
                       )}
 
@@ -619,32 +532,27 @@ const DealsTable = ({
                           if (!phone) return;
                           window.location.href = `tel:${phone}`;
                         }}
-                        className="h-10 w-10 rounded-full hover:bg-blue-400   active:scale-95 transition-all duration-150 flex items-center justify-center"
+                        className="h-10 w-10 rounded-full hover:bg-blue-400 active:scale-95 transition-all duration-150 flex items-center justify-center"
                       >
-                        <Icon name="PhoneCall" size={20} className="text-blue-600 hover:text-white" />
+                        <Icon
+                          name="PhoneCall"
+                          size={20}
+                          className="text-blue-600 hover:text-white"
+                        />
                       </Button>
 
-                      {/* WhatsApp — brand green, white logo via invert */}
+                      {/* WhatsApp */}
                       <Button
                         variant="ghost"
                         size="icon"
                         aria-label="Open WhatsApp chat"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const phone = deal?.phoneNumber?.replace(/\D/g, "");
-                          if (!phone) return;
-                          window.open(
-                            `https://api.whatsapp.com/send/?phone=${phone}`,
-                            "_blank",
-                            "noopener,noreferrer",
-                          );
-                        }}
-                        className="h-10 w-10 rounded-full  hover:bg-[#1fb85557]  active:scale-95 transition-all duration-150 flex items-center justify-center"
+                        onClick={(e) => openWhatsapp(e, deal)}
+                        className="h-10 w-10 rounded-full hover:bg-[#1fb85557] active:scale-95 transition-all duration-150 flex items-center justify-center"
                       >
                         <img
                           src="/assets/whatsapp-logo.png"
                           alt=""
-                          className="w-8 h-8 object-contain  "
+                          className="w-8 h-8 object-contain"
                         />
                       </Button>
                     </div>

@@ -55,6 +55,8 @@ const DealDrawer = ({
       whatsapp: "",
       addressCity: "",
       cProject: "",
+      cClientNomen: "",
+      cProjectNomen: "",
       cNextContactAt: "",
       cLeatReceivedAt: fromEspoToLocalInput(new Date()),
       cPreference: "",
@@ -156,6 +158,8 @@ const DealDrawer = ({
         whatsapp: "",
         addressCity: "",
         cProject: "",
+        cClientNomen: "",
+        cProjectNomen: "",
         cNextContactAt: "",
         
         cLeatReceivedAt: fromEspoToLocalInput(new Date()),
@@ -991,6 +995,25 @@ const DealDrawer = ({
                         }
                       />
                     </div>
+
+                    {/* Client / Project Nomen — internal nomenclature codes. */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="Client Nomen"
+                        value={formData.cClientNomen || ""}
+                        onChange={(e) =>
+                          handleChange("cClientNomen", e.target.value)
+                        }
+                      />
+
+                      <Input
+                        label="Project Nomen"
+                        value={formData.cProjectNomen || ""}
+                        onChange={(e) =>
+                          handleChange("cProjectNomen", e.target.value)
+                        }
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-card border border-border rounded-lg p-4 space-y-4">
@@ -1632,6 +1655,22 @@ const DealDrawer = ({
                                 </p>
                                 <p className="text-sm text-foreground font-medium break-words">
                                   {deal.cClientNomen}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Project Nomen — internal project-code; same
+                              admin-only treatment as Client Nomen. */}
+                          {isAdmin && deal?.cProjectNomen && (
+                            <div className="flex items-start gap-3">
+                              <Icon name="Hash" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Project Nomen
+                                </p>
+                                <p className="text-sm text-foreground font-medium break-words">
+                                  {deal.cProjectNomen}
                                 </p>
                               </div>
                             </div>
