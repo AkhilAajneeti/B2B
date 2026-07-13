@@ -148,7 +148,18 @@ const DealDrawer = ({
     };
   };
 
+  // Hydrate the form whenever the drawer OPENS — not just when `deal`/`mode`
+  // change. Closing the drawer leaves `mode` as "add" and `deal` as null, so
+  // a second "New Lead" click changed neither dependency and this effect never
+  // re-ran: the form still held the previous lead's values. Keying on `isOpen`
+  // guarantees a fresh form every time it's opened.
   useEffect(() => {
+    if (!isOpen) return;
+
+    // Opening any lead starts on Overview rather than whatever tab was left
+    // selected on the previously-viewed lead.
+    setActiveTab("overview");
+
     if (mode === "add") {
       setFormData({
         firstName: "",
@@ -189,7 +200,7 @@ const DealDrawer = ({
       });
       setIsEditing(false);
     }
-  }, [deal, mode]);
+  }, [deal, mode, isOpen]);
 
   const [massFields, setMassFields] = useState({
     assignedUserId: false,
