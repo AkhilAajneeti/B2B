@@ -713,7 +713,9 @@ const DealsPage = () => {
             <ConfirmDeleteModal
               open={showDeleteConfirm}
               title="Delete Selected Leads"
-              description={`Are you sure you want to delete ${selectedDeals.length} lead(s)? This action cannot be undone.`}
+              description="These leads and their activity history will be permanently removed."
+              recordName={`${selectedDeals.length} lead${selectedDeals.length === 1 ? "" : "s"} selected`}
+              confirmLabel={`Delete ${selectedDeals.length}`}
               loading={bulkDeleteMutation.isPending}
               onCancel={() => setShowDeleteConfirm(false)}
               onConfirm={handleConfirmBulkDelete}
@@ -723,7 +725,8 @@ const DealsPage = () => {
             <ConfirmDeleteModal
               open={!!leadToDelete}
               title="Delete Lead"
-              description={`Are you sure you want to delete "${leadToDelete?.name || "this lead"}"? This action cannot be undone.`}
+              description="This lead and its activity history will be permanently removed."
+              recordName={leadToDelete?.name}
               loading={deleteLeadMutation.isPending}
               onCancel={() => setLeadToDelete(null)}
               onConfirm={handleConfirmDeleteLead}
