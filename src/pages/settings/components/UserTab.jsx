@@ -45,6 +45,9 @@ const UserTab = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+  // On edit, the password section stays locked (blurred) until the admin
+  // explicitly opts in — most edits don't change the password.
+  const [changePassword, setChangePassword] = useState(false);
   const [isShowDetails, setIsShowDetails] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -99,28 +102,46 @@ const UserTab = () => {
     return [emptyPhone()];
   };
 
-  const handleEdit = (member) => {
+  // One place that maps a User record -> the invite/edit form shape.
+  const buildInviteData = (u) => ({
+    id: u.id,
+    userName: u.userName || "",
+    salutationName: u.salutationName || "",
+    firstName: u.firstName || "",
+    lastName: u.lastName || "",
+    title: u.title || "",
+    emails: hydrateEmails(u),
+    phones: hydratePhones(u),
+    gender: u.gender || "",
+    type: u.type || "regular",
+    isActive: u.isActive !== undefined ? !!u.isActive : true,
+    teamsIds: u.teamsIds || (u.defaultTeamId ? [u.defaultTeamId] : []),
+    defaultTeamId: u.defaultTeamId || "",
+    rolesIds: u.rolesIds || [],
+    password: "",
+    confirmPassword: "",
+  });
+
+  const handleEdit = async (member) => {
     setIsEdit(true);
+    setChangePassword(false); // editing shouldn't touch the password by default
     setIsInviteModalOpen(true);
 
-    setInviteData({
-      id: member.id,
-      userName: member.userName || "",
-      salutationName: member.salutationName || "",
-      firstName: member.firstName || "",
-      lastName: member.lastName || "",
-      title: member.title || "",
-      emails: hydrateEmails(member),
-      phones: hydratePhones(member),
-      gender: member.gender || "",
-      type: member.type || "regular",
-      isActive: member.isActive !== undefined ? !!member.isActive : true,
-      teamsIds: member.teamsIds || (member.defaultTeamId ? [member.defaultTeamId] : []),
-      defaultTeamId: member.defaultTeamId || "",
-      rolesIds: member.rolesIds || [],
-      password: "",
-      confirmPassword: "",
-    });
+    // Paint immediately from the list row so the modal isn't blank...
+    setInviteData(buildInviteData(member));
+
+    // ...then re-hydrate from the FULL record. The users list endpoint returns
+    // a partial User: EspoCRM omits link-multiple fields (teamsIds / rolesIds)
+    // and other secondary fields unless explicitly selected. Hydrating the form
+    // from the row alone left those blank, which is why every edit forced you
+    // to re-fill fields you hadn't touched.
+    try {
+      const full = await fetchUserById(member.id);
+      if (full?.id) setInviteData(buildInviteData(full));
+    } catch (err) {
+      console.error("Failed to load full user for edit", err);
+      toast.error("Couldn't load all user details — some fields may be blank");
+    }
   };
 
   const handleChange = (key, value) => {
@@ -525,6 +546,7 @@ const UserTab = () => {
               variant="default"
               onClick={() => {
                 setIsEdit(false);
+                setChangePassword(false);
                 setInviteData({
                   userName: "",
                   salutationName: "",
@@ -1122,70 +1144,140 @@ const UserTab = () => {
                           />
                         </div>
                       </div>
-                      {/* password and generate password */}
-                      <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="relative">
-                            <Input
-                              label="Password"
-                              type={showPassword ? "text" : "password"}
-                              value={inviteData?.password}
-                              onChange={(e) =>
-                                handleInviteChange("password", e?.target?.value)
+                      {/* Password — required on create, optional on edit. On
+                          edit it stays blurred + inert behind a toggle so an
+                          admin can't change it by accident, and an untouched
+                          password is never sent in the payload. */}
+                      {(() => {
+                        const passwordLocked = isEdit && !changePassword;
+
+                        return (
+                          <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <Icon
+                                  name={passwordLocked ? "Lock" : "LockOpen"}
+                                  size={16}
+                                  className="text-muted-foreground"
+                                />
+                                <div>
+                                  <h4 className="text-sm font-semibold text-foreground">
+                                    Password
+                                  </h4>
+                                  {passwordLocked && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Left unchanged — the current password stays.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {isEdit && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={changePassword ? "outline" : "default"}
+                                  iconName={changePassword ? "X" : "KeyRound"}
+                                  iconPosition="left"
+                                  onClick={() => {
+                                    const next = !changePassword;
+                                    setChangePassword(next);
+                                    if (!next) {
+                                      // Re-locking clears the fields, so nothing
+                                      // gets sent in the payload.
+                                      setInviteData((prev) => ({
+                                        ...prev,
+                                        password: "",
+                                        confirmPassword: "",
+                                      }));
+                                    }
+                                  }}
+                                >
+                                  {changePassword ? "Cancel" : "Change Password"}
+                                </Button>
+                              )}
+                            </div>
+
+                            <div
+                              className={
+                                passwordLocked
+                                  ? "pointer-events-none select-none opacity-60 blur-[3px] transition-all"
+                                  : "transition-all"
                               }
-                              required={!isEdit}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
+                              aria-hidden={passwordLocked}
                             >
-                              <Icon
-                                name={showPassword ? "EyeOff" : "Eye"}
-                                size={18}
-                              />
-                            </button>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="relative">
+                                  <Input
+                                    label="Password"
+                                    type={showPassword ? "text" : "password"}
+                                    value={inviteData?.password}
+                                    onChange={(e) =>
+                                      handleInviteChange("password", e?.target?.value)
+                                    }
+                                    required={!isEdit}
+                                    disabled={passwordLocked}
+                                  />
+                                  <button
+                                    type="button"
+                                    tabIndex={passwordLocked ? -1 : 0}
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
+                                  >
+                                    <Icon
+                                      name={showPassword ? "EyeOff" : "Eye"}
+                                      size={18}
+                                    />
+                                  </button>
+                                </div>
+
+                                <div className="relative">
+                                  <Input
+                                    label="Confirm Password"
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    value={inviteData?.confirmPassword}
+                                    onChange={(e) =>
+                                      handleInviteChange(
+                                        "confirmPassword",
+                                        e?.target?.value,
+                                      )
+                                    }
+                                    required={!isEdit}
+                                    disabled={passwordLocked}
+                                  />
+                                  <button
+                                    type="button"
+                                    tabIndex={passwordLocked ? -1 : 0}
+                                    onClick={() =>
+                                      setShowConfirmPassword(!showConfirmPassword)
+                                    }
+                                    className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
+                                  >
+                                    <Icon
+                                      name={showConfirmPassword ? "EyeOff" : "Eye"}
+                                      size={18}
+                                    />
+                                  </button>
+                                </div>
+
+                                <Button
+                                  className="col-span-2"
+                                  variant="default"
+                                  onClick={handleGeneratePassword}
+                                  loading={isLoading}
+                                  iconName="Send"
+                                  iconPosition="left"
+                                  fullWidth
+                                  type="button"
+                                  disabled={passwordLocked}
+                                >
+                                  Generate Password
+                                </Button>
+                              </div>
+                            </div>
                           </div>
-                          <div className="relative">
-                            <Input
-                              label="Confirm Password"
-                              type={showConfirmPassword ? "text" : "password"}
-                              value={inviteData?.confirmPassword}
-                              onChange={(e) =>
-                                handleInviteChange(
-                                  "confirmPassword",
-                                  e?.target?.value,
-                                )
-                              }
-                              required={!isEdit}
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setShowConfirmPassword(!showConfirmPassword)
-                              }
-                              className="absolute right-3 top-[38px] text-muted-foreground hover:text-foreground"
-                            >
-                              <Icon
-                                name={showConfirmPassword ? "EyeOff" : "Eye"}
-                                size={18}
-                              />
-                            </button>
-                          </div>
-                          <Button
-                            className="col-span-2"
-                            variant="default"
-                            onClick={handleGeneratePassword}
-                            loading={isLoading}
-                            iconName="Send"
-                            iconPosition="left"
-                            fullWidth
-                            type="button"
-                          >
-                            Generate Password
-                          </Button>
-                        </div>
-                      </div>
+                        );
+                      })()}
                       <div className="flex space-x-3 pt-4">
                         <Button
                           variant="outline"

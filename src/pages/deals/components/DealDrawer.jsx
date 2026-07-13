@@ -1083,6 +1083,7 @@ const DealDrawer = ({
                         onChange={(value) =>
                           handleSelectChange("teamId", value)
                         }
+                        searchable
                       />
                     </div>
                   </div>
@@ -1290,6 +1291,7 @@ const DealDrawer = ({
                         options={teamOptions}
                         disabled={!massFields.teamId}
                         onChange={(v) => handleChange("teamId", v)}
+                        searchable
                       />
                     </div>
                   </div>
