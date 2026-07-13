@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
@@ -195,11 +196,11 @@ const DealsTable = ({
     </th>
   );
 
-  const handleDelete = async (e, deal) => {
+  // Hands the whole deal up to the page, which opens the shared
+  // ConfirmDeleteModal (same dialog the bulk delete uses). No window.confirm.
+  const handleDelete = (e, deal) => {
     e.stopPropagation();
-    const ok = window.confirm(`Delete lead ${deal?.name}?`);
-    if (!ok) return;
-    await onDelete(deal.id);
+    onDelete?.(deal);
   };
 
   const openWhatsapp = (e, deal) => {
@@ -283,9 +284,19 @@ const DealsTable = ({
                 </td>
               </tr>
             ) : (
-              paginatedDeals?.map((deal) => (
-                <tr
+              <AnimatePresence initial={false}>
+                {paginatedDeals?.map((deal) => (
+                <motion.tr
                   key={deal?.id}
+                  layout
+                  // Deleted rows flash red and slide out rather than blinking
+                  // away, so the delete reads as an action, not a glitch.
+                  exit={{
+                    opacity: 0,
+                    x: -60,
+                    backgroundColor: "rgba(254, 226, 226, 1)",
+                    transition: { duration: 0.28, ease: "easeIn" },
+                  }}
                   onMouseEnter={() => setHoveredRow(deal?.id)}
                   onMouseLeave={() => setHoveredRow(null)}
                   onClick={() => onDealClick(deal)}
@@ -416,8 +427,9 @@ const DealsTable = ({
                       )}
                     </div>
                   </td>
-                </tr>
-              ))
+                </motion.tr>
+                ))}
+              </AnimatePresence>
             )}
           </tbody>
         </table>

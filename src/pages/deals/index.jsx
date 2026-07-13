@@ -61,6 +61,9 @@ const DealsPage = () => {
   });
   const [mode, setMode] = useState("view");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // The single lead awaiting delete confirmation. Holds the whole record so
+  // the dialog can name it; null when the dialog is closed.
+  const [leadToDelete, setLeadToDelete] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const location = useLocation();
   const canCreateLead = canCreate("Lead");
@@ -311,6 +314,28 @@ const DealsPage = () => {
     queryClient.invalidateQueries({ queryKey: ["leads"] });
   };
 
+  // Row trash icon → open the shared confirm dialog (same one bulk delete
+  // uses). Permission is checked here so we never open a dialog the user
+  // can't act on.
+  const handleRequestDeleteLead = (deal) => {
+    if (deal && !canDeleteRecord("Lead", getPermissionRecord(deal))) {
+      toast.error("You do not have permission to delete this lead");
+      return;
+    }
+    setLeadToDelete(deal);
+  };
+
+  const handleConfirmDeleteLead = () => {
+    const id = leadToDelete?.id;
+    if (!id) return;
+
+    toast.loading("Deleting lead...", { id: "delete-lead" });
+    deleteLeadMutation.mutate(id, {
+      onSettled: () => setLeadToDelete(null),
+    });
+  };
+
+  // Kept for the drawer, which deletes by id.
   const handleDeleteLead = async (id) => {
     const record = leads.find((lead) => lead.id === id);
 
@@ -643,7 +668,7 @@ const DealsPage = () => {
                 onDealClick={handleDealClick}
                 sortConfig={sortConfig}
                 onSort={handleSort}
-                onDelete={handleDeleteLead}
+                onDelete={handleRequestDeleteLead}
                 isLoading={isLoading}
                 page={page}
                 setPage={setPage}
@@ -689,8 +714,19 @@ const DealsPage = () => {
               open={showDeleteConfirm}
               title="Delete Selected Leads"
               description={`Are you sure you want to delete ${selectedDeals.length} lead(s)? This action cannot be undone.`}
+              loading={bulkDeleteMutation.isPending}
               onCancel={() => setShowDeleteConfirm(false)}
               onConfirm={handleConfirmBulkDelete}
+            />
+
+            {/* Single-lead delete — same dialog as bulk, named record. */}
+            <ConfirmDeleteModal
+              open={!!leadToDelete}
+              title="Delete Lead"
+              description={`Are you sure you want to delete "${leadToDelete?.name || "this lead"}"? This action cannot be undone.`}
+              loading={deleteLeadMutation.isPending}
+              onCancel={() => setLeadToDelete(null)}
+              onConfirm={handleConfirmDeleteLead}
             />
           </div>
         </main>
