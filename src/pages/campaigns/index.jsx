@@ -321,11 +321,11 @@ const ProjectsPage = () => {
               </div>
               <div className="flex items-center space-x-3">
                
-               {isSupAdmin() && (
+               
                 <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
                   <Icon name="Plus" size={16} className="mr-2" />
                   New Campaigns
-                </Button>)}
+                </Button>
 
               </div>
             </div>
