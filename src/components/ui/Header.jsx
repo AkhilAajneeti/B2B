@@ -103,10 +103,10 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [open, setOpen]);
 
-  // Alert the user when a *new* notification arrives, i.e. when the unread
-  // count rises. We track the previous count in a ref so the effect only
-  // fires on an increase — not on the initial load or when the count drops
-  // (e.g. after the user reads notifications).
+  // Shake the bell whenever there are unread notifications (count > 0): once on
+  // load, again with sound on each new arrival, and as a periodic reminder. It
+  // goes quiet only when the unread count reaches 0. `prevCountRef` starts null
+  // so we can tell the very first server value apart from a live increase.
   const prevCountRef = useRef(null);
   const audioCtxRef = useRef(null);
   const [bellRinging, setBellRinging] = useState(false);
@@ -116,10 +116,6 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   // Latest count, mirrored into a ref so the 30-min reminder interval (which is
   // set up once) reads the current value instead of a stale closure.
   const countRef = useRef(0);
-  // Whether the user has opened (i.e. read) the dropdown since the last new
-  // notification. When true we suppress the periodic reminder shake — no point
-  // nagging about notifications they've already seen. Reset on each new arrival.
-  const readSinceLastRef = useRef(false);
 
   // Shake the bell once (auto-stops after the 900ms animation). `withSound`
   // plays the chime — on for genuine new arrivals, off for the quieter 30-min
@@ -134,11 +130,8 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   const handleClick = async () => {
     setOpen(!open);
 
-    // Opening the dropdown = the user is reading their notifications, so stop
-    // any current shake and mute the reminder until something new arrives.
+    // fetch only when opening
     if (!open) {
-      readSinceLastRef.current = true;
-      setBellRinging(false);
       const data = await fetchNotifications();
       setNotifications(data.list || []);
     }
@@ -185,24 +178,31 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   }, [count]);
 
   useEffect(() => {
+    // Wait for the first real value from the server; while it's still loading
+    // `data` is undefined and `count` is a placeholder 0.
+    if (data === undefined) return;
     const prev = prevCountRef.current;
     prevCountRef.current = count;
-    // Skip the first observed value (nothing to compare against) and any
-    // decrease/no-change; only a genuine increase means a new notification.
-    if (prev === null || count <= prev) return;
-    // A fresh, unread notification — allow reminders again and shake with sound.
-    readSinceLastRef.current = false;
-    triggerRing(true);
-  }, [count]);
+    if (count <= 0) return; // all read → nothing to shake about
+    if (prev === null) {
+      // First server value this session and there are unread notifications —
+      // shake to draw attention, but without sound (not a live arrival).
+      triggerRing(false);
+    } else if (count > prev) {
+      // A genuinely new notification arrived while the page was open — shake
+      // and play the chime.
+      triggerRing(true);
+    }
+  }, [data, count]);
 
-  // Reminder: every 30 minutes, if there are still unread notifications AND the
-  // user hasn't opened them since the last arrival, shake the bell again
-  // (silently) so it doesn't get forgotten. Set up once; reads live values via
-  // refs.
+  // Reminder: every 30 minutes, as long as there are still unread
+  // notifications (count > 0), shake the bell again (silently) so it doesn't
+  // get forgotten. Stops on its own once everything is read. Set up once; reads
+  // the live count via a ref.
   useEffect(() => {
     const THIRTY_MIN = 30 * 60 * 1000;
     const id = setInterval(() => {
-      if (countRef.current > 0 && !readSinceLastRef.current) {
+      if (countRef.current > 0) {
         triggerRing(false);
       }
     }, THIRTY_MIN);
