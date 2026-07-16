@@ -322,9 +322,12 @@ const ProjectsPage = () => {
               <div className="flex items-center space-x-3">
                
                
-                <Button onClick={handleAddLeads} className="linearbg-1 text-white hover:text-white">
+                <Button
+                  onClick={handleAddLeads}
+                  className="linearbg-1 text-white hover:text-white border border-[#6E1420]/30 shadow-[0_1px_2px_rgba(16,24,40,.06),0_6px_16px_-6px_rgba(110,20,32,.45)] hover:shadow-[0_2px_4px_rgba(16,24,40,.08),0_10px_22px_-6px_rgba(110,20,32,.55)] transition-shadow"
+                >
                   <Icon name="Plus" size={16} className="mr-2" />
-                  New Campaigns
+                  New Campaign
                 </Button>
 
               </div>
@@ -345,7 +348,7 @@ const ProjectsPage = () => {
                   selectedCount={selectedDeals?.length}
                 />
               </div>
-              <div className="inline-flex shrink-0 rounded-lg border border-border bg-card p-0.5">
+              <div className="inline-flex shrink-0 rounded-lg border border-[#6E1420]/15 bg-card p-0.5 shadow-[0_1px_2px_rgba(16,24,40,.06),0_4px_12px_-4px_rgba(16,24,40,.12)]">
                 {["cards", "table"].map((v) => (
                   <button
                     key={v}
