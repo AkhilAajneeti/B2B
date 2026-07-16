@@ -491,7 +491,7 @@ const DealDrawer = ({
                       {/* Client Nomen now binds to clientNomen (was wired to
                           projectNomen — typing in either field was saving to
                           the wrong key on the backend). */}
-                      {isSupAdmin() && <Input
+                      {<Input
                         label="Client Nomen *"
                         value={formData.clientNomen || ""}
                         onChange={(e) => handleChange("clientNomen", e.target.value)}
@@ -501,7 +501,7 @@ const DealDrawer = ({
                         label="Project Nomen *"
                         value={formData.projectNomen || ""}
                         onChange={(e) => handleChange("projectNomen", e.target.value)}
-                        disabled={!isSupAdmin()}
+                        // disabled={!isSupAdmin()}
                       />
                       <Input
                         label="Address"
@@ -509,7 +509,7 @@ const DealDrawer = ({
                         onChange={(e) =>
                           handleChange("address", e.target.value)
                         }
-                        disabled={!isSupAdmin()}
+                        // disabled={!isSupAdmin()}
                       />
                       <Select
                         label="Assigned User"
@@ -519,7 +519,7 @@ const DealDrawer = ({
                           handleSelectChange("assignedUserId", value)
                         }
                         searchable
-                        disabled={!isSupAdmin()}
+                        // disabled={!isSupAdmin()}
                       />
                       <Select
                         label="Teams"
@@ -529,7 +529,7 @@ const DealDrawer = ({
                           handleSelectChange("teamId", value)
                         }
                         searchable
-                        disabled={!isSupAdmin()}
+                        // disabled={!isSupAdmin()}
                       />
                     </div>
                   </div>

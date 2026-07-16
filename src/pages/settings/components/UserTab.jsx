@@ -53,7 +53,7 @@ const UserTab = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [detailsLoadingId, setDetailsLoadingId] = useState(null);
   const emptyEmail = () => ({ emailAddress: "", primary: true, optOut: false, invalid: false });
-  const emptyPhone = () => ({ phoneNumber: "", type: "Mobile", primary: true });
+  const emptyPhone = () => ({ phoneNumber: "+91 ", type: "Mobile", primary: true });
 
   const [inviteData, setInviteData] = useState({
     userName: "",
@@ -172,7 +172,9 @@ const UserTab = () => {
     }
 
     const cleanedEmails = inviteData.emails.filter((e) => e.emailAddress?.trim());
-    const cleanedPhones = inviteData.phones.filter((p) => p.phoneNumber?.trim());
+    const cleanedPhones = inviteData.phones.filter(
+      (p) => (p.phoneNumber || "").replace(/\D/g, "").replace(/^91/, "").trim()
+    );
 
     const teamsIds = inviteData.teamsIds || [];
     const defaultTeamId = inviteData.defaultTeamId || teamsIds[0] || null;
