@@ -658,27 +658,40 @@ const DealsPage = () => {
             )}
 
             {/* Table + pagination — one rounded card: table is the body,
-                pagination is the footer, sharing border/shadow/corners. */}
-            <div className="overflow-hidden rounded-2xl border border-[rgba(20,20,30,0.08)] shadow-[0_1px_2px_rgba(16,24,40,.04),0_4px_16px_rgba(16,24,40,.06)]">
-              <DealsTable
-                deals={leads}
-                selectedDeals={selectedDeals}
-                onSelectDeal={handleSelectDeal}
-                onSelectAll={handleSelectAll}
-                onDealClick={handleDealClick}
-                sortConfig={sortConfig}
-                onSort={handleSort}
-                onDelete={handleRequestDeleteLead}
-                isLoading={isLoading}
-                page={page}
-                setPage={setPage}
-                canEdit={(deal) =>
-                  canEditRecord("Lead", getPermissionRecord(deal))
-                }
-                canDelete={(deal) =>
-                  canDeleteRecord("Lead", getPermissionRecord(deal))
-                }
-              />
+                pagination is the footer, sharing border/shadow/corners.
+
+                The card itself must NOT be overflow-hidden: the footer's
+                "per page" Select renders its menu as an absolutely-positioned
+                child, and a clipping context here cut the menu off so it
+                couldn't be used. Instead only the table is clipped (it's the
+                part whose square corners need rounding), and the footer rounds
+                its own bottom corners. */}
+            <div className="rounded-2xl border border-[rgba(20,20,30,0.08)] shadow-[0_1px_2px_rgba(16,24,40,.04),0_4px_16px_rgba(16,24,40,.06)]">
+              <div
+                className={`overflow-hidden ${
+                  totalPages > 1 ? "rounded-t-2xl" : "rounded-2xl"
+                }`}
+              >
+                <DealsTable
+                  deals={leads}
+                  selectedDeals={selectedDeals}
+                  onSelectDeal={handleSelectDeal}
+                  onSelectAll={handleSelectAll}
+                  onDealClick={handleDealClick}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  onDelete={handleRequestDeleteLead}
+                  isLoading={isLoading}
+                  page={page}
+                  setPage={setPage}
+                  canEdit={(deal) =>
+                    canEditRecord("Lead", getPermissionRecord(deal))
+                  }
+                  canDelete={(deal) =>
+                    canDeleteRecord("Lead", getPermissionRecord(deal))
+                  }
+                />
+              </div>
 
               <TablePagination
                 currentPage={page}
