@@ -92,6 +92,8 @@ export default {
         'slide-in': 'slideIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
         // Expanding halo behind the "Active" status dot on ProjectCard.
         'pulse-ring': 'pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        // Bell swing fired when a new notification arrives (Header).
+        'bell-swing': 'bellSwing 900ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 1',
       },
       keyframes: {
         fadeIn: {
@@ -106,6 +108,17 @@ export default {
           '0%': { transform: 'scale(1)', opacity: '0.55' },
           '70%': { transform: 'scale(2.6)', opacity: '0' },
           '100%': { transform: 'scale(2.6)', opacity: '0' },
+        },
+        bellSwing: {
+          '0%, 100%': { transform: 'rotate(0)' },
+          '10%': { transform: 'rotate(18deg)' },
+          '20%': { transform: 'rotate(-16deg)' },
+          '30%': { transform: 'rotate(14deg)' },
+          '40%': { transform: 'rotate(-12deg)' },
+          '50%': { transform: 'rotate(8deg)' },
+          '60%': { transform: 'rotate(-6deg)' },
+          '70%': { transform: 'rotate(4deg)' },
+          '80%': { transform: 'rotate(-2deg)' },
         },
       },
       spacing: {

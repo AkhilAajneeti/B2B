@@ -114,6 +114,60 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   };
   const { data } = useNotificationCount(!open);
   const count = data || 0;
+
+  // Alert the user when a *new* notification arrives, i.e. when the unread
+  // count rises. We track the previous count in a ref so the effect only
+  // fires on an increase — not on the initial load or when the count drops
+  // (e.g. after the user reads notifications).
+  const prevCountRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const [bellRinging, setBellRinging] = useState(false);
+
+  // Short two-tone chime generated with the Web Audio API so we don't ship an
+  // audio asset. Browsers block audio until the user has interacted with the
+  // page; by then they've navigated/clicked, so the context resumes fine, and
+  // if it's still blocked this fails silently rather than throwing.
+  const playChime = () => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const now = ctx.currentTime;
+      [
+        { freq: 880, start: 0 },
+        { freq: 1174, start: 0.14 },
+      ].forEach(({ freq, start }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now + start);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + start + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + start);
+        osc.stop(now + start + 0.36);
+      });
+    } catch {
+      /* audio unavailable / blocked — ignore */
+    }
+  };
+
+  useEffect(() => {
+    const prev = prevCountRef.current;
+    prevCountRef.current = count;
+    // Skip the first observed value (nothing to compare against) and any
+    // decrease/no-change; only a genuine increase means a new notification.
+    if (prev === null || count <= prev) return;
+    setBellRinging(true);
+    playChime();
+    const t = setTimeout(() => setBellRinging(false), 900);
+    return () => clearTimeout(t);
+  }, [count]);
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-40">
@@ -171,10 +225,19 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 aria-label="Notifications"
                 onClick={handleClick}
               >
-                <Icon name="Bell" size={20} />
+                <Icon
+                  name="Bell"
+                  size={20}
+                  className={`origin-top ${bellRinging ? "animate-bell-swing" : ""}`}
+                />
                 {count > 0 && (
-                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
-                    {count}
+                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center">
+                    {bellRinging && (
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70 animate-ping" />
+                    )}
+                    <span className="relative inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[11px] font-semibold leading-none rounded-full ring-2 ring-background">
+                      {count > 99 ? "99+" : count}
+                    </span>
                   </span>
                 )}
               </Button>
