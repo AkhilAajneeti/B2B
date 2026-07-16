@@ -94,14 +94,50 @@ const NotificationDropdown = () => {
     const note = n.noteData || {};
     const data = note.data || {};
 
-    const actor = note.createdByName || n.data?.userName || "Someone";
+    // "Record" rows in the list payload carry no actor at all — noteData,
+    // data and createdById are all null — so there is genuinely nobody to
+    // name. Keep it null here rather than inventing a "Someone" that made
+    // every row read identically.
+    const actorName = note.createdByName || n.data?.userName || null;
 
     const parentType = note.parentType || n.relatedParentType || "";
-    const parentName = note.parentName || n.data?.entityName || "";
+    // `relatedParentName` is where the record's name lives on the raw list
+    // payload (e.g. "Sandeep Verma"). It was missing from this chain, so every
+    // Record notification lost its name and collapsed to a bare "lead".
+    const parentName =
+      note.parentName || n.data?.entityName || n.relatedParentName || "";
     const entity = entityLabel(parentType);
-    const target = parentName ? `${entity} ${parentName}` : entity;
+    // With a known actor the record name belongs inside the sentence. Without
+    // one the record itself becomes the bold subject, so leave its name out of
+    // the message to avoid "Sandeep Verma updated lead Sandeep Verma".
+    const target =
+      actorName && parentName ? `${entity} ${parentName}` : entity;
 
     const noteType = note.type || n.type;
+
+    // No actor → passive voice, with the record name as the subject:
+    // "**Sandeep Verma** was updated".
+    if (!actorName) {
+      const passive = {
+        Post: "has a new comment",
+        Create: "was created",
+        CreateRelated: "has a new related record",
+        Assign: "was assigned",
+        Status: `status changed${data.value ? ` to ${data.value}` : ""}`,
+        Update: "was updated",
+        Relate: "was linked",
+        EmailReceived: "received a new email",
+        EmailSent: "had an email sent",
+      };
+      return {
+        id: n.id,
+        actor: parentName || entity,
+        message: passive[noteType] || "was updated",
+        entity: parentType,
+        time: n.createdAt,
+        read: n.read,
+      };
+    }
 
     let message;
     switch (noteType) {
@@ -150,7 +186,7 @@ const NotificationDropdown = () => {
 
     return {
       id: n.id,
-      actor,
+      actor: actorName,
       message,
       entity: parentType,
       time: n.createdAt,

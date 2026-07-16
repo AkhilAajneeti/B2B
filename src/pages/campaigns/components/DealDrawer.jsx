@@ -301,27 +301,24 @@ const DealDrawer = ({
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [usersRes, teamRes, contactRes] =
-          await Promise.all([
-            fetchUser(),
-            fetchTeam(),
+    // Load the three lists INDEPENDENTLY. Previously all three were awaited in
+    // a single Promise.all, so if any one rejected (e.g. fetchContacts erroring
+    // or timing out on initial page load) the shared catch skipped every
+    // setState — leaving the Assigned User / Collaborator dropdowns empty on a
+    // fresh "New Campaign". They only filled once the user opened an existing
+    // campaign, whose separate fetchTeamUser call succeeded. Isolating the
+    // loads means a failure in one no longer blanks the others.
+    fetchUser()
+      .then((res) => setUsers(res.list || []))
+      .catch((err) => console.error("Failed to load users", err));
 
+    fetchTeam()
+      .then((res) => setTeam(res.list || []))
+      .catch((err) => console.error("Failed to load teams", err));
 
-            fetchContacts(),
-          ]);
-
-        setUsers(usersRes.list || []);
-        setTeam(teamRes.list || []);
-
-        setContact(contactRes.list || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-
-    loadData();
+    fetchContacts()
+      .then((res) => setContact(res.list || []))
+      .catch((err) => console.error("Failed to load contacts", err));
   }, []);
 
   // For non-admin roles (Owner / rep), /User only returns users in their
