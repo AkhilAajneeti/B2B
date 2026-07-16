@@ -146,6 +146,203 @@ const articles = [
     ],
     related: ["lead-statuses-explained"],
   },
+  {
+    id: "weightage-based-lead-distribution",
+    title: "Weightage-based lead distribution",
+    description:
+      "How leads are shared between users automatically, based on each user's configured weightage.",
+    tags: [
+      "distribution",
+      "weightage",
+      "round robin",
+      "assignment",
+      "percentage",
+      "auto assign",
+    ],
+    sections: [
+      // ── 1. Overview ────────────────────────────────────────────────
+      {
+        type: "heading",
+        text: "📋 Overview",
+      },
+      {
+        type: "paragraph",
+        body:
+          "Leads are shared between users according to a configured weightage. You don't set percentages by hand — the system converts each user's weightage into a percentage and hands out leads proportionally. A higher weightage simply means a bigger share of the incoming leads.",
+      },
+      {
+        type: "badges",
+        items: [
+          { label: "1 : 3", value: "25% : 75%" },
+          { label: "2 : 3", value: "40% : 60%" },
+          { label: "2 : 3 : 5", value: "20% : 30% : 50%" },
+        ],
+      },
+      {
+        type: "note",
+        variant: "tip",
+        title: "The short version",
+        body:
+          "Weightage is just a ratio. Whatever ratio you set, the system turns it into percentages and splits leads to match — as closely as whole leads allow.",
+      },
+
+      // ── 2. How it calculates ───────────────────────────────────────
+      {
+        type: "heading",
+        text: "🧮 How the system calculates distribution",
+      },
+      {
+        type: "steps",
+        items: [
+          "Add up the weightage of every user in the group.",
+          "Convert each user's weightage into a percentage of that total.",
+          "Work out the expected number of leads for each user from their percentage.",
+          "Because a lead can't be split into decimals, round the values while keeping the overall split as close as possible to the configured percentages.",
+        ],
+      },
+      {
+        type: "note",
+        variant: "info",
+        title: "The formula",
+        body:
+          "User Percentage = (User Weightage ÷ Total Weightage) × 100.  Expected Leads = (User Percentage ÷ 100) × Total Leads.",
+      },
+
+      // ── 3. Conversion table ────────────────────────────────────────
+      {
+        type: "heading",
+        text: "🔢 Percentage conversion table",
+      },
+      {
+        type: "table",
+        headers: ["Weightage", "Percentage"],
+        align: ["left", "right"],
+        rows: [
+          ["1 : 1", "50% : 50%"],
+          ["1 : 2", "33.33% : 66.67%"],
+          ["1 : 3", "25% : 75%"],
+          ["2 : 3", "40% : 60%"],
+          ["2 : 5", "28.57% : 71.43%"],
+          ["2 : 3 : 5", "20% : 30% : 50%"],
+          ["1 : 2 : 3", "16.67% : 33.33% : 50%"],
+        ],
+      },
+
+      // ── 4. Practical examples ──────────────────────────────────────
+      {
+        type: "heading",
+        text: "📊 Practical examples",
+      },
+      {
+        type: "paragraph",
+        body:
+          "Example 1 — Weightage 1 : 3 (25% : 75%). How the split lands at different batch sizes:",
+      },
+      {
+        type: "table",
+        headers: ["Total Leads", "Distribution"],
+        align: ["left", "right"],
+        rows: [
+          ["100", "25 – 75"],
+          ["40", "10 – 30"],
+          ["20", "5 – 15"],
+          ["10", "2 – 8 (or 3 – 7 depending on rounding)"],
+        ],
+      },
+      {
+        type: "paragraph",
+        body: "Example 2 — Weightage 2 : 3 (40% : 60%):",
+      },
+      {
+        type: "table",
+        headers: ["Total Leads", "Distribution"],
+        align: ["left", "right"],
+        rows: [
+          ["100", "40 – 60"],
+          ["50", "20 – 30"],
+          ["20", "8 – 12"],
+          ["10", "4 – 6"],
+        ],
+      },
+      {
+        type: "paragraph",
+        body: "Example 3 — Weightage 2 : 3 : 5 (20% : 30% : 50%):",
+      },
+      {
+        type: "table",
+        headers: ["Total Leads", "Distribution"],
+        align: ["left", "right"],
+        rows: [
+          ["100", "20 – 30 – 50"],
+          ["50", "10 – 15 – 25"],
+          ["20", "4 – 6 – 10"],
+          ["10", "2 – 3 – 5"],
+        ],
+      },
+
+      // ── Flow diagram ───────────────────────────────────────────────
+      {
+        type: "heading",
+        text: "🔄 The distribution flow",
+      },
+      {
+        type: "flow",
+        items: [
+          "Configure Weightage",
+          "Convert to Percentage",
+          "Calculate Expected Leads",
+          "Round if Needed",
+          "Assign Leads",
+        ],
+      },
+
+      // ── 5. Important notes ─────────────────────────────────────────
+      {
+        type: "heading",
+        text: "⚠️ Important notes",
+      },
+      {
+        type: "bullets",
+        items: [
+          "Weightage is converted into percentages automatically — you never enter percentages yourself.",
+          "Leads are distributed proportionally based on those percentages.",
+          "Small batches may not match the exact percentage, because leads can't be split into decimals.",
+          "A difference of one lead can occur due to rounding.",
+          "No lead is ever lost or duplicated.",
+          "Across many assignments, the cumulative distribution stays very close to the configured percentage.",
+        ],
+      },
+      {
+        type: "note",
+        variant: "warning",
+        title: "Small batches look uneven — that's expected",
+        body:
+          "With only a handful of leads, whole-number rounding can make one user look favoured. It evens out as more leads come in.",
+      },
+
+      // ── 6. FAQ ─────────────────────────────────────────────────────
+      {
+        type: "heading",
+        text: "❓ FAQ",
+      },
+      {
+        type: "accordion",
+        items: [
+          {
+            q: "Why didn't I receive exactly 25% of the leads?",
+            a:
+              "When the total number of leads is small, percentages often land on decimals (for example, 2.5 leads). Since a lead can't be split, the system rounds the allocation while keeping the configured distribution as close as possible.",
+          },
+          {
+            q: "Will the distribution stay fair over time?",
+            a:
+              "Yes. Individual batches may differ by one lead because of rounding, but the overall distribution across many batches lines up closely with the configured weightage.",
+          },
+        ],
+      },
+    ],
+    related: ["creating-a-lead", "filtering-leads", "permissions:what-roles-mean"],
+  },
 ];
 
 export default articles;

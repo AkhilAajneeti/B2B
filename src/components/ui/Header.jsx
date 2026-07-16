@@ -103,18 +103,6 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [open, setOpen]);
 
-  const handleClick = async () => {
-    setOpen(!open);
-
-    // fetch only when opening
-    if (!open) {
-      const data = await fetchNotifications();
-      setNotifications(data.list || []);
-    }
-  };
-  const { data } = useNotificationCount(!open);
-  const count = data || 0;
-
   // Alert the user when a *new* notification arrives, i.e. when the unread
   // count rises. We track the previous count in a ref so the effect only
   // fires on an increase — not on the initial load or when the count drops
@@ -122,6 +110,41 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   const prevCountRef = useRef(null);
   const audioCtxRef = useRef(null);
   const [bellRinging, setBellRinging] = useState(false);
+  // Holds the current shake's stop-timer so overlapping triggers don't leave
+  // the bell stuck ringing.
+  const ringTimerRef = useRef(null);
+  // Latest count, mirrored into a ref so the 30-min reminder interval (which is
+  // set up once) reads the current value instead of a stale closure.
+  const countRef = useRef(0);
+  // Whether the user has opened (i.e. read) the dropdown since the last new
+  // notification. When true we suppress the periodic reminder shake — no point
+  // nagging about notifications they've already seen. Reset on each new arrival.
+  const readSinceLastRef = useRef(false);
+
+  // Shake the bell once (auto-stops after the 900ms animation). `withSound`
+  // plays the chime — on for genuine new arrivals, off for the quieter 30-min
+  // reminder.
+  const triggerRing = (withSound) => {
+    setBellRinging(true);
+    if (withSound) playChime();
+    if (ringTimerRef.current) clearTimeout(ringTimerRef.current);
+    ringTimerRef.current = setTimeout(() => setBellRinging(false), 900);
+  };
+
+  const handleClick = async () => {
+    setOpen(!open);
+
+    // Opening the dropdown = the user is reading their notifications, so stop
+    // any current shake and mute the reminder until something new arrives.
+    if (!open) {
+      readSinceLastRef.current = true;
+      setBellRinging(false);
+      const data = await fetchNotifications();
+      setNotifications(data.list || []);
+    }
+  };
+  const { data } = useNotificationCount(!open);
+  const count = data || 0;
 
   // Short two-tone chime generated with the Web Audio API so we don't ship an
   // audio asset. Browsers block audio until the user has interacted with the
@@ -156,17 +179,39 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
     }
   };
 
+  // Keep the ref in sync for the reminder interval to read.
+  useEffect(() => {
+    countRef.current = count;
+  }, [count]);
+
   useEffect(() => {
     const prev = prevCountRef.current;
     prevCountRef.current = count;
     // Skip the first observed value (nothing to compare against) and any
     // decrease/no-change; only a genuine increase means a new notification.
     if (prev === null || count <= prev) return;
-    setBellRinging(true);
-    playChime();
-    const t = setTimeout(() => setBellRinging(false), 900);
-    return () => clearTimeout(t);
+    // A fresh, unread notification — allow reminders again and shake with sound.
+    readSinceLastRef.current = false;
+    triggerRing(true);
   }, [count]);
+
+  // Reminder: every 30 minutes, if there are still unread notifications AND the
+  // user hasn't opened them since the last arrival, shake the bell again
+  // (silently) so it doesn't get forgotten. Set up once; reads live values via
+  // refs.
+  useEffect(() => {
+    const THIRTY_MIN = 30 * 60 * 1000;
+    const id = setInterval(() => {
+      if (countRef.current > 0 && !readSinceLastRef.current) {
+        triggerRing(false);
+      }
+    }, THIRTY_MIN);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Clean up any pending shake timer on unmount.
+  useEffect(() => () => clearTimeout(ringTimerRef.current), []);
 
   return (
     <>

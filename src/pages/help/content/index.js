@@ -20,6 +20,9 @@
  *   { type: "note", variant: "info"|"success"|"warning"|"tip", title?, body }
  *   { type: "screenshot", label, alt? }
  *   { type: "accordion", items: [{ q, a }] }
+ *   { type: "table", headers: [...], rows: [[...]], align?: [...], caption? }
+ *   { type: "flow", items: [...] }            // left-to-right step diagram
+ *   { type: "badges", items: [{ label, value, note? }] }  // conversion cards
  */
 import gettingStarted from "./gettingStarted";
 import leads from "./leads";

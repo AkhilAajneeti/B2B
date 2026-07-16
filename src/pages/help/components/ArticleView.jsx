@@ -6,6 +6,9 @@ import NoteCard from "./NoteCard";
 import StepList from "./StepList";
 import BulletList from "./BulletList";
 import Accordion from "./Accordion";
+import HelpTable from "./HelpTable";
+import FlowDiagram from "./FlowDiagram";
+import BadgeCards from "./BadgeCards";
 import ScreenshotPlaceholder from "./ScreenshotPlaceholder";
 import RelatedGuides from "./RelatedGuides";
 import NeedHelp from "./NeedHelp";
@@ -53,6 +56,20 @@ const renderSection = (section, idx) => {
       );
     case "accordion":
       return <Accordion key={idx} items={section.items} />;
+    case "table":
+      return (
+        <HelpTable
+          key={idx}
+          headers={section.headers}
+          rows={section.rows}
+          align={section.align}
+          caption={section.caption}
+        />
+      );
+    case "flow":
+      return <FlowDiagram key={idx} items={section.items} />;
+    case "badges":
+      return <BadgeCards key={idx} items={section.items} />;
     default:
       return null;
   }
