@@ -12,7 +12,7 @@ const SetupWizard = ({ integration, isOpen, onClose, onComplete }) => {
   const steps = [
     {
       title: "Authorization",
-      description: "Grant CRMPro access to your account",
+      description: "Grant Aajneeti CRM access to your account",
       content: (
         <div className="text-center space-y-4">
           <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mx-auto">

@@ -242,7 +242,7 @@ const EmailsPage = () => {
                   <EmailConnectionCard
                     provider="Gmail"
                     icon="Mail"
-                    description="Connect your Gmail account to sync emails, manage threads, and compose messages directly from CRMPro."
+                    description="Connect your Gmail account to sync emails, manage threads, and compose messages directly from Aajneeti CRM."
                     onConnect={() => handleConnectProvider('gmail')}
                     isConnected={connectedAccounts?.gmail}
                   />
