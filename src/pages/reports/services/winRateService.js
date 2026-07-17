@@ -213,6 +213,9 @@ export const fetchWinRateDataset = async ({ filters = {}, year }) => {
     ];
 
     const query = buildQuery(whereGroup);
+    // Keep in sync with what the aggregation hooks read: useWinRateAnalytics
+    // needs status/createdAt; useFunnelAnalytics additionally groups by
+    // assignedUserId/assignedUserName for its per-rep breakdown.
     const select = [
       "id",
       "status",
@@ -221,10 +224,7 @@ export const fetchWinRateDataset = async ({ filters = {}, year }) => {
       "assignedUserName",
     ].join(",");
 
-    const all = [];
-    let offset = 0;
-
-    while (offset < MAX_LEADS) {
+    const fetchPage = async (offset) => {
       const url = `${ESPO_BASE}?${query}&select=${select}&maxSize=${PAGE_SIZE}&offset=${offset}&orderBy=createdAt&order=desc`;
       const res = await fetch(url, {
         method: "GET",
@@ -239,15 +239,35 @@ export const fetchWinRateDataset = async ({ filters = {}, year }) => {
         throw new Error(`Win rate fetch failed: ${res.status}`);
       }
 
-      const data = await res.json();
-      const list = data?.list || [];
-      all.push(...list);
-      if (list.length < PAGE_SIZE) break;
-      offset += PAGE_SIZE;
+      return res.json();
+    };
+
+    // Page 0 first — its `total` tells us exactly how many more pages exist, so
+    // the rest can be fetched CONCURRENTLY. The previous implementation awaited
+    // each page in sequence (up to 25 round trips back-to-back), which is what
+    // made the analytics panel take ~10s to paint. The browser still caps
+    // concurrent requests per host, so this self-throttles rather than
+    // stampeding the gateway.
+    const first = await fetchPage(0);
+    const firstList = first?.list || [];
+    const all = [...firstList];
+
+    const reportedTotal =
+      typeof first?.total === "number" ? first.total : firstList.length;
+    const total = Math.min(reportedTotal, MAX_LEADS);
+
+    if (firstList.length === PAGE_SIZE && total > PAGE_SIZE) {
+      const offsets = [];
+      for (let o = PAGE_SIZE; o < total; o += PAGE_SIZE) offsets.push(o);
+
+      const pages = await Promise.all(offsets.map((o) => fetchPage(o)));
+      for (const page of pages) all.push(...(page?.list || []));
     }
 
-    writeCachedDataset(filters, year, all);
-    return all;
+    // Guard against the backend reporting a larger `total` than it pages out.
+    const capped = all.slice(0, MAX_LEADS);
+    writeCachedDataset(filters, year, capped);
+    return capped;
   })().finally(() => {
     inFlight.delete(key);
   });

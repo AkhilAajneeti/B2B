@@ -51,6 +51,10 @@ const DealDrawer = ({
     parentType: "",
     collaboratorsIds: "",
     enableConfiguration: false,
+    // Gates outbound WhatsApp messaging for this campaign. Defaults OFF on new
+    // campaigns so creating one can never silently start messaging leads — the
+    // rep has to opt in.
+    sendWhatsappNotification: false,
     // Structured form of the backend `configuration` string. Each row is
     // {id, name, count}; serialized back to "id:name:count\n" on save.
     configurationItems: [],
@@ -70,6 +74,7 @@ const DealDrawer = ({
         parentType: "",
         collaboratorsIds: "",
         enableConfiguration: false,
+        sendWhatsappNotification: false,
         configurationItems: [],
       });
     } else if (deal) {
@@ -93,6 +98,7 @@ const DealDrawer = ({
         parentName: deal.parentType || "",
         parentType: deal.parentId || "",
         enableConfiguration: deal.enableConfiguration || false,
+        sendWhatsappNotification: deal.sendWhatsappNotification || false,
         configurationItems: parseConfiguration(deal.configuration),
       });
       // Always land on the overview tab when (re-)opening an existing
@@ -248,6 +254,9 @@ const DealDrawer = ({
       parentId: formData.parentType || null, // record ID
       collaboratorsIds: formData.collaboratorsIds || null, // record ID
       enableConfiguration: !!formData.enableConfiguration,
+      // Boolean on Project — coerce so an undefined form value can never send
+      // `undefined` and have the backend fall back to its own default.
+      sendWhatsappNotification: !!formData.sendWhatsappNotification,
       configuration: serializeConfiguration(formData.configurationItems),
       attachmentsIds: [],
       reminders: [],
@@ -448,7 +457,17 @@ const DealDrawer = ({
                   onClick={() => {
                     if (isEditing && deal) {
 
+                      // Cancel → restore form state from the saved record.
+                      // projectNomen / clientNomen / whatsappTemplate were
+                      // missing here, so cancelling an edit silently wiped them
+                      // from form state (the hydration effect above only re-runs
+                      // on [mode, deal], not on cancel) — re-entering edit then
+                      // showed them blank. Keep this object in sync with that
+                      // effect.
                       setFormData({
+                        projectNomen: deal.projectNomen || "",
+                        clientNomen: deal.clientNomen || "",
+                        whatsappTemplate: deal.whatsappTemplate || "",
                         name: deal.name || "",
                         address: deal.address || "",
                         assignedUserId: deal.assignedUserId || "",
@@ -458,6 +477,8 @@ const DealDrawer = ({
                         parentName: deal.parentType || "",
                         parentType: deal.parentId || "",
                         enableConfiguration: deal.enableConfiguration || false,
+                        sendWhatsappNotification:
+                          deal.sendWhatsappNotification || false,
                         configurationItems: parseConfiguration(
                           deal.configuration,
                         ),
@@ -656,25 +677,86 @@ const DealDrawer = ({
                       </div>
                     }
 
-                    {/* WhatsApp Template — free-text message body used to
-                        seed wa.me URLs / outbound chats. Multi-line so reps
-                        can paste a full template with greeting, name
-                        placeholder, signature, etc. */}
+                    {/* ================= WhatsApp ================= */}
+                    {/* The send toggle and the message body are one decision,
+                        so they live in one card: turning notifications on is
+                        meaningless without a template, and vice versa. */}
                     {isSupAdmin() &&
                       <div className="col-span-2">
-                        <label className="block text-sm font-medium text-foreground mb-1">
-                          WhatsApp Template
-                        </label>
-                        <textarea
-                          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 "
-                          rows={4}
-                          value={formData.whatsappTemplate || ""}
-                          placeholder="Hello {name}, ..."
-                          onChange={(e) =>
-                            handleChange("whatsappTemplate", e.target.value)
-                          }
+                        <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                          {/* Header: what this does + the on/off switch */}
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Icon
+                                  name="MessageCircle"
+                                  size={16}
+                                  className="text-success shrink-0"
+                                />
+                                <h2 className="text-sm font-semibold text-foreground">
+                                  WhatsApp Notification
+                                </h2>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Automatically send the template below to leads in
+                                this campaign.
+                              </p>
+                            </div>
 
-                        />
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={!!formData.sendWhatsappNotification}
+                              aria-label="Send WhatsApp notification"
+                              onClick={() =>
+                                handleChange(
+                                  "sendWhatsappNotification",
+                                  !formData.sendWhatsappNotification,
+                                )
+                              }
+                              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card ${formData.sendWhatsappNotification
+                                ? "bg-success"
+                                : "bg-muted-foreground/30"
+                                }`}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${formData.sendWhatsappNotification
+                                  ? "translate-x-[22px]"
+                                  : "translate-x-0.5"
+                                  }`}
+                              />
+                            </button>
+                          </div>
+
+                          {/* Template — free-text message body used to seed
+                              wa.me URLs / outbound chats. Multi-line so reps can
+                              paste a full template with greeting, name
+                              placeholder, signature, etc. Stays editable while
+                              the toggle is off so a template can be drafted
+                              before going live; we just say it won't send. */}
+                          <div>
+                            <label className="block text-sm font-medium text-foreground mb-1">
+                              Message Template
+                            </label>
+                            <textarea
+                              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-60"
+                              rows={4}
+                              value={formData.whatsappTemplate || ""}
+                              placeholder="Hello {name}, ..."
+                              onChange={(e) =>
+                                handleChange("whatsappTemplate", e.target.value)
+                              }
+                            />
+                            {!formData.sendWhatsappNotification && (
+                              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Icon name="Info" size={12} className="shrink-0" />
+                                Notifications are off — this template won't be
+                                sent.
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     }
                   </div>
@@ -874,10 +956,36 @@ const DealDrawer = ({
 
                       {/* ================= Details ================= */}
                       <div className="border border-border rounded-xl p-6">
+                        {/* WhatsApp — mirrors the Configuration card's
+                            Enabled/Disabled badge so both toggles read the same
+                            way at a glance. */}
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-base font-semibold text-foreground">
+                            WhatsApp Notification
+                          </h3>
+                          <span
+                            className={`px-3 py-1 text-xs font-medium rounded-full ${deal?.sendWhatsappNotification
+                              ? "bg-success/10 text-success"
+                              : "bg-muted text-muted-foreground"
+                              }`}
+                          >
+                            {deal?.sendWhatsappNotification
+                              ? "Enabled"
+                              : "Disabled"}
+                          </span>
+                        </div>
+
                         {/* WhatsApp Template — preserve newlines and spacing
                               with whitespace-pre-wrap so templates with line
-                              breaks render the way the rep wrote them. */}
-                        <div className="md:col-span-2">
+                              breaks render the way the rep wrote them. Dimmed
+                              when sending is off: the text is still there, it
+                              just isn't in use. */}
+                        <div
+                          className={`md:col-span-2 ${deal?.sendWhatsappNotification
+                            ? "opacity-100"
+                            : "opacity-60"
+                            }`}
+                        >
                           <p className="text-sm text-muted-foreground">
                             WhatsApp Template
                           </p>

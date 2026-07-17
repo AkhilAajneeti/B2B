@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Icon from "../../../components/AppIcon";
 import { fetchLeadsCount } from "services/leads.service";
 import { fetchProjectsById } from "services/projects.service";
+import { projectLeadFilter } from "../utils/leadScope";
 import { getLastActivityLabel } from "pages/pipeline/utils/dateHelpers";
 
 /* Per-card accent pair, rotated by index. `tint` is the hover border colour,
@@ -49,25 +50,10 @@ const MAX_AVATARS = 4;
 const ProjectCard = ({ project, index = 0, onOpen }) => {
   const accent = ACCENTS[index % ACCENTS.length];
 
-  // Lead↔campaign linkage is inconsistent: some leads carry the clean label in
-  // `cProjectNomen` (with a messy `cProject`), others have it in `cProject`
-  // (with a null `cProjectNomen`). So match EITHER — cProjectNomen equals OR
-  // cProject contains the projectNomen. For "Default" projectNomen (no real
-  // per-campaign label) scope by `cClientNomen` (client-level) instead.
-  const hasNomen = project.projectNomen && project.projectNomen !== "Default";
-  const countFilter = hasNomen
-    ? [
-        {
-          type: "or",
-          value: [
-            { type: "equals", attribute: "cProjectNomen", value: project.projectNomen },
-            { type: "contains", attribute: "cProject", value: project.projectNomen },
-          ],
-        },
-      ]
-    : project.clientNomen
-      ? [{ type: "equals", attribute: "cClientNomen", value: project.clientNomen }]
-      : [{ type: "contains", attribute: "cProject", value: project.name }];
+  // Lead↔campaign matching lives in utils/leadScope so this card and the KPI
+  // row above it count leads by exactly the same rule — see that file for why
+  // the match is an OR across cProjectNomen / cProject / cClientNomen.
+  const countFilter = projectLeadFilter(project);
 
   const filterKey = JSON.stringify(countFilter);
 

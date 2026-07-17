@@ -72,6 +72,34 @@ const ProjectsPage = () => {
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
+  // Is any campaign filter actually narrowing the list? Drives whether the KPI
+  // row counts leads company-wide or only across the filtered campaigns.
+  const isFiltered = useMemo(
+    () =>
+      Object.values(filters).some(
+        (v) => v !== "" && v !== null && v !== undefined,
+      ),
+    [filters],
+  );
+
+  // The KPI row must reflect EVERY filtered campaign, not just the page the
+  // user happens to be on — `projects` above is one page (25 by default), so
+  // scoping from it would under-count as soon as the filter matched more than
+  // a page. Fetch the filtered set once, unpaginated, for scoping only.
+  // Skipped entirely when no filter is active (the KPIs count company-wide
+  // then, so the campaign list isn't needed).
+  const { data: scopeData } = useProjects({
+    page: 1,
+    limit: 200,
+    filters,
+    orderBy: "createdAt",
+    order: "desc",
+    enabled: isFiltered,
+  });
+  // Fall back to the current page while the scope query is in flight, so the
+  // cards show a filtered-ish number rather than flashing the global total.
+  const scopeProjects = isFiltered ? scopeData?.list || projects : null;
+
   const exportLeadsToCSV = (rows, fileName = "projects_export") => {
     if (!rows || rows.length === 0) {
       toast.error("No data to export");
@@ -333,8 +361,14 @@ const ProjectsPage = () => {
               </div>
             </div>
 
-            {/* KPI row */}
-            <ProjectKpis totalProjects={totalItems} />
+            {/* KPI row — lead counts scope to the filtered campaigns so they
+                agree with the cards below instead of showing company-wide
+                totals next to a filtered project count. */}
+            <ProjectKpis
+              totalProjects={totalItems}
+              scopeProjects={scopeProjects}
+              isFiltered={isFiltered}
+            />
 
             {/* Filters + view toggle */}
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
@@ -419,8 +453,6 @@ const ProjectsPage = () => {
               </div>
             )}
 
-            {/* Pagination — card view only; the table view renders its own
-                inside the card above. */}
             {viewMode === "cards" && (
               <TablePagination
                 currentPage={currentPage}
