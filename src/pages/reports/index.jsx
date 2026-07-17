@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet";
 import Header from "../../components/ui/Header";
@@ -14,6 +14,7 @@ import Icon from "../../components/AppIcon";
 import DealsTable from "./components/DealsTable";
 // import { fetchLeads } from "services/leads.service";
 import { useNewLeads } from "hooks/useLeads";
+import { useTeamUsers } from "hooks/useTeams";
 import { useFilteredMetrics } from "./hooks/useFilteredMetrics";
 
 const Reports = () => {
@@ -36,6 +37,7 @@ const Reports = () => {
     status: "",
     source: "",
     assignUser: "",
+    team: "",
     dateType: "",        // 👈 NEW (today, before, between, etc.)
     closeDateFrom: "",
     closeDateTo: "",
@@ -66,9 +68,14 @@ const Reports = () => {
       dateType: "",
       source: "",
       assignUser: "",
+      team: "",
       closeDateFrom: "",
       closeDateTo: "",
     });
+    // `page` is what the query + pagination actually bind to; clearing filters
+    // previously reset only the legacy `currentPage`, stranding the user on a
+    // now-empty page of the widened result set.
+    setPage(1);
     setCurrentPage(1);
   };
 
@@ -133,10 +140,32 @@ const Reports = () => {
   //   loadStatus();
   // }, []);
 
+  // Team filter → fetch the selected team's users and expose their ids as an
+  // internal `_teamUserIds` field on the filters object, which the services
+  // translate into `assignedUserId IN [...]`. Same derivation the Leads page
+  // uses (there is no native team attribute on Lead), so "filter by team"
+  // means "leads assigned to anyone on that team". The team-users query is
+  // React Query cached, so switching teams is instant after the first use.
+  const { data: filterTeamUsersData } = useTeamUsers(filters.team);
+  const filterTeamUserIds = useMemo(
+    () =>
+      filters.team ? (filterTeamUsersData?.list || []).map((u) => u.id) : null,
+    [filters.team, filterTeamUsersData],
+  );
+  // Both the table and the metric cards read from this so their numbers can
+  // never disagree about which team is in scope.
+  const filtersForBackend = useMemo(
+    () =>
+      filters.team && filterTeamUserIds !== null
+        ? { ...filters, _teamUserIds: filterTeamUserIds }
+        : filters,
+    [filters, filterTeamUserIds],
+  );
+
   const { data: leadsData, isLoading } = useNewLeads({
     limit,
     page,
-    filters,
+    filters: filtersForBackend,
     orderBy: sortConfig.key,
     order: sortConfig.direction,
   });
@@ -206,7 +235,9 @@ const Reports = () => {
 
   // Filter-aware metrics — each card runs its own backend count against the
   // full filtered dataset, so the numbers stay correct beyond page 1.
-  const { metricsData } = useFilteredMetrics({ filters });
+  // Uses `filtersForBackend` (not raw `filters`) so the team filter narrows the
+  // cards exactly as it narrows the table below them.
+  const { metricsData } = useFilteredMetrics({ filters: filtersForBackend });
 
 
   return (

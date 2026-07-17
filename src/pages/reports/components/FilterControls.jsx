@@ -4,6 +4,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
+import { useTeams } from "hooks/useTeams";
 import RoleGuard from "components/RoleGuard";
 import { todayLocal } from "../../../utils/dateFilter";
 
@@ -58,6 +59,12 @@ const FilterControls = ({
   const assignUserOptions = assignUser.map((acc) => ({
     value: acc.id, // 👈 important (ID use karo)
     label: acc.name,
+  }));
+  // Teams list — cached via React Query, so this costs one request per session.
+  const { data: teamsData } = useTeams();
+  const teamOptions = (teamsData?.list || []).map((t) => ({
+    value: t.id,
+    label: t.name,
   }));
   const sourceOptions = [
     { value: "Call", label: "Call" },
@@ -132,6 +139,15 @@ const FilterControls = ({
         label: "Assigned",
         value: m?.label || filters.assignUser,
         onRemove: () => handleFilterChange("assignUser", ""),
+      });
+    }
+    if (filters?.team) {
+      const m = teamOptions.find((o) => o.value === filters.team);
+      pills.push({
+        key: "team",
+        label: "Team",
+        value: m?.label || filters.team,
+        onRemove: () => handleFilterChange("team", ""),
       });
     }
     if (filters?.dateType) {
@@ -288,6 +304,18 @@ const FilterControls = ({
           value={filters?.assignUser || ""}
           onChange={(value) => handleFilterChange("assignUser", value)}
           searchable
+        />
+        {/* Team — mirrors the Leads page filter (same options, same behaviour):
+            long team names wrap in the panel instead of being clipped. */}
+        <Select
+          placeholder="Team"
+          options={teamOptions}
+          value={filters?.team || ""}
+          onChange={(value) => handleFilterChange("team", value)}
+          searchable
+          clearable
+          wrapOptions
+          dropdownClassName="min-w-[260px]"
         />
       </div>
 
