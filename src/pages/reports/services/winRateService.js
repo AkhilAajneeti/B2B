@@ -85,6 +85,27 @@ const filtersToWhereGroup = (filters = {}) => {
       value: filters.assignUser,
     });
   }
+  // TEAM FILTER — `_teamUserIds` is the internal, derived field set by the
+  // Reports page from the selected team's members (Lead has no native team
+  // attribute). Translates to `assignedUserId IN [...]`, mirroring
+  // leads.service.js and useFilteredMetrics so the charts, the cards and the
+  // table all scope to the same team. An empty array means the team has no
+  // users → match nothing, rather than silently charting everyone.
+  if (Array.isArray(filters._teamUserIds)) {
+    if (filters._teamUserIds.length === 0) {
+      where.push({
+        type: "equals",
+        attribute: "id",
+        value: "__no_team_users__",
+      });
+    } else {
+      where.push({
+        type: "in",
+        attribute: "assignedUserId",
+        value: filters._teamUserIds,
+      });
+    }
+  }
   if (filters.cProject) {
     where.push({
       type: "like",

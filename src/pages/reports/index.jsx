@@ -162,6 +162,20 @@ const Reports = () => {
     [filters, filterTeamUserIds],
   );
 
+  // Report Analytics scope. The charts stay deliberately decoupled from the
+  // rest of the filter bar (they chart the full year, independent of the
+  // table's status/source/date), but they DO honour the team filter — a
+  // "Team: X" chip should mean the same thing everywhere on the page. Passing
+  // only the team scope keeps the chart cache keyed on team alone, so it isn't
+  // refetched every time an unrelated filter changes.
+  const chartFilters = useMemo(
+    () =>
+      filters.team && filterTeamUserIds !== null
+        ? { _teamUserIds: filterTeamUserIds }
+        : {},
+    [filters.team, filterTeamUserIds],
+  );
+
   const { data: leadsData, isLoading } = useNewLeads({
     limit,
     page,
@@ -334,13 +348,19 @@ const Reports = () => {
                 </div>
 
                 {/*
-                  Charts are intentionally NOT given `filters` — they fetch the
-                  full year's dataset independently. The filter bar above drives
-                  the table only. This keeps the two flows fully decoupled.
+                  Charts fetch the full year's dataset independently — the
+                  table's status / source / date filters deliberately do NOT
+                  narrow them. The one exception is the TEAM filter, which they
+                  do honour, so a "Team: X" chip scopes the whole page
+                  consistently. Both charts share a single network fetch (same
+                  React Query key), so this stays one request.
                 */}
                 <div className="grid grid-cols-1 gap-6 mb-8">
-                  <ConversionFunnelChart enabled={showAnalytics} />
-                  <WinRateChart enabled={showAnalytics} />
+                  <ConversionFunnelChart
+                    filters={chartFilters}
+                    enabled={showAnalytics}
+                  />
+                  <WinRateChart filters={chartFilters} enabled={showAnalytics} />
                 </div>
               </>
             )}
