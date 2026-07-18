@@ -193,5 +193,18 @@ export const getUserRoles = () => {
 };
 
 // True only for users holding the "Owner" role — NOT admins or managers.
-// Used to gate owner-only actions like "Export All".
-export const isOwner = () => getUserRoles().includes('owner',"Manager");
+// NOTE: role names from getUserRoles() are lowercased, so compare in lowercase.
+export const isOwner = () => getUserRoles().includes('owner');
+
+// "Elevated" = admin (by type) OR Owner / Manager (by role). This is the same
+// set the sidebar treats as elevated, and it gates owner/manager/admin-only
+// actions like "Export All". Kept as one helper so those checks stay in sync.
+export const isElevated = () => {
+  const roles = getUserRoles();
+  return (
+    isSupAdmin() ||
+    roles.includes('admin') ||
+    roles.includes('owner') ||
+    roles.includes('manager')
+  );
+};

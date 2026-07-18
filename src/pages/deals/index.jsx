@@ -35,7 +35,7 @@ import {
   canEditRecord,
   canDeleteRecord,
   getStoredUser,
-  isOwner,
+  isElevated,
 } from "utils/permission";
 import { useLocation } from "react-router-dom";
 
@@ -594,11 +594,11 @@ const DealsPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                {/* Export All — owner-only. Gated by role rather than the old
-                    `hidden` CSS so non-owners can't reach it by un-hiding the
-                    element in devtools; when they aren't an owner it isn't
-                    rendered at all. */}
-                {isOwner() && (
+                {/* Export All — visible to elevated users (Owner / Manager /
+                    Admin). Gated by role rather than the old `hidden` CSS so
+                    others can't reach it by un-hiding the element in devtools;
+                    when they aren't elevated it isn't rendered at all. */}
+                {isElevated() && (
                   <Button
                     className="linearbg-1 text-white hover:text-white"
                     variant="outline"
