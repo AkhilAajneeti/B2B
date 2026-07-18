@@ -194,4 +194,4 @@ export const getUserRoles = () => {
 
 // True only for users holding the "Owner" role — NOT admins or managers.
 // Used to gate owner-only actions like "Export All".
-export const isOwner = () => getUserRoles().includes('owner');
+export const isOwner = () => getUserRoles().includes('owner',"Manager");
