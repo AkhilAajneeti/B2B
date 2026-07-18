@@ -436,7 +436,7 @@ const ProjectsPage = () => {
                   onDealClick={handleDealClick}
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                  currentPage={currentPage}
+                  currentPage={currentPage}           
                   itemsPerPage={itemsPerPage}
                   onDelete={handleDeleteLead}
                   isLoading={loading}

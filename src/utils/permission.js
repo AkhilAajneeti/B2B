@@ -174,3 +174,24 @@ export const isSupAdmin = () => {
   const role = user?.type?.toLowerCase();
   return role === 'admin';
 };
+
+// All role names on the logged-in user, normalized + lowercased. Roles live in
+// EspoCRM's plural-keyed shape (`rolesNames: { id: "Owner" }`); we also accept
+// singular variants for forward-compat if the auth response shape changes.
+// Mirrors the extraction in components/ui/Sidebar.jsx.
+export const getUserRoles = () => {
+  const user = getStoredUser();
+  return [
+    user?.role,
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+    ...Object.values(user?.rolesNames || {}),
+    ...Object.values(user?.roleNames || {}),
+  ]
+    .filter(Boolean)
+    .map((r) => (typeof r === 'string' ? r : r?.name || ''))
+    .map((r) => r.toLowerCase());
+};
+
+// True only for users holding the "Owner" role — NOT admins or managers.
+// Used to gate owner-only actions like "Export All".
+export const isOwner = () => getUserRoles().includes('owner');

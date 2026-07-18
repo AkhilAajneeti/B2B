@@ -35,6 +35,7 @@ import {
   canEditRecord,
   canDeleteRecord,
   getStoredUser,
+  isOwner,
 } from "utils/permission";
 import { useLocation } from "react-router-dom";
 
@@ -593,16 +594,20 @@ const DealsPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                <Button
-                  className="linearbg-1 text-white hover:text-white hidden"
-                  variant="outline"
-                  onClick={() =>
-                    exportLeadsToCSV(leads, "all_leads")
-                  }
-                >
-                  <Icon name="Download" size={16} className="mr-2" />
-                  Export All
-                </Button>
+                {/* Export All — owner-only. Gated by role rather than the old
+                    `hidden` CSS so non-owners can't reach it by un-hiding the
+                    element in devtools; when they aren't an owner it isn't
+                    rendered at all. */}
+                {isOwner() && (
+                  <Button
+                    className="linearbg-1 text-white hover:text-white"
+                    variant="outline"
+                    onClick={() => exportLeadsToCSV(leads, "all_leads")}
+                  >
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Export All
+                  </Button>
+                )}
 
                 <Button
                   onClick={handleAddLeads}

@@ -11,6 +11,35 @@ import { fetchContacts } from "services/contact.service";
 import makeAnimated from "react-select/animated";
 import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
 import { isAdminOrManager, isSupAdmin } from "../../../utils/permission.js";
+
+/**
+ * Read-only field in the overview grid: a small muted icon + label above the
+ * value. Value markup varies per field (links, dates, plain text), so it comes
+ * in as children rather than a prop.
+ */
+const ViewField = ({ icon, label, className = "", children }) => (
+  <div className={className}>
+    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <Icon name={icon} size={13} className="shrink-0" />
+      {label}
+    </p>
+    {children}
+  </div>
+);
+
+/** Section header for the view cards — icon + title, with optional right slot. */
+const SectionHeader = ({ icon, title, children }) => (
+  <div className="flex items-center justify-between gap-3 mb-6">
+    <div className="flex items-center gap-2 min-w-0">
+      <Icon name={icon} size={16} className="text-primary shrink-0" />
+      <h3 className="text-base font-semibold text-foreground truncate">
+        {title}
+      </h3>
+    </div>
+    {children}
+  </div>
+);
+
 const DealDrawer = ({
   deal,
   selectedIds = [],
@@ -796,28 +825,27 @@ const DealDrawer = ({
                     <div className="space-y-6">
                       {/* ================= Overview ================= */}
                       <div className="border border-border rounded-xl p-6">
+                        <SectionHeader icon="Info" title="Overview" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                           {/* Client Nomen */}
                           {isSupAdmin() &&
-                            <div className="col-span-2">
-                              <p className="text-sm text-muted-foreground">
-                                Client Nomen
-                              </p>
+                            <ViewField
+                              icon="Building2"
+                              label="Client Nomen"
+                              className="col-span-2"
+                            >
                               <p className="text-foreground font-medium mt-1">
                                 {deal?.clientNomen || "none"}
                               </p>
-                            </div>}
+                            </ViewField>}
 
                           {/* Project Nomen */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Project Nomen
-                            </p>
+                          <ViewField icon="Layers" label="Project Nomen">
                             <p className="text-foreground font-medium mt-1">
                               {deal?.projectNomen || "Default"}
                             </p>
-                          </div>
+                          </ViewField>
 
                           {/* Name */}
                           {/* {isSupAdmin && (
@@ -831,71 +859,56 @@ const DealDrawer = ({
                             </div>
                           )} */}
 
-                          {/* Phone */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Created By
-                            </p>
+                          {/* Created By */}
+                          <ViewField icon="UserPlus" label="Created By">
                             {deal?.createdByName ? (
-                              <p className="text-primary hover:underline">
+                              <p className="text-primary hover:underline mt-1">
                                 {deal.createdByName}
                               </p>
                             ) : (
-                              <p className="text-foreground">None</p>
+                              <p className="text-foreground mt-1">None</p>
                             )}
-                          </div>
+                          </ViewField>
 
-                          {/* Email */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Assigned User
-                            </p>
+                          {/* Assigned User */}
+                          <ViewField icon="UserCheck" label="Assigned User">
                             {deal?.assignedUserName ? (
-                              <p className="text-primary hover:underline break-all">
+                              <p className="text-primary hover:underline break-all mt-1">
                                 {deal.assignedUserName}
                               </p>
                             ) : (
-                              <p className="text-foreground">None</p>
+                              <p className="text-foreground mt-1">None</p>
                             )}
-                          </div>
+                          </ViewField>
 
-                          {/* WhatsApp */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Last Assigned User
-                            </p>
+                          {/* Last Assigned User */}
+                          <ViewField icon="UserCog" label="Last Assigned User">
                             {deal?.lastAssignedUser ? (
-                              <p className="text-primary hover:underline break-all">
+                              <p className="text-primary hover:underline break-all mt-1">
                                 {deal.lastAssignedUser}
                               </p>
                             ) : (
-                              <p className="text-foreground">None</p>
+                              <p className="text-foreground mt-1">None</p>
                             )}
-                          </div>
+                          </ViewField>
 
-                          {/* Next Contact */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Created At
-                            </p>
-                            <p className="text-foreground font-medium">
+                          {/* Created At */}
+                          <ViewField icon="Calendar" label="Created At">
+                            <p className="text-foreground font-medium mt-1">
                               {deal?.createdAt
                                 ? formatDate(deal.createdAt)
                                 : "—"}
                             </p>
-                          </div>
+                          </ViewField>
 
-                          {/* Next Contact */}
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Modified At
-                            </p>
-                            <p className="text-foreground font-medium">
+                          {/* Modified At */}
+                          <ViewField icon="History" label="Modified At">
+                            <p className="text-foreground font-medium mt-1">
                               {deal?.modifiedAt
                                 ? formatDate(deal.modifiedAt)
                                 : "None"}
                             </p>
-                          </div>
+                          </ViewField>
                         </div>
                       </div>
 
@@ -906,19 +919,19 @@ const DealDrawer = ({
                           here. When `enableConfiguration` is false, the rows
                           render dimmed to signal the values aren't active. */}
                       <div className="border border-border rounded-xl p-6">
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-base font-semibold text-foreground">
-                            Configuration
-                          </h3>
+                        <SectionHeader
+                          icon="SlidersHorizontal"
+                          title="Configuration"
+                        >
                           <span
-                            className={`px-3 py-1 text-xs font-medium rounded-full ${deal?.enableConfiguration
+                            className={`shrink-0 px-3 py-1 text-xs font-medium rounded-full ${deal?.enableConfiguration
                               ? "bg-success/10 text-success"
                               : "bg-muted text-muted-foreground"
                               }`}
                           >
                             {deal?.enableConfiguration ? "Enabled" : "Disabled"}
                           </span>
-                        </div>
+                        </SectionHeader>
 
                         {(() => {
                           const items = parseConfiguration(deal?.configuration);
@@ -959,12 +972,12 @@ const DealDrawer = ({
                         {/* WhatsApp — mirrors the Configuration card's
                             Enabled/Disabled badge so both toggles read the same
                             way at a glance. */}
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-base font-semibold text-foreground">
-                            WhatsApp Notification
-                          </h3>
+                        <SectionHeader
+                          icon="MessageCircle"
+                          title="WhatsApp Notification"
+                        >
                           <span
-                            className={`px-3 py-1 text-xs font-medium rounded-full ${deal?.sendWhatsappNotification
+                            className={`shrink-0 px-3 py-1 text-xs font-medium rounded-full ${deal?.sendWhatsappNotification
                               ? "bg-success/10 text-success"
                               : "bg-muted text-muted-foreground"
                               }`}
@@ -973,26 +986,25 @@ const DealDrawer = ({
                               ? "Enabled"
                               : "Disabled"}
                           </span>
-                        </div>
+                        </SectionHeader>
 
                         {/* WhatsApp Template — preserve newlines and spacing
                               with whitespace-pre-wrap so templates with line
                               breaks render the way the rep wrote them. Dimmed
                               when sending is off: the text is still there, it
                               just isn't in use. */}
-                        <div
+                        <ViewField
+                          icon="FileText"
+                          label="WhatsApp Template"
                           className={`md:col-span-2 ${deal?.sendWhatsappNotification
                             ? "opacity-100"
                             : "opacity-60"
                             }`}
                         >
-                          <p className="text-sm text-muted-foreground">
-                            WhatsApp Template
-                          </p>
                           <p className="text-foreground leading-relaxed mt-1 whitespace-pre-wrap">
                             {deal?.whatsappTemplate || "—"}
                           </p>
-                        </div>
+                        </ViewField>
 
                       </div>
                     </div>
