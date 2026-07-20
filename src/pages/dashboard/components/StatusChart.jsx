@@ -53,6 +53,12 @@ const STATUS_COLOR_MAP = {
 
 const colorForStatus = (status, fallbackIndex = 0) =>
   STATUS_COLOR_MAP[status] || COLORS[fallbackIndex % COLORS.length];
+
+// Display-only: capitalize the first letter of every word so labels read as
+// Title Case (e.g. "Not interested" → "Not Interested"). The RAW status string
+// is still used for colour + data lookups, so this can't break any mapping.
+const prettyStatus = (status = "") =>
+  String(status).replace(/\b\w/g, (c) => c.toUpperCase());
 const STATUS_OPTIONS = [
   "Call Later",
   "Call Not Connecting",
@@ -288,7 +294,7 @@ const StatusChart = () => {
       return (
         <div className="bg-popover border border-border rounded-lg p-3 shadow-elevation-2">
           <p className="font-medium text-popover-foreground mb-1">
-            {data.name}
+            {prettyStatus(data.name)}
           </p>
           <p className="text-sm text-muted-foreground">
             Leads: {isEmpty ? 0 : data.value}
@@ -323,7 +329,7 @@ const StatusChart = () => {
             Leads by Status
           </h3>
           <p className="text-sm text-muted-foreground">
-            Lead distribution across Status
+            Lead distribution across statuses
           </p>
         </div>
         <div className="w-full mt-5 scrollbar-hide">
@@ -397,7 +403,7 @@ const StatusChart = () => {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: colorForStatus(item.name, index) }}
             />
-            <span>{item.name}</span>
+            <span>{prettyStatus(item.name)}</span>
           </div>
         ))}
 

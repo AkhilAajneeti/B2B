@@ -13,6 +13,7 @@ import TablePagination from "./components/TablePagination";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createLead,
+  createLeadActivity,
   deleteActivity,
   deleteLead,
   updateLead,
@@ -313,6 +314,49 @@ const DealsPage = () => {
 
     await updateLead(id, payload);
     queryClient.invalidateQueries({ queryKey: ["leads"] });
+  };
+
+  // Quick Edit (mobile bottom sheet) save. Does two things from one tap:
+  //   1. Updates the changed lead fields (status / description / follow-up) —
+  //      `fields.description` overwrites the lead's description, same field the
+  //      drawer edits.
+  //   2. Also logs the note to the activity STREAM (same Post the drawer
+  //      creates), so call history accumulates instead of being lost to the
+  //      description overwrite.
+  // Throws on permission denial so the sheet stays open; the stream post is
+  // best-effort (the note is already saved to description) so a stream failure
+  // doesn't fail the whole save.
+  const handleQuickUpdate = async (id, { fields = {}, note = "" } = {}) => {
+    const record = leads.find((lead) => lead.id === id);
+    if (record && !canEditRecord("Lead", getPermissionRecord(record))) {
+      toast.error("You do not have permission to edit this lead");
+      throw new Error("permission-denied");
+    }
+
+    if (Object.keys(fields).length) {
+      await updateLead(id, fields);
+    }
+
+    if (note) {
+      try {
+        await createLeadActivity({
+          post: note,
+          parentId: id,
+          parentType: "Lead",
+          type: "Post",
+          isInternal: false,
+          attachmentsIds: [],
+        });
+      } catch (streamErr) {
+        // Note is already saved to description above, so keep the save a
+        // success — just surface that the stream log didn't post.
+        console.error("Quick note stream post failed", streamErr);
+        toast.error("Saved, but couldn't add the note to activity");
+      }
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["leads"] });
+    queryClient.invalidateQueries({ queryKey: ["lead-stream", id] });
   };
 
   // Row trash icon → open the shared confirm dialog (same one bulk delete
@@ -686,6 +730,7 @@ const DealsPage = () => {
                   sortConfig={sortConfig}
                   onSort={handleSort}
                   onDelete={handleRequestDeleteLead}
+                  onQuickUpdate={handleQuickUpdate}
                   isLoading={isLoading}
                   page={page}
                   setPage={setPage}

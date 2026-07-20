@@ -177,8 +177,47 @@ const ActivityTimeline = ({
     if (completed) return false;
     return new Date(dueDate) < new Date();
   };
+  // Human-readable entity label for mid-sentence use ("Lead" -> "lead").
+  const entityLabel = (t) => {
+    const map = {
+      Lead: "lead",
+      Meeting: "meeting",
+      Task: "task",
+      Call: "call",
+      Account: "account",
+      Contact: "contact",
+      Case: "case",
+      Opportunity: "deal",
+      Project: "campaign",
+    };
+    return map[t] || (t ? t.toLowerCase() : "record");
+  };
+
+  // Build a plain-English sentence for the activity — subject (who) + verb +
+  // object — instead of the raw "Update for Lead by X" machine text. Uses the
+  // status value on updates/creates so the line is actually informative.
   const getActivityTitle = (activity) => {
-    return `${activity.type} for ${activity.parentType} by ${activity.createdByName}`;
+    const actor = activity.createdByName || "Someone";
+    const entity = entityLabel(activity.parentType);
+    const status = activity.data?.value || activity.data?.statusValue;
+
+    switch (activity.type) {
+      case "Post":
+        return `${actor} added a note`;
+      case "Create":
+        return `${actor} created a new ${entity}`;
+      case "Assign":
+        return activity.data?.assignedUserName
+          ? `${actor} assigned the ${entity} to ${activity.data.assignedUserName}`
+          : `${actor} assigned the ${entity}`;
+      case "Update":
+      case "Status":
+        return status
+          ? `${actor} changed the status to ${status}`
+          : `${actor} updated the ${entity}`;
+      default:
+        return `${actor} updated the ${entity}`;
+    }
   };
   const canShowComplete = (activity) => {
     const completableTypes = ["Meeting", "Task"];
@@ -222,6 +261,14 @@ const ActivityTimeline = ({
                     {activity.parentName && (
                       <p className="text-xs text-muted-foreground mb-2">
                         {activity.parentType} • {activity.parentName}
+                      </p>
+                    )}
+
+                    {/* NOTE BODY — the comment text on a Post activity, which
+                        the old title threw away entirely. */}
+                    {activity.type === "Post" && activity.post && (
+                      <p className="text-sm text-foreground bg-muted/40 border border-border rounded-md px-3 py-2 mb-2 whitespace-pre-wrap break-words">
+                        {activity.post}
                       </p>
                     )}
 

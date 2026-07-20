@@ -718,6 +718,56 @@ const DealDrawer = ({
   const canEditDeal = (deal) =>
     canEditRecord("Lead", getPermissionRecord({ ...deal, ...leadsDetails }));
 
+  // ── Inline field editing (view mode) ─────────────────────────────────
+  // Lets the user pencil-edit Status / Description in place without opening
+  // the full edit form. `deal` is a snapshot that won't refetch after save,
+  // so successful saves are held in `inlineEdits` and layered over `deal` for
+  // display. Reset whenever a different lead is shown.
+  const [inlineField, setInlineField] = useState(null); // "status" | "description" | null
+  const [inlineValue, setInlineValue] = useState("");
+  const [inlineSaving, setInlineSaving] = useState(false);
+  const [inlineEdits, setInlineEdits] = useState({});
+
+  useEffect(() => {
+    setInlineEdits({});
+    setInlineField(null);
+    setInlineValue("");
+  }, [deal?.id]);
+
+  const inlineStatus = inlineEdits.status ?? deal?.status;
+  const inlineDescription = inlineEdits.description ?? deal?.description;
+
+  const startInlineEdit = (field, currentValue) => {
+    setInlineField(field);
+    setInlineValue(currentValue ?? "");
+  };
+  const cancelInlineEdit = () => {
+    setInlineField(null);
+    setInlineValue("");
+  };
+  const saveInlineEdit = async (field) => {
+    if (inlineSaving) return;
+    if (!canEditDeal(deal)) {
+      toast.error("You do not have permission to edit this lead");
+      return;
+    }
+    const value = field === "description" ? inlineValue : inlineValue.trim();
+    try {
+      setInlineSaving(true);
+      await onUpdate(deal.id, { [field]: value });
+      setInlineEdits((prev) => ({ ...prev, [field]: value }));
+      // Keep the drawer's own detail query fresh too.
+      queryClient.invalidateQueries({ queryKey: ["leadDetails", deal.id] });
+      toast.success("Updated");
+      cancelInlineEdit();
+    } catch (err) {
+      console.error("Inline update failed", err);
+      toast.error("Couldn't update");
+    } finally {
+      setInlineSaving(false);
+    }
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -1426,98 +1476,88 @@ const DealDrawer = ({
                     <div className="space-y-5">
 
 
-                      {/* ============ Contact ============ */}
-                      <div className="border border-border rounded-xl overflow-hidden">
-                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
-                          <Icon name="UserCircle" size={16} className="text-slate-500" />
-                          <h3 className="text-sm font-semibold text-foreground">
-                            Contact
-                          </h3>
-                        </div>
-                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-                          {/* Phone */}
-                          <div className="flex items-start gap-3">
-                            <Icon name="Phone" size={14} className="text-slate-400 mt-0.5 shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-xs text-muted-foreground mb-0.5">
-                                Phone
-                              </p>
-                              {deal?.phoneNumber ? (
-                                <a
-                                  href={`tel:${deal.phoneNumber}`}
-                                  className="text-sm text-primary hover:underline font-medium break-all"
-                                >
-                                  {deal.phoneNumber}
-                                </a>
-                              ) : (
-                                <p className="text-sm text-muted-foreground">None</p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Email */}
-                          <div className="flex items-start gap-3">
-                            <Icon name="Mail" size={14} className="text-slate-400 mt-0.5 shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-xs text-muted-foreground mb-0.5">
-                                Email
-                              </p>
-                              {deal?.emailAddress ? (
-                                <a
-                                  href={`mailto:${deal.emailAddress}`}
-                                  className="text-sm text-primary hover:underline font-medium break-all"
-                                >
-                                  {deal.emailAddress}
-                                </a>
-                              ) : (
-                                <p className="text-sm text-muted-foreground">None</p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* WhatsApp — uses the shared buildWhatsappUrl
-                              helper so the link logic is identical to
-                              the header Quick Action. */}
-                          <div className="flex items-start gap-3 md:col-span-2">
-                            <Icon name="MessageCircle" size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-xs text-muted-foreground mb-0.5">
-                                WhatsApp
-                              </p>
-                              {(() => {
-                                const url = buildWhatsappUrl(deal);
-                                if (!url) {
-                                  return (
-                                    <p className="text-sm text-muted-foreground">
-                                      None
-                                    </p>
-                                  );
-                                }
-                                return (
-                                  <a
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 hover:underline font-medium break-all"
-                                  >
-                                    {deal?.phoneNumber || deal?.cWhatsapp}
-                                  </a>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-
-                      <div className="border border-border rounded-xl overflow-hidden">
-                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                      {/* ============ Interest ============ */}
+                      {/* No overflow-hidden here (unlike the other cards): the
+                          inline Status dropdown renders as an absolute child and
+                          would be clipped by it. The header rounds its own top
+                          corners instead so the card still looks clean. */}
+                      <div className="border border-border rounded-xl">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border rounded-t-xl">
                           <Icon name="Briefcase" size={16} className="text-slate-500" />
                           <h3 className="text-sm font-semibold text-foreground">
                             Interest
                           </h3>
                         </div>
                         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {/* Status — moved here from the hero/lifecycle so the
+                              lead's current stage sits with the interest data.
+                              Pencil = inline edit without opening the form.
+                              Spans full width while editing for breathing room. */}
+                          <div className="group flex items-start gap-3">
+                            <Icon name="CircleDot" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-muted-foreground mb-1">
+                                Status
+                              </p>
+                              {inlineField === "status" ? (
+                                <div className="flex items-center gap-1.5">
+                                  <div className="min-w-0 flex-1">
+                                    <Select
+                                      options={statusOptions}
+                                      value={inlineValue}
+                                      onChange={(v) => setInlineValue(v)}
+                                      searchable
+                                      wrapOptions
+                                      dropdownClassName="min-w-[240px]"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => saveInlineEdit("status")}
+                                    disabled={inlineSaving}
+                                    aria-label="Save status"
+                                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+                                  >
+                                    <Icon name={inlineSaving ? "Loader" : "Check"} size={16} className={inlineSaving ? "animate-spin" : ""} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={cancelInlineEdit}
+                                    disabled={inlineSaving}
+                                    aria-label="Cancel"
+                                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-50"
+                                  >
+                                    <Icon name="X" size={16} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {inlineStatus ? (
+                                    <span
+                                      className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStageColor(
+                                        inlineStatus,
+                                      )}`}
+                                    >
+                                      {getStatusLabel(inlineStatus)}
+                                    </span>
+                                  ) : (
+                                    <p className="text-sm text-muted-foreground">None</p>
+                                  )}
+                                  {canEditDeal(deal) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => startInlineEdit("status", inlineStatus || "New")}
+                                      aria-label="Edit status"
+                                      className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-border/70 bg-card text-muted-foreground transition hover:border-primary/40 hover:bg-muted hover:text-primary"
+                                    >
+                                      <Icon name="Pencil" size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
                           {/* Project — baseline */}
                           <div className="flex items-start gap-3">
                             <Icon name="Layers" size={14} className="text-slate-400 mt-0.5 shrink-0" />
@@ -1752,6 +1792,171 @@ const DealDrawer = ({
                               </div>
                             </div>
                           </div>
+
+                          {/* Description — moved here from Lifecycle; full
+                              width, multi-line, with auto-linked URLs.
+                              Pencil = inline edit without opening the form. */}
+                          <div className="flex items-start gap-3 md:col-span-2">
+                            <Icon name="FileText" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2 mb-0.5">
+                                <p className="text-xs text-muted-foreground">
+                                  Description
+                                </p>
+                                {inlineField !== "description" && canEditDeal(deal) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => startInlineEdit("description", inlineDescription)}
+                                    aria-label="Edit description"
+                                    className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-border/70 bg-card text-muted-foreground transition hover:border-primary/40 hover:bg-muted hover:text-primary"
+                                  >
+                                    <Icon name="Pencil" size={12} />
+                                  </button>
+                                )}
+                              </div>
+
+                              {inlineField === "description" ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                    rows={3}
+                                    value={inlineValue}
+                                    placeholder="Add a description..."
+                                    onChange={(e) => setInlineValue(e.target.value)}
+                                    autoFocus
+                                  />
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={cancelInlineEdit}
+                                      disabled={inlineSaving}
+                                      className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => saveInlineEdit("description")}
+                                      disabled={inlineSaving}
+                                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+                                    >
+                                      <Icon name={inlineSaving ? "Loader" : "Check"} size={14} className={inlineSaving ? "animate-spin" : ""} />
+                                      Save
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
+                                  {(() => {
+                                    if (!inlineDescription) return "None";
+
+                                    const URL_RE = /(https?:\/\/[^\s)]+)/g;
+                                    const parts = inlineDescription.split(URL_RE);
+                                    return parts.map((part, i) => {
+                                      if (!part) return null;
+                                      if (/^https?:\/\//.test(part)) {
+                                        return (
+                                          <a
+                                            key={i}
+                                            href={part}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:underline break-all"
+                                          >
+                                            {part}
+                                          </a>
+                                        );
+                                      }
+                                      return <span key={i}>{part}</span>;
+                                    });
+                                  })()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ============ Contact ============ */}
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-3 bg-slate-50/60 border-b border-border">
+                          <Icon name="UserCircle" size={16} className="text-slate-500" />
+                          <h3 className="text-sm font-semibold text-foreground">
+                            Contact
+                          </h3>
+                        </div>
+                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {/* Phone */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Phone" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Phone
+                              </p>
+                              {deal?.phoneNumber ? (
+                                <a
+                                  href={`tel:${deal.phoneNumber}`}
+                                  className="text-sm text-primary hover:underline font-medium break-all"
+                                >
+                                  {deal.phoneNumber}
+                                </a>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">None</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Email */}
+                          <div className="flex items-start gap-3">
+                            <Icon name="Mail" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Email
+                              </p>
+                              {deal?.emailAddress ? (
+                                <a
+                                  href={`mailto:${deal.emailAddress}`}
+                                  className="text-sm text-primary hover:underline font-medium break-all"
+                                >
+                                  {deal.emailAddress}
+                                </a>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">None</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* WhatsApp — uses the shared buildWhatsappUrl
+                              helper so the link logic is identical to
+                              the header Quick Action. */}
+                          <div className="flex items-start gap-3 md:col-span-2">
+                            <Icon name="MessageCircle" size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                WhatsApp
+                              </p>
+                              {(() => {
+                                const url = buildWhatsappUrl(deal);
+                                if (!url) {
+                                  return (
+                                    <p className="text-sm text-muted-foreground">
+                                      None
+                                    </p>
+                                  );
+                                }
+                                return (
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 hover:underline font-medium break-all"
+                                  >
+                                    {deal?.phoneNumber || deal?.cWhatsapp}
+                                  </a>
+                                );
+                              })()}
+                            </div>
+                          </div>
                         </div>
                       </div>
 
@@ -1822,44 +2027,6 @@ const DealDrawer = ({
                                 {deal?.cSiteVisitAt
                                   ? formatDateTime(deal.cSiteVisitAt)
                                   : "None"}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Description — full width, multi-line. */}
-                          <div className="flex items-start gap-3 md:col-span-2">
-                            <Icon name="FileText" size={14} className="text-slate-400 mt-0.5 shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs text-muted-foreground mb-0.5">
-                                Description
-                              </p>
-                              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
-                                {(() => {
-                                  if (!deal?.description) return "None";
-
-                                  const URL_RE = /(https?:\/\/[^\s)]+)/g;
-                                  const parts =
-                                    deal.description.split(URL_RE);
-                                  return parts.map((part, i) => {
-                                    if (!part) return null;
-                                    if (/^https?:\/\//.test(part)) {
-                                      return (
-                                        <a
-                                          key={i}
-                                          href={part}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-primary hover:underline break-all"
-                                        >
-                                          {part}
-                                        </a>
-                                      );
-                                    }
-                                    return (
-                                      <span key={i}>{part}</span>
-                                    );
-                                  });
-                                })()}
                               </p>
                             </div>
                           </div>
@@ -2210,43 +2377,13 @@ const DealDrawer = ({
                               gutter, the `absolute` line + dots sit in
                               that gutter. Created uses emerald (origin),
                               modified uses sky (motion). */}
-                          <div className="relative pl-6">
-                            <div className="absolute left-1.5 top-2 bottom-2 w-px bg-slate-200" />
+                          <div className="relative pl-9">
+                            <div className="absolute left-3 top-3 bottom-3 w-px bg-slate-200" />
 
-                            {/* Created */}
+                            {/* Modified — newest first, so it sits at the top */}
                             <div className="relative pb-5">
-                              <div className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-emerald-400 bg-white flex items-center justify-center">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              </div>
-                              <p className="text-[10px] uppercase tracking-wider text-emerald-600 font-medium">
-                                Created
-                              </p>
-                              <p className="text-sm font-medium text-slate-900 mt-0.5">
-                                {deal?.createdAt
-                                  ? formatDateTime(deal.createdAt)
-                                  : "—"}
-                              </p>
-                              {deal?.createdByName && (
-                                <div className="mt-1 flex items-center gap-1.5">
-                                  <div
-                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
-                                    style={{
-                                      backgroundColor: getNameColor(deal.createdByName),
-                                    }}
-                                  >
-                                    {getInitials(deal.createdByName)}
-                                  </div>
-                                  <p className="text-xs text-slate-500">
-                                    by {deal.createdByName}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Modified */}
-                            <div className="relative">
-                              <div className="absolute -left-6 top-1 w-4 h-4 rounded-full border-2 border-sky-400 bg-white flex items-center justify-center">
-                                <div className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                              <div className="absolute -left-9 -top-0.5 w-6 h-6 rounded-full bg-sky-500 ring-4 ring-sky-100 flex items-center justify-center shadow-sm">
+                                <Icon name="PencilLine" size={12} className="text-white" />
                               </div>
                               <p className="text-[10px] uppercase tracking-wider text-sky-600 font-medium">
                                 Last modified
@@ -2268,6 +2405,36 @@ const DealDrawer = ({
                                   </div>
                                   <p className="text-xs text-slate-500">
                                     by {deal.modifiedByName}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Created — oldest, so it sits at the bottom */}
+                            <div className="relative">
+                              <div className="absolute -left-9 -top-0.5 w-6 h-6 rounded-full bg-emerald-500 ring-4 ring-emerald-100 flex items-center justify-center shadow-sm">
+                                <Icon name="Sparkles" size={12} className="text-white" />
+                              </div>
+                              <p className="text-[10px] uppercase tracking-wider text-emerald-600 font-medium">
+                                Created
+                              </p>
+                              <p className="text-sm font-medium text-slate-900 mt-0.5">
+                                {deal?.createdAt
+                                  ? formatDateTime(deal.createdAt)
+                                  : "—"}
+                              </p>
+                              {deal?.createdByName && (
+                                <div className="mt-1 flex items-center gap-1.5">
+                                  <div
+                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
+                                    style={{
+                                      backgroundColor: getNameColor(deal.createdByName),
+                                    }}
+                                  >
+                                    {getInitials(deal.createdByName)}
+                                  </div>
+                                  <p className="text-xs text-slate-500">
+                                    by {deal.createdByName}
                                   </p>
                                 </div>
                               )}

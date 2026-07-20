@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
+import QuickEditSheet from "./QuickEditSheet";
 
 const DealsTable = ({
   deals,
@@ -15,9 +16,15 @@ const DealsTable = ({
   canEdit = () => true,
   canDelete = () => true,
   onDelete,
+  // Quick post-call update from the mobile card's bottom sheet. Same signature
+  // as the drawer's onUpdate: (id, payload) => Promise. Optional — the Quick
+  // Edit affordance only renders when a handler is supplied.
+  onQuickUpdate,
   isLoading,
 }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
+  // The lead whose Quick Edit bottom sheet is open (mobile only). null = closed.
+  const [quickEditDeal, setQuickEditDeal] = useState(null);
 
   const formatDate = (date) => {
     if (!date) return "—"; // null / undefined / empty
@@ -533,6 +540,29 @@ const DealsTable = ({
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      {/* Quick Edit — opens the bottom sheet for a fast
+                          post-call update (status / note / follow-up) without
+                          leaving the list. Only shown when the page wires an
+                          onQuickUpdate handler. */}
+                      {onQuickUpdate && canEdit(deal) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Quick update lead"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQuickEditDeal(deal);
+                          }}
+                          className="h-10 w-10 rounded-full hover:bg-primary/10 active:scale-95 transition-all duration-150 flex items-center justify-center"
+                        >
+                          <Icon
+                            name="PencilLine"
+                            size={19}
+                            className="text-primary"
+                          />
+                        </Button>
+                      )}
+
                       {/* Call — opens the device dialer via tel: */}
                       <Button
                         variant="ghost"
@@ -575,6 +605,15 @@ const DealsTable = ({
           ))
         )}
       </div>
+
+      {/* Quick Edit bottom sheet — mobile only, rendered once and driven by
+          quickEditDeal so it can animate cleanly on open/close. */}
+      <QuickEditSheet
+        open={!!quickEditDeal}
+        deal={quickEditDeal}
+        onClose={() => setQuickEditDeal(null)}
+        onSave={onQuickUpdate}
+      />
     </div>
   );
 };

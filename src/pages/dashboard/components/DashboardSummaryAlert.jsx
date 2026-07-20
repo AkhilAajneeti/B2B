@@ -401,7 +401,7 @@ const DashboardSummaryAlert = () => {
               aria-label="Open pipeline"
             >
               <Icon name="Kanban" size={14} />
-              <span>View Overdue Leads</span>
+              <span>View overdue leads</span>
               <Icon name="ArrowRight" size={12} />
             </button>
           </div>
