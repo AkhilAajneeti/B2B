@@ -994,6 +994,7 @@ const DealDrawer = ({
                         onChange={(e) =>
                           handleChange("phoneNumber", e.target.value)
                         }
+                         disabled
                       />
                       <Input
                         label="Email"
@@ -1001,6 +1002,7 @@ const DealDrawer = ({
                         onChange={(e) =>
                           handleChange("emailAddress", e.target.value)
                         }
+                         disabled
                       />
                     </div>
 
