@@ -209,28 +209,26 @@ const QuickAddActivity = ({ isOpen, onClose, onAdd }) => {
     }
   }, [formData.dateStart, formData.dateEnd]);
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [ userRes, teamRes, accRes, leadRes] =
-          await Promise.all([
-            // fetchStatus(),
-            fetchUser(),
-            fetchTeam(),
-            fetchAccounts({ limit: 200, page: 1 }),
-            fetchLeads({ limit: 200, page: 1 }),
-            // fetchContacts(),
-          ]);
-        // setStatus(statusRes.options || []);
-        setUser(userRes.list || []);
-        setTeam(teamRes.list || []);
-        setAcc(accRes.list || []);
-        setLead(leadRes.list || []);
-        // setContact(contactRes.list || []);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-    loadData();
+    // Load each list INDEPENDENTLY. Previously all four were awaited in one
+    // Promise.all, so if any single request rejected (e.g. fetchAccounts or
+    // fetchLeads erroring / permission-limited) the shared catch skipped every
+    // setState — leaving Assigned User, Teams, Parent AND Users all empty at
+    // once. Isolating them means one failure can't blank the others.
+    fetchUser()
+      .then((res) => setUser(res.list || []))
+      .catch((err) => console.error("Failed to load users", err));
+
+    fetchTeam()
+      .then((res) => setTeam(res.list || []))
+      .catch((err) => console.error("Failed to load teams", err));
+
+    fetchAccounts({ limit: 200, page: 1 })
+      .then((res) => setAcc(res.list || []))
+      .catch((err) => console.error("Failed to load accounts", err));
+
+    fetchLeads({ limit: 200, page: 1 })
+      .then((res) => setLead(res.list || []))
+      .catch((err) => console.error("Failed to load leads", err));
   }, []);
 
   const userOptions = user
