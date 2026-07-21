@@ -20,6 +20,36 @@ import { useLeadMeeting } from "hooks/useMeeting";
 import { createLeadMeeting, createMeeting } from "services/meeting.service";
 import { fetchTeamUser } from "services/team.service";
 import { toEspoDateTime, fromEspoToLocalInput } from "../../pipeline/utils/dateHelpers";
+
+// Gradient tint per field icon. Full static class strings (not built at
+// runtime) so Tailwind's JIT can see and generate them.
+const ICON_TILE = {
+  violet: "bg-gradient-to-br from-violet-400 to-violet-600",
+  indigo: "bg-gradient-to-br from-indigo-400 to-indigo-600",
+  sky: "bg-gradient-to-br from-sky-400 to-sky-600",
+  cyan: "bg-gradient-to-br from-cyan-400 to-cyan-600",
+  emerald: "bg-gradient-to-br from-emerald-400 to-emerald-600",
+  teal: "bg-gradient-to-br from-teal-400 to-teal-600",
+  amber: "bg-gradient-to-br from-amber-400 to-amber-600",
+  orange: "bg-gradient-to-br from-orange-400 to-orange-600",
+  blue: "bg-gradient-to-br from-blue-400 to-blue-600",
+  rose: "bg-gradient-to-br from-rose-400 to-rose-600",
+  pink: "bg-gradient-to-br from-pink-400 to-pink-600",
+  slate: "bg-gradient-to-br from-slate-400 to-slate-600",
+};
+
+// A field icon rendered as a small "3D" gradient tile: white icon on a colored
+// gradient, with a soft drop shadow + inset highlight ring for depth.
+const FieldIcon = ({ name, tint = "slate" }) => (
+  <span
+    className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[9px] shadow-sm ring-1 ring-inset ring-white/25 ${
+      ICON_TILE[tint] || ICON_TILE.slate
+    }`}
+  >
+    <Icon name={name} size={13} className="text-white drop-shadow-sm" />
+  </span>
+);
+
 const DealDrawer = ({
   deal,
   isOpen,
@@ -383,7 +413,7 @@ const DealDrawer = ({
   const tabs = [
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
-    { id: "Stream", label: "Stream", icon: "Calendar" },
+    { id: "Comments", label: "Comments", icon: "Calendar" },
     { id: "Task", label: "Task", icon: "ListChecks" },
     { id: "Meeting", label: "Meeting", icon: "Projector" },
   ];
@@ -530,7 +560,7 @@ const DealDrawer = ({
 
   const handleDelete = async (e, activity) => {
     e.stopPropagation();
-    const ok = window.confirm(`Delete Stream ${activity?.createdByName}?`);
+    const ok = window.confirm(`Delete Comments ${activity?.createdByName}?`);
     if (!ok) return;
     await onDelete(activity.id); // 👈 parent ko bol rahe ho
     queryClient.invalidateQueries({ queryKey: ["lead-stream", deal.id] });
@@ -1496,7 +1526,7 @@ const DealDrawer = ({
                               Pencil = inline edit without opening the form.
                               Spans full width while editing for breathing room. */}
                           <div className="group flex items-start gap-3">
-                            <Icon name="CircleDot" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="CircleDot" tint="violet" />
                             <div className="min-w-0 flex-1">
                               <p className="text-xs text-muted-foreground mb-1">
                                 Status
@@ -1562,7 +1592,7 @@ const DealDrawer = ({
 
                           {/* Project — baseline */}
                           <div className="flex items-start gap-3">
-                            <Icon name="Layers" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="Layers" tint="indigo" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 Project
@@ -1579,7 +1609,7 @@ const DealDrawer = ({
                           {deal?.cProjectName &&
                             deal.cProjectName !== deal?.cProject && (
                               <div className="flex items-start gap-3">
-                                <Icon name="Building2" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                                <FieldIcon name="Building2" tint="sky" />
                                 <div className="min-w-0">
                                   <p className="text-xs text-muted-foreground mb-0.5">
                                     Project Name
@@ -1594,7 +1624,7 @@ const DealDrawer = ({
                           {/* Project Type */}
                           {deal?.cProjectType && (
                             <div className="flex items-start gap-3">
-                              <Icon name="LayoutGrid" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <FieldIcon name="LayoutGrid" tint="cyan" />
                               <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground mb-0.5">
                                   Project Type
@@ -1608,7 +1638,7 @@ const DealDrawer = ({
 
                           {deal?.cProjectBudget && (
                             <div className="flex items-start gap-3">
-                              <Icon name="IndianRupee" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <FieldIcon name="IndianRupee" tint="emerald" />
                               <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground mb-0.5">
                                   Project Budget
@@ -1624,7 +1654,7 @@ const DealDrawer = ({
                               project's location, not the lead's. */}
                           {deal?.cProjectLocation && (
                             <div className="flex items-start gap-3">
-                              <Icon name="Compass" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <FieldIcon name="Compass" tint="teal" />
                               <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground mb-0.5">
                                   Project Location
@@ -1641,7 +1671,7 @@ const DealDrawer = ({
                               split stays internal. Source itself appears
                               as a pill in the hero (admin only). */}
                           <div className="flex items-start gap-3">
-                            <Icon name="Tag" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="Tag" tint="amber" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 {isAdmin ? "Sub Source" : "Source"}
@@ -1658,7 +1688,7 @@ const DealDrawer = ({
                               labeled source separately. */}
                           {deal?.cLeadSource && (
                             <div className="flex items-start gap-3">
-                              <Icon name="Megaphone" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <FieldIcon name="Megaphone" tint="orange" />
                               <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground mb-0.5">
                                   Lead Source
@@ -1674,7 +1704,7 @@ const DealDrawer = ({
                               WhatsApp, Web, etc.). */}
                           {deal?.cPlatform && (
                             <div className="flex items-start gap-3">
-                              <Icon name="Smartphone" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <FieldIcon name="Smartphone" tint="blue" />
                               <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground mb-0.5">
                                   Platform
@@ -1688,7 +1718,7 @@ const DealDrawer = ({
 
                           {/* City — baseline */}
                           <div className="flex items-start gap-3">
-                            <Icon name="MapPin" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="MapPin" tint="rose" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 City
@@ -1703,7 +1733,7 @@ const DealDrawer = ({
                               only since reps don't deal with it. */}
                           {isAdmin && deal?.cClientNomen && (
                             <div className="flex items-start gap-3">
-                              <Icon name="Hash" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <FieldIcon name="Hash" tint="slate" />
                               <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground mb-0.5">
                                   Client Nomen
@@ -1719,7 +1749,7 @@ const DealDrawer = ({
                               admin-only treatment as Client Nomen. */}
                           {isAdmin && deal?.cProjectNomen && (
                             <div className="flex items-start gap-3">
-                              <Icon name="Hash" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                              <FieldIcon name="Hash" tint="slate" />
                               <div className="min-w-0">
                                 <p className="text-xs text-muted-foreground mb-0.5">
                                   Project Nomen
@@ -1735,7 +1765,7 @@ const DealDrawer = ({
                               bullets need horizontal room. Same parser
                               as before (splits on <b>…</b> tags). */}
                           <div className="flex items-start gap-3 md:col-span-2">
-                            <Icon name="Heart" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="Heart" tint="pink" />
                             <div className="min-w-0 flex-1">
                               <p className="text-xs text-muted-foreground mb-1">
                                 Preference
@@ -1799,7 +1829,7 @@ const DealDrawer = ({
                               width, multi-line, with auto-linked URLs.
                               Pencil = inline edit without opening the form. */}
                           <div className="flex items-start gap-3 md:col-span-2">
-                            <Icon name="FileText" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="FileText" tint="blue" />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between gap-2 mb-0.5">
                                 <p className="text-xs text-muted-foreground">
@@ -1890,7 +1920,7 @@ const DealDrawer = ({
                         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Phone */}
                           <div className="flex items-start gap-3">
-                            <Icon name="Phone" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="Phone" tint="blue" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 Phone
@@ -1910,7 +1940,7 @@ const DealDrawer = ({
 
                           {/* Email */}
                           <div className="flex items-start gap-3">
-                            <Icon name="Mail" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="Mail" tint="violet" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 Email
@@ -1932,7 +1962,7 @@ const DealDrawer = ({
                               helper so the link logic is identical to
                               the header Quick Action. */}
                           <div className="flex items-start gap-3 md:col-span-2">
-                            <Icon name="MessageCircle" size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                            <FieldIcon name="MessageCircle" tint="emerald" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 WhatsApp
@@ -1973,7 +2003,7 @@ const DealDrawer = ({
                         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
                           {/* Lead Received At */}
                           <div className="flex items-start gap-3">
-                            <Icon name="Inbox" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="Inbox" tint="indigo" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 Lead Received
@@ -1989,7 +2019,7 @@ const DealDrawer = ({
                           {/* Created At — the row's creation timestamp,
                               distinct from when the lead was received. */}
                           <div className="flex items-start gap-3">
-                            <Icon name="PlusCircle" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="PlusCircle" tint="emerald" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 Created
@@ -2005,7 +2035,7 @@ const DealDrawer = ({
                           {/* Next Contact — exact datetime as a reference
                               (the smart banner above is human-readable). */}
                           <div className="flex items-start gap-3">
-                            <Icon name="Clock" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="Clock" tint="amber" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 Next Contact
@@ -2020,7 +2050,7 @@ const DealDrawer = ({
 
                           {/* Site Visit */}
                           <div className="flex items-start gap-3">
-                            <Icon name="Home" size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                            <FieldIcon name="Home" tint="rose" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
                                 Site Visit
@@ -2037,11 +2067,11 @@ const DealDrawer = ({
                     </div>
                   )}
 
-                  {activeTab === "Stream" && (
+                  {activeTab === "Comments" && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-medium text-foreground">
-                          Recent Stream
+                          Recent Comments
                         </h3>
                         <Button
                           variant="outline"
@@ -2050,7 +2080,7 @@ const DealDrawer = ({
                           onClick={createActivity}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Write the first stream
+                          Write the first Comments
                         </Button>
                       </div>
                       <div className="space-y-4">
