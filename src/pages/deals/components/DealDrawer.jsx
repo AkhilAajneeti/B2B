@@ -38,13 +38,51 @@ const ICON_TILE = {
   slate: "bg-gradient-to-br from-slate-400 to-slate-600",
 };
 
+// Keep the inline status editor visually aligned with QuickEditSheet. Statuses
+// that only appear in the full drawer intentionally use the same neutral
+// fallback treatment as an unmapped QuickEditSheet status.
+const QUICK_EDIT_STATUS_COLOR = {
+  New: "bg-blue-50 text-blue-700 border-blue-200",
+  Interested: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "Follow up": "bg-indigo-50 text-indigo-700 border-indigo-200",
+  "Call Later": "bg-amber-50 text-amber-700 border-amber-200",
+  "Call Not Connecting": "bg-rose-50 text-rose-700 border-rose-200",
+  "Call Not Picked": "bg-red-50 text-red-700 border-red-200",
+  "Site Visit Scheduled": "bg-sky-50 text-sky-700 border-sky-200",
+  "Site Visit Done": "bg-teal-50 text-teal-700 border-teal-200",
+  "Switch Off": "bg-neutral-100 text-neutral-700 border-neutral-300",
+  "Not Interested": "bg-red-50 text-red-700 border-red-200",
+  "Low Budget": "bg-yellow-50 text-yellow-700 border-yellow-200",
+  Purchased: "bg-green-50 text-green-700 border-green-200",
+};
+
+const getQuickEditStatusChip = (status) =>
+  QUICK_EDIT_STATUS_COLOR[status] || "bg-primary/10 text-primary border-primary/30";
+
+const QUICK_EDIT_STATUS_ACCENT = {
+  New: "#2563EB",
+  Interested: "#059669",
+  "Follow up": "#4F46E5",
+  "Call Later": "#F59E0B",
+  "Call Not Connecting": "#E11D48",
+  "Call Not Picked": "#DC2626",
+  "Site Visit Scheduled": "#0284C7",
+  "Site Visit Done": "#0D9488",
+  "Switch Off": "#737373",
+  "Not Interested": "#DC2626",
+  "Low Budget": "#CA8A04",
+  Purchased: "#16A34A",
+};
+
+const getQuickEditStatusAccent = (status) =>
+  QUICK_EDIT_STATUS_ACCENT[status] || "var(--color-primary)";
+
 // A field icon rendered as a small "3D" gradient tile: white icon on a colored
 // gradient, with a soft drop shadow + inset highlight ring for depth.
 const FieldIcon = ({ name, tint = "slate" }) => (
   <span
-    className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[9px] shadow-sm ring-1 ring-inset ring-white/25 ${
-      ICON_TILE[tint] || ICON_TILE.slate
-    }`}
+    className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[9px] shadow-sm ring-1 ring-inset ring-white/25 ${ICON_TILE[tint] || ICON_TILE.slate
+      }`}
   >
     <Icon name={name} size={13} className="text-white drop-shadow-sm" />
   </span>
@@ -202,7 +240,7 @@ const DealDrawer = ({
         cClientNomen: "",
         cProjectNomen: "",
         cNextContactAt: "",
-        
+
         cLeatReceivedAt: fromEspoToLocalInput(new Date()),
         cPreference: "",
         assignedUserId: currentUser?.id || "",
@@ -388,17 +426,31 @@ const DealDrawer = ({
 
   const getStageColor = (stage) => {
     const colors = {
-      New: "bg-blue-100 text-blue-800",
-      Interested: "bg-sky-100 text-sky-800",
-      "Follow up": "bg-indigo-100 text-indigo-800",
-      Converted: "bg-green-100 text-green-800",
-      "Not interested": "bg-orange-100 text-orange-800",
-      Broker: "bg-purple-100 text-purple-800",
-      "Call Not Picked": "bg-red-100 text-red-800",
-      Invalid: "bg-gray-100 text-gray-700",
-      QDTD: "bg-fuchsia-100 text-fuchsia-800",
+      New: "bg-blue-50 text-blue-700 border border-blue-200",
+      Interested: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      "Follow up": "bg-indigo-50 text-indigo-700 border border-indigo-200",
+      "Call Later": "bg-amber-50 text-amber-700 border border-amber-200",
+      "Call Not Connecting": "bg-rose-50 text-rose-700 border border-rose-200",
+      "Call Not Picked": "bg-red-50 text-red-700 border border-red-200",
+      Broker: "bg-violet-50 text-violet-700 border border-violet-200",
+      Dead: "bg-slate-100 text-slate-700 border border-slate-300",
+      "Fake Lead": "bg-pink-50 text-pink-700 border border-pink-200",
+      "Invalid Number": "bg-gray-100 text-gray-700 border border-gray-300",
+      "Irrelevant Lead": "bg-orange-50 text-orange-700 border border-orange-200",
+      "Low Budget": "bg-yellow-50 text-yellow-700 border border-yellow-200",
+      "Low Interest": "bg-lime-50 text-lime-700 border border-lime-200",
+      "Not Interested": "bg-red-50 text-red-700 border border-red-200",
+      "Other Location": "bg-cyan-50 text-cyan-700 border border-cyan-200",
+      Purchased: "bg-green-50 text-green-700 border border-green-200 shadow-sm",
+      "Site Visit Done": "bg-teal-50 text-teal-700 border border-teal-200",
+      "Site Visit Scheduled": "bg-sky-50 text-sky-700 border border-sky-200",
+      "Switch Off": "bg-neutral-100 text-neutral-700 border border-neutral-300",
+      Converted: "bg-green-50 text-green-700 border border-green-200",
+      "Not interested": "bg-orange-50 text-orange-700 border border-orange-200",
+      Invalid: "bg-gray-100 text-gray-700 border border-gray-300",
+      QDTD: "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
     };
-    return colors?.[stage] || "bg-gray-100 text-gray-800";
+    return colors?.[stage] || "bg-gray-100 text-gray-700 border border-gray-200";
   };
 
   // Map cryptic status codes to human-readable labels for display.
@@ -916,7 +968,7 @@ const DealDrawer = ({
               for a sales rep, surfaced before the tabs. */}
           {mode === "view" && deal && !isEditing && (
             <div className="border-b border-border">
-              <div className="px-6 py-3 flex flex-wrap gap-2 hidden sm:flex">
+              <div className="px-6 py-3 flex flex-wrap gap-2  sm:flex">
                 <a
                   href={deal?.phoneNumber ? `tel:${deal.phoneNumber}` : undefined}
                   className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
@@ -925,7 +977,7 @@ const DealDrawer = ({
                     }`}
                 >
                   <Icon name="Phone" size={14} />
-                  Call
+                  {deal?.phoneNumber?.replace(/^\+91/, "")}
                 </a>
                 {(() => {
                   const waUrl = buildWhatsappUrl(deal);
@@ -948,7 +1000,7 @@ const DealDrawer = ({
                   href={
                     deal?.emailAddress ? `mailto:${deal.emailAddress}` : undefined
                   }
-                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.emailAddress
+                  className={` hidden inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.emailAddress
                     ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
                     : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
                     }`}
@@ -1024,7 +1076,7 @@ const DealDrawer = ({
                         onChange={(e) =>
                           handleChange("phoneNumber", e.target.value)
                         }
-                         disabled
+                        disabled
                       />
                       <Input
                         label="Email"
@@ -1032,7 +1084,7 @@ const DealDrawer = ({
                         onChange={(e) =>
                           handleChange("emailAddress", e.target.value)
                         }
-                         disabled
+                        disabled
                       />
                     </div>
 
@@ -1300,8 +1352,8 @@ const DealDrawer = ({
                     {/* Assigned User */}
                     <div
                       className={`rounded-xl border p-3 transition-colors ${massFields.assignedUserId
-                          ? "bg-white border-rose-300 shadow-sm"
-                          : "bg-slate-50/60 border-slate-200"
+                        ? "bg-white border-rose-300 shadow-sm"
+                        : "bg-slate-50/60 border-slate-200"
                         }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
@@ -1340,8 +1392,8 @@ const DealDrawer = ({
                     {/* Team */}
                     <div
                       className={`rounded-xl border p-3 transition-colors ${massFields.teamId
-                          ? "bg-white border-rose-300 shadow-sm"
-                          : "bg-slate-50/60 border-slate-200"
+                        ? "bg-white border-rose-300 shadow-sm"
+                        : "bg-slate-50/60 border-slate-200"
                         }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
@@ -1382,8 +1434,8 @@ const DealDrawer = ({
                     {/* Status */}
                     <div
                       className={`rounded-xl border p-3 transition-colors ${massFields.status
-                          ? "bg-white border-rose-300 shadow-sm"
-                          : "bg-slate-50/60 border-slate-200"
+                        ? "bg-white border-rose-300 shadow-sm"
+                        : "bg-slate-50/60 border-slate-200"
                         }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
@@ -1421,8 +1473,8 @@ const DealDrawer = ({
                     {/* Next Contact Date */}
                     <div
                       className={`rounded-xl border p-3 transition-colors ${massFields.cNextContactAt
-                          ? "bg-white border-rose-300 shadow-sm"
-                          : "bg-slate-50/60 border-slate-200"
+                        ? "bg-white border-rose-300 shadow-sm"
+                        : "bg-slate-50/60 border-slate-200"
                         }`}
                     >
                       <div className="flex items-center gap-3 mb-2">
@@ -1525,42 +1577,58 @@ const DealDrawer = ({
                               lead's current stage sits with the interest data.
                               Pencil = inline edit without opening the form.
                               Spans full width while editing for breathing room. */}
-                          <div className="group flex items-start gap-3">
+                          <div className="group flex items-start gap-3 md:col-span-2">
                             <FieldIcon name="CircleDot" tint="violet" />
-                            <div className="min-w-0 flex-1">
+                            <div className="min-w-0 flex-1 ">
                               <p className="text-xs text-muted-foreground mb-1">
                                 Status
                               </p>
                               {inlineField === "status" ? (
-                                <div className="flex items-center gap-1.5">
-                                  <div className="min-w-0 flex-1">
-                                    <Select
-                                      options={statusOptions}
-                                      value={inlineValue}
-                                      onChange={(v) => setInlineValue(v)}
-                                      searchable
-                                      wrapOptions
-                                      dropdownClassName="min-w-[240px]"
-                                    />
+                                <div className="space-y-3">
+                                  <div className="flex flex-wrap gap-2">
+                                    {statusOptions.map(({ value, label }) => {
+                                      const active = inlineValue === value;
+                                      return (
+                                        <button
+                                          key={value}
+                                          type="button"
+                                          onClick={() => setInlineValue(value)}
+                                          disabled={inlineSaving}
+                                          style={
+                                            active
+                                              ? { "--tw-ring-color": getQuickEditStatusAccent(value) }
+                                              : undefined
+                                          }
+                                          className={`min-h-[44px] rounded-full border px-4 text-sm font-medium transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
+                                            active
+                                              ? `${getQuickEditStatusChip(value)} ring-2 ring-offset-1 ring-offset-background shadow-sm`
+                                              : "border-border bg-card text-muted-foreground hover:bg-muted"
+                                          }`}
+                                        >
+                                          {label}
+                                        </button>
+                                      );
+                                    })}
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => saveInlineEdit("status")}
-                                    disabled={inlineSaving}
-                                    aria-label="Save status"
-                                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
-                                  >
-                                    <Icon name={inlineSaving ? "Loader" : "Check"} size={16} className={inlineSaving ? "animate-spin" : ""} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={cancelInlineEdit}
-                                    disabled={inlineSaving}
-                                    aria-label="Cancel"
-                                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:bg-muted disabled:opacity-50"
-                                  >
-                                    <Icon name="X" size={16} />
-                                  </button>
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={cancelInlineEdit}
+                                      disabled={inlineSaving}
+                                      className="px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => saveInlineEdit("status")}
+                                      disabled={inlineSaving}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+                                    >
+                                      <Icon name={inlineSaving ? "Loader" : "Check"} size={16} className={inlineSaving ? "animate-spin" : ""} />
+                                      Save
+                                    </button>
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2">
@@ -1590,6 +1658,169 @@ const DealDrawer = ({
                             </div>
                           </div>
 
+                          {/* Quick Edit activity */}
+                          {/* add activity form */}
+                          {/* ================= Latest Activity ================= */}
+                          <div className="md:col-span-2">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                              {/* Icon */}
+                              <div className="flex items-center gap-3 sm:block">
+                                <FieldIcon name="MessageSquare" tint="emerald" />
+
+                                {/* Mobile Header */}
+                                <div className="flex items-center justify-between flex-1 sm:hidden">
+                                  <p className="text-xs text-muted-foreground">
+                                    Latest Activity
+                                  </p>
+
+                                  {!showActivityForm && canEditDeal(deal) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingActivityId(null);
+                                        setActivityText("");
+                                        setActivityForm(true);
+                                      }}
+                                      aria-label="Add Activity"
+                                      className="grid h-7 w-7 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
+                                    >
+                                      <Icon name="Pencil" size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 w-full min-w-0">
+                                {/* Desktop Header */}
+                                <div className="hidden sm:flex items-center justify-between mb-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    Latest Activity
+                                  </p>
+
+                                  {!showActivityForm && canEditDeal(deal) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingActivityId(null);
+                                        setActivityText("");
+                                        setActivityForm(true);
+                                      }}
+                                      aria-label="Add Activity"
+                                      className="grid h-7 w-7 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
+                                    >
+                                      <Icon name="Pencil" size={14} />
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* ================= CREATE MODE ================= */}
+                                {showActivityForm ? (
+                                  <form onSubmit={handlePostActivity} className="space-y-3">
+                                    <textarea
+                                      value={activityText}
+                                      onChange={(e) => setActivityText(e.target.value)}
+                                      rows={4}
+                                      placeholder="Write your activity..."
+                                      className="w-full resize-none rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+                                    />
+
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setActivityForm(false);
+                                          setActivityText("");
+                                          setEditingActivityId(null);
+                                        }}
+                                      >
+                                        Cancel
+                                      </Button>
+
+                                      <Button
+                                        type="submit"
+                                        size="sm"
+                                        disabled={postingActivity || !activityText.trim()}
+                                      >
+                                        {postingActivity ? (
+                                          <>
+                                            <Icon
+                                              name="Loader"
+                                              size={14}
+                                              className="mr-1 animate-spin"
+                                            />
+                                            Posting...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Icon
+                                              name="Send"
+                                              size={14}
+                                              className="mr-1"
+                                            />
+                                            Post Activity
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
+                                  </form>
+                                ) : (
+                                  <>
+                                    {streams?.length ? (
+                                      <div className="w-full rounded-xl border border-border bg-muted/20 p-4 transition hover:border-primary/20">
+                                        <div className="relative pl-4">
+                                          <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-emerald-500" />
+
+                                          <p className="text-sm font-medium leading-6 text-foreground whitespace-pre-wrap break-words ">
+                                            {getActivityMessage(streams[0])}
+                                          </p>
+                                        </div>
+
+                                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+                                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Icon name="Clock3" size={13} />
+                                            <span>{formatDate(streams[0].createdAt)}</span>
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+                                              <Icon name="Sparkles" size={11} />
+                                              Latest
+                                            </span>
+
+                                            <span className="text-xs text-muted-foreground">
+                                              {streams[0].createdByName || "System"}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingActivityId(null);
+                                          setActivityText("");
+                                          setActivityForm(true);
+                                        }}
+                                        className="flex w-full items-center justify-center rounded-xl border-2 border-dashed border-border py-8 text-sm text-muted-foreground transition hover:border-primary hover:text-primary"
+                                      >
+                                        <Icon
+                                          name="PlusCircle"
+                                          size={18}
+                                          className="mr-2"
+                                        />
+                                        Nobody has called this lead yet. You're first.
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* add activity form */}
                           {/* Project — baseline */}
                           <div className="flex items-start gap-3">
                             <FieldIcon name="Layers" tint="indigo" />
@@ -2080,7 +2311,7 @@ const DealDrawer = ({
                           onClick={createActivity}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Write the first Activity 
+                          Write the first Activity
                         </Button>
                       </div>
                       <div className="space-y-4">

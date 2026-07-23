@@ -127,7 +127,7 @@ const QuickEditSheet = ({ open, deal, onClose, onSave }) => {
   const buildPayload = () => {
     const payload = {};
     if (status && status !== deal?.status) payload.status = status;
-    if (note.trim()) payload.description = note.trim();
+    // if (note.trim()) payload.description = note.trim();
     const originalFollow = fromEspoToLocalInput(deal?.cNextContactAt) || "";
     if (followUp !== originalFollow) {
       payload.cNextContactAt = followUp ? toEspoDateTime(followUp) : null;
@@ -136,7 +136,7 @@ const QuickEditSheet = ({ open, deal, onClose, onSave }) => {
   };
 
   const dirty = useMemo(
-    () => Object.keys(buildPayload()).length > 0,
+    () => Object.keys(buildPayload()).length > 0 || note.trim().length > 0,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [status, note, followUp, deal],
   );
