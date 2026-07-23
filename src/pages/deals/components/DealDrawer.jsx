@@ -2080,7 +2080,7 @@ const DealDrawer = ({
                           onClick={createActivity}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Write the first Comments
+                          Write the first Comments 
                         </Button>
                       </div>
                       <div className="space-y-4">
