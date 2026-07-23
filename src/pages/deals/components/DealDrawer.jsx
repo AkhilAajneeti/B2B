@@ -413,7 +413,7 @@ const DealDrawer = ({
   const tabs = [
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
-    { id: "Comments", label: "Comments", icon: "Calendar" },
+    { id: "Activity", label: "Activity", icon: "Calendar" },
     { id: "Task", label: "Task", icon: "ListChecks" },
     { id: "Meeting", label: "Meeting", icon: "Projector" },
   ];
@@ -560,7 +560,7 @@ const DealDrawer = ({
 
   const handleDelete = async (e, activity) => {
     e.stopPropagation();
-    const ok = window.confirm(`Delete Comments ${activity?.createdByName}?`);
+    const ok = window.confirm(`Delete Activity ${activity?.createdByName}?`);
     if (!ok) return;
     await onDelete(activity.id); // 👈 parent ko bol rahe ho
     queryClient.invalidateQueries({ queryKey: ["lead-stream", deal.id] });
@@ -2067,11 +2067,11 @@ const DealDrawer = ({
                     </div>
                   )}
 
-                  {activeTab === "Comments" && (
+                  {activeTab === "Activity" && (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-medium text-foreground">
-                          Recent Comments
+                          Recent Activity
                         </h3>
                         <Button
                           variant="outline"
@@ -2080,7 +2080,7 @@ const DealDrawer = ({
                           onClick={createActivity}
                         >
                           <Icon name="Plus" size={16} className="mr-1" />
-                          Write the first Comments 
+                          Write the first Activity 
                         </Button>
                       </div>
                       <div className="space-y-4">
