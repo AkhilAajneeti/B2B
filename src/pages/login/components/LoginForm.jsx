@@ -71,6 +71,7 @@ const LoginForm = () => {
           "Content-Type": "application/json",
           "create-token": loginToken,
         },
+        //cross origin request  on crm 
         body: JSON.stringify({
           username: formData.username,
           password: formData.password,
@@ -115,7 +116,7 @@ const LoginForm = () => {
         JSON.stringify(buildLoginObj(user, user.rolesNames)),
       );
 
-    
+
       let enrichedUser = user;
       try {
         const userRes = await fetch(
