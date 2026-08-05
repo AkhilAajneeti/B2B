@@ -96,7 +96,7 @@ export const useWinRateAnalytics = ({
     initialDataUpdatedAt: 0,
     staleTime: STALE,
     gcTime: GC,
-    refetchInterval: STALE, // silent background refresh every 5 min
+    refetchInterval: 60 * 60 * 1000, // silent background refresh every 60 min
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,

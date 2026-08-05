@@ -51,9 +51,11 @@ export const useNewLeads = ({ limit, page, filters, orderBy = "createdAt", order
         refetchOnWindowFocus: true,
         refetchOnReconnect: true,
         refetchOnMount: true,
-        // Poll once a minute. Only the mounted page+filter combo polls, and
+        // Poll every 30 minutes. Only the mounted page+filter combo polls, and
         // `refetchIntervalInBackground: false` stops hidden tabs from firing.
-        refetchInterval: 60 * 1000,
+        // The list also refetches on mount/focus/reconnect above, so the user
+        // still sees fresh rows whenever they return to the tab.
+        refetchInterval: 30 * 60 * 1000,
         refetchIntervalInBackground: false,
     })
 }

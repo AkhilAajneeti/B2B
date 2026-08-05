@@ -168,7 +168,7 @@ export const useFunnelAnalytics = ({
     placeholderData: (previous) => previous,
     staleTime: STALE,
     gcTime: GC,
-    refetchInterval: STALE,
+    refetchInterval: 60 * 60 * 1000, // silent background refresh every 60 min
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,
