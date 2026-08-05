@@ -254,6 +254,27 @@ const DealDrawer = ({
       .map((i) => `${i.id}:${i.name}:${i.count || 1}`)
       .join("\n") + (items.length ? "\n" : "");
 
+  // Quick-save ONLY the WhatsApp notification flag. EspoCRM PATCH updates just
+  // the fields present in the payload, so sending `{ sendWhatsappNotification }`
+  // alone leaves every other campaign field untouched — unlike handleSubmit,
+  // which hand-builds and sends the entire form. Used by the "Save WhatsApp
+  // setting" button next to the toggle so a rep can flip it without re-saving
+  // the whole campaign.
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+
+  const handleSaveWhatsapp = async () => {
+    if (!deal?.id) return;
+    setSavingWhatsapp(true);
+    try {
+      // Parent (onUpdate → handleUpdateTasks) handles the toast + refetch.
+      await onUpdate(deal.id, {
+        sendWhatsappNotification: !!formData.sendWhatsappNotification,
+      });
+    } finally {
+      setSavingWhatsapp(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -757,6 +778,38 @@ const DealDrawer = ({
                               />
                             </button>
                           </div>
+
+                          {/* Save ONLY the WhatsApp toggle — sends a partial
+                              update ({ sendWhatsappNotification }) via onUpdate,
+                              so flipping this doesn't require saving the whole
+                              campaign form. Shown only for an existing record
+                              (needs an id; hidden while adding). */}
+                          {mode !== "add" && deal?.id && (
+                            <div className="flex justify-end">
+                              <button
+                                type="button"
+                                onClick={handleSaveWhatsapp}
+                                disabled={savingWhatsapp}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
+                              >
+                                {savingWhatsapp ? (
+                                  <>
+                                    <Icon
+                                      name="Loader2"
+                                      size={13}
+                                      className="animate-spin"
+                                    />
+                                    Saving…
+                                  </>
+                                ) : (
+                                  <>
+                                    <Icon name="Check" size={13} />
+                                    Save WhatsApp setting
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
 
                           {/* Template — free-text message body used to seed
                               wa.me URLs / outbound chats. Multi-line so reps can
