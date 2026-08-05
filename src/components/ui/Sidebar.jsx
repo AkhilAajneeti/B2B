@@ -41,12 +41,6 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       badge: null,
     },
     // {
-    //   label: "Accounts",
-    //   path: "/accounts",
-    //   icon: "Building2",
-    //   badge: null,
-    // },
-    // {
     //   label: "Sales Team",
     //   path: "/sales-team",
     //   icon: "Users",

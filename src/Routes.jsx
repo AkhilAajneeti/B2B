@@ -20,7 +20,6 @@ const Settings        = lazy(() => import("./pages/settings"));
 const IntegrationsPage = lazy(() => import("./pages/integrations"));
 const DealsPage       = lazy(() => import("./pages/deals"));
 const EmailsPage      = lazy(() => import("./pages/emails"));
-const AccountsPage    = lazy(() => import("./pages/accounts"));
 const Reports         = lazy(() => import("./pages/reports"));
 const Activities      = lazy(() => import("./pages/activities"));
 const Profile         = lazy(() => import("pages/profile"));
@@ -121,14 +120,6 @@ const Routes = () => {
               element={
                 <ProtectedRoute>
                   <ProjectDemoPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/accounts"
-              element={
-                <ProtectedRoute>
-                  <AccountsPage />
                 </ProtectedRoute>
               }
             />
