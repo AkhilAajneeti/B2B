@@ -710,6 +710,7 @@ const DealDrawer = ({
   ];
   const statusOptions = [
     { value: "Broker", label: "Broker" },
+    { value: "Duplicate", label: "Duplicate" },
     { value: "Call Later", label: "Call Later" },
     { value: "Call Not Connecting", label: "Call Not Connecting" },
     { value: "Call Not Picked", label: "Call Not Picked" },
@@ -1599,11 +1600,10 @@ const DealDrawer = ({
                                               ? { "--tw-ring-color": getQuickEditStatusAccent(value) }
                                               : undefined
                                           }
-                                          className={`min-h-[44px] rounded-full border px-4 text-sm font-medium transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
-                                            active
+                                          className={`min-h-[44px] rounded-full border px-4 text-sm font-medium transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${active
                                               ? `${getQuickEditStatusChip(value)} ring-2 ring-offset-1 ring-offset-background shadow-sm`
                                               : "border-border bg-card text-muted-foreground hover:bg-muted"
-                                          }`}
+                                            }`}
                                         >
                                           {label}
                                         </button>

@@ -49,6 +49,7 @@ const DealsFilters = ({
   ];
   const statusOptions = [
     { value: "Broker", label: "Broker" },
+     { value: "Duplicate", label: "Duplicate" },
     { value: "QDTD", label: "Qualify Due To Delay" },
     { value: "Call Later", label: "Call Later" },
     { value: "Call Not Connecting", label: "Call Not Connecting" },
