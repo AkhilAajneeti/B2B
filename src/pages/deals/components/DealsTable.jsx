@@ -48,47 +48,59 @@ const DealsTable = ({
   // visually connected. Whole class strings (not concatenated) so the
   // Tailwind JIT can statically discover every variant.
   const getStageGradient = (stage) => {
+    // Mirrors the semantic getStageColor palette so the mobile card tint and
+    // the status badge share the same hue per category.
     const gradients = {
       New: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+
+      // Green — progressing
+      "Follow up":
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
       Interested:
         "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
-      "Follow up":
-        "bg-gradient-to-br from-indigo-50/70 to-background border-indigo-100",
+      "Site Visit Scheduled":
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      "Site Visit Done":
+        "bg-gradient-to-br from-emerald-100/70 to-background border-emerald-200",
+      Purchased:
+        "bg-gradient-to-br from-emerald-100/80 to-background border-emerald-200",
+
+      // Yellow — trying to reach
       "Call Later":
-        "bg-gradient-to-br from-amber-50/70 to-background border-amber-100",
-      "Call Not Connecting":
-        "bg-gradient-to-br from-rose-50/70 to-background border-rose-100",
-      "Call Not Picked":
-        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
-      Broker:
-        "bg-gradient-to-br from-violet-50/70 to-background border-violet-100",
-      Dead: "bg-gradient-to-br from-slate-100/70 to-background border-slate-200",
-      "Fake Lead":
-        "bg-gradient-to-br from-pink-50/70 to-background border-pink-100",
-      "Invalid Number":
-        "bg-gradient-to-br from-gray-100/70 to-background border-gray-200",
-      "Irrelevant Lead":
-        "bg-gradient-to-br from-orange-50/70 to-background border-orange-100",
-      "Low Budget":
         "bg-gradient-to-br from-yellow-50/70 to-background border-yellow-100",
+      "Call Not Connecting":
+        "bg-gradient-to-br from-yellow-50/70 to-background border-yellow-100",
+      "Call Not Picked":
+        "bg-gradient-to-br from-yellow-100/70 to-background border-yellow-200",
+      "Switch Off":
+        "bg-gradient-to-br from-yellow-100/70 to-background border-yellow-200",
+
+      // Violet — auto-qualified
+      QDTD: "bg-gradient-to-br from-violet-50/70 to-background border-violet-100",
+
+      // Slate — admin
+      Duplicate:
+        "bg-gradient-to-br from-slate-100/70 to-background border-slate-200",
+
+      // Red — not a fit → lost / junk
+      "Low Budget":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
       "Low Interest":
-        "bg-gradient-to-br from-lime-50/70 to-background border-lime-100",
-      "Not Interested":
         "bg-gradient-to-br from-red-50/70 to-background border-red-100",
       "Other Location":
-        "bg-gradient-to-br from-cyan-50/70 to-background border-cyan-100",
-      Purchased:
-        "bg-gradient-to-br from-green-50/70 to-background border-green-100",
-      "Site Visit Done":
-        "bg-gradient-to-br from-teal-50/70 to-background border-teal-100",
-      "Site Visit Scheduled":
-        "bg-gradient-to-br from-sky-50/70 to-background border-sky-100",
-      "Switch Off":
-        "bg-gradient-to-br from-neutral-100/70 to-background border-neutral-200",
-      // Qualify Due To Delay — stalled/pending qualification. Fuchsia
-      // keeps it distinct from Broker (violet), Irrelevant (orange),
-      // and Fake Lead (pink).
-      QDTD: "bg-gradient-to-br from-fuchsia-50/70 to-background border-fuchsia-100",
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      "Irrelevant Lead":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      "Not Interested":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      Broker:
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      Dead:
+        "bg-gradient-to-br from-red-100/70 to-background border-red-200",
+      "Fake Lead":
+        "bg-gradient-to-br from-red-100/70 to-background border-red-200",
+      "Invalid Number":
+        "bg-gradient-to-br from-red-100/80 to-background border-red-200",
     };
 
     return (
@@ -98,31 +110,48 @@ const DealsTable = ({
   };
 
   const getStageColor = (stage) => {
+    // Semantic status palette — hue = category, depth = progress/intensity.
+    // Opaque light shades (not /opacity tints) because the app themes via CSS
+    // tokens with no Tailwind `dark:` variants: a solid light chip stays
+    // readable on both light and dark rows. Whole class strings so the JIT can
+    // statically discover every variant.
     const colors = {
+      // Blue — new / neutral start
       New: "bg-blue-50 text-blue-700 border border-blue-200",
-      Interested: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      "Follow up": "bg-indigo-50 text-indigo-700 border border-indigo-200",
-      "Call Later": "bg-amber-50 text-amber-700 border border-amber-200",
-      "Call Not Connecting": "bg-rose-50 text-rose-700 border border-rose-200",
-      "Call Not Picked": "bg-red-50 text-red-700 border border-red-200",
-      Broker: "bg-violet-50 text-violet-700 border border-violet-200",
-      Dead: "bg-slate-100 text-slate-700 border border-slate-300",
-      "Fake Lead": "bg-pink-50 text-pink-700 border border-pink-200",
-      "Invalid Number": "bg-gray-100 text-gray-700 border border-gray-300",
-      "Irrelevant Lead": "bg-orange-50 text-orange-700 border border-orange-200",
-      "Low Budget": "bg-yellow-50 text-yellow-700 border border-yellow-200",
-      "Low Interest": "bg-lime-50 text-lime-700 border border-lime-200",
-      "Not Interested": "bg-red-50 text-red-700 border border-red-200",
-      "Other Location": "bg-cyan-50 text-cyan-700 border border-cyan-200",
-      Purchased:
-        "bg-green-50 text-green-700 border border-green-200 shadow-sm",
-      "Site Visit Done": "bg-teal-50 text-teal-700 border border-teal-200",
-      "Site Visit Scheduled": "bg-sky-50 text-sky-700 border border-sky-200",
-      "Switch Off": "bg-neutral-100 text-neutral-700 border border-neutral-300",
-      QDTD: "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
+
+      // Green — progressing toward a sale, deepening to the win
+      "Follow up": "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      Interested: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+      "Site Visit Scheduled":
+        "bg-emerald-200 text-emerald-800 border border-emerald-300",
+      "Site Visit Done": "bg-emerald-300 text-emerald-900 border border-emerald-400",
+      Purchased: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",
+
+      // Yellow — trying to reach / no response (caution, keep trying)
+      "Call Later": "bg-yellow-50 text-yellow-700 border border-yellow-200",
+      "Call Not Connecting": "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      "Call Not Picked": "bg-yellow-200 text-yellow-800 border border-yellow-300",
+      "Switch Off": "bg-yellow-300 text-yellow-900 border border-yellow-400",
+
+      // Violet — auto-qualified (its own colour so it never blends in)
+      QDTD: "bg-violet-100 text-violet-800 border border-violet-300",
+
+      // Slate — admin / housekeeping
+      Duplicate: "bg-slate-100 text-slate-600 border border-slate-200",
+
+      // Red — not a fit (light) → firm no → junk (solid dark)
+      "Low Budget": "bg-red-50 text-red-700 border border-red-200",
+      "Low Interest": "bg-red-50 text-red-700 border border-red-200",
+      "Other Location": "bg-red-50 text-red-700 border border-red-200",
+      "Irrelevant Lead": "bg-red-50 text-red-700 border border-red-200",
+      "Not Interested": "bg-red-100 text-red-700 border border-red-200",
+      Broker: "bg-red-100 text-red-700 border border-red-200",
+      Dead: "bg-red-200 text-red-800 border border-red-300",
+      "Fake Lead": "bg-red-300 text-red-900 border border-red-400",
+      "Invalid Number": "bg-red-600 text-white border border-red-600 shadow-sm",
     };
 
-    return colors?.[stage] || "bg-gray-100 text-gray-700 border border-gray-200";
+    return colors?.[stage] || "bg-slate-100 text-slate-600 border border-slate-200";
   };
 
   const getSourceColor = (source) => {
