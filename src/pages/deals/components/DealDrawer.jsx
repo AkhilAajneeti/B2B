@@ -43,17 +43,17 @@ const ICON_TILE = {
 // fallback treatment as an unmapped QuickEditSheet status.
 const QUICK_EDIT_STATUS_COLOR = {
   New: "bg-blue-50 text-blue-700 border-blue-200",
-  Interested: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "Follow up": "bg-indigo-50 text-indigo-700 border-indigo-200",
-  "Call Later": "bg-amber-50 text-amber-700 border-amber-200",
-  "Call Not Connecting": "bg-rose-50 text-rose-700 border-rose-200",
-  "Call Not Picked": "bg-red-50 text-red-700 border-red-200",
-  "Site Visit Scheduled": "bg-sky-50 text-sky-700 border-sky-200",
-  "Site Visit Done": "bg-teal-50 text-teal-700 border-teal-200",
-  "Switch Off": "bg-neutral-100 text-neutral-700 border-neutral-300",
-  "Not Interested": "bg-red-50 text-red-700 border-red-200",
-  "Low Budget": "bg-yellow-50 text-yellow-700 border-yellow-200",
-  Purchased: "bg-green-50 text-green-700 border-green-200",
+  "Follow up": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Interested: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 border-emerald-300",
+  "Site Visit Done": "bg-emerald-300 text-emerald-900 border-emerald-400",
+  Purchased: "bg-emerald-600 text-white border-emerald-600",
+  "Call Later": "bg-yellow-50 text-yellow-700 border-yellow-200",
+  "Call Not Connecting": "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "Call Not Picked": "bg-yellow-200 text-yellow-800 border-yellow-300",
+  "Switch Off": "bg-yellow-300 text-yellow-900 border-yellow-400",
+  "Not Interested": "bg-red-100 text-red-700 border-red-200",
+  "Low Budget": "bg-red-50 text-red-700 border-red-200",
 };
 
 const getQuickEditStatusChip = (status) =>
@@ -61,17 +61,17 @@ const getQuickEditStatusChip = (status) =>
 
 const QUICK_EDIT_STATUS_ACCENT = {
   New: "#2563EB",
+  "Follow up": "#10B981",
   Interested: "#059669",
-  "Follow up": "#4F46E5",
-  "Call Later": "#F59E0B",
-  "Call Not Connecting": "#E11D48",
-  "Call Not Picked": "#DC2626",
-  "Site Visit Scheduled": "#0284C7",
-  "Site Visit Done": "#0D9488",
-  "Switch Off": "#737373",
+  "Site Visit Scheduled": "#059669",
+  "Site Visit Done": "#047857",
+  Purchased: "#059669",
+  "Call Later": "#CA8A04",
+  "Call Not Connecting": "#CA8A04",
+  "Call Not Picked": "#A16207",
+  "Switch Off": "#A16207",
   "Not Interested": "#DC2626",
-  "Low Budget": "#CA8A04",
-  Purchased: "#16A34A",
+  "Low Budget": "#EF4444",
 };
 
 const getQuickEditStatusAccent = (status) =>
@@ -425,32 +425,42 @@ const DealDrawer = ({
   };
 
   const getStageColor = (stage) => {
+    // Semantic status palette — mirrors DealsTable.getStageColor. Hue =
+    // category, depth = progress/intensity. Opaque light shades so a chip stays
+    // readable on both light and dark rows (the app has no `dark:` variants).
     const colors = {
       New: "bg-blue-50 text-blue-700 border border-blue-200",
-      Interested: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      "Follow up": "bg-indigo-50 text-indigo-700 border border-indigo-200",
-      "Call Later": "bg-amber-50 text-amber-700 border border-amber-200",
-      "Call Not Connecting": "bg-rose-50 text-rose-700 border border-rose-200",
-      "Call Not Picked": "bg-red-50 text-red-700 border border-red-200",
-      Broker: "bg-violet-50 text-violet-700 border border-violet-200",
-      Dead: "bg-slate-100 text-slate-700 border border-slate-300",
-      "Fake Lead": "bg-pink-50 text-pink-700 border border-pink-200",
-      "Invalid Number": "bg-gray-100 text-gray-700 border border-gray-300",
-      "Irrelevant Lead": "bg-orange-50 text-orange-700 border border-orange-200",
-      "Low Budget": "bg-yellow-50 text-yellow-700 border border-yellow-200",
-      "Low Interest": "bg-lime-50 text-lime-700 border border-lime-200",
-      "Not Interested": "bg-red-50 text-red-700 border border-red-200",
-      "Other Location": "bg-cyan-50 text-cyan-700 border border-cyan-200",
-      Purchased: "bg-green-50 text-green-700 border border-green-200 shadow-sm",
-      "Site Visit Done": "bg-teal-50 text-teal-700 border border-teal-200",
-      "Site Visit Scheduled": "bg-sky-50 text-sky-700 border border-sky-200",
-      "Switch Off": "bg-neutral-100 text-neutral-700 border border-neutral-300",
-      Converted: "bg-green-50 text-green-700 border border-green-200",
-      "Not interested": "bg-orange-50 text-orange-700 border border-orange-200",
-      Invalid: "bg-gray-100 text-gray-700 border border-gray-300",
-      QDTD: "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200",
+
+      "Follow up": "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      Interested: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+      "Site Visit Scheduled":
+        "bg-emerald-200 text-emerald-800 border border-emerald-300",
+      "Site Visit Done": "bg-emerald-300 text-emerald-900 border border-emerald-400",
+      Purchased: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",
+      Converted: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",
+
+      "Call Later": "bg-yellow-50 text-yellow-700 border border-yellow-200",
+      "Call Not Connecting": "bg-yellow-100 text-yellow-800 border border-yellow-200",
+      "Call Not Picked": "bg-yellow-200 text-yellow-800 border border-yellow-300",
+      "Switch Off": "bg-yellow-300 text-yellow-900 border border-yellow-400",
+
+      QDTD: "bg-violet-100 text-violet-800 border border-violet-300",
+
+      Duplicate: "bg-slate-100 text-slate-600 border border-slate-200",
+
+      "Low Budget": "bg-red-50 text-red-700 border border-red-200",
+      "Low Interest": "bg-red-50 text-red-700 border border-red-200",
+      "Other Location": "bg-red-50 text-red-700 border border-red-200",
+      "Irrelevant Lead": "bg-red-50 text-red-700 border border-red-200",
+      "Not Interested": "bg-red-100 text-red-700 border border-red-200",
+      "Not interested": "bg-red-100 text-red-700 border border-red-200",
+      Broker: "bg-red-100 text-red-700 border border-red-200",
+      Dead: "bg-red-200 text-red-800 border border-red-300",
+      "Fake Lead": "bg-red-300 text-red-900 border border-red-400",
+      "Invalid Number": "bg-red-600 text-white border border-red-600 shadow-sm",
+      Invalid: "bg-red-600 text-white border border-red-600 shadow-sm",
     };
-    return colors?.[stage] || "bg-gray-100 text-gray-700 border border-gray-200";
+    return colors?.[stage] || "bg-slate-100 text-slate-600 border border-slate-200";
   };
 
   // Map cryptic status codes to human-readable labels for display.

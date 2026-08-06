@@ -47,17 +47,17 @@ const STATUS_OPTIONS = [
 // like the same product as the card behind it.
 const STATUS_COLOR = {
   New: "bg-blue-50 text-blue-700 border-blue-200",
-  Interested: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "Follow up": "bg-indigo-50 text-indigo-700 border-indigo-200",
-  "Call Later": "bg-amber-50 text-amber-700 border-amber-200",
-  "Call Not Connecting": "bg-rose-50 text-rose-700 border-rose-200",
-  "Call Not Picked": "bg-red-50 text-red-700 border-red-200",
-  "Site Visit Scheduled": "bg-sky-50 text-sky-700 border-sky-200",
-  "Site Visit Done": "bg-teal-50 text-teal-700 border-teal-200",
-  "Switch Off": "bg-neutral-100 text-neutral-700 border-neutral-300",
-  "Not Interested": "bg-red-50 text-red-700 border-red-200",
-  "Low Budget": "bg-yellow-50 text-yellow-700 border-yellow-200",
-  Purchased: "bg-green-50 text-green-700 border-green-200",
+  "Follow up": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Interested: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 border-emerald-300",
+  "Site Visit Done": "bg-emerald-300 text-emerald-900 border-emerald-400",
+  Purchased: "bg-emerald-600 text-white border-emerald-600",
+  "Call Later": "bg-yellow-50 text-yellow-700 border-yellow-200",
+  "Call Not Connecting": "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "Call Not Picked": "bg-yellow-200 text-yellow-800 border-yellow-300",
+  "Switch Off": "bg-yellow-300 text-yellow-900 border-yellow-400",
+  "Not Interested": "bg-red-100 text-red-700 border-red-200",
+  "Low Budget": "bg-red-50 text-red-700 border-red-200",
 };
 const selectedChip = (s) =>
   STATUS_COLOR[s] || "bg-primary/10 text-primary border-primary/30";
@@ -68,17 +68,17 @@ const selectedChip = (s) =>
 // primary when nothing is selected or the status is unmapped.
 const STATUS_ACCENT = {
   New: "#2563EB",
+  "Follow up": "#10B981",
   Interested: "#059669",
-  "Follow up": "#4F46E5",
-  "Call Later": "#F59E0B",
-  "Call Not Connecting": "#E11D48",
-  "Call Not Picked": "#DC2626",
-  "Site Visit Scheduled": "#0284C7",
-  "Site Visit Done": "#0D9488",
-  "Switch Off": "#737373",
+  "Site Visit Scheduled": "#059669",
+  "Site Visit Done": "#047857",
+  Purchased: "#059669",
+  "Call Later": "#CA8A04",
+  "Call Not Connecting": "#CA8A04",
+  "Call Not Picked": "#A16207",
+  "Switch Off": "#A16207",
   "Not Interested": "#DC2626",
-  "Low Budget": "#CA8A04",
-  Purchased: "#16A34A",
+  "Low Budget": "#EF4444",
 };
 const accentFor = (s) => STATUS_ACCENT[s] || "var(--color-primary)";
 
