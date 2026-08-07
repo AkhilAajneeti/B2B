@@ -19,30 +19,38 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
   };
 
   const getStatusTag = (status) => {
+    // Semantic status palette — mirrors DealsTable.getStageColor (leads table).
+    // Hue = category, depth = progress/intensity. Opaque light shades so a chip
+    // stays readable on both light and dark rows (no `dark:` variants in-app).
     const colors = {
       New: "bg-blue-50 text-blue-700 border-blue-200",
-      Interested: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      "Follow up": "bg-indigo-50 text-indigo-700 border-indigo-200",
-      "Call Later": "bg-amber-50 text-amber-700 border-amber-200",
-      "Call Not Connecting": "bg-rose-50 text-rose-700 border-rose-200",
-      "Call Not Picked": "bg-red-50 text-red-700 border-red-200",
-      Broker: "bg-violet-50 text-violet-700 border-violet-200",
-      Dead: "bg-slate-100 text-slate-600 border-slate-300",
-      "Fake Lead": "bg-pink-50 text-pink-700 border-pink-200",
-      "Invalid Number": "bg-gray-100 text-gray-600 border-gray-300",
-      "Irrelevant Lead": "bg-orange-50 text-orange-700 border-orange-200",
-      "Low Budget": "bg-yellow-50 text-yellow-700 border-yellow-200",
-      "Low Interest": "bg-lime-50 text-lime-700 border-lime-200",
-      "Not Interested": "bg-red-50 text-red-700 border-red-200",
-      "Other Location": "bg-cyan-50 text-cyan-700 border-cyan-200",
-      Purchased: "bg-green-50 text-green-700 border-green-200",
-      "Site Visit Done": "bg-teal-50 text-teal-700 border-teal-200",
-      "Site Visit Scheduled": "bg-sky-50 text-sky-700 border-sky-200",
-      "Switch Off": "bg-neutral-100 text-neutral-600 border-neutral-300",
-      QDTD: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
-      Duplicate: "bg-slate-100 text-slate-600 border-slate-300",
+
+      "Follow up": "bg-emerald-50 text-emerald-700 border-emerald-200",
+      Interested: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 border-emerald-300",
+      "Site Visit Done": "bg-emerald-300 text-emerald-900 border-emerald-400",
+      Purchased: "bg-emerald-600 text-white border-emerald-600",
+
+      "Call Later": "bg-yellow-50 text-yellow-700 border-yellow-200",
+      "Call Not Connecting": "bg-yellow-100 text-yellow-800 border-yellow-200",
+      "Call Not Picked": "bg-yellow-200 text-yellow-800 border-yellow-300",
+      "Switch Off": "bg-yellow-300 text-yellow-900 border-yellow-400",
+
+      QDTD: "bg-violet-100 text-violet-800 border-violet-300",
+
+      Duplicate: "bg-slate-100 text-slate-600 border-slate-200",
+
+      "Low Budget": "bg-red-50 text-red-700 border-red-200",
+      "Low Interest": "bg-red-50 text-red-700 border-red-200",
+      "Other Location": "bg-red-50 text-red-700 border-red-200",
+      "Irrelevant Lead": "bg-red-50 text-red-700 border-red-200",
+      "Not Interested": "bg-red-100 text-red-700 border-red-200",
+      Broker: "bg-red-100 text-red-700 border-red-200",
+      Dead: "bg-red-200 text-red-800 border-red-300",
+      "Fake Lead": "bg-red-300 text-red-900 border-red-400",
+      "Invalid Number": "bg-red-600 text-white border-red-600",
     };
-    return colors?.[status] || "bg-gray-100 text-gray-600 border-gray-200";
+    return colors?.[status] || "bg-slate-100 text-slate-600 border-slate-200";
   };
 
   const getSourceTag = (source) => {
