@@ -764,14 +764,14 @@ const DealDrawer = ({
                                   !formData.sendWhatsappNotification,
                                 )
                               }
-                              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card ${formData.sendWhatsappNotification
-                                ? "bg-success"
-                                : "bg-muted-foreground/30"
+                              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-card ${formData.sendWhatsappNotification
+                                ? "bg-success border-success/70"
+                                : "bg-slate-200 border-slate-300"
                                 }`}
                             >
                               <span
                                 aria-hidden="true"
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${formData.sendWhatsappNotification
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-1 ring-slate-900/10 transition-transform ${formData.sendWhatsappNotification
                                   ? "translate-x-[22px]"
                                   : "translate-x-0.5"
                                   }`}
