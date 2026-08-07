@@ -81,41 +81,55 @@ const ActivityTimeline = ({
       // card and the deals row carry the same visual signal for the same
       // status).
       New: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+
+      // Green — progressing toward a sale
+      "Follow up":
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
       Interested:
         "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
-      "Follow up":
-        "bg-gradient-to-br from-indigo-50/70 to-background border-indigo-100",
+      "Site Visit Scheduled":
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      "Site Visit Done":
+        "bg-gradient-to-br from-emerald-100/70 to-background border-emerald-200",
+      Purchased:
+        "bg-gradient-to-br from-emerald-100/80 to-background border-emerald-200",
+
+      // Yellow — trying to reach / no response
       "Call Later":
-        "bg-gradient-to-br from-amber-50/70 to-background border-amber-100",
-      "Call Not Connecting":
-        "bg-gradient-to-br from-rose-50/70 to-background border-rose-100",
-      "Call Not Picked":
-        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
-      Broker:
-        "bg-gradient-to-br from-violet-50/70 to-background border-violet-100",
-      Dead: "bg-gradient-to-br from-slate-100/70 to-background border-slate-200",
-      "Fake Lead":
-        "bg-gradient-to-br from-pink-50/70 to-background border-pink-100",
-      "Invalid Number":
-        "bg-gradient-to-br from-gray-100/70 to-background border-gray-200",
-      "Irrelevant Lead":
-        "bg-gradient-to-br from-orange-50/70 to-background border-orange-100",
-      "Low Budget":
         "bg-gradient-to-br from-yellow-50/70 to-background border-yellow-100",
+      "Call Not Connecting":
+        "bg-gradient-to-br from-yellow-50/70 to-background border-yellow-100",
+      "Call Not Picked":
+        "bg-gradient-to-br from-yellow-100/70 to-background border-yellow-200",
+      "Switch Off":
+        "bg-gradient-to-br from-yellow-100/70 to-background border-yellow-200",
+
+      // Violet — auto-qualified
+      QDTD: "bg-gradient-to-br from-violet-50/70 to-background border-violet-100",
+
+      // Slate — admin
+      Duplicate:
+        "bg-gradient-to-br from-slate-100/70 to-background border-slate-200",
+
+      // Red — not a fit → lost / junk
+      "Low Budget":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
       "Low Interest":
-        "bg-gradient-to-br from-lime-50/70 to-background border-lime-100",
-      "Not Interested":
         "bg-gradient-to-br from-red-50/70 to-background border-red-100",
       "Other Location":
-        "bg-gradient-to-br from-cyan-50/70 to-background border-cyan-100",
-      Purchased:
-        "bg-gradient-to-br from-green-50/70 to-background border-green-100",
-      "Site Visit Done":
-        "bg-gradient-to-br from-teal-50/70 to-background border-teal-100",
-      "Site Visit Scheduled":
-        "bg-gradient-to-br from-sky-50/70 to-background border-sky-100",
-      "Switch Off":
-        "bg-gradient-to-br from-neutral-100/70 to-background border-neutral-200",
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      "Irrelevant Lead":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      "Not Interested":
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      Broker:
+        "bg-gradient-to-br from-red-50/70 to-background border-red-100",
+      Dead:
+        "bg-gradient-to-br from-red-100/70 to-background border-red-200",
+      "Fake Lead":
+        "bg-gradient-to-br from-red-100/70 to-background border-red-200",
+      "Invalid Number":
+        "bg-gradient-to-br from-red-100/80 to-background border-red-200",
       Planned:
         "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
     };
@@ -135,25 +149,32 @@ const ActivityTimeline = ({
       Pending: "bg-amber-100 text-amber-800",
       "Not Held": "bg-red-100 text-red-800",
 
-      New: "bg-blue-100 text-blue-800",
-      Interested: "bg-emerald-100 text-emerald-800",
-      "Follow up": "bg-indigo-100 text-indigo-800",
-      "Call Later": "bg-amber-100 text-amber-800",
-      "Call Not Connecting": "bg-rose-100 text-rose-800",
-      "Call Not Picked": "bg-red-100 text-red-800",
-      Broker: "bg-violet-100 text-violet-800",
-      Dead: "bg-slate-200 text-slate-800",
-      "Fake Lead": "bg-pink-100 text-pink-800",
-      "Invalid Number": "bg-gray-200 text-gray-800",
-      "Irrelevant Lead": "bg-orange-100 text-orange-800",
-      "Low Budget": "bg-yellow-100 text-yellow-800",
-      "Low Interest": "bg-lime-100 text-lime-800",
-      "Not Interested": "bg-red-100 text-red-800",
-      "Other Location": "bg-cyan-100 text-cyan-800",
-      Purchased: "bg-green-100 text-green-800",
-      "Site Visit Done": "bg-teal-100 text-teal-800",
-      "Site Visit Scheduled": "bg-sky-100 text-sky-800",
-      "Switch Off": "bg-neutral-200 text-neutral-800",
+      New: "bg-blue-50 text-blue-700",
+
+      "Follow up": "bg-emerald-50 text-emerald-700",
+      Interested: "bg-emerald-100 text-emerald-700",
+      "Site Visit Scheduled": "bg-emerald-200 text-emerald-800",
+      "Site Visit Done": "bg-emerald-300 text-emerald-900",
+      Purchased: "bg-emerald-600 text-white",
+
+      "Call Later": "bg-yellow-50 text-yellow-700",
+      "Call Not Connecting": "bg-yellow-100 text-yellow-800",
+      "Call Not Picked": "bg-yellow-200 text-yellow-800",
+      "Switch Off": "bg-yellow-300 text-yellow-900",
+
+      QDTD: "bg-violet-100 text-violet-800",
+
+      Duplicate: "bg-slate-100 text-slate-600",
+
+      "Low Budget": "bg-red-50 text-red-700",
+      "Low Interest": "bg-red-50 text-red-700",
+      "Other Location": "bg-red-50 text-red-700",
+      "Irrelevant Lead": "bg-red-50 text-red-700",
+      "Not Interested": "bg-red-100 text-red-700",
+      Broker: "bg-red-100 text-red-700",
+      Dead: "bg-red-200 text-red-800",
+      "Fake Lead": "bg-red-300 text-red-900",
+      "Invalid Number": "bg-red-600 text-white",
       Planned: "bg-blue-100 text-blue-800",
     };
     return colors?.[status] || "bg-gray-100 text-gray-800";
