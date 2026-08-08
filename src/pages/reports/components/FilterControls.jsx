@@ -98,6 +98,7 @@ const FilterControls = ({
     { value: "Purchased", label: "Purchased" },
     { value: "Site Visit Done", label: "Site Visit Done" },
     { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
+    { value: "Invitation Sent", label: "Invitation Sent" },
     { value: "Switch Off", label: "Switch Off" },
   ];
 

@@ -28,6 +28,7 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
       "Follow up": "bg-emerald-50 text-emerald-700 border-emerald-200",
       Interested: "bg-emerald-100 text-emerald-700 border-emerald-200",
       "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 border-emerald-300",
+      "Invitation Sent": "bg-emerald-200 text-emerald-800 border-emerald-300",
       "Site Visit Done": "bg-emerald-300 text-emerald-900 border-emerald-400",
       Purchased: "bg-emerald-600 text-white border-emerald-600",
 

@@ -60,6 +60,8 @@ const DealsTable = ({
         "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
       "Site Visit Scheduled":
         "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      "Invitation Sent":
+        "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
       "Site Visit Done":
         "bg-gradient-to-br from-emerald-100/70 to-background border-emerald-200",
       Purchased:
@@ -123,6 +125,8 @@ const DealsTable = ({
       "Follow up": "bg-emerald-50 text-emerald-700 border border-emerald-200",
       Interested: "bg-emerald-100 text-emerald-700 border border-emerald-200",
       "Site Visit Scheduled":
+        "bg-emerald-200 text-emerald-800 border border-emerald-300",
+      "Invitation Sent":
         "bg-emerald-200 text-emerald-800 border border-emerald-300",
       "Site Visit Done": "bg-emerald-300 text-emerald-900 border border-emerald-400",
       Purchased: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",

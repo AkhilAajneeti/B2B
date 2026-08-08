@@ -24,6 +24,7 @@ export const FUNNEL_STAGES = [
   { key: "Follow up", label: "Follow up", from: "#A78BFA", to: "#7C3AED" },
   { key: "Interested", label: "Interested", from: "#34D399", to: "#10B981" },
   { key: "Site Visit Scheduled", label: "Site Visit Scheduled", from: "#FBBF24", to: "#F59E0B" },
+  { key: "Invitation Sent", label: "Invitation Sent", from: "#10B981", to: "#059669" },
   { key: "Site Visit Done", label: "Site Visit Done", from: "#FB923C", to: "#EA580C" },
   { key: "Purchased", label: "Purchased", from: "#F472B6", to: "#DB2777" },
 ];
