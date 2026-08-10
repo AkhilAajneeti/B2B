@@ -13,7 +13,13 @@ const getCacheKey = () => {
     return "leads_count_cache_guest";
   }
 };
-const CACHE_TTL = 1000 * 60 * 10; // 10 min
+// Tiered cache lifetimes. A count whose date window ends BEFORE today is
+// historical and barely changes, so it can be cached for hours; a window that
+// reaches into today still accumulates new leads, so it must stay short. The
+// right TTL is chosen per call by `ttlForFilters` below.
+const CACHE_TTL_SHORT = 1000 * 60 * 15; // 15 min — live / current windows
+const CACHE_TTL_MEDIUM = 1000 * 60 * 60; // 1 hour — all-time totals (no date bound)
+const CACHE_TTL_LONG = 1000 * 60 * 60 * 2; // 2 hours — purely historical windows
 const leadsCountCache = new Map();
 // 🔥 helpers
 const getLocalCache = () => {
@@ -33,6 +39,56 @@ const setLocalCache = (key, value) => {
   localStorage.setItem(getCacheKey(), JSON.stringify(cache));
 };
 
+// Relative date types that always reach into "now" (so the count keeps changing
+// as leads arrive) vs. ones that are already in the past (fixed once the period
+// closed).
+const LIVE_DATE_TYPES = new Set(["today", "currentMonth", "lastSevenDays", "after"]);
+const PAST_DATE_TYPES = new Set(["yesterday", "lastMonth"]);
+
+const startOfToday = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
+
+// Decide how long a given count may be cached. A window is "long-cacheable" only
+// when it HAS a date bound and every date bound ends strictly before today —
+// e.g. a past month/week/day bucket on the dashboard, which can't change. Any
+// window that touches today (or has no date filter at all, i.e. an all-time
+// total) still gains new leads, so it stays on the short TTL.
+const ttlForFilters = (filters = []) => {
+  const todayStart = startOfToday();
+  let sawDateFilter = false;
+  let allHistorical = true;
+
+  for (const f of filters) {
+    const type = f?.type;
+    if (LIVE_DATE_TYPES.has(type)) {
+      sawDateFilter = true;
+      allHistorical = false;
+    } else if (PAST_DATE_TYPES.has(type)) {
+      sawDateFilter = true;
+    } else if (type === "between" && Array.isArray(f.value) && f.value[1]) {
+      sawDateFilter = true;
+      if (!(new Date(f.value[1]).getTime() < todayStart)) allHistorical = false;
+    } else if (type === "before" && f.value) {
+      sawDateFilter = true;
+      if (!(new Date(f.value).getTime() < todayStart)) allHistorical = false;
+    }
+    // equals / isNull / source / status clauses don't affect freshness.
+  }
+
+  // Past, closed window (e.g. last month) — fixed, cache longest.
+  if (sawDateFilter && allHistorical) return CACHE_TTL_LONG;
+  // No date bound at all — an all-time total (per-campaign totals, "interested"
+  // KPI, etc.). It only creeps up as new leads arrive, so a medium TTL is fine
+  // and spares the campaigns page its per-card count fan-out on every visit.
+  if (!sawDateFilter) return CACHE_TTL_MEDIUM;
+  // A window that reaches into today (today / this week / current month) still
+  // gains leads live — keep it short.
+  return CACHE_TTL_SHORT;
+};
+
 //industry chart
 export const fetchLeadsCount = async (filters = []) => {
   // 🔥 Stable cache key — prefixed with the per-user namespace so the
@@ -47,9 +103,13 @@ export const fetchLeadsCount = async (filters = []) => {
     }))
   )}`;
 
+  // Historical windows (past month/week/day) get the long TTL; anything
+  // touching today stays short. Same key → same TTL every time (deterministic).
+  const ttl = ttlForFilters(filters);
+
   // ✅ 1. MEMORY CACHE
   const cached = leadsCountCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (cached && Date.now() - cached.timestamp < ttl) {
     return cached.value;
   }
 
@@ -57,7 +117,7 @@ export const fetchLeadsCount = async (filters = []) => {
   const localCache = getLocalCache();
   const localItem = localCache[cacheKey];
 
-  if (localItem && Date.now() - localItem.timestamp < CACHE_TTL) {
+  if (localItem && Date.now() - localItem.timestamp < ttl) {
     leadsCountCache.set(cacheKey, localItem);
     return localItem.value;
   }

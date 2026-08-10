@@ -1,3 +1,46 @@
+// ── Users reference cache ────────────────────────────────────────────────
+// The user list is org reference data pulled on nearly every page/drawer
+// (assignee & collaborator pickers, filters), and fetchUser PAGINATES through
+// every user — so each miss is several requests. Cache the whole result in
+// localStorage, namespaced per logged-in user (ACL can scope the list), and
+// reuse it for a few hours instead of refetching. Cleared on logout
+// (Header.handleLogout), on any user mutation below, and on a 401 wipe.
+const USERS_CACHE_TTL = 1000 * 60 * 60 * 6; // 6 hours
+const usersCacheKey = () => {
+  try {
+    const uid = JSON.parse(localStorage.getItem("login_object"))?.id;
+    return `users_cache_${uid || "guest"}`;
+  } catch {
+    return "users_cache_guest";
+  }
+};
+const readUsersCache = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(usersCacheKey()));
+    if (raw && Date.now() - raw.timestamp < USERS_CACHE_TTL) return raw.value;
+  } catch {
+    /* corrupt / unavailable — fall through to a fresh fetch */
+  }
+  return null;
+};
+const writeUsersCache = (value) => {
+  try {
+    localStorage.setItem(
+      usersCacheKey(),
+      JSON.stringify({ value, timestamp: Date.now() }),
+    );
+  } catch {
+    /* quota or storage disabled — skip caching, not fatal */
+  }
+};
+export const clearUsersCache = () => {
+  try {
+    localStorage.removeItem(usersCacheKey());
+  } catch {
+    /* ignore */
+  }
+};
+
 /**
  * Fetches EVERY user, not just the first page.
  *
@@ -8,6 +51,9 @@
  * `total`.
  */
 export const fetchUser = async () => {
+  const cached = readUsersCache();
+  if (cached) return cached;
+
   const token = localStorage.getItem("auth_token");
 
   const PAGE_SIZE = 200; // EspoCRM's max rows per list request
@@ -49,7 +95,9 @@ export const fetchUser = async () => {
     offset += rows.length;
   }
 
-  return { total: list.length, list };
+  const result = { total: list.length, list };
+  writeUsersCache(result);
+  return result;
 }
 export const fetchUserById = async (id) => {
   const token = localStorage.getItem("auth_token");
@@ -99,6 +147,8 @@ export const updateUser = async (id, payload) => {
     throw new Error(text || "User update failed");
   }
 
+  // The edited user must show up in the cached list immediately.
+  clearUsersCache();
   return await res.json();
 };
 
@@ -115,6 +165,7 @@ export const deleteUser = async (id) => {
   if (!res.ok) {
     throw new Error("Failed to delete User");
   }
+  clearUsersCache();
   return res.json();
 };
 

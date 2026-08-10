@@ -216,7 +216,16 @@ const UserTab = () => {
 
       setIsInviteModalOpen(false);
     } catch (err) {
-      toast.error(isEdit ? "Failed to update user ❌" : "Failed to create user ❌");
+      // Surface the duplicate case specifically; keep a clean generic message
+      // for everything else (don't leak raw backend bodies into the toast).
+      const msg = String(err?.message || "");
+      if (/already exist/i.test(msg)) {
+        toast.error("User already exists");
+      } else {
+        toast.error(
+          isEdit ? "Failed to update user ❌" : "Failed to create user ❌",
+        );
+      }
     } finally {
       setIsLoading(false);
     }

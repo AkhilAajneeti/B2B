@@ -69,7 +69,13 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
     // around just bloats localStorage and could resurrect stale data
     // if the same user logs in again within the TTL.
     Object.keys(localStorage).forEach((k) => {
-      if (k.startsWith("leads_count_cache_")) localStorage.removeItem(k);
+      if (
+        k.startsWith("leads_count_cache_") ||
+        k.startsWith("users_cache_") ||
+        k.startsWith("teams_cache_")
+      ) {
+        localStorage.removeItem(k);
+      }
     });
 
     handleDropdownClose();
