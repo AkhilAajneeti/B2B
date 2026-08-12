@@ -43,6 +43,19 @@ export const EXCLUDED_STATUSES = [
   "lost",
   "closed",
   "purchased",
+  // Closed / not-actionable statuses — no live follow-up to chase, so they are
+  // hidden from the action pipeline board AND the reminder notifications (both
+  // read from buildPipelineDeals, which filters on isExcludedDeal). Matched
+  // case-insensitively via `status.includes(...)`.
+  "not interested",
+  "fake lead",
+  "invalid number",
+  "irrelevant lead",
+  "duplicate",
+  "broker",
+  "low interest",
+  "other location",
+  "switch off",
 ];
 
 // Urgency styling keyed by category. Whole strings only (Tailwind-safe).
