@@ -143,9 +143,16 @@ const DealDrawer = ({
   const queryClient = useQueryClient();
   const { data: usersData } = useUsers();
   const { data: teamData } = useTeams();
+  // Stream stays eager: the Overview tab shows the latest activity from it.
   const { data: streamData } = useLeadStream(deal?.id, isOpen);
-  const { data: taskData } = useLeadTask(deal?.id, isOpen);
-  const { data: meetData } = useLeadMeeting(deal?.id, isOpen);
+  // Task & Meeting data is only rendered inside their own tabs, so fetch them
+  // lazily — only once the user actually opens that tab. React Query caches the
+  // result, so re-opening the tab doesn't refetch.
+  const { data: taskData } = useLeadTask(deal?.id, isOpen && activeTab === "Task");
+  const { data: meetData } = useLeadMeeting(
+    deal?.id,
+    isOpen && activeTab === "Meeting",
+  );
   const currentUser = getStoredUser();
   // Source / Sub Source visibility: admins & managers see both with real
   // labels; everyone else only sees the Sub Source input, relabeled "Source"

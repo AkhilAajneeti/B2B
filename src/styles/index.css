@@ -46,7 +46,17 @@ select:focus {
    clipped to the glyphs; readable on both light and dark grounds. Change the two
    stops here to restyle every heading at once. */
 .heading-gradient {
-  background-image: linear-gradient(140deg, #AC2334 0%, #E8536B 100%);
+  /* Indian-flag tricolor: saffron -> green (same hues as the call-button
+     gradient). The transition is kept in the middle so the first letters read
+     clean saffron and the last clean green — pure white can't be used mid-text
+     because it would vanish on the light page. */
+  background-image: linear-gradient(
+    140deg,
+    #ff9933 0%,
+    #ff9933 35%,
+    #138808 65%,
+    #138808 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
