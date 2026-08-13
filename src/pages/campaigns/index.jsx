@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
+import TricolorBurst from "../../components/TricolorBurst";
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import DealsTable from "./components/DealsTable";
@@ -329,7 +330,8 @@ const ProjectsPage = () => {
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."
         />
       </Helmet>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background relative isolate">
+      <TricolorBurst />
         <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
         <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
 

@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet";
 import { Droppable, DragDropContext } from "@hello-pangea/dnd";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
+import TricolorBurst from "../../components/TricolorBurst";
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import PipelineColumn from "./components/PipelineColumn";
@@ -101,7 +102,8 @@ const Pipeline = () => {
   }, [refetch]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative isolate">
+      <TricolorBurst />
       <Helmet>
         <title>Pipeline - Aajneeti Connect ltd</title>
         <meta

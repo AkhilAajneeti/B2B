@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
+import TricolorBurst from "../../components/TricolorBurst";
 import Icon from "../../components/AppIcon";
 import CompanyTab from "./components/CompanyTab";
 import TeamsTab from "./components/TeamsTab";
@@ -50,7 +51,8 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative isolate">
+      <TricolorBurst />
       <Header
         onMenuToggle={handleSidebarToggle}
         isSidebarOpen={isSidebarOpen}

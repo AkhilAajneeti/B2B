@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Helmet } from "react-helmet";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
+import TricolorBurst from "../../components/TricolorBurst";
 import MetricsCard from "./components/MetricsCard";
 import FilterControls from "./components/FilterControls";
 import ConversionFunnelChart from "./components/ConversionFunnelChart";
@@ -263,7 +264,8 @@ const Reports = () => {
           content="Comprehensive sales analytics with interactive visualizations and export capabilities for data-driven decision making"
         />
       </Helmet>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background relative isolate">
+      <TricolorBurst />
         <Header
           onMenuToggle={handleSidebarToggle}
           isSidebarOpen={isSidebarOpen}

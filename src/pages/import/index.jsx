@@ -24,6 +24,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Header from "components/ui/Header";
 import Sidebar from "components/ui/Sidebar";
+import TricolorBurst from "components/TricolorBurst";
 import Button from "components/ui/Button";
 import Icon from "components/AppIcon";
 import { fetchImports } from "./components/utils";
@@ -147,7 +148,8 @@ const ImportPage = () => {
   // ---------- Render ----------
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative isolate">
+      <TricolorBurst />
       <Header
         onMenuToggle={() => setIsSidebarOpen((v) => !v)}
         isSidebarOpen={isSidebarOpen}

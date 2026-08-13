@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet";
 import { useParams } from "react-router-dom";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
+import TricolorBurst from "../../components/TricolorBurst";
 import HelpSidebar from "./components/HelpSidebar";
 import HelpHome from "./components/HelpHome";
 import CategoryView from "./components/CategoryView";
@@ -70,7 +71,8 @@ const HelpPage = () => {
           content="CRM Help Center — short, beginner-friendly guides for leads, meetings, tasks, reports and more."
         />
       </Helmet>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background relative isolate">
+      <TricolorBurst />
         <Header
           onMenuToggle={() => setIsAppSidebarOpen((v) => !v)}
           isSidebarOpen={isAppSidebarOpen}

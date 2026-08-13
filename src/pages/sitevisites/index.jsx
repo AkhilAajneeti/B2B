@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
+import TricolorBurst from "../../components/TricolorBurst";
 import Icon from "../../components/AppIcon";
 import { useSiteVisits } from "hooks/useSiteVisits";
 import { updateSiteVisit } from "services/sitevisite.service";
@@ -331,7 +332,8 @@ const SiteVisitePage = () => {
         <title>Site Visits - CRM</title>
         <meta name="description" content="Confirm scheduled site visits and track which leads actually show up." />
       </Helmet>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background relative isolate">
+      <TricolorBurst />
         <Header onMenuToggle={() => setIsSidebarOpen((o) => !o)} isSidebarOpen={isSidebarOpen} />
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
