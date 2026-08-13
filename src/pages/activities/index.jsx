@@ -252,7 +252,7 @@ const Activities = () => {
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold heading-gradient mb-2">
                 {total} Activities
               </h1>
               <p className="text-muted-foreground">

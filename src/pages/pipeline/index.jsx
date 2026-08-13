@@ -127,7 +127,7 @@ const Pipeline = () => {
                   Sales Pipeline
                 </span>
               </div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-3xl font-bold heading-gradient">
                 Your leads today
               </h1>
               <p className="mt-1.5 text-muted-foreground">

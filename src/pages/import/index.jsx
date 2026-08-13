@@ -161,7 +161,7 @@ const ImportPage = () => {
           {/* Page header */}
           <div className="flex items-start justify-between mb-6 gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold heading-gradient mb-2">
                 Imports
               </h1>
               <p className="text-muted-foreground">

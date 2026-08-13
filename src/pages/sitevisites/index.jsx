@@ -340,7 +340,7 @@ const SiteVisitePage = () => {
             {/* Page header */}
             <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-foreground lg:text-3xl">Site Visits</h1>
+                <h1 className="text-2xl font-bold heading-gradient lg:text-3xl">Site Visits</h1>
                 <p className="mt-1 text-muted-foreground">
                   Confirm scheduled visits and track who actually shows up.
                 </p>

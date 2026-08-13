@@ -41,6 +41,18 @@ select:focus {
   background: linear-gradient(52deg, #000000, #AC2334);
 }
 
+/* Shared 140deg brand gradient for page headings (Dashboard, Leads, …). Defined
+   once so every page's main title uses the exact same colours. The gradient is
+   clipped to the glyphs; readable on both light and dark grounds. Change the two
+   stops here to restyle every heading at once. */
+.heading-gradient {
+  background-image: linear-gradient(140deg, #AC2334 0%, #E8536B 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 /*  */
 @keyframes reminderShake {
   0% {

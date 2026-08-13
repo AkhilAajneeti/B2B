@@ -361,7 +361,7 @@ const Dashboard = () => {
       <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
       <main className="lg:ml-64 pt-16">
         <div className="m-6">
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
+          <h1 className="text-2xl lg:text-3xl font-bold heading-gradient mb-2">
             Dashboard
           </h1>
           <p className="text-muted-foreground">
