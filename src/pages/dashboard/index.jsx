@@ -335,7 +335,28 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative isolate">
+      {/* Subtle tricolor ambiance (Indian flag) — a faint saffron glow bleeding
+          down from the top, a green glow rising from the bottom, neutral in the
+          middle. Dashboard-only, fixed to the viewport, non-interactive, and
+          kept very light so it reads as atmosphere behind the content, never
+          over it. */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
+        <div
+          className="absolute inset-x-0 top-0 h-48"
+          style={{
+            background:
+              "radial-gradient(115% 100% at 50% 0%, rgba(255,153,51,0.13), rgba(255,153,51,0) 72%)",
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-48"
+          style={{
+            background:
+              "radial-gradient(115% 100% at 50% 100%, rgba(19,136,8,0.13), rgba(19,136,8,0) 72%)",
+          }}
+        />
+      </div>
       <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
       <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
       <main className="lg:ml-64 pt-16">
