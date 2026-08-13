@@ -71,11 +71,14 @@ export const fetchActivity = async ({
     }
   }
 
-  // ✅ SEARCH
+  // ✅ SEARCH — match the related record's NAME (e.g. the lead "Vikash Singh
+  // Parmar"), not its entity TYPE. `parentType` only ever holds "Lead" / "Task"
+  // / "Meeting", so searching a person's name there matched nothing; the name
+  // lives in `parentName`.
   if (filters.search) {
     where.push({
       type: "like",
-      attribute: "parentType",
+      attribute: "parentName",
       value: `%${filters.search}%`,
     });
   }
