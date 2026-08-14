@@ -178,7 +178,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
           className="pointer-events-none absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(180deg, rgba(255,153,51,0.45) 0%, rgba(255,153,51,0.10) 26%, rgba(255,153,51,0) 38%, rgba(19,136,8,0) 62%, rgba(19,136,8,0.10) 74%, rgba(19,136,8,0.45) 100%)",
+              "linear-gradient(180deg, rgba(255,153,51,0.28) 0%, rgba(255,153,51,0.07) 26%, rgba(255,153,51,0) 38%, rgba(19,136,8,0) 62%, rgba(19,136,8,0.07) 74%, rgba(19,136,8,0.28) 100%)",
           }}
         />
         <div className="flex flex-col h-full">
