@@ -143,3 +143,49 @@ select:focus {
     opacity: 0;
   }
 }
+
+/* "CRM" wordmark — saffron<->green tricolor that flows smoothly to the right
+   like a waving flag. The gradient repeats and starts/ends on saffron so the
+   loop is seamless. */
+.flag-flow {
+  background-image: linear-gradient(
+    90deg,
+    #ff9933,
+    #138808,
+    #ff9933,
+    #138808,
+    #ff9933
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: flagFlow 5s linear infinite;
+}
+/* Same flowing tricolor as a badge background; text-shadow keeps white text
+   legible over the light saffron stretch. */
+.flag-flow-bg {
+  background-image: linear-gradient(
+    90deg,
+    #ff9933,
+    #138808,
+    #ff9933,
+    #138808,
+    #ff9933
+  );
+  background-size: 200% auto;
+  animation: flagFlow 5s linear infinite;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+@keyframes flagFlow {
+  to {
+    background-position: 200% center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flag-flow,
+  .flag-flow-bg {
+    animation: none;
+  }
+}

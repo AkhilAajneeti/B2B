@@ -243,10 +243,10 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 <img src="assets/images/aajneeti-favicon.png" alt="" />
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-lg font-semibold text-foreground">
+                <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium bg-mahroon text-white rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-white rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
               </div>
@@ -255,10 +255,10 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
             {/* Mobile Logo - Only visible on mobile */}
             <div className="flex items-center space-x-3 lg:hidden">
               <div className="flex items-center space-x-2" onClick={()=>navigate('/')}>
-                <span className="text-lg font-semibold text-foreground">
+                <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium bg-mahroon-200 text-accent-foreground rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-white rounded-full">
                   ACL
                 </span>
               </div>
