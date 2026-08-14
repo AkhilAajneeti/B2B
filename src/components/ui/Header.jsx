@@ -246,7 +246,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-white rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-neutral-900 rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
               </div>
@@ -258,7 +258,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-white rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-neutral-900 rounded-full">
                   ACL
                 </span>
               </div>
@@ -271,11 +271,11 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 is a 4:3 illustration, so the badge keeps ~that ratio and a white
                 base + border so it reads cleanly on the light header. */}
             <span
-              className="flag-shine inline-flex h-9 w-12 items-center justify-center overflow-hidden rounded-md bg-white ring-1 ring-border shadow-sm shrink-0"
+              className="inline-flex h-9 w-12 items-center justify-center overflow-hidden rounded-md bg-white shrink-0"
               title="India"
             >
               <img
-                src="/assets/indianFlag.jpg"
+                src="assets/indianFlag.jpg"
                 alt="Indian flag"
                 className="h-full w-full object-cover"
               />

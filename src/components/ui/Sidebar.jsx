@@ -192,7 +192,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                 <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-white rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-neutral-900 rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
               </div>
