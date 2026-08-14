@@ -61,6 +61,12 @@ select:focus {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  /* Shrink the gradient box to the text itself. On a full-width block heading
+     the gradient spans the whole line, so short titles ("Leads") sit entirely
+     in the saffron half and never reach the green. fit-content makes the
+     gradient span exactly the text, so both colours show at any length. */
+  width: fit-content;
+  max-width: 100%;
 }
 
 /*  */
