@@ -13,12 +13,9 @@ const ActivityFilters = ({
 }) => {
   const activityTypeOptions = [
     { value: "all", label: "All Types" },
-    { value: "Account", label: "Account" },
     { value: "Task", label: "Task" },
-    // { value: "Call", label: "Training" },
     { value: "Meeting", label: "Meeting" },
     { value: "Lead", label: "Lead" },
-    { value: "Contact", label: "Contact" },
   ];
   const ACTIVITY_DATE_FILTERS = [
     { label: "Today", value: "today" },
@@ -54,29 +51,27 @@ const ActivityFilters = ({
           </h3>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-4">
-        {/* Search */}
-        <div className="lg:col-span-1">
-          <Input
-            type="search"
-            placeholder="Search activities..."
-            value={filters?.search}
-            onChange={(e) => onFilterChange("search", e?.target?.value)}
-            className="w-full"
+      {/* Search is hidden for now — only Type + Date filters are shown, laid out
+          as two clean, labelled columns. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Activity Type */}
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            Type
+          </label>
+          <Select
+            options={activityTypeOptions}
+            value={filters?.type}
+            onChange={(value) => onFilterChange("type", value)}
+            placeholder="All Types"
           />
         </div>
-        {/* Activity Type */}
-        <Select
-          options={activityTypeOptions}
-          value={filters?.type}
-          onChange={(value) => onFilterChange("type", value)}
-          placeholder="Activity Type"
-        />
-        {/* Date Range Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-
-          {/* Date Type Select */}
+        {/* Date */}
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            Date
+          </label>
           <Select
             className="min-w-0"
             placeholder="Filter by date"
@@ -91,30 +86,25 @@ const ActivityFilters = ({
               type="number"
               placeholder="Enter days"
               value={filters?.xDays || ""}
-              onChange={(e) =>
-                onFilterChange("xDays", e.target.value)
-              }
+              onChange={(e) => onFilterChange("xDays", e.target.value)}
+              className="mt-2"
             />
           )}
 
           {/* Date Range Inputs */}
           {showDateInputs && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-2">
               <Input
                 type="date"
                 value={filters?.closeDateFrom || ""}
-                onChange={(e) =>
-                  onFilterChange("closeDateFrom", e.target.value)
-                }
+                onChange={(e) => onFilterChange("closeDateFrom", e.target.value)}
               />
 
               {filters?.dateType === "between" && (
                 <Input
                   type="date"
                   value={filters?.closeDateTo || ""}
-                  onChange={(e) =>
-                    onFilterChange("closeDateTo", e.target.value)
-                  }
+                  onChange={(e) => onFilterChange("closeDateTo", e.target.value)}
                 />
               )}
             </div>
