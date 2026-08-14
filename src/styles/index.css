@@ -103,3 +103,43 @@ select:focus {
 .reminder-shake {
   animation: reminderShake 0.6s ease-in-out 2;
 }
+
+/* Header Indian-flag badge: a soft diagonal light sweeps across the flag on a
+   smooth, infinite loop. The ::after is the moving highlight; the wrapper clips
+   it to the flag's rounded rectangle. */
+.flag-shine {
+  position: relative;
+  overflow: hidden;
+}
+.flag-shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    transparent 100%
+  );
+  transform: translateX(-160%) skewX(-20deg);
+  animation: flagShine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes flagShine {
+  0% {
+    transform: translateX(-160%) skewX(-20deg);
+  }
+  55%,
+  100% {
+    transform: translateX(280%) skewX(-20deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flag-shine::after {
+    animation: none;
+    opacity: 0;
+  }
+}
