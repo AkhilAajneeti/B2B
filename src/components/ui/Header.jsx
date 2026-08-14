@@ -222,6 +222,16 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-40">
+        {/* Very soft left -> right tricolor wash behind the bar (saffron on the
+            left, green on the right, neutral in the middle). Non-interactive. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(255,153,51,0.14) 0%, rgba(255,153,51,0) 30%, rgba(19,136,8,0) 70%, rgba(19,136,8,0.14) 100%)",
+          }}
+        />
         <div className="flex items-center justify-between h-full px-4 lg:px-6">
           {/* Left Section - Mobile Menu & Logo */}
           <div className="flex items-center space-x-4">
@@ -271,7 +281,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 is a 4:3 illustration, so the badge keeps ~that ratio and a white
                 base + border so it reads cleanly on the light header. */}
             <span
-              className="inline-flex h-9 w-12 items-center justify-center overflow-hidden rounded-md bg-white shrink-0"
+              className="flag-shine inline-flex h-9 w-12 items-center justify-center overflow-hidden rounded-md bg-white shrink-0"
               title="India"
             >
               <img
