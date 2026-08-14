@@ -69,6 +69,27 @@ select:focus {
   max-width: 100%;
 }
 
+/* Like heading-gradient but with a hint of white in the middle (full tricolor).
+   Used on light-on-light headings such as the login "Welcome back". The white
+   band is kept narrow and slightly grey so the middle letters don't fully
+   vanish on a light background. */
+.heading-gradient-flag {
+  background-image: linear-gradient(
+    140deg,
+    #ff9933 0%,
+    #ff9933 34%,
+    #d9d9d9 50%,
+    #138808 66%,
+    #138808 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  width: fit-content;
+  max-width: 100%;
+}
+
 /*  */
 @keyframes reminderShake {
   0% {
