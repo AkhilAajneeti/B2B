@@ -170,24 +170,17 @@ const Sidebar = ({ isOpen = false, onClose }) => {
           transform transition-transform duration-300 ease-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `} >
-        {/* Subtle tricolor ambiance — saffron at the top, green at the bottom,
-            behind the nav items. Non-interactive, sits inside the sidebar. */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <div
-            className="absolute inset-x-0 top-0 h-40"
-            style={{
-              background:
-                "radial-gradient(120% 80% at 50% 0%, rgba(255,153,51,0.13), rgba(255,153,51,0) 70%)",
-            }}
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 h-40"
-            style={{
-              background:
-                "radial-gradient(120% 80% at 50% 100%, rgba(19,136,8,0.13), rgba(19,136,8,0) 70%)",
-            }}
-          />
-        </div>
+        {/* Tricolor ambiance (Indian flag) — saffron down from the top, green up
+            from the bottom, the sidebar's own light colour as the middle "white"
+            stripe. Behind the nav, non-interactive. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,153,51,0.45) 0%, rgba(255,153,51,0.10) 26%, rgba(255,153,51,0) 38%, rgba(19,136,8,0) 62%, rgba(19,136,8,0.10) 74%, rgba(19,136,8,0.45) 100%)",
+          }}
+        />
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
