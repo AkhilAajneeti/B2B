@@ -275,7 +275,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
               title="India"
             >
               <img
-                src="assets/indianFlag.jpg"
+                src="assets/indianFlag.png"
                 alt="Indian flag"
                 className="h-full w-full object-cover"
               />
