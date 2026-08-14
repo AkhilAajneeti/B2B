@@ -170,6 +170,24 @@ const Sidebar = ({ isOpen = false, onClose }) => {
           transform transition-transform duration-300 ease-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `} >
+        {/* Subtle tricolor ambiance — saffron at the top, green at the bottom,
+            behind the nav items. Non-interactive, sits inside the sidebar. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+          <div
+            className="absolute inset-x-0 top-0 h-40"
+            style={{
+              background:
+                "radial-gradient(120% 80% at 50% 0%, rgba(255,153,51,0.13), rgba(255,153,51,0) 70%)",
+            }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-40"
+            style={{
+              background:
+                "radial-gradient(120% 80% at 50% 100%, rgba(19,136,8,0.13), rgba(19,136,8,0) 70%)",
+            }}
+          />
+        </div>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
