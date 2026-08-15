@@ -117,6 +117,14 @@ const isTeamRecord = (record, user) => {
 };
 
 export const canEntityRecord = (entity, action, record) => {
+  // Owners / admins / managers operate across the whole org — they can act on
+  // ANY record regardless of who it's assigned to, its team scoping, or a
+  // missing ACL. Role is read from login_object (not the ACL table), so this
+  // still holds when a lead sits in a team the owner isn't in, when the
+  // assigned user isn't in the loaded users list, or when the ACL failed to
+  // load at all.
+  if (isElevated()) return true;
+
   const rawAccess = getEntityActionValue(entity, action);
   const access = typeof rawAccess === "string" ? rawAccess.toLowerCase() : rawAccess;
   if (access == null) return false;
