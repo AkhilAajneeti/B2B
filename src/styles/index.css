@@ -46,27 +46,8 @@ select:focus {
    clipped to the glyphs; readable on both light and dark grounds. Change the two
    stops here to restyle every heading at once. */
 .heading-gradient {
-  /* Indian-flag tricolor: saffron -> green (same hues as the call-button
-     gradient). The transition is kept in the middle so the first letters read
-     clean saffron and the last clean green — pure white can't be used mid-text
-     because it would vanish on the light page. */
-  background-image: linear-gradient(
-    140deg,
-    #ff9933 0%,
-    #ff9933 35%,
-    #138808 65%,
-    #138808 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  /* Shrink the gradient box to the text itself. On a full-width block heading
-     the gradient spans the whole line, so short titles ("Leads") sit entirely
-     in the saffron half and never reach the green. fit-content makes the
-     gradient span exactly the text, so both colours show at any length. */
-  width: fit-content;
-  max-width: 100%;
+  /* Tricolor gradient removed — headings use a solid colour again. */
+  color: var(--color-foreground);
 }
 
 /* Like heading-gradient but with a hint of white in the middle (full tricolor).
@@ -74,20 +55,8 @@ select:focus {
    band is kept narrow and slightly grey so the middle letters don't fully
    vanish on a light background. */
 .heading-gradient-flag {
-  background-image: linear-gradient(
-    140deg,
-    #ff9933 0%,
-    #ff9933 34%,
-    #d9d9d9 50%,
-    #138808 66%,
-    #138808 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  width: fit-content;
-  max-width: 100%;
+  /* Tricolor gradient removed — solid colour. */
+  color: var(--color-foreground);
 }
 
 /*  */
@@ -169,17 +138,8 @@ select:focus {
    clipped text on purpose: a white stretch inside text vanishes on the light
    header. */
 .flag-flow {
-  background-image: linear-gradient(
-    90deg,
-    #ff9933 0%,
-    #ff9933 28%,
-    #138808 72%,
-    #138808 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  /* Tricolor gradient removed — "CRM" wordmark uses a solid colour. */
+  color: var(--color-foreground);
 }
 /* Badge background — the full flag: saffron -> white -> green. The white owns
    the middle so the dark badge text stays readable across it. */

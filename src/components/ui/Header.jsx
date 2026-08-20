@@ -277,19 +277,6 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
           {/* Right Section - Actions & User */}
           <div className="flex items-center space-x-2">
-            {/* Indian flag badge with a smooth, infinite shine sweep. The source
-                is a 4:3 illustration, so the badge keeps ~that ratio and a white
-                base + border so it reads cleanly on the light header. */}
-            <span
-              className="flag-shine inline-flex h-9 w-12 items-center justify-center overflow-hidden rounded-md bg-white shrink-0"
-              title="India"
-            >
-              <img
-                src="assets/indianFlag.png"
-                alt="Indian flag"
-                className="h-full w-full object-cover"
-              />
-            </span>
             <div className="relative" ref={notificationRef}>
               {/* Notifications */}
               <Button
