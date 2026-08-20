@@ -222,16 +222,6 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-40">
-        {/* Very soft left -> right tricolor wash behind the bar (saffron on the
-            left, green on the right, neutral in the middle). Non-interactive. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(255,153,51,0.14) 0%, rgba(255,153,51,0) 30%, rgba(19,136,8,0) 70%, rgba(19,136,8,0.14) 100%)",
-          }}
-        />
         <div className="flex items-center justify-between h-full px-4 lg:px-6">
           {/* Left Section - Mobile Menu & Logo */}
           <div className="flex items-center space-x-4">
@@ -256,7 +246,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-neutral-900 rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium bg-mahroon text-white rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
               </div>
@@ -268,7 +258,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-neutral-900 rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium bg-mahroon-200 text-accent-foreground rounded-full">
                   ACL
                 </span>
               </div>

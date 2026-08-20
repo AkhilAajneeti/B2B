@@ -170,17 +170,6 @@ const Sidebar = ({ isOpen = false, onClose }) => {
           transform transition-transform duration-300 ease-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `} >
-        {/* Tricolor ambiance (Indian flag) — saffron down from the top, green up
-            from the bottom, the sidebar's own light colour as the middle "white"
-            stripe. Behind the nav, non-interactive. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(255,153,51,0.28) 0%, rgba(255,153,51,0.07) 26%, rgba(255,153,51,0) 38%, rgba(19,136,8,0) 62%, rgba(19,136,8,0.07) 74%, rgba(19,136,8,0.28) 100%)",
-          }}
-        />
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
@@ -192,7 +181,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                 <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium flag-flow-bg text-neutral-900 rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
               </div>

@@ -889,24 +889,6 @@ const DealDrawer = ({
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
-        {/* Tricolor ambiance — saffron from the top, green from the bottom,
-            behind the drawer content. Non-interactive. */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <div
-            className="absolute inset-x-0 top-0 h-40"
-            style={{
-              background:
-                "radial-gradient(120% 90% at 50% 0%, rgba(255,153,51,0.16), rgba(255,153,51,0) 70%)",
-            }}
-          />
-          <div
-            className="absolute inset-x-0 bottom-0 h-40"
-            style={{
-              background:
-                "radial-gradient(120% 90% at 50% 100%, rgba(19,136,8,0.16), rgba(19,136,8,0) 70%)",
-            }}
-          />
-        </div>
         <div className="flex flex-col h-full">
           {/* Header — hero strip with avatar, name, working status pill.
               In add/edit/mass-update modes we just show the title, since

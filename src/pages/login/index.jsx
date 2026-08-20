@@ -300,27 +300,6 @@ const LoginPage = () => {
 
         {/* ───────────────────────── RIGHT · FORM ───────────────────────── */}
         <div className="relative flex items-center justify-center px-6 py-10 sm:px-10 lg:px-14">
-          {/* Tricolor ambiance — saffron from the top, green from the bottom,
-              behind the form. Non-interactive. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 overflow-hidden"
-          >
-            <div
-              className="absolute inset-x-0 top-0 h-56"
-              style={{
-                background:
-                  "radial-gradient(120% 90% at 50% 0%, rgba(255,153,51,0.20), rgba(255,153,51,0) 70%)",
-              }}
-            />
-            <div
-              className="absolute inset-x-0 bottom-0 h-56"
-              style={{
-                background:
-                  "radial-gradient(120% 90% at 50% 100%, rgba(19,136,8,0.20), rgba(19,136,8,0) 70%)",
-              }}
-            />
-          </div>
           {/* soft warm glow behind the card */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -top-24 right-0 h-72 w-72 rounded-full bg-[#AC2334]/5 blur-3xl" />
