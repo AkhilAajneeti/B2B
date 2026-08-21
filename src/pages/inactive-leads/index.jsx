@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
+import Papa from "papaparse";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
 import DealsTable from "../deals/components/DealsTable";
+import DealsFilters from "../deals/components/DealsFilters";
 import DealDrawer from "../deals/components/DealDrawer";
 import TablePagination from "../deals/components/TablePagination";
 import ConfirmDeleteModal from "../deals/components/ConfirmDeleteModal";
@@ -13,15 +15,16 @@ import { useNewLeads } from "hooks/useLeads";
 import { useMetaData } from "hooks/useMetaData";
 import { useLeadDetails } from "hooks/useLeadDetails";
 import { useUsers } from "hooks/useUsers";
+import { useTeamUsers } from "hooks/useTeams";
 import { canEditRecord, canDeleteRecord } from "utils/permission";
 
 /**
  * Inactive Leads — an independent page that surfaces ONLY the inactive / lost
- * leads so they can be reviewed or re-assigned. It reuses the Leads section's exact
- * fetch pattern (useNewLeads -> fetchNewLeads -> whereGroup `status IN [...]`)
- * and the same table + drawer UI, with the status filter LOCKED to the statuses
- * below. Nothing in the Leads section is modified — its components are only
- * imported.
+ * leads so they can be reviewed or re-assigned. It reuses the Leads section's
+ * exact fetch pattern (useNewLeads -> fetchNewLeads -> whereGroup `status IN`)
+ * and the same table + drawer + filters UI, with the status ALWAYS constrained
+ * to the statuses below. Nothing in the Leads section is modified — its
+ * components are only imported.
  */
 const INACTIVE_STATUSES = [
   "Broker",
@@ -32,6 +35,20 @@ const INACTIVE_STATUSES = [
   "Irrelevant Lead",
   "Not Interested",
 ];
+
+const DEFAULT_FILTERS = {
+  search: "",
+  status: [],
+  sector: "",
+  cProject: "",
+  source: "",
+  assignUser: "",
+  team: "",
+  dateType: "",
+  closeDateFrom: "",
+  closeDateTo: "",
+  xDays: "",
+};
 
 const InactiveLeadsPage = () => {
   const queryClient = useQueryClient();
@@ -47,28 +64,38 @@ const InactiveLeadsPage = () => {
     direction: "desc",
   });
   const [leadToDelete, setLeadToDelete] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
-  // Locked status filter — this page only ever fetches the replace statuses.
-  // Same filter shape the Leads page sends, so the backend where-clause is built
-  // identically (status IN [...]).
-  const filters = useMemo(
-    () => ({
-      search: "",
-      status: INACTIVE_STATUSES,
-      sector: "",
-      cProject: "",
-      source: "",
-      assignUser: "",
-      team: "",
-      dateType: "",
-      closeDateFrom: "",
-      closeDateTo: "",
-      xDays: "",
-    }),
-    [],
+  // Team filter → resolve the team's members, same as the Leads page.
+  const { data: filterTeamUsersData } = useTeamUsers(filters.team);
+  const filterTeamUserIds = useMemo(
+    () =>
+      filters.team ? (filterTeamUsersData?.list || []).map((u) => u.id) : null,
+    [filters.team, filterTeamUsersData],
   );
 
-  const { data: leadsData, isLoading } = useNewLeads({ limit, page, filters });
+  // Status is ALWAYS constrained to the inactive set. If the rep narrows to
+  // specific statuses, keep only the inactive ones they picked; otherwise show
+  // all inactive. Everything else (search / source / project / user / team /
+  // date) filters within that scope exactly like the Leads page.
+  const filtersForBackend = useMemo(() => {
+    const base =
+      filters.team && filterTeamUserIds !== null
+        ? { ...filters, _teamUserIds: filterTeamUserIds }
+        : { ...filters };
+    const pickedInactive = (filters.status || []).filter((s) =>
+      INACTIVE_STATUSES.includes(s),
+    );
+    base.status = pickedInactive.length > 0 ? pickedInactive : INACTIVE_STATUSES;
+    return base;
+  }, [filters, filterTeamUserIds]);
+
+  const { data: leadsData, isLoading } = useNewLeads({
+    limit,
+    page,
+    filters: filtersForBackend,
+  });
   const { data: metaData } = useMetaData();
   const { data: leadsDetails } = useLeadDetails(selectedDeal?.id, mode);
   const { data: usersData } = useUsers();
@@ -87,6 +114,11 @@ const InactiveLeadsPage = () => {
         return acc;
       }, {}),
     [usersData],
+  );
+
+  const selectedLeadRecords = useMemo(
+    () => leads.filter((lead) => selectedDeals.includes(lead.id)),
+    [leads, selectedDeals],
   );
 
   // Enrich a lead with its assigned user's teams so team-scoped edit/delete
@@ -108,6 +140,34 @@ const InactiveLeadsPage = () => {
     };
   };
 
+  const exportLeadsToCSV = (rows, fileName = "inactive_leads") => {
+    if (!rows || rows.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+    const exportData = rows.map((lead) => ({
+      Name: lead?.name || "",
+      Email: lead?.emailAddress || "",
+      Phone: `"${lead?.phoneNumber || ""}"`,
+      Status: lead?.status || "",
+      Source: lead?.source || "",
+      "Project Name": lead?.cProject || lead?.cProjectName || "",
+      "Assigned User": lead?.assignedUserName || "",
+      "Next Contact": lead?.cNextContact || "",
+      "Created At": lead?.createdAt || "",
+    }));
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${fileName}_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const deleteLeadMutation = useMutation({
     mutationFn: deleteLead,
     onSuccess: () => {
@@ -118,8 +178,28 @@ const InactiveLeadsPage = () => {
     onError: () => toast.error("Failed to delete lead", { id: "delete-lead" }),
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids) => Promise.all(ids.map((id) => deleteLead(id))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      setSelectedDeals([]);
+      setShowDeleteConfirm(false);
+      toast.success("Selected leads deleted", { id: "bulk-delete" });
+    },
+    onError: () => toast.error("Failed to delete leads", { id: "bulk-delete" }),
+  });
+
   const handleMenuToggle = () => setIsSidebarOpen((v) => !v);
   const handleSidebarClose = () => setIsSidebarOpen(false);
+
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters);
+    setPage(1);
+  };
+  const handleClearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setPage(1);
+  };
 
   const handleDealClick = (deal) => {
     setSelectedDeal(deal);
@@ -129,13 +209,12 @@ const InactiveLeadsPage = () => {
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
+    setMode("view");
   };
 
   const handleUpdateLead = async (id, payload) => {
     const record =
-      selectedDeal?.id === id
-        ? selectedDeal
-        : leads.find((l) => l.id === id);
+      selectedDeal?.id === id ? selectedDeal : leads.find((l) => l.id === id);
     if (record && !canEditRecord("Lead", getPermissionRecord(record))) {
       toast.error("You do not have permission to edit this lead");
       return;
@@ -192,6 +271,77 @@ const InactiveLeadsPage = () => {
     }
   };
 
+  // Bulk actions (shown by the filter bar once leads are selected): mass-update
+  // (re-assign / bulk status), export, or delete — same as the Leads page.
+  const handleBulkAction = (action) => {
+    if (action === "mass-update") {
+      if (!selectedDeals.length) {
+        toast.error("Select at least one lead");
+        return;
+      }
+      const editableIds = selectedLeadRecords
+        .filter((deal) => canEditRecord("Lead", getPermissionRecord(deal)))
+        .map((deal) => deal.id);
+      if (!editableIds.length || editableIds.length !== selectedDeals.length) {
+        toast.error("Select only leads you have permission to edit");
+        return;
+      }
+      setSelectedDeal(null);
+      setMode("mass-update");
+      setIsDrawerOpen(true);
+      return;
+    }
+    if (action === "export") {
+      if (!selectedDeals.length) {
+        toast.error("Select at least one lead");
+        return;
+      }
+      exportLeadsToCSV(selectedLeadRecords, "selected_inactive_leads");
+      return;
+    }
+    if (action === "delete") {
+      if (!selectedDeals.length) {
+        toast.error("Select at least one lead");
+        return;
+      }
+      const deletableIds = selectedLeadRecords
+        .filter((deal) => canDeleteRecord("Lead", getPermissionRecord(deal)))
+        .map((deal) => deal.id);
+      if (!deletableIds.length || deletableIds.length !== selectedDeals.length) {
+        toast.error("Select only leads you have permission to delete");
+        return;
+      }
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const handleConfirmBulkDelete = () => {
+    if (!selectedDeals.length) return;
+    const deletableIds = selectedLeadRecords
+      .filter((deal) => canDeleteRecord("Lead", getPermissionRecord(deal)))
+      .map((deal) => deal.id);
+    if (!deletableIds.length || deletableIds.length !== selectedDeals.length) {
+      toast.error("Select only leads you have permission to delete");
+      return;
+    }
+    toast.loading("Deleting leads…", { id: "bulk-delete" });
+    bulkDeleteMutation.mutate(deletableIds);
+  };
+
+  const handleBulkUpdateLeads = async (payload) => {
+    const editableIds = selectedLeadRecords
+      .filter((deal) => canEditRecord("Lead", getPermissionRecord(deal)))
+      .map((deal) => deal.id);
+    if (!editableIds.length || editableIds.length !== selectedDeals.length) {
+      toast.error("Select only leads you have permission to edit");
+      return;
+    }
+    await Promise.all(editableIds.map((id) => updateLead(id, payload)));
+    queryClient.invalidateQueries({ queryKey: ["leads"] });
+    setSelectedDeals([]);
+    toast.success(`${editableIds.length} leads updated`);
+  };
+
   const noop = () => {};
 
   return (
@@ -212,10 +362,19 @@ const InactiveLeadsPage = () => {
                 Leads marked Broker, Dead, Low Budget, Duplicate, Invalid Number,
                 Irrelevant or Not Interested — review or re-assign them.
               </p>
-              <span className="inline-block mt-2 text-sm text-muted-foreground">
-                {total} lead{total === 1 ? "" : "s"}
-              </span>
             </div>
+
+            <DealsFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              dealCount={total}
+              onBulkAction={handleBulkAction}
+              selectedCount={selectedDeals?.length}
+              total={total}
+              limit={limit}
+              page={page}
+            />
 
             <div className="rounded-2xl border border-[rgba(20,20,30,0.08)] shadow-[0_1px_2px_rgba(16,24,40,.04),0_4px_16px_rgba(16,24,40,.06)]">
               <div
@@ -270,8 +429,19 @@ const InactiveLeadsPage = () => {
               onUpdate={handleUpdateLead}
               onClose={handleDrawerClose}
               onDelete={noop}
-              onBulkUpdate={noop}
+              onBulkUpdate={handleBulkUpdateLeads}
               selectedIds={selectedDeals}
+            />
+
+            <ConfirmDeleteModal
+              open={showDeleteConfirm}
+              title="Delete Selected Leads"
+              description="These leads and their activity history will be permanently removed."
+              recordName={`${selectedDeals.length} lead${selectedDeals.length === 1 ? "" : "s"} selected`}
+              confirmLabel={`Delete ${selectedDeals.length}`}
+              loading={bulkDeleteMutation.isPending}
+              onCancel={() => setShowDeleteConfirm(false)}
+              onConfirm={handleConfirmBulkDelete}
             />
 
             <ConfirmDeleteModal

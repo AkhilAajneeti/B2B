@@ -605,17 +605,19 @@ const DealsFilters = ({
             fills cols 3-4 so the button auto-flows to col 5; no-date-filter
             mode keeps col-span-3 so the button stays right-aligned across its
             wider cell. */}
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${!showDateInputs
-          ? "lg:col-span-2"
-          : filters?.dateType === "between"
-            ? "lg:col-span-1"
-            : "lg:col-start-5 lg:col-span-1"
-          }`}>
-          <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
-            <Icon name="Plus" size={16} className="mr-2" />
-            Lead Analytics
-          </Button>
-        </div>
+        {toggleAnalytics && (
+          <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${!showDateInputs
+            ? "lg:col-span-2"
+            : filters?.dateType === "between"
+              ? "lg:col-span-1"
+              : "lg:col-start-5 lg:col-span-1"
+            }`}>
+            <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
+              <Icon name="Plus" size={16} className="mr-2" />
+              Lead Analytics
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Date conditional grids — sit inside the card directly under
