@@ -43,6 +43,22 @@ const DealsTable = ({
     })?.format(parsedDate);
   };
 
+  // Same parsing as formatDate, but returns just the time (e.g. "10:00 AM").
+  const formatTime = (date) => {
+    if (!date) return "";
+    const safe =
+      typeof date === "string" && date.length > 10
+        ? `${date.replace(" ", "T")}Z`
+        : date;
+    const parsed = new Date(safe);
+    if (isNaN(parsed.getTime())) return "";
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })?.format(parsed);
+  };
+
   // Soft status-tinted gradient for the mobile lead card background. Mirrors
   // the same palette as getStageColor so the card and the status badge feel
   // visually connected. Whole class strings (not concatenated) so the
@@ -398,8 +414,16 @@ const DealsTable = ({
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="text-sm text-foreground whitespace-nowrap">
-                      {formatDate(deal?.createdAt)}
+                    <div className="whitespace-nowrap leading-tight">
+                      <div className="text-sm font-medium text-foreground">
+                        {formatDate(deal?.createdAt)}
+                      </div>
+                      {formatTime(deal?.createdAt) && (
+                        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Icon name="Clock" size={11} className="shrink-0" />
+                          {formatTime(deal?.createdAt)}
+                        </div>
+                      )}
                     </div>
                   </td>
 
