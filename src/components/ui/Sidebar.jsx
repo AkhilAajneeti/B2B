@@ -53,6 +53,11 @@ const Sidebar = ({ isOpen = false, onClose }) => {
 
     },
     {
+      label: "Inactive Leads",
+      path: "/inactive-leads",
+      icon: "Recycle",
+    },
+    {
       label: "My Campaigns",
       path: "/campaigns",
       icon: "Layers",

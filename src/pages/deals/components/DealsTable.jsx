@@ -408,9 +408,17 @@ const DealsTable = ({
                   </td>
 
                   <td className="px-4 py-4">
-                    <span className="inline-flex px-1 py-1 text-xs font-medium rounded-full whitespace-nowrap">
-                      {formatDate(deal?.cNextContactAt)}
-                    </span>
+                    <div className="whitespace-nowrap leading-tight">
+                      <div className="text-sm font-medium text-foreground">
+                        {formatDate(deal?.cNextContactAt)}
+                      </div>
+                      {formatTime(deal?.cNextContactAt) && (
+                        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Icon name="Clock" size={11} className="shrink-0" />
+                          {formatTime(deal?.cNextContactAt)}
+                        </div>
+                      )}
+                    </div>
                   </td>
 
                   <td className="px-4 py-4">

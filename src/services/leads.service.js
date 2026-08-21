@@ -418,6 +418,17 @@ export const fetchNewLeads = async ({
     }
   }
 
+  // Exclude specific statuses — used by the Leads table to hide the inactive /
+  // junk statuses by default (they live in the Inactive Leads section). Kept
+  // separate from the include `status` filter above so both can coexist.
+  if (Array.isArray(filters.excludeStatus) && filters.excludeStatus.length > 0) {
+    where.push({
+      type: "notIn",
+      attribute: "status",
+      value: filters.excludeStatus,
+    });
+  }
+
   if (filters.source) {
     where.push({
       // `like` (case-insensitive contains) instead of `equals` — reps fill

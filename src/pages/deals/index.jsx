@@ -41,6 +41,20 @@ import {
 } from "utils/permission";
 import { useLocation } from "react-router-dom";
 
+// Inactive / junk statuses hidden from the Leads table by default — these leads
+// live in the Inactive Leads section instead, so the Leads table shows only
+// active leads. Picking one of these explicitly in the status filter still
+// shows it (see filtersForBackend below).
+const LEADS_HIDDEN_STATUSES = [
+  "Broker",
+  "Dead",
+  "Low Budget",
+  "Duplicate",
+  "Invalid Number",
+  "Irrelevant Lead",
+  "Not Interested",
+];
+
 const DealsPage = () => {
   const queryClient = useQueryClient();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -152,13 +166,18 @@ const DealsPage = () => {
         : null,
     [filters.team, filterTeamUsersData],
   );
-  const filtersForBackend = useMemo(
-    () =>
+  const filtersForBackend = useMemo(() => {
+    const base =
       filters.team && filterTeamUserIds !== null
         ? { ...filters, _teamUserIds: filterTeamUserIds }
-        : filters,
-    [filters, filterTeamUserIds],
-  );
+        : { ...filters };
+    // Default view hides the inactive/junk statuses so only valid leads show.
+    // An explicit status pick overrides this (choose "Broker" and it appears).
+    if (!filters.status || filters.status.length === 0) {
+      base.excludeStatus = LEADS_HIDDEN_STATUSES;
+    }
+    return base;
+  }, [filters, filterTeamUserIds]);
 
   const { data: leadsData, isLoading } = useNewLeads({
     limit,
