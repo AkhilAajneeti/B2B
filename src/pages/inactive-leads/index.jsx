@@ -33,7 +33,6 @@ const INACTIVE_STATUSES = [
   "Duplicate",
   "Invalid Number",
   "Irrelevant Lead",
-  "Not Interested",
 ];
 
 const DEFAULT_FILTERS = {
