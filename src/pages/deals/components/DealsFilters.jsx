@@ -9,6 +9,34 @@ import { useTeams } from "hooks/useTeams";
 import { todayLocal } from "../../../utils/dateFilter";
 import { isSupAdmin } from "utils/permission";
 
+// Full status list — the default the Leads page uses (it passes no override, so
+// its behaviour is unchanged). Other pages (e.g. Inactive Leads) pass a narrowed
+// `statusOptions` so the dropdown only offers statuses relevant to that page.
+const DEFAULT_STATUS_OPTIONS = [
+  { value: "Broker", label: "Broker" },
+  { value: "Duplicate", label: "Duplicate" },
+  { value: "QDTD", label: "Qualify Due To Delay" },
+  { value: "Call Later", label: "Call Later" },
+  { value: "Call Not Connecting", label: "Call Not Connecting" },
+  { value: "Call Not Picked", label: "Call Not Picked" },
+  { value: "Dead", label: "Dead" },
+  { value: "Fake Lead", label: "Fake Lead" },
+  { value: "Follow up", label: "Follow up" },
+  { value: "Interested", label: "Interested" },
+  { value: "Invalid Number", label: "Invalid Number" },
+  { value: "Irrelevant Lead", label: "Irrelevant Lead" },
+  { value: "Low Budget", label: "Low Budget" },
+  { value: "Low Interest", label: "Low Interest" },
+  { value: "New", label: "New" },
+  { value: "Not Interested", label: "Not Interested" },
+  { value: "Other Location", label: "Other Location" },
+  { value: "Purchased", label: "Purchased" },
+  { value: "Site Visit Done", label: "Site Visit Done" },
+  { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
+  { value: "Invitation Sent", label: "Invitation Sent" },
+  { value: "Switch Off", label: "Switch Off" },
+];
+
 const DealsFilters = ({
   filters,
   onFiltersChange,
@@ -17,6 +45,7 @@ const DealsFilters = ({
   onBulkAction,
   selectedCount,
   toggleAnalytics,
+  statusOptions = DEFAULT_STATUS_OPTIONS,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
@@ -46,30 +75,6 @@ const DealsFilters = ({
     { value: "Aajneeti", label: "Aajneeti" },
     { value: "Meta", label: "Meta" },
     { value: "Other", label: "Other" },
-  ];
-  const statusOptions = [
-    { value: "Broker", label: "Broker" },
-     { value: "Duplicate", label: "Duplicate" },
-    { value: "QDTD", label: "Qualify Due To Delay" },
-    { value: "Call Later", label: "Call Later" },
-    { value: "Call Not Connecting", label: "Call Not Connecting" },
-    { value: "Call Not Picked", label: "Call Not Picked" },
-    { value: "Dead", label: "Dead" },
-    { value: "Fake Lead", label: "Fake Lead" },
-    { value: "Follow up", label: "Follow up" },
-    { value: "Interested", label: "Interested" },
-    { value: "Invalid Number", label: "Invalid Number" },
-    { value: "Irrelevant Lead", label: "Irrelevant Lead" },
-    { value: "Low Budget", label: "Low Budget" },
-    { value: "Low Interest", label: "Low Interest" },
-    { value: "New", label: "New" },
-    { value: "Not Interested", label: "Not Interested" },
-    { value: "Other Location", label: "Other Location" },
-    { value: "Purchased", label: "Purchased" },
-    { value: "Site Visit Done", label: "Site Visit Done" },
-    { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
-    { value: "Invitation Sent", label: "Invitation Sent" },
-    { value: "Switch Off", label: "Switch Off" },
   ];
   const ACTIVITY_DATE_FILTERS = [
     { label: "Today", value: "today" },

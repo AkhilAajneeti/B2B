@@ -35,6 +35,13 @@ const INACTIVE_STATUSES = [
   "Irrelevant Lead",
 ];
 
+// Only these statuses are meaningful here, so the filter dropdown offers just
+// them (not the full active-lead status list).
+const INACTIVE_STATUS_OPTIONS = INACTIVE_STATUSES.map((s) => ({
+  value: s,
+  label: s,
+}));
+
 const DEFAULT_FILTERS = {
   search: "",
   status: [],
@@ -370,6 +377,7 @@ const InactiveLeadsPage = () => {
               dealCount={total}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
+              statusOptions={INACTIVE_STATUS_OPTIONS}
               total={total}
               limit={limit}
               page={page}
