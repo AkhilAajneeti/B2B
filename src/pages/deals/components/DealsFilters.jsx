@@ -13,6 +13,10 @@ import { isSupAdmin } from "utils/permission";
 // its behaviour is unchanged). Other pages (e.g. Inactive Leads) pass a narrowed
 // `statusOptions` so the dropdown only offers statuses relevant to that page.
 const DEFAULT_STATUS_OPTIONS = [
+  // "All" is a pseudo-option (not a real status) — picking it tells the Leads
+  // page to drop its default junk-status exclusion and show every lead. Pages
+  // that pass their own `statusOptions` (e.g. Inactive Leads) don't get it.
+  { value: "All", label: "All Leads" },
   { value: "Broker", label: "Broker" },
   { value: "Duplicate", label: "Duplicate" },
   { value: "QDTD", label: "Qualify Due To Delay" },

@@ -170,9 +170,14 @@ const DealsPage = () => {
       filters.team && filterTeamUserIds !== null
         ? { ...filters, _teamUserIds: filterTeamUserIds }
         : { ...filters };
-    // Default view hides the inactive/junk statuses so only valid leads show.
-    // An explicit status pick overrides this (choose "Broker" and it appears).
-    if (!filters.status || filters.status.length === 0) {
+    const statusArr = filters.status || [];
+    if (statusArr.includes("All")) {
+      // "All Leads" selected → drop the status filter entirely and skip the
+      // default exclusion, so every lead (junk statuses included) shows.
+      base.status = [];
+    } else if (statusArr.length === 0) {
+      // Default view hides the inactive/junk statuses so only valid leads show.
+      // An explicit status pick overrides this (choose "Broker" and it appears).
       base.excludeStatus = LEADS_HIDDEN_STATUSES;
     }
     return base;
