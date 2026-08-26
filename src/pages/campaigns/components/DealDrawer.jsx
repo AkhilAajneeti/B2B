@@ -500,7 +500,9 @@ const DealDrawer = ({
               </h2>
             </div>
             <div className="flex items-center space-x-2">
-              {!isMassUpdate && (
+              {/* Edit / Cancel toggle only makes sense for an existing record.
+                  In "add" mode the create form is already shown, so hide it. */}
+              {!isMassUpdate && mode !== "add" && (
                 <Button
                   variant="outline"
                   size="sm"
