@@ -288,7 +288,10 @@ export const deleteProject = async (id) => {
   if (!res.ok) {
     throw new Error("Failed to delete Project");
   }
-  return res.json();
+  // EspoCRM's DELETE can return `true`, an empty body, or 204 — guard the parse
+  // so a successful delete with no JSON body doesn't throw a false failure.
+  const text = await res.text();
+  return text ? JSON.parse(text) : true;
 };
 export const bulkDeleteProject = async (ids = []) => {
   return Promise.all(ids.map((id) => deleteProject(id)));

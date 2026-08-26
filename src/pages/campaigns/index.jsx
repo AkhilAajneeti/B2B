@@ -202,6 +202,9 @@ const ProjectsPage = () => {
       });
     } catch (err) {
       console.error("Delete failed", err);
+      // Dismiss the "Deleting…" loader and surface the failure (was silently
+      // left spinning forever before).
+      toast.error("Failed to delete Project", { id: "delete-project" });
     }
   };
   const handleBulkDelete = async () => {

@@ -91,7 +91,7 @@ const DealsTable = ({
   };
   const handleDelete = async (e, deal) => {
     e.stopPropagation();
-    const ok = window.confirm(`Delete Task ${deal?.name}?`);
+    const ok = window.confirm(`Delete Project ${deal?.name}?`);
     if (!ok) return;
 
     await onDelete(deal.id); // 👈 parent ko bol rahe ho

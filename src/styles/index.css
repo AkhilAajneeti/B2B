@@ -41,6 +41,25 @@ select:focus {
   background: linear-gradient(52deg, #000000, #AC2334);
 }
 
+/* Collapsible sidebar (desktop) — when the sidebar shrinks to its icon rail,
+   the Sidebar component adds `sidebar-collapsed` to <body>. Page content uses
+   the hardcoded `lg:ml-64` utility and the Header offset uses `ml-64`; rather
+   than editing ~20 page files we shift those two here so the layout follows the
+   4rem rail. Higher specificity than the base utility, so cascade order is not a
+   concern. The transition keeps it in sync with the sidebar's width animation. */
+@media (min-width: 1024px) {
+  .lg\:ml-64,
+  .ml-64 {
+    transition: margin-left 300ms ease;
+  }
+  body.sidebar-collapsed .lg\:ml-64 {
+    margin-left: 4rem;
+  }
+  body.sidebar-collapsed .ml-64 {
+    margin-left: 4rem;
+  }
+}
+
 /* Shared 140deg brand gradient for page headings (Dashboard, Leads, …). Defined
    once so every page's main title uses the exact same colours. The gradient is
    clipped to the glyphs; readable on both light and dark grounds. Change the two

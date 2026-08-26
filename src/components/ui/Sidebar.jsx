@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
@@ -8,6 +8,27 @@ const Sidebar = ({ isOpen = false, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isUpgradeCardVisible, setIsUpgradeCardVisible] = useState(true);
+
+  // Desktop-only collapse: shrink the sidebar down to an icon rail and back.
+  // Persisted so the choice survives reloads + page navigation. A
+  // `sidebar-collapsed` class on <body> lets the page-content margins
+  // (lg:ml-64) and header offset (ml-64) follow — see index.css. Mobile keeps
+  // the full drawer regardless (all collapse styles are `lg:`-scoped).
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("sidebarCollapsed") === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("sidebarCollapsed", collapsed ? "1" : "0");
+    } catch {
+      /* ignore storage errors (private mode etc.) */
+    }
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+  }, [collapsed]);
 
   // Items marked `adminOnly` are visible to elevated users only.
   // "Elevated" = type=admin OR has the Owner / Manager role.
@@ -171,18 +192,36 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-sidebar border-r border-border z-50 lg:z-30
-          transform transition-transform duration-300 ease-out
+          fixed top-0 left-0 h-full w-64 ${collapsed ? "lg:w-16" : "lg:w-64"} bg-sidebar border-r border-border z-50 lg:z-30
+          transform transition-all duration-300 ease-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `} >
+        {/* Collapse / expand toggle — desktop only. Straddles the right edge. */}
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          className="hidden lg:flex absolute -right-3 top-24 z-40 w-6 h-6 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm hover:text-foreground hover:bg-muted transition-smooth"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <Icon name={collapsed ? "ChevronRight" : "ChevronLeft"} size={14} />
+        </button>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border">
+          <div
+            className={`flex items-center justify-between p-6 border-b border-border ${
+              collapsed ? "lg:px-3" : ""
+            }`}
+          >
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
                 <Icon name="Zap" size={20} color="white" />
               </div>
-              <div className="flex items-center space-x-2">
+              <div
+                className={`flex items-center space-x-2 ${
+                  collapsed ? "lg:hidden" : ""
+                }`}
+              >
                 <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
@@ -225,9 +264,11 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                   <button
                     key={item?.path}
                     onClick={() => handleNavigation(item?.path)}
+                    title={item?.label}
                     className={`
                       w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg
                       transition-smooth group
+                      ${collapsed ? "lg:justify-center" : ""}
                       ${isActive
                         ? "linearbg-1 text-white shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-mahroon"
@@ -243,12 +284,15 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                           ${isActive ? "text-white" : "text-muted-foreground group-hover:text-foreground"}
                         `}
                       />
-                      <span>{item?.label}</span>
+                      <span className={collapsed ? "lg:hidden" : ""}>
+                        {item?.label}
+                      </span>
                     </div>
                     {item?.badge > 0 && (
                       <span
                         className={`
                           px-2 py-0.5 text-xs font-medium rounded-full
+                          ${collapsed ? "lg:hidden" : ""}
                           ${isActive
                             ? "bg-primary-foreground/20 text-primary-foreground"
                             : "bg-mahroon-400 text-accent-foreground"
@@ -265,7 +309,11 @@ const Sidebar = ({ isOpen = false, onClose }) => {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-border">
+          <div
+            className={`p-4 border-t border-border ${
+              collapsed ? "lg:hidden" : ""
+            }`}
+          >
             <div className="text-xs text-muted-foreground text-center">
               Developed by Aajneeti connect ltd.
               <br />© 2026 All rights reserved.
