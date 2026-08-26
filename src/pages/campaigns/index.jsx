@@ -188,8 +188,11 @@ const ProjectsPage = () => {
   //deletion delete
   const handleDeleteLead = async (id) => {
     // Record-level guard — see meeting/index.jsx for full rationale.
+    // NOTE: the ACL scope / entity type is "CProjects" (matches the REST
+    // endpoint /CProjects), NOT "Project" — the wrong name made this guard
+    // always resolve to "no" and blocked deletes the backend actually allows.
     const record = projects.find((p) => p.id === id);
-    if (record && !canDeleteRecord("Project", record)) {
+    if (record && !canDeleteRecord("CProjects", record)) {
       toast.error("You do not have permission to delete this project");
       return;
     }
