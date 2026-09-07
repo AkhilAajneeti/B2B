@@ -33,6 +33,7 @@ const INACTIVE_STATUSES = [
   "Duplicate",
   "Invalid Number",
   "Irrelevant Lead",
+  "Fake Lead"
 ];
 
 // Only these statuses are meaningful here, so the filter dropdown offers just
