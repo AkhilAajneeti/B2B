@@ -52,6 +52,7 @@ const LEADS_HIDDEN_STATUSES = [
   "Duplicate",
   "Invalid Number",
   "Irrelevant Lead",
+  "Fake Lead"
 ];
 
 const DealsPage = () => {
