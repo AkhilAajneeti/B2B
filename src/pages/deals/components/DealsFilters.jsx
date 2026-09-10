@@ -569,8 +569,8 @@ const DealsFilters = ({
           outside the collapsible grid so they stay visible on mobile too. They
           set the same `dateType` as the "Filter by date" dropdown (in sync);
           tapping the active pill clears it. */}
-      <div className="flex flex-wrap items-center gap-2 px-4 pt-4">
-        <span className="text-xs font-medium text-muted-foreground mr-0.5">
+      <div className="flex flex-wrap items-center gap-2.5 px-4 pt-4 pb-3 lg:pb-1">
+        <span className="text-xs font-medium text-muted-foreground mr-0.5 w-full lg:w-auto">
           Quick:
         </span>
         {QUICK_DATE_PILLS.map((pill) => {
