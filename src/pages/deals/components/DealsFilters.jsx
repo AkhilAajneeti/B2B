@@ -82,6 +82,7 @@ const DealsFilters = ({
   ];
   const ACTIVITY_DATE_FILTERS = [
     { label: "Today", value: "today" },
+    { label: "Yesterday", value: "yesterday" },
     { label: "Last 7 Days", value: "lastSevenDays" },
     { label: "Current Month", value: "currentMonth" },
     { label: "Last Month", value: "lastMonth" },

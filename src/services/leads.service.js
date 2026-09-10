@@ -238,6 +238,17 @@ export const fetchLeads = async ({ limit = 100, page = 1 }) => {
 
   return await res.json();
 };
+// EspoCRM has no native "yesterday" date type, so the deals date filter
+// translates it into a whole-day `on` filter for yesterday's calendar day
+// (Espo matches the full day for a dateTime field, in the user's timezone).
+// Computed in LOCAL time (sv-SE → YYYY-MM-DD) so IST users past 5:30 AM UTC
+// don't slip a day the way toISOString() would.
+const yesterdayLocalDate = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toLocaleDateString("sv-SE");
+};
+
 export const fetchNewLeads = async ({
   limit,
   page,
@@ -273,6 +284,16 @@ export const fetchNewLeads = async ({
         where.push({
           type,
           attribute: "createdAt",
+          dateTime: true,
+        });
+        break;
+
+      case "yesterday":
+        // No native Espo "yesterday" — express it as a whole-day `on` filter.
+        where.push({
+          type: "on",
+          attribute: "createdAt",
+          value: yesterdayLocalDate(),
           dateTime: true,
         });
         break;
@@ -337,6 +358,16 @@ export const fetchNewLeads = async ({
         where.push({
           type,
           attribute: "cNextContactAt",
+          dateTime: true,
+        });
+        break;
+
+      case "yesterday":
+        // No native Espo "yesterday" — whole-day `on` filter for yesterday.
+        where.push({
+          type: "on",
+          attribute: "cNextContactAt",
+          value: yesterdayLocalDate(),
           dateTime: true,
         });
         break;
