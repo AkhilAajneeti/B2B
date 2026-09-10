@@ -41,6 +41,48 @@ const DEFAULT_STATUS_OPTIONS = [
   { value: "Switch Off", label: "Switch Off" },
 ];
 
+// One-tap quick date filters. Each drives the SAME `dateType` value as the
+// "Filter by date" dropdown, so the pill and the dropdown stay in sync; tapping
+// the already-active pill clears it. Hue per window (matches the app's pill
+// style): a coloured dot + soft tinted background, deepening when active.
+const QUICK_DATE_PILLS = [
+  {
+    value: "today",
+    label: "Today",
+    dot: "bg-emerald-500",
+    idle: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+    active: "border-emerald-400 bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300",
+  },
+  {
+    value: "yesterday",
+    label: "Yesterday",
+    dot: "bg-amber-500",
+    idle: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100",
+    active: "border-amber-400 bg-amber-100 text-amber-800 ring-1 ring-amber-300",
+  },
+  {
+    value: "lastSevenDays",
+    label: "Last 7 Days",
+    dot: "bg-sky-500",
+    idle: "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100",
+    active: "border-sky-400 bg-sky-100 text-sky-800 ring-1 ring-sky-300",
+  },
+  {
+    value: "currentMonth",
+    label: "Current Month",
+    dot: "bg-violet-500",
+    idle: "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100",
+    active: "border-violet-400 bg-violet-100 text-violet-800 ring-1 ring-violet-300",
+  },
+  {
+    value: "lastMonth",
+    label: "Last Month",
+    dot: "bg-rose-500",
+    idle: "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100",
+    active: "border-rose-400 bg-rose-100 text-rose-800 ring-1 ring-rose-300",
+  },
+];
+
 const DealsFilters = ({
   filters,
   onFiltersChange,
@@ -522,6 +564,35 @@ const DealsFilters = ({
           </div>
         </div>
       )}
+
+      {/* Quick date pills — one-tap shortcuts for the common windows. Kept
+          outside the collapsible grid so they stay visible on mobile too. They
+          set the same `dateType` as the "Filter by date" dropdown (in sync);
+          tapping the active pill clears it. */}
+      <div className="flex flex-wrap items-center gap-2 px-4 pt-4">
+        <span className="text-xs font-medium text-muted-foreground mr-0.5">
+          Quick:
+        </span>
+        {QUICK_DATE_PILLS.map((pill) => {
+          const isActive = filters?.dateType === pill.value;
+          return (
+            <button
+              key={pill.value}
+              type="button"
+              onClick={() =>
+                handleFilterChange("dateType", isActive ? "" : pill.value)
+              }
+              aria-pressed={isActive}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-smooth ${
+                isActive ? pill.active : pill.idle
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${pill.dot}`} />
+              {pill.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Filters grid — same controls, tighter spacing in its own zone. */}
       <div
