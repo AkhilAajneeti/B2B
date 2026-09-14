@@ -1982,6 +1982,18 @@ const DealDrawer = ({
                             </div>
                           </div>
 
+                          <div className="flex items-start gap-3">
+                            <FieldIcon name="MapPin" tint="rose" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                Lead Source
+                              </p>
+                              <p className="text-sm text-foreground font-medium capitalize">
+                                {deal?.cLeadSource || "ACL"}
+                              </p>
+                            </div>
+                          </div>
+
                           {/* Client Nomen — internal client-code; admin
                               only since reps don't deal with it. */}
                           {isAdmin && deal?.cClientNomen && (
