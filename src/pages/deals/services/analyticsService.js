@@ -1,4 +1,7 @@
-import { projectLeadCondition } from "pages/campaigns/utils/leadScope";
+import {
+  projectExclusionConditions,
+  projectLeadCondition,
+} from "pages/campaigns/utils/leadScope";
 
 
 const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
@@ -137,6 +140,7 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
   // table they were opened from.
   if (filters.cProjectRef && !omit.has("cProject")) {
     where.push(projectLeadCondition(filters.cProjectRef));
+    where.push(...projectExclusionConditions(filters.cProjectExclude));
   } else if (filters.cProject && !omit.has("cProject")) {
     where.push({
       type: "like",

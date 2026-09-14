@@ -1,4 +1,7 @@
-import { projectLeadCondition } from "pages/campaigns/utils/leadScope";
+import {
+  projectExclusionConditions,
+  projectLeadCondition,
+} from "pages/campaigns/utils/leadScope";
 // cache services?
 // Per-user cache namespace. The previous version read
 // `localStorage.getItem("userId")` which was never set anywhere in the
@@ -429,6 +432,9 @@ export const fetchNewLeads = async ({
   // keeps the plain contains behaviour.
   if (filters.cProjectRef) {
     where.push(projectLeadCondition(filters.cProjectRef));
+    // …and subtract the sibling projects that condition's `contains` arm would
+    // otherwise sweep in ("MigsunRohini" matching "MigsunRohiniCentral").
+    where.push(...projectExclusionConditions(filters.cProjectExclude));
   } else if (filters.cProject) {
     where.push({
       type: "like",

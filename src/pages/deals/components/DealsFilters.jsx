@@ -7,6 +7,7 @@ import { fetchUser } from "services/user.service";
 import RoleGuard from "components/RoleGuard";
 import { useTeams } from "hooks/useTeams";
 import { useProjectOptions } from "hooks/useProjects";
+import { projectSiblingTokens } from "pages/campaigns/utils/leadScope";
 import { todayLocal } from "../../../utils/dateFilter";
 import { isSupAdmin } from "utils/permission";
 
@@ -285,21 +286,29 @@ const DealsFilters = ({
   const { options: projectOptions, isLoading: projectsLoading } =
     useProjectOptions();
 
-  // Picking a project stores TWO things:
+  // Picking a project stores THREE things:
   //   - `cProject`: the label. Drives the pill, survives in sessionStorage, and
   //     is what a free-typed search falls back to.
-  //   - `cProjectRef`: the CProjects record behind that label. The service
-  //     turns it into the leadScope match (cProjectNomen equals the nomen OR
-  //     cProject contains it), which is what finally separates two projects
-  //     that share a prefix — "…Tower A" no longer drags in "…Tower B".
-  // Free text typed into the box matches no option, so the ref is cleared and
-  // the old `contains` behaviour applies.
+  //   - `cProjectRef`: the CProjects record behind that label, which the
+  //     service turns into the leadScope match (cProjectNomen equals the nomen
+  //     OR cProject contains it).
+  //   - `cProjectExclude`: the tokens of every OTHER project that the match's
+  //     `contains` arm would swallow. This is the bit that separates projects
+  //     sharing a prefix: "MigsunRohini" contains-matches "MigsunRohiniCentral"
+  //     leads too, so the sibling is subtracted back out. Computed here because
+  //     this is where the full project list already lives — no extra request.
+  // Free text typed into the box matches no option, so both derived fields are
+  // cleared and the plain `contains` behaviour applies.
   const handleProjectChange = (value) => {
     const match = projectOptions.find((option) => option.value === value);
+    const allProjects = projectOptions.map((option) => option.project);
     onFiltersChange({
       ...filters,
       cProject: value || "",
       cProjectRef: match?.project || null,
+      cProjectExclude: match
+        ? projectSiblingTokens(match.project, allProjects)
+        : [],
     });
   };
 
@@ -367,7 +376,12 @@ const DealsFilters = ({
         // Clears the ref alongside the label, otherwise the backend would keep
         // matching on an orphaned project reference with no pill to show it.
         onRemove: () =>
-          onFiltersChange({ ...filters, cProject: "", cProjectRef: null }),
+          onFiltersChange({
+            ...filters,
+            cProject: "",
+            cProjectRef: null,
+            cProjectExclude: [],
+          }),
       });
     }
 

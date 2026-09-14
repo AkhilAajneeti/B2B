@@ -50,6 +50,7 @@ const DEFAULT_FILTERS = {
   cProject: "",
   // Set when the project was picked from the dropdown (see DealsFilters).
   cProjectRef: null,
+  cProjectExclude: [],
   source: "",
   assignUser: "",
   team: "",
