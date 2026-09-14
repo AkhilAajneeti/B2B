@@ -10,7 +10,7 @@ import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import TablePagination from "./components/TablePagination";
 import {
   createTasks,
@@ -37,6 +37,9 @@ const TaskPage = () => {
   const canEditTask = canEdit("Task");
   const canDeleteTask = canDelete("Task");
   const location = useLocation();
+  const navigate = useNavigate();
+  // URL deep-link param — /tasks/:taskId opens that task's drawer (shareable).
+  const { taskId: taskIdFromUrl } = useParams();
 
   const taskIdFromState = location.state?.taskId;
   const [sortConfig, setSortConfig] = useState({
@@ -65,11 +68,18 @@ const TaskPage = () => {
     setSelectedDeal(deal);
     setMode("view");
     setIsDrawerOpen(true);
+    // Reflect the open task in the URL so it can be shared / deep-linked.
+    navigate(`/tasks/${deal.id}`);
   };
   const { data: selectedDealData } = useTask(
     selectedDeal?.id,
     isDrawerOpen && !!selectedDeal?.id
   );
+
+  // Deep-link fetch — pull the task named in the URL by id (works even when it
+  // isn't on the current page / filter). Shares its ["task", id] queryKey with
+  // the drawer's own detail fetch, so React Query dedupes — no extra request.
+  const { data: deepLinkTask } = useTask(taskIdFromUrl, !!taskIdFromUrl);
 
 
   const totalPages = Math.ceil(total / limit);
@@ -115,12 +125,16 @@ const TaskPage = () => {
     setSelectedDeal(null);
     setMode("add");
     setIsDrawerOpen(true);
+    // Clear any deep-link id so an "add" drawer never sits on a /tasks/:id URL.
+    if (taskIdFromUrl) navigate("/tasks");
   };
 
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
     setMode("view");
+    // Drop the task id from the URL when closing (back to the plain list URL).
+    if (taskIdFromUrl) navigate("/tasks");
   };
 
   const handleCreateLead = async (payload) => {
@@ -323,6 +337,32 @@ const TaskPage = () => {
       setIsDrawerOpen(true);
     }
   }, [taskIdFromState, leads]);
+
+  // URL deep-link (/tasks/:taskId) → open that task's drawer. Fetched by id, so
+  // it works on direct load / shared link / refresh regardless of pagination.
+  // Deps are ONLY [taskIdFromUrl, deepLinkTask] so editing inside the drawer
+  // (which touches neither) never yanks the mode back to "view".
+  useEffect(() => {
+    if (!taskIdFromUrl || !deepLinkTask) return;
+    if (String(deepLinkTask.id) === String(taskIdFromUrl)) {
+      setSelectedDeal(deepLinkTask);
+      setMode("view");
+      setIsDrawerOpen(true);
+    }
+  }, [taskIdFromUrl, deepLinkTask]);
+
+  // Reverse sync: when the task id LEAVES the URL (browser Back from
+  // /tasks/:id → /tasks), close a deep-linked drawer so state matches the URL.
+  // Only a view-mode drawer is URL-bound; add / mass-update drawers aren't, so
+  // they stay open. Setting isDrawerOpen(false) re-runs this and then no-ops.
+  useEffect(() => {
+    if (taskIdFromUrl) return;
+    if (isDrawerOpen && mode === "view") {
+      setIsDrawerOpen(false);
+      setSelectedDeal(null);
+    }
+  }, [taskIdFromUrl, isDrawerOpen, mode]);
+
   return (
     <>
       <Helmet>

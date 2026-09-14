@@ -149,6 +149,16 @@ const Routes = () => {
                 </ProtectedRoute>
               }
             />
+            {/* Deep-linkable task — same page, opens the given task's drawer
+                directly so a particular task can be shared via URL. */}
+            <Route
+              path="/tasks/:taskId"
+              element={
+                <ProtectedRoute>
+                  <TaskPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/reports"
               element={
