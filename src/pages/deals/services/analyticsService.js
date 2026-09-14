@@ -1,7 +1,4 @@
-import {
-  projectExclusionConditions,
-  projectLeadCondition,
-} from "pages/campaigns/utils/leadScope";
+import { projectExactLeadCondition } from "pages/campaigns/utils/leadScope";
 
 
 const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
@@ -138,9 +135,12 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
   // `cProjectRef` and matches via leadScope, free text falls back to contains.
   // Both paths live here so the analytics charts can never disagree with the
   // table they were opened from.
-  if (filters.cProjectRef && !omit.has("cProject")) {
-    where.push(projectLeadCondition(filters.cProjectRef));
-    where.push(...projectExclusionConditions(filters.cProjectExclude));
+  const projectCondition =
+    filters.cProjectRef && !omit.has("cProject")
+      ? projectExactLeadCondition(filters.cProjectRef)
+      : null;
+  if (projectCondition) {
+    where.push(projectCondition);
   } else if (filters.cProject && !omit.has("cProject")) {
     where.push({
       type: "like",

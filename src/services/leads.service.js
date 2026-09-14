@@ -1,7 +1,4 @@
-import {
-  projectExclusionConditions,
-  projectLeadCondition,
-} from "pages/campaigns/utils/leadScope";
+import { projectExactLeadCondition } from "pages/campaigns/utils/leadScope";
 // cache services?
 // Per-user cache namespace. The previous version read
 // `localStorage.getItem("userId")` which was never set anywhere in the
@@ -423,18 +420,15 @@ export const fetchNewLeads = async ({
     });
   }
   // 🔹 PROJECT — a value PICKED from the dropdown carries `cProjectRef` (the
-  // CProjects record), so match it exactly the way campaigns do:
-  // `cProjectNomen equals <nomen>` OR `cProject contains <nomen>`. Lead project
-  // data is free text and inconsistent — some leads hold the clean label in
-  // cProjectNomen, others bury it in a messy cProject — so a strict equals
-  // would miss half of them, while the old blanket `like %name%` couldn't tell
-  // "…Tower A" from "…Tower B". Free text typed into the filter has no ref and
-  // keeps the plain contains behaviour.
-  if (filters.cProjectRef) {
-    where.push(projectLeadCondition(filters.cProjectRef));
-    // …and subtract the sibling projects that condition's `contains` arm would
-    // otherwise sweep in ("MigsunRohini" matching "MigsunRohiniCentral").
-    where.push(...projectExclusionConditions(filters.cProjectExclude));
+  // CProjects record), which matches EXACTLY so one project's leads can't drag
+  // in another whose name merely extends it. Free text typed into the filter
+  // has no ref and keeps the loose `contains` behaviour, which is what a
+  // hand-typed search should do.
+  const projectCondition = filters.cProjectRef
+    ? projectExactLeadCondition(filters.cProjectRef)
+    : null;
+  if (projectCondition) {
+    where.push(projectCondition);
   } else if (filters.cProject) {
     where.push({
       type: "like",

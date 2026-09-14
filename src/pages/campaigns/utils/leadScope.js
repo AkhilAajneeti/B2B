@@ -74,74 +74,52 @@ export const projectsLeadScope = (projects = []) => {
 };
 
 /**
- * The token `projectLeadCondition` matches leads on — mirrors its three
- * branches exactly. Returns null for the clientNomen branch, which scopes by
- * an exact `cClientNomen` equals and therefore has no `contains` arm to guard.
+ * The leads-filter match for ONE project — exact, and deliberately narrow.
+ *
+ * Separate from `projectLeadCondition` above, which campaign counting uses and
+ * which is built on `contains` for tolerance. Tolerance is exactly wrong for
+ * the Leads page filter: `cProject CONTAINS "MigsunRohini"` also returns every
+ * "MigsunRohiniCentral" lead, and a rep filtering to one project wants that one
+ * project.
+ *
+ * Two unknowns are covered by brute force instead of assumption:
+ *   - WHICH TOKEN identifies the project on a lead — its short `projectNomen`
+ *     ("MigsunRohini") or its full `name` ("ShubhamShakyaPropshopMigsunRohini").
+ *   - WHICH FIELD holds it — leads spread the label across `cProject`,
+ *     `cProjectName` and `cProjectNomen` inconsistently (the table renders
+ *     whichever is populated, which is why the column can look right while a
+ *     filter on one field finds nothing).
+ * Every token × field pair is OR'd as an exact `equals`. Exact matching means
+ * the extra arms cost recall nothing and can't reintroduce prefix bleed:
+ * `equals "MigsunRohini"` never matches "MigsunRohiniCentral".
+ *
+ * `equals` is also the one operator this codebase already relies on everywhere
+ * — an earlier attempt here used `notContains` / `isEmpty`, which Espo is only
+ * ever asked for as date filters in this app, and the whole query failed.
  */
-export const projectMatchToken = (project = {}) => {
-  if (project.projectNomen && project.projectNomen !== "Default") {
-    return project.projectNomen;
-  }
-  if (project.clientNomen) return null;
-  return project.name || null;
-};
+const PROJECT_LEAD_ATTRIBUTES = ["cProject", "cProjectName", "cProjectNomen"];
 
-/**
- * Tokens belonging to OTHER projects that this project's `contains` arm would
- * sweep up.
- *
- * `projectLeadCondition` deliberately matches `cProject CONTAINS <token>` so it
- * still finds leads whose project text is messy. The cost is that a token which
- * is a substring of another project's token drags that project's leads in too —
- * pick "MigsunRohini" and every "MigsunRohiniCentral" lead appears with it.
- *
- * Rather than trade the messy-data tolerance away for an exact match (which
- * would silently hide leads), we keep `contains` and subtract the siblings: the
- * caller turns each token returned here into a `notContains` clause. The list
- * comes from the already-cached project list, so this costs no extra request.
- *
- * Matched by `includes`, not `startsWith` — "NewMigsunRohini" would be pulled
- * in by a contains on "MigsunRohini" just as surely as a suffixed name is.
- */
-export const projectSiblingTokens = (project = {}, allProjects = []) => {
-  const token = (projectMatchToken(project) || "").trim();
-  if (!token) return [];
-
-  const lower = token.toLowerCase();
+export const projectExactLeadCondition = (project = {}) => {
+  const tokens = [];
   const seen = new Set();
+  for (const raw of [project.projectNomen, project.name]) {
+    const token = (raw || "").trim();
+    if (!token || token === "Default") continue;
+    const key = token.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    tokens.push(token);
+  }
+  if (tokens.length === 0) return null;
 
-  return (allProjects || [])
-    .map((p) => (projectMatchToken(p) || "").trim())
-    .filter((candidate) => {
-      if (!candidate) return false;
-      const key = candidate.toLowerCase();
-      // The project's own token is what we're matching ON, not excluding.
-      if (key === lower) return false;
-      if (!key.includes(lower)) return false;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+  const value = tokens.flatMap((token) =>
+    PROJECT_LEAD_ATTRIBUTES.map((attribute) => ({
+      type: "equals",
+      attribute,
+      value: token,
+    })),
+  );
+
+  // A single clause doesn't need the `or` wrapper around it.
+  return value.length === 1 ? value[0] : { type: "or", value };
 };
-
-/**
- * Sibling tokens → whereGroup conditions. Top-level whereGroup entries are
- * ANDed, so these sit alongside the match condition and subtract from it.
- *
- * Each exclusion is OR'd with `isEmpty` so a lead that matched on a clean
- * `cProjectNomen` but carries no `cProject` text at all isn't dropped by a
- * NOT LIKE that never evaluates true for an empty column.
- *
- * Kept separate from `projectSiblingTokens` so callers can persist the plain
- * token strings in UI state and build the query shape only at request time.
- */
-export const projectExclusionConditions = (tokens = []) =>
-  (tokens || [])
-    .filter(Boolean)
-    .map((token) => ({
-      type: "or",
-      value: [
-        { type: "isEmpty", attribute: "cProject" },
-        { type: "notContains", attribute: "cProject", value: token },
-      ],
-    }));

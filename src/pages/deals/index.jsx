@@ -124,8 +124,6 @@ const DealsPage = () => {
     // The CProjects record behind `cProject` when it was picked from the
     // dropdown (null for a free-typed search). Drives the precise match.
     cProjectRef: null,
-    // Sibling project tokens subtracted from that match (see DealsFilters).
-    cProjectExclude: [],
     source: "",
     assignUser: "",
     team: "",
