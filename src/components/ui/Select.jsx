@@ -24,6 +24,12 @@ const Select = React.forwardRef(({
     // being truncated. Selected display still truncates so the trigger stays
     // clean. Default keeps existing behavior across the app.
     wrapOptions = false,
+    // Opt-in combobox behaviour: when the typed search matches no option, the
+    // list offers the raw text as a selectable value, and a value that isn't in
+    // `options` still renders on the trigger. Lets a filter be both a curated
+    // dropdown AND a free-text search. Single-select only; default keeps the
+    // strict-dropdown behaviour every other caller relies on.
+    allowCustomValue = false,
     // Extra Tailwind classes applied to the dropdown panel container — used
     // to widen the panel for long labels without affecting the trigger width.
     dropdownClassName = "",
@@ -89,6 +95,24 @@ const Select = React.forwardRef(({
         )
         : options;
 
+    // The raw search term offered as its own option when it matches nothing in
+    // the list — that's the free-text escape hatch. Skipped when an option
+    // already carries exactly this label/value, so the list never shows a
+    // duplicate of a real project.
+    const trimmedSearch = (searchTerm || "").trim();
+    const hasExactOption = options?.some(
+        option =>
+            option?.label?.toString()?.toLowerCase() === trimmedSearch.toLowerCase() ||
+            option?.value?.toString()?.toLowerCase() === trimmedSearch.toLowerCase()
+    );
+    const customOption =
+        allowCustomValue && !multiple && trimmedSearch && !hasExactOption
+            ? { value: trimmedSearch, label: `Search "${trimmedSearch}"` }
+            : null;
+    const visibleOptions = customOption
+        ? [customOption, ...(filteredOptions || [])]
+        : filteredOptions;
+
     // Get selected option(s) for display
     const getSelectedDisplay = () => {
         if (!value) return placeholder;
@@ -101,7 +125,11 @@ const Select = React.forwardRef(({
         }
 
         const selectedOption = options?.find(opt => opt?.value === value);
-        return selectedOption ? selectedOption?.label : placeholder;
+        if (selectedOption) return selectedOption?.label;
+        // A free-typed value has no matching option — show the text itself
+        // rather than falling back to the placeholder as if nothing were set.
+        if (allowCustomValue) return value?.toString();
+        return placeholder;
     };
 
     const handleToggle = () => {
@@ -125,6 +153,11 @@ const Select = React.forwardRef(({
         } else {
             onChange?.(option?.value);
             setIsOpen(false);
+            // Reset the search with the dropdown so reopening starts from the
+            // full list — otherwise a stale term would keep re-offering its
+            // `allowCustomValue` row at the top. Multi-select deliberately
+            // keeps its term so several matches can be ticked in a row.
+            setSearchTerm("");
             onOpenChange?.(false);
         }
     };
@@ -245,12 +278,12 @@ const Select = React.forwardRef(({
                         )}
 
                         <div className="py-1 max-h-60 overflow-auto">
-                            {filteredOptions?.length === 0 ? (
+                            {visibleOptions?.length === 0 ? (
                                 <div className="px-4 py-3 text-sm text-muted-foreground text-center">
                                     {searchTerm ? 'No options found' : 'No options available'}
                                 </div>
                             ) : (
-                                filteredOptions?.map((option) => (
+                                visibleOptions?.map((option) => (
                                     <div
                                         key={option?.value}
                                         title={option?.label}

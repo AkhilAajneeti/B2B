@@ -6,6 +6,7 @@ import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
 import RoleGuard from "components/RoleGuard";
 import { useTeams } from "hooks/useTeams";
+import { useProjectOptions } from "hooks/useProjects";
 import { todayLocal } from "../../../utils/dateFilter";
 import { isSupAdmin } from "utils/permission";
 
@@ -278,6 +279,30 @@ const DealsFilters = ({
     label: acc.name,
   }));
 
+  // Project list for the Project dropdown — the canonical CProjects records,
+  // fetched once and cached (see useProjectOptions for why this can't come from
+  // the leads already on screen).
+  const { options: projectOptions, isLoading: projectsLoading } =
+    useProjectOptions();
+
+  // Picking a project stores TWO things:
+  //   - `cProject`: the label. Drives the pill, survives in sessionStorage, and
+  //     is what a free-typed search falls back to.
+  //   - `cProjectRef`: the CProjects record behind that label. The service
+  //     turns it into the leadScope match (cProjectNomen equals the nomen OR
+  //     cProject contains it), which is what finally separates two projects
+  //     that share a prefix — "…Tower A" no longer drags in "…Tower B".
+  // Free text typed into the box matches no option, so the ref is cleared and
+  // the old `contains` behaviour applies.
+  const handleProjectChange = (value) => {
+    const match = projectOptions.find((option) => option.value === value);
+    onFiltersChange({
+      ...filters,
+      cProject: value || "",
+      cProjectRef: match?.project || null,
+    });
+  };
+
   // Teams list — cached via React Query, only fetched once until staleTime expires.
   const { data: teamsData } = useTeams();
   const teamOptions = (teamsData?.list || []).map((t) => ({
@@ -339,7 +364,10 @@ const DealsFilters = ({
         key: "cProject",
         label: "Project",
         value: filters.cProject,
-        onRemove: () => handleFilterChange("cProject", ""),
+        // Clears the ref alongside the label, otherwise the backend would keep
+        // matching on an orphaned project reference with no pill to show it.
+        onRemove: () =>
+          onFiltersChange({ ...filters, cProject: "", cProjectRef: null }),
       });
     }
 
@@ -626,10 +654,23 @@ const DealsFilters = ({
           onChange={(value) => handleFilterChange("status", value || [])}
         />
 
-        <Input
+        {/* Project — a searchable dropdown of real projects rather than a bare
+            text box. Two projects that only differ at the END of the name
+            (".. Phase 1" / ".. Phase 2") are now one click apart instead of a
+            hunt through 10k paginated rows. `wrapOptions` + the wider panel
+            keep those distinguishing tails visible; `allowCustomValue` keeps
+            the old free-text search available for anything not in the list. */}
+        <Select
           placeholder="Project Name"
+          options={projectOptions}
           value={filters?.cProject || ""}
-          onChange={(e) => handleFilterChange("cProject", e.target.value)}
+          onChange={handleProjectChange}
+          searchable
+          clearable
+          allowCustomValue
+          wrapOptions
+          dropdownClassName="min-w-[320px]"
+          loading={projectsLoading}
         />
 
         <Select

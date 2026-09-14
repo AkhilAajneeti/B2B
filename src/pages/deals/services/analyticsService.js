@@ -1,3 +1,5 @@
+import { projectLeadCondition } from "pages/campaigns/utils/leadScope";
+
 
 const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
 
@@ -47,6 +49,23 @@ const DATE_FILTER_TYPES = new Set([
 const buildQuery = (whereGroup) =>
   whereGroup
     .map((f, i) => {
+      // Nested OR — matches any of several sub-clauses across DIFFERENT
+      // attributes, so it has no top-level `attribute`. Used by the project
+      // filter (cProjectNomen equals OR cProject contains).
+      if (f.type === "or" && Array.isArray(f.value)) {
+        let q = `whereGroup[${i}][type]=or`;
+        f.value.forEach((sub, j) => {
+          q += `&whereGroup[${i}][value][${j}][type]=${encodeURIComponent(sub.type)}`;
+          if (sub.attribute) {
+            q += `&whereGroup[${i}][value][${j}][attribute]=${encodeURIComponent(sub.attribute)}`;
+          }
+          if (sub.value !== undefined && sub.value !== null && sub.value !== "") {
+            q += `&whereGroup[${i}][value][${j}][value]=${encodeURIComponent(sub.value)}`;
+          }
+        });
+        return q;
+      }
+
       let q = `whereGroup[${i}][type]=${encodeURIComponent(f.type)}`;
       if (f.attribute) {
         q += `&whereGroup[${i}][attribute]=${encodeURIComponent(f.attribute)}`;
@@ -112,7 +131,13 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
   if (filters.search && !omit.has("name")) {
     where.push({ type: "like", attribute: "name", value: `%${filters.search}%` });
   }
-  if (filters.cProject && !omit.has("cProject")) {
+  // Mirrors the leads list: a project picked from the dropdown carries
+  // `cProjectRef` and matches via leadScope, free text falls back to contains.
+  // Both paths live here so the analytics charts can never disagree with the
+  // table they were opened from.
+  if (filters.cProjectRef && !omit.has("cProject")) {
+    where.push(projectLeadCondition(filters.cProjectRef));
+  } else if (filters.cProject && !omit.has("cProject")) {
     where.push({
       type: "like",
       attribute: "cProject",

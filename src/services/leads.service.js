@@ -1,3 +1,4 @@
+import { projectLeadCondition } from "pages/campaigns/utils/leadScope";
 // cache services?
 // Per-user cache namespace. The previous version read
 // `localStorage.getItem("userId")` which was never set anywhere in the
@@ -418,7 +419,17 @@ export const fetchNewLeads = async ({
       value: `%${filters.search}%`,
     });
   }
-  if (filters.cProject) {
+  // 🔹 PROJECT — a value PICKED from the dropdown carries `cProjectRef` (the
+  // CProjects record), so match it exactly the way campaigns do:
+  // `cProjectNomen equals <nomen>` OR `cProject contains <nomen>`. Lead project
+  // data is free text and inconsistent — some leads hold the clean label in
+  // cProjectNomen, others bury it in a messy cProject — so a strict equals
+  // would miss half of them, while the old blanket `like %name%` couldn't tell
+  // "…Tower A" from "…Tower B". Free text typed into the filter has no ref and
+  // keeps the plain contains behaviour.
+  if (filters.cProjectRef) {
+    where.push(projectLeadCondition(filters.cProjectRef));
+  } else if (filters.cProject) {
     where.push({
       type: "like",
       attribute: "cProject",
@@ -509,6 +520,24 @@ export const fetchNewLeads = async ({
   // ✅ QUERY BUILDER (FIXED)
   const query = where
     .map((f, i) => {
+      // Nested OR clause — one condition matching any of several sub-clauses
+      // on DIFFERENT attributes, so it carries no top-level `attribute`.
+      // Serialized as whereGroup[i][value][j][...] per sub-clause, the same
+      // shape projects.service.js uses for its multi-field search.
+      if (f.type === "or" && Array.isArray(f.value)) {
+        let q = `whereGroup[${i}][type]=or`;
+        f.value.forEach((sub, j) => {
+          q += `&whereGroup[${i}][value][${j}][type]=${sub.type}`;
+          if (sub.attribute) {
+            q += `&whereGroup[${i}][value][${j}][attribute]=${sub.attribute}`;
+          }
+          if (sub.value !== undefined && sub.value !== "") {
+            q += `&whereGroup[${i}][value][${j}][value]=${encodeURIComponent(sub.value)}`;
+          }
+        });
+        return q;
+      }
+
       let q = `whereGroup[${i}][type]=${f.type}`;
 
       // 🔥 ALWAYS ensure attribute for safety (backend crash fix)

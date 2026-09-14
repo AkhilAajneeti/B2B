@@ -121,6 +121,9 @@ const DealsPage = () => {
     status: [],
     sector: "",
     cProject: "",
+    // The CProjects record behind `cProject` when it was picked from the
+    // dropdown (null for a free-typed search). Drives the precise match.
+    cProjectRef: null,
     source: "",
     assignUser: "",
     team: "",

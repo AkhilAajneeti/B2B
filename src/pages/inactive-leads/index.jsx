@@ -48,6 +48,8 @@ const DEFAULT_FILTERS = {
   status: [],
   sector: "",
   cProject: "",
+  // Set when the project was picked from the dropdown (see DealsFilters).
+  cProjectRef: null,
   source: "",
   assignUser: "",
   team: "",
