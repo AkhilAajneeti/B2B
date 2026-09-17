@@ -575,7 +575,19 @@ export const fetchNewLeads = async ({
 
   // Whitelist sortable attributes so a stray column key can't produce a bad
   // orderBy the backend rejects. Falls back to createdAt/desc.
-  const SORTABLE = ["name", "source", "status", "assignedUserName", "createdAt"];
+  // Whitelisted sort columns. Espo 400s on an orderBy it doesn't recognise, and
+  // a 400 here surfaces as an EMPTY TABLE rather than an error — so a column
+  // only joins this list once its arrow has been exercised in the browser.
+  // `cSubSource` is what the Source column actually renders (`source` is kept
+  // for older persisted sortConfig values).
+  const SORTABLE = [
+    "name",
+    "source",
+    "cSubSource",
+    "status",
+    "assignedUserName",
+    "createdAt",
+  ];
   const safeOrderBy = SORTABLE.includes(orderBy) ? orderBy : "createdAt";
   const safeOrder = order === "asc" ? "asc" : "desc";
   const baseUrl = `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=${safeOrderBy}&order=${safeOrder}`;

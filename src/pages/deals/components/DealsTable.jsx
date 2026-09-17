@@ -312,7 +312,9 @@ const DealsTable = ({
               </th>
               <SortHeader label="Name" column="name" />
               <SortHeader label="Project Name" column="cProjectName" />
-              <SortHeader label="Source" column="source" />
+              {/* Sorts cSubSource — the field this column renders. It sorted
+                  the unrelated `source` field before. */}
+              <SortHeader label="Source" column="cSubSource" />
               <SortHeader label="Status" column="status" />
               <SortHeader label="Next Contact" column="cNextContactAt" />
               <SortHeader label="Create At" column="createdAt" />

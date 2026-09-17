@@ -100,10 +100,13 @@ const InactiveLeadsPage = () => {
     return base;
   }, [filters, filterTeamUserIds]);
 
+  // Same fix as the Leads page — without these the sort arrows were inert.
   const { data: leadsData, isLoading } = useNewLeads({
     limit,
     page,
     filters: filtersForBackend,
+    orderBy: sortConfig?.key,
+    order: sortConfig?.direction,
   });
   const { data: metaData } = useMetaData();
   const { data: leadsDetails } = useLeadDetails(selectedDeal?.id, mode);
@@ -250,6 +253,7 @@ const InactiveLeadsPage = () => {
       direction:
         prev?.key === key && prev?.direction === "asc" ? "desc" : "asc",
     }));
+    setPage(1);
   };
 
   const handleSelectDeal = (id, isSelected) => {

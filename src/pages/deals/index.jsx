@@ -187,10 +187,16 @@ const DealsPage = () => {
     return base;
   }, [filters, filterTeamUserIds]);
 
+  // `orderBy`/`order` were missing here, so every request went out with the
+  // hook's createdAt/desc default: the sort arrows flipped and `sortConfig`
+  // persisted, but the list never actually re-ordered. Reports has always
+  // passed them, which is why sorting worked there and not here.
   const { data: leadsData, isLoading } = useNewLeads({
     limit,
     page,
     filters: filtersForBackend,
+    orderBy: sortConfig?.key,
+    order: sortConfig?.direction,
   });
   const createLeadMutation = useMutation({
     mutationFn: createLead,
@@ -461,6 +467,10 @@ const DealsPage = () => {
           ? "desc"
           : "asc",
     }));
+    // Back to page 1 — you sort to bring something to the top, and page 5 of a
+    // freshly re-ordered list is a different set of rows entirely. Same reset
+    // the filter changes already do.
+    setPage(1);
   };
 
   const handleFiltersChange = (newFilters) => {
