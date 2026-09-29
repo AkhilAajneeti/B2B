@@ -17,7 +17,11 @@ const DATASET_GC = 1000 * 60 * 60 * 24; // drop entries older than 24h on next r
 
 // Hard caps so a runaway filter never pages forever.
 const PAGE_SIZE = 200;
-const MAX_LEADS = 1000;
+// Exported so the charts can TELL the user when a dataset hit this ceiling.
+// A capped dataset is the newest MAX_LEADS matching leads (paged createdAt
+// desc), not the whole set — percentages drawn from it describe a recent
+// sample, and a chart that doesn't say so reads as company-wide.
+export const MAX_LEADS = 1000;
 
 const DATE_FILTER_TYPES = new Set([
   "today",

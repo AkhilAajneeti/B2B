@@ -154,6 +154,7 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
     total,
     projectCount,
     topProject,
+    isCapped,
     isLoading,
     isFetching,
     isEmpty,
@@ -192,6 +193,19 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             {subtitleText}
           </p>
+          {/* Only shown when the dataset actually hit the ceiling. Without it
+              these percentages read as company-wide when they describe the
+              most recent slice — a project that was busy last year and quiet
+              lately looks far smaller than it is. */}
+          {isCapped && (
+            <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+              <Icon name="Info" size={12} className="shrink-0" />
+              <span>
+                Based on the {total.toLocaleString()} most recent leads — older
+                leads aren&apos;t counted.
+              </span>
+            </p>
+          )}
         </div>
 
         {/* Group-by tabs — flips the donut from project to team buckets without

@@ -20,6 +20,7 @@ import {
   fetchProjectDataset,
   readCachedProjectDataset,
   BUSINESS_STATUSES,
+  MAX_LEADS,
 } from "../services/analyticsService";
 
 const FRESH_WINDOW = 1000 * 60 * 2; // 2 min — chart re-mounts within this skip network
@@ -269,9 +270,15 @@ export const useProjectBreakdown = ({
 
     const topProject = sorted[0] || null;
 
+    // The fetcher stops at MAX_LEADS, so a full-length dataset means there were
+    // very likely older leads it never saw. Surfaced so the chart can say the
+    // numbers describe a recent sample rather than everything.
+    const isCapped = total >= MAX_LEADS;
+
     return {
       pieData,
       total,
+      isCapped,
       projectCount: sorted.length,
       topProject: topProject
         ? {

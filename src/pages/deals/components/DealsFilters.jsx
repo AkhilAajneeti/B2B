@@ -360,10 +360,15 @@ const DealsFilters = ({
     }
 
     if (filters?.cProject) {
+      // Show the same short name the dropdown and the leads table use. Falls
+      // back to the stored string for a free-typed search, which has no option.
+      const projectMatch = projectOptions.find(
+        (o) => o.value === filters.cProject,
+      );
       pills.push({
         key: "cProject",
         label: "Project",
-        value: filters.cProject,
+        value: projectMatch?.label || filters.cProject,
         // Clears the ref alongside the label, otherwise the backend would keep
         // matching on an orphaned project reference with no pill to show it.
         onRemove: () =>

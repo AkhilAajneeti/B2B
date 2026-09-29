@@ -91,6 +91,7 @@ const Select = React.forwardRef(({
     const filteredOptions = searchable && searchTerm
         ? options?.filter(option =>
             option?.label?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
+            option?.subLabel?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
             (option?.value && option?.value?.toString()?.toLowerCase()?.includes(searchTerm?.toLowerCase()))
         )
         : options;
@@ -299,15 +300,27 @@ const Select = React.forwardRef(({
                                         )}
                                         onClick={() => !option?.disabled && handleOptionSelect(option)}
                                     >
+                                        {/* `subLabel` renders as a quieter
+                                            second line under the label — for
+                                            options whose short display name
+                                            needs a fuller identifier beneath it
+                                            to tell near-identical entries
+                                            apart. Options without one are
+                                            unchanged. */}
                                         <span
                                             className={cn(
-                                                "flex-1",
+                                                "flex-1 min-w-0",
                                                 wrapOptions
                                                     ? "whitespace-normal break-words leading-snug"
                                                     : "truncate",
                                             )}
                                         >
                                             {option?.label}
+                                            {option?.subLabel && (
+                                                <span className="block text-[11px] text-muted-foreground font-normal truncate mt-0.5">
+                                                    {option.subLabel}
+                                                </span>
+                                            )}
                                         </span>
                                         {multiple && isSelected(option?.value) && (
                                             <Check className="h-4 w-4 ml-2 flex-shrink-0 text-primary" />

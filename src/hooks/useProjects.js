@@ -50,8 +50,14 @@ export const useProject = (id, enabled) => {
 //     it in the background — the rep never sees a stale project list;
 //   - 30-min `staleTime`, so navigating around the app doesn't refetch.
 
-const PROJECT_OPTIONS_CACHE_KEY = "project_options_v1";
-const PROJECT_OPTIONS_TTL = 1000 * 60 * 60 * 24; // 1 day
+// v2 — the cached shape now carries projectNomen for the short display label.
+const PROJECT_OPTIONS_CACHE_KEY = "project_options_v2";
+// Deliberately long. The cached copy is only ever used to PAINT instantly; it's
+// marked stale on read (initialDataUpdatedAt: 0 below), so React Query refreshes
+// it in the background every session regardless. A long TTL therefore can't
+// serve a stale list — it just means the instant paint keeps working for a rep
+// who hasn't opened the CRM in a while.
+const PROJECT_OPTIONS_TTL = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 // Espo caps `maxSize` per request, so page through rather than asking for
 // everything at once. In practice this is a single round trip.
@@ -124,14 +130,26 @@ export const useProjectOptions = ({ enabled = true } = {}) => {
     retry: 1,
   });
 
-  // `value` is the project NAME, not its id, so the filter value stays a plain
-  // string end to end: the existing pill, the sessionStorage persistence and
-  // the free-text fallback in the service all keep working untouched. The full
-  // record rides along in `project` for the caller to stash as `cProjectRef`.
+  // `value` stays the project NAME because it's the one field guaranteed
+  // unique, and it keeps the filter value a plain string end to end (the pill,
+  // the sessionStorage persistence and the free-text fallback in the service
+  // all work on it untouched). The full record rides along in `project` for the
+  // caller to stash as `cProjectRef`.
+  //
+  // The LABEL is the short `projectNomen` — the same name the leads table and
+  // the analytics chart show. The dropdown used to display the full
+  // concatenated name ("ShubhamShakyaPropshopMigsunRohiniCentral") while every
+  // other screen said "MigsunRohiniCentral", so a rep had to learn a second
+  // vocabulary just to use the filter. The full name drops to `subLabel`, which
+  // keeps two similarly-named projects distinguishable and stays searchable.
   const options = useMemo(() => {
     const seen = new Set();
     return (query.data || [])
-      .map((p) => ({ ...p, name: (p?.name || "").trim() }))
+      .map((p) => ({
+        ...p,
+        name: (p?.name || "").trim(),
+        projectNomen: (p?.projectNomen || "").trim(),
+      }))
       .filter((p) => {
         if (!p.name) return false;
         const key = p.name.toLowerCase();
@@ -139,8 +157,20 @@ export const useProjectOptions = ({ enabled = true } = {}) => {
         seen.add(key);
         return true;
       })
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((p) => ({ value: p.name, label: p.name, project: p }));
+      .map((p) => {
+        // "Default" is a placeholder nomen, not a real short name — fall back
+        // to the full name for those, same as ProjectCard does.
+        const short =
+          p.projectNomen && p.projectNomen !== "Default" ? p.projectNomen : p.name;
+        return {
+          value: p.name,
+          label: short,
+          // Only worth a second line when it actually says something new.
+          subLabel: short === p.name ? undefined : p.name,
+          project: p,
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [query.data]);
 
   return { options, isLoading: query.isLoading && !query.data };
