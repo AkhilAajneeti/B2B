@@ -257,7 +257,7 @@ const DealsTable = ({
       </button>
     </th>
   );
-
+ 
   // Hands the whole deal up to the page, which opens the shared
   // ConfirmDeleteModal (same dialog the bulk delete uses). No window.confirm.
   const handleDelete = (e, deal) => {
