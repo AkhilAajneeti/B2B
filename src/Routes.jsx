@@ -69,7 +69,7 @@ const Routes = () => {
             <Route
               path="/settings"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute blockMasked>
                   <Settings />
                 </ProtectedRoute>
               }

@@ -245,9 +245,26 @@ const MASKED_ROLE_NAMES = [
   "masked",
 ];
 
+// Accounts masked by name, matched against `login_object.username` (the
+// EspoCRM userName, e.g. "arun_rana"). Lowercase entries only — the comparison
+// lowercases the stored value before checking.
+//
+// This exists alongside the role check so masking works with no EspoCRM setup
+// at all. Prefer the role for anyone added later: a username listed here stops
+// masking the moment that account is renamed in Espo, silently and with no
+// error to notice.
+const MASKED_USERNAMES = ["aajneeti"];
+
 export const isMaskedUser = () => {
-  // An elevated user is never masked — a misassigned role shouldn't blind an
-  // Owner or Admin to their own data.
+  const username = getStoredUser()?.username?.trim?.().toLowerCase();
+
+  // A name listed above is masked unconditionally. Naming a specific account is
+  // a deliberate instruction, so it outranks the elevated escape hatch below —
+  // otherwise making that account an Owner would quietly undo the masking.
+  if (username && MASKED_USERNAMES.includes(username)) return true;
+
+  // Role-based: an elevated user is never masked, so a role assigned by mistake
+  // can't blind an Owner or Admin to their own data.
   if (isElevated()) return false;
   return getUserRoles().some((role) => MASKED_ROLE_NAMES.includes(role));
 };

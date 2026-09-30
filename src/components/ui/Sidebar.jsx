@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
-import { getStoredUser, isSupAdmin } from "../../utils/permission";
+import { getStoredUser, isSupAdmin, isMaskedUser } from "../../utils/permission";
 
 const Sidebar = ({ isOpen = false, onClose }) => {
   const location = useLocation();
@@ -146,6 +146,10 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       path: "/settings",
       icon: "Settings",
       badge: null,
+      // Restricted accounts don't get Settings. The /settings route is guarded
+      // too (see Routes.jsx) — hiding the button alone would still leave the
+      // page reachable by typing the URL.
+      hideWhenMasked: true,
     },
     {
       label: "Help Center",
@@ -255,6 +259,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                   //   wins.
                   if (item.adminOnly && !isAdmin) return false;
                   if (item.isSupAdmin && !isSupAdmin()) return false;
+                  // `hideWhenMasked` — hidden from restricted accounts.
+                  if (item.hideWhenMasked && isMaskedUser()) return false;
                   return true;
                 })
                 .map((item) => {

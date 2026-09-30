@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import { isMaskedUser } from "utils/permission";
 
 // Token truthiness alone is too weak — a tampered `auth_token = "x"`
 // would let the route render, then every downstream service call 401s
@@ -18,9 +19,15 @@ const isSessionValid = () => {
   }
 };
 
-const ProtectedRoute = ({ children }) => {
+// `blockMasked` keeps restricted accounts off a route entirely. Hiding the
+// sidebar button is presentation only — without this, the page is still one
+// typed URL away.
+const ProtectedRoute = ({ children, blockMasked = false }) => {
   if (!isSessionValid()) {
     return <Navigate to="/login" replace />;
+  }
+  if (blockMasked && isMaskedUser()) {
+    return <Navigate to="/" replace />;
   }
   return children;
 };
