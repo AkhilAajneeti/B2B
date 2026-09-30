@@ -21,7 +21,7 @@ import { createLeadMeeting, createMeeting } from "services/meeting.service";
 import { fetchTeamUser } from "services/team.service";
 import { toEspoDateTime, fromEspoToLocalInput } from "../../pipeline/utils/dateHelpers";
 import { isMaskedUser } from "utils/permission";
-import { displayPhone, displayEmail } from "utils/privacy";
+import { displayPhone, displayEmail, BLUR_CLASS } from "utils/privacy";
 
 // Gradient tint per field icon. Full static class strings (not built at
 // runtime) so Tailwind's JIT can see and generate them.
@@ -1003,6 +1003,9 @@ const DealDrawer = ({
                     rather than an href, so the digits aren't in the markup for
                     a right-click "copy link address" to lift straight out. */}
                 {masked ? (
+                  // Same reason as the table: with phoneNumber absent from the
+                  // list response there is nothing to dial, so don't offer it.
+                  !deal?.phoneNumber ? null : (
                   <button
                     type="button"
                     onClick={() => {
@@ -1017,6 +1020,7 @@ const DealDrawer = ({
                     <Icon name="Phone" size={14} />
                     {displayPhone(deal?.phoneNumber, true)}
                   </button>
+                  )
                 ) : (
                   <a
                     href={deal?.phoneNumber ? `tel:${deal.phoneNumber}` : undefined}
@@ -2258,7 +2262,13 @@ const DealDrawer = ({
                               </p>
                               {deal?.emailAddress ? (
                                 masked ? (
-                                  <p className="text-sm text-muted-foreground italic">
+                                  // Blurring the MASKED string, not the real
+                                  // address — the DOM holds only asterisks, so
+                                  // there is nothing behind the blur to reveal.
+                                  <p
+                                    className={`text-sm text-muted-foreground font-medium break-all ${BLUR_CLASS}`}
+                                    aria-label="Email hidden"
+                                  >
                                     {displayEmail(deal.emailAddress, true)}
                                   </p>
                                 ) : (

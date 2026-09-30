@@ -1,4 +1,37 @@
 import { projectExactLeadCondition } from "pages/campaigns/utils/leadScope";
+import { isMaskedUser } from "utils/permission";
+
+// Fields the leads LIST actually needs, for the request made on behalf of a
+// restricted user. Espo's `select` is a whitelist with no "exclude" form, so
+// this has to name everything the list UI and the permission helpers read —
+// omitting one silently breaks a column or an edit/delete gate rather than
+// erroring. Deliberately absent: phoneNumber, emailAddress, cWhatsapp.
+//
+// The point is that the contact fields never enter the response, so they are
+// not in the Network tab and not in the React Query cache. It is a real
+// improvement over masking alone, but it is still NOT access control: the same
+// account holds a valid token and can request every field with curl. Only
+// field-level read permissions on the Lead entity in EspoCRM close that.
+const MASKED_LEAD_SELECT = [
+  "id",
+  "name",
+  "status",
+  "source",
+  "cSubSource",
+  "cProject",
+  "cProjectName",
+  "cProjectNomen",
+  "cNextContactAt",
+  "cNextContact",
+  "createdAt",
+  // Ownership + team scoping — read by isOwnRecord / isTeamRecord to decide
+  // whether this user may edit or delete a row.
+  "assignedUserId",
+  "assignedUserName",
+  "createdById",
+  "teamsIds",
+].join(",");
+
 // cache services?
 // Per-user cache namespace. The previous version read
 // `localStorage.getItem("userId")` which was never set anywhere in the
@@ -590,7 +623,14 @@ export const fetchNewLeads = async ({
   ];
   const safeOrderBy = SORTABLE.includes(orderBy) ? orderBy : "createdAt";
   const safeOrder = order === "asc" ? "asc" : "desc";
-  const baseUrl = `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=${safeOrderBy}&order=${safeOrder}`;
+  // Restricted users get a narrowed response that simply doesn't carry the
+  // contact fields — see MASKED_LEAD_SELECT above for why this isn't a
+  // substitute for the EspoCRM role.
+  const selectParam = isMaskedUser()
+    ? `&select=${encodeURIComponent(MASKED_LEAD_SELECT)}`
+    : "";
+
+  const baseUrl = `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=${safeOrderBy}&order=${safeOrder}${selectParam}`;
 
   const url = query ? `${baseUrl}&${query}` : baseUrl;
 
@@ -620,9 +660,16 @@ export const searchLeads = async ({ query = "", limit = 15, offset = 0 } = {}) =
   params.append("orderBy", "createdAt");
   params.append("order", "desc");
 
+  // Restricted users also lose phone/email as SEARCH fields: matching on them
+  // would let someone confirm a full number by typing it and seeing a hit,
+  // which gives back what the mask withholds.
+  const masked = isMaskedUser();
+
   const q = query.trim();
   if (q) {
-    const fields = ["name", "phoneNumber", "emailAddress", "cProject"];
+    const fields = masked
+      ? ["name", "cProject"]
+      : ["name", "phoneNumber", "emailAddress", "cProject"];
     params.append("whereGroup[0][type]", "or");
     fields.forEach((f, i) => {
       params.append(`whereGroup[0][value][${i}][type]`, "contains");
@@ -632,7 +679,9 @@ export const searchLeads = async ({ query = "", limit = 15, offset = 0 } = {}) =
   }
   params.append(
     "attributeSelect",
-    "name,phoneNumber,emailAddress,cProject,cProjectName,assignedUserId,assignedUserName,status",
+    masked
+      ? "name,cProject,cProjectName,assignedUserId,assignedUserName,status"
+      : "name,phoneNumber,emailAddress,cProject,cProjectName,assignedUserId,assignedUserName,status",
   );
 
   const res = await fetch(

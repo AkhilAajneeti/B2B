@@ -638,7 +638,11 @@ const DealsTable = ({
                         </Button>
                       )}
 
-                      {/* Call — opens the device dialer via tel: */}
+                      {/* Call — opens the device dialer via tel:. Hidden for a
+                          restricted user when the row carries no number: their
+                          leads request omits phoneNumber entirely, so the
+                          button would be inert. */}
+                      {(!masked || deal?.phoneNumber) && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -657,6 +661,7 @@ const DealsTable = ({
                           className="text-blue-600 hover:text-white"
                         />
                       </Button>
+                      )}
 
                       {/* WhatsApp */}
                       {!masked && (

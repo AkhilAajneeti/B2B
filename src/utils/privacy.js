@@ -11,8 +11,14 @@
  * markup and one class toggle in DevTools reveals it.
  */
 
-/** Shown wherever a value is withheld entirely rather than partially masked. */
-export const HIDDEN_PLACEHOLDER = "Hidden";
+/**
+ * Tailwind classes that render a masked value as a blurred smudge. Pair with
+ * `maskEmail` / `maskPhoneNumber` output — NEVER with a real value. Blurring
+ * the real string would leave it sitting in the DOM for one class toggle in
+ * DevTools to reveal; blurring an already-masked string just makes the mask
+ * read as "deliberately obscured" instead of looking like stored data.
+ */
+export const BLUR_CLASS = "blur-[3px] select-none";
 
 /**
  * "+919876543210" → "+91 98******10"
@@ -66,11 +72,29 @@ export const displayPhone = (raw, masked) =>
   masked ? maskPhoneNumber(raw) : raw || "";
 
 /**
- * Email is withheld outright rather than partially masked — a masked local part
- * plus a visible domain is often enough to guess the address.
+ * "rahul@gmail.com" → "*****@*********"
+ *
+ * Every character goes, including the domain — a masked local part beside a
+ * readable domain narrows an address far more than it looks like it does. Only
+ * the "@" survives, so the result still reads as an email address rather than
+ * an error. Length is preserved the same way the phone mask preserves it.
+ */
+export const maskEmail = (raw) => {
+  if (!raw) return "";
+  const str = String(raw).trim();
+  if (!str) return "";
+
+  const at = str.indexOf("@");
+  if (at < 0) return "*".repeat(str.length);
+
+  return `${"*".repeat(at)}@${"*".repeat(str.length - at - 1)}`;
+};
+
+/**
+ * Email for display: masked or not, decided by the caller's `masked` flag.
  * Returns "" for an empty input so existing empty-state fallbacks still apply.
  */
 export const displayEmail = (raw, masked) => {
   if (!raw) return "";
-  return masked ? HIDDEN_PLACEHOLDER : raw;
+  return masked ? maskEmail(raw) : raw;
 };
