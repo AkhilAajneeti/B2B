@@ -16,7 +16,7 @@ import { useMetaData } from "hooks/useMetaData";
 import { useLeadDetails } from "hooks/useLeadDetails";
 import { useUsers } from "hooks/useUsers";
 import { useTeamUsers } from "hooks/useTeams";
-import { canEditRecord, canDeleteRecord } from "utils/permission";
+import { canEditRecord, canDeleteRecord, isMaskedUser } from "utils/permission";
 
 /**
  * Inactive Leads — an independent page that surfaces ONLY the inactive / lost
@@ -153,6 +153,16 @@ const InactiveLeadsPage = () => {
   };
 
   const exportLeadsToCSV = (rows, fileName = "inactive_leads") => {
+    // Contact details are most of what this export is FOR, so a restricted
+    // user doesn't get one at all — masking the table while letting them
+    // download the raw numbers would defeat the whole thing. Guarded here
+    // rather than only on the button, so the bulk "export selected" action
+    // can't reach it either.
+    if (isMaskedUser()) {
+      toast.error("Export isn't available for your account");
+      return;
+    }
+
     if (!rows || rows.length === 0) {
       toast.error("No data to export");
       return;

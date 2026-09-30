@@ -20,6 +20,8 @@ import { useLeadMeeting } from "hooks/useMeeting";
 import { createLeadMeeting, createMeeting } from "services/meeting.service";
 import { fetchTeamUser } from "services/team.service";
 import { toEspoDateTime, fromEspoToLocalInput } from "../../pipeline/utils/dateHelpers";
+import { isMaskedUser } from "utils/permission";
+import { displayPhone, displayEmail } from "utils/privacy";
 
 // Gradient tint per field icon. Full static class strings (not built at
 // runtime) so Tailwind's JIT can see and generate them.
@@ -102,6 +104,10 @@ const DealDrawer = ({
   onBulkUpdate,
   selectedIds = [],
 }) => {
+  // Restricted users see contact details masked and lose the outbound
+  // shortcuts whose URLs would carry the raw number (WhatsApp) or address.
+  const masked = isMaskedUser();
+
   const [activeTab, setActiveTab] = useState("overview");
   const [isEditing, setIsEditing] = useState(false);
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
@@ -992,17 +998,38 @@ const DealDrawer = ({
           {mode === "view" && deal && !isEditing && (
             <div className="border-b border-border">
               <div className="px-6 py-3 flex flex-wrap gap-2  sm:flex">
-                <a
-                  href={deal?.phoneNumber ? `tel:${deal.phoneNumber}` : undefined}
-                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
-                    ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
-                    : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
-                    }`}
-                >
-                  <Icon name="Phone" size={14} />
-                  {deal?.phoneNumber?.replace(/^\+91/, "")}
-                </a>
-                {(() => {
+                {/* Calling still works for a restricted user — they just never
+                    see the number. The masked branch dials from an onClick
+                    rather than an href, so the digits aren't in the markup for
+                    a right-click "copy link address" to lift straight out. */}
+                {masked ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!deal?.phoneNumber) return;
+                      window.location.href = `tel:${deal.phoneNumber}`;
+                    }}
+                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
+                      ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
+                      : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
+                      }`}
+                  >
+                    <Icon name="Phone" size={14} />
+                    {displayPhone(deal?.phoneNumber, true)}
+                  </button>
+                ) : (
+                  <a
+                    href={deal?.phoneNumber ? `tel:${deal.phoneNumber}` : undefined}
+                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
+                      ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
+                      : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
+                      }`}
+                  >
+                    <Icon name="Phone" size={14} />
+                    {deal?.phoneNumber?.replace(/^\+91/, "")}
+                  </a>
+                )}
+                {!masked && (() => {
                   const waUrl = buildWhatsappUrl(deal);
                   return (
                     <a
@@ -1093,9 +1120,18 @@ const DealDrawer = ({
 
                     {/* Phone & Email */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Read-only outside "add" mode — but a read-only input
+                          still RENDERS its value, so a restricted user could
+                          have read the number straight out of the edit form.
+                          Masked while disabled; in add mode they're typing the
+                          value themselves, so it stays plain. */}
                       <Input
                         label="Phone"
-                        value={formData.phoneNumber || ""}
+                        value={
+                          masked && mode !== "add"
+                            ? displayPhone(formData.phoneNumber, true)
+                            : formData.phoneNumber || ""
+                        }
                         onChange={(e) =>
                           handleChange("phoneNumber", e.target.value)
                         }
@@ -1103,7 +1139,11 @@ const DealDrawer = ({
                       />
                       <Input
                         label="Email"
-                        value={formData.emailAddress || ""}
+                        value={
+                          masked && mode !== "add"
+                            ? displayEmail(formData.emailAddress, true)
+                            : formData.emailAddress || ""
+                        }
                         onChange={(e) =>
                           handleChange("emailAddress", e.target.value)
                         }
@@ -2191,12 +2231,18 @@ const DealDrawer = ({
                                 Phone
                               </p>
                               {deal?.phoneNumber ? (
-                                <a
-                                  href={`tel:${deal.phoneNumber}`}
-                                  className="text-sm text-primary hover:underline font-medium break-all"
-                                >
-                                  {deal.phoneNumber}
-                                </a>
+                                masked ? (
+                                  <p className="text-sm font-medium break-all">
+                                    {displayPhone(deal.phoneNumber, true)}
+                                  </p>
+                                ) : (
+                                  <a
+                                    href={`tel:${deal.phoneNumber}`}
+                                    className="text-sm text-primary hover:underline font-medium break-all"
+                                  >
+                                    {deal.phoneNumber}
+                                  </a>
+                                )
                               ) : (
                                 <p className="text-sm text-muted-foreground">None</p>
                               )}
@@ -2211,12 +2257,18 @@ const DealDrawer = ({
                                 Email
                               </p>
                               {deal?.emailAddress ? (
-                                <a
-                                  href={`mailto:${deal.emailAddress}`}
-                                  className="text-sm text-primary hover:underline font-medium break-all"
-                                >
-                                  {deal.emailAddress}
-                                </a>
+                                masked ? (
+                                  <p className="text-sm text-muted-foreground italic">
+                                    {displayEmail(deal.emailAddress, true)}
+                                  </p>
+                                ) : (
+                                  <a
+                                    href={`mailto:${deal.emailAddress}`}
+                                    className="text-sm text-primary hover:underline font-medium break-all"
+                                  >
+                                    {deal.emailAddress}
+                                  </a>
+                                )
                               ) : (
                                 <p className="text-sm text-muted-foreground">None</p>
                               )}
@@ -2233,7 +2285,7 @@ const DealDrawer = ({
                                 WhatsApp
                               </p>
                               {(() => {
-                                const url = buildWhatsappUrl(deal);
+                                const url = masked ? null : buildWhatsappUrl(deal);
                                 if (!url) {
                                   return (
                                     <p className="text-sm text-muted-foreground">

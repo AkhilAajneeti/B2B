@@ -38,6 +38,7 @@ import {
   canDeleteRecord,
   getStoredUser,
   isElevated,
+  isMaskedUser,
 } from "utils/permission";
 import { useLocation } from "react-router-dom";
 
@@ -270,6 +271,16 @@ const DealsPage = () => {
   const industry = metaData?.industries || [];
   const total = leadsData?.total || 0;
   const exportLeadsToCSV = (rows, fileName = "leads_export") => {
+    // Contact details are most of what this export is FOR, so a restricted
+    // user doesn't get one at all — masking the table while letting them
+    // download the raw numbers would defeat the whole thing. Guarded here
+    // rather than only on the button, so the bulk "export selected" action
+    // can't reach it either.
+    if (isMaskedUser()) {
+      toast.error("Export isn't available for your account");
+      return;
+    }
+
     if (!rows || rows.length === 0) {
       toast.error("No data to export");
       return;

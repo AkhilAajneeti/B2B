@@ -217,3 +217,37 @@ export const isElevated = () => {
     roles.includes('manager')
   );
 };
+
+// ---------------------------------------------------------------------------
+// Restricted (masked) users
+// ---------------------------------------------------------------------------
+//
+// Users holding one of these EspoCRM roles see customer contact details masked:
+// phone numbers reduced to their first and last two digits, email addresses
+// hidden, and the WhatsApp / call / mail shortcuts and CSV exports withheld.
+// Assign the role in EspoCRM — adding or removing a person never needs a code
+// change, and it's the same lever you'd use for the real fix (see below).
+//
+// Several spellings are accepted so the exact role label in Espo doesn't have
+// to match a string in here character for character.
+//
+// ⚠️  THIS IS A UI MASK, NOT ACCESS CONTROL. The unmasked values still arrive in
+// the API response and sit in the React Query cache — anyone who opens DevTools
+// on a restricted account can read them. It stops casual viewing, screenshots
+// and accidental sharing; it does not stop someone who goes looking. To
+// actually withhold the data, restrict `phoneNumber` / `emailAddress` read
+// access on the Lead entity for this role in EspoCRM so it never reaches the
+// browser — this masking is then the visible half of that.
+const MASKED_ROLE_NAMES = [
+  "restricted view",
+  "restricted",
+  "restricted user",
+  "masked",
+];
+
+export const isMaskedUser = () => {
+  // An elevated user is never masked — a misassigned role shouldn't blind an
+  // Owner or Admin to their own data.
+  if (isElevated()) return false;
+  return getUserRoles().some((role) => MASKED_ROLE_NAMES.includes(role));
+};

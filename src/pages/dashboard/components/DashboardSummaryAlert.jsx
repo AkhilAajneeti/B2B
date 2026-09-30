@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../../components/AppIcon";
 import { useUrgentLeads } from "../../../hooks/useUrgentLeads";
+import { isMaskedUser } from "utils/permission";
 
 // Format a Date as `HH:MM` in the user's locale (24h with leading zeros).
 const formatClock = (date) =>
@@ -140,6 +141,7 @@ const playChime = () => {
 };
 
 const NotificationRow = ({ deal, variant, onClick }) => {
+  const masked = isMaskedUser();
   const fullTitle = deal.title || "Untitled Lead";
 
   const phone =
@@ -202,15 +204,33 @@ const NotificationRow = ({ deal, variant, onClick }) => {
         {(phone || dueDateTime) && (
           <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
             {phone && (
-              <a
-                href={`tel:${phone}`}
-                onClick={(e) => e.stopPropagation()}
-                aria-label={`Call ${phone}`}
-                title={`Call ${phone}`}
-                className="sm:hidden inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-200 transition-colors"
-              >
-                <Icon name="Phone" size={14} />
-              </a>
+              // Restricted users keep tap-to-call but get no href, aria-label
+              // or title carrying the number — all three are readable without
+              // ever placing the call.
+              masked ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.location.href = `tel:${phone}`;
+                  }}
+                  aria-label="Call lead"
+                  title="Call lead"
+                  className="sm:hidden inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-200 transition-colors"
+                >
+                  <Icon name="Phone" size={14} />
+                </button>
+              ) : (
+                <a
+                  href={`tel:${phone}`}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`Call ${phone}`}
+                  title={`Call ${phone}`}
+                  className="sm:hidden inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-200 transition-colors"
+                >
+                  <Icon name="Phone" size={14} />
+                </a>
+              )
             )}
             {dueDateTime && (
               <span className="inline-flex items-center gap-1">

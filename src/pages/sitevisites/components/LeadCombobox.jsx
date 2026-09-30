@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "../../../components/AppIcon";
 import { searchLeads } from "services/leads.service";
+import { isMaskedUser } from "utils/permission";
+import { displayPhone } from "utils/privacy";
 
 const PAGE_SIZE = 15;
 
@@ -121,7 +123,9 @@ const LeadCombobox = ({ value, onChange }) => {
           <p className="truncate text-sm font-semibold text-slate-800">{value.name}</p>
           <p className="truncate text-xs text-slate-500">
             {value.cProject || value.cProjectName || "—"}
-            {value.phoneNumber ? ` · ${value.phoneNumber}` : ""}
+            {value.phoneNumber
+              ? ` · ${displayPhone(value.phoneNumber, isMaskedUser())}`
+              : ""}
           </p>
         </div>
         <button
@@ -206,7 +210,9 @@ const LeadCombobox = ({ value, onChange }) => {
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-slate-800">{lead.name || "Unnamed lead"}</p>
                 <p className="truncate text-xs text-slate-500">
-                  {lead.phoneNumber || "No phone"}
+                  {lead.phoneNumber
+                    ? displayPhone(lead.phoneNumber, isMaskedUser())
+                    : "No phone"}
                   {(lead.cProject || lead.cProjectName)
                     ? ` · ${lead.cProject || lead.cProjectName}`
                     : ""}

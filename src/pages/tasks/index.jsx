@@ -22,7 +22,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasks, useTasksAll } from "hooks/useTasks";
 import { useTask } from "hooks/useTask";
-import { canCreate, canDelete, canDeleteRecord, canEdit } from "utils/permission";
+import { canCreate, canDelete, canDeleteRecord, canEdit, isMaskedUser } from "utils/permission";
 const TaskPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
@@ -85,6 +85,16 @@ const TaskPage = () => {
   const totalPages = Math.ceil(total / limit);
 
   const exportLeadsToCSV = (rows, fileName = "leads_export") => {
+    // Contact details are most of what this export is FOR, so a restricted
+    // user doesn't get one at all — masking the table while letting them
+    // download the raw numbers would defeat the whole thing. Guarded here
+    // rather than only on the button, so the bulk "export selected" action
+    // can't reach it either.
+    if (isMaskedUser()) {
+      toast.error("Export isn't available for your account");
+      return;
+    }
+
     if (!rows || rows.length === 0) {
       toast.error("No data to export");
       return;

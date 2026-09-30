@@ -1,6 +1,11 @@
 import React from "react";
+import { isMaskedUser } from "utils/permission";
+import { displayPhone } from "utils/privacy";
 
 const renderAttendees = (names = {}, columns = {}, phoneMap = {}) => {
+  // Attendee rows list lead/contact phone numbers, so they mask like
+  // everywhere else.
+  const masked = isMaskedUser();
   const entries = Object.entries(names);
   if (entries.length === 0) {
     return <p className="text-foreground">None</p>;
@@ -29,7 +34,9 @@ const renderAttendees = (names = {}, columns = {}, phoneMap = {}) => {
                   {name}
                 </p>
                 {phone && (
-                  <p className="text-xs text-muted-foreground">{phone}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {displayPhone(phone, masked)}
+                  </p>
                 )}
               </div>
             </div>

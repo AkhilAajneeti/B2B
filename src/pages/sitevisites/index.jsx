@@ -10,6 +10,8 @@ import { useSiteVisits } from "hooks/useSiteVisits";
 import { updateSiteVisit } from "services/sitevisite.service";
 import DateTimePicker from "./components/DateTimePicker";
 import ScheduleVisitDialog from "./components/ScheduleVisitDialog";
+import { isMaskedUser } from "utils/permission";
+import { displayPhone } from "utils/privacy";
 
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -87,9 +89,18 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const IconAction = ({ name, label, href }) => {
+const IconAction = ({ name, label, href, onClick }) => {
   const cls =
     "grid h-8 w-8 place-items-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700";
+  // onClick wins over href: a restricted user still gets to place the
+  // call, but the number never appears in the markup as a copyable link.
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} aria-label={label} className={cls}>
+        <Icon name={name} size={15} />
+      </button>
+    );
+  }
   return href ? (
     <a href={href} target="_blank" rel="noreferrer" aria-label={label} className={cls}>
       <Icon name={name} size={15} />
@@ -102,9 +113,12 @@ const IconAction = ({ name, label, href }) => {
 };
 
 const RowActions = ({ visit, onMarkVisited, onReschedule, saving }) => {
+  const masked = isMaskedUser();
   const tel = visit.phone ? `tel:${visit.phone.replace(/\s/g, "")}` : undefined;
   const waNum = visit.whatsapp?.replace(/\D/g, "");
-  const wa = waNum ? `https://wa.me/${waNum}` : undefined;
+  // The wa.me URL carries the raw number in the address bar, so restricted
+  // users don't get the WhatsApp action at all.
+  const wa = masked || !waNum ? undefined : `https://wa.me/${waNum}`;
 
   if (visit.status === "Visited") {
     return (
@@ -118,8 +132,21 @@ const RowActions = ({ visit, onMarkVisited, onReschedule, saving }) => {
   // Scheduled → reschedule (change the visit date) or mark the visit done.
   return (
     <div className="flex items-center justify-end gap-2">
-      <IconAction name="Phone" label="Call" href={tel} />
-      <IconAction name="MessageCircle" label="WhatsApp" href={wa} />
+      <IconAction
+        name="Phone"
+        label="Call"
+        href={masked ? undefined : tel}
+        onClick={
+          masked && tel
+            ? () => {
+                window.location.href = tel;
+              }
+            : undefined
+        }
+      />
+      {!masked && (
+        <IconAction name="MessageCircle" label="WhatsApp" href={wa} />
+      )}
       <button
         onClick={() => onReschedule(visit)}
         disabled={saving}
@@ -169,6 +196,7 @@ const DayCard = ({ day, count, confirmed }) => (
 );
 
 const SiteVisitePage = () => {
+  const masked = isMaskedUser();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
@@ -507,7 +535,7 @@ const SiteVisitePage = () => {
                             {v.phone && (
                               <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                                 <Icon name="Phone" size={11} />
-                                {v.phone}
+                                {displayPhone(v.phone, masked)}
                               </p>
                             )}
                           </td>

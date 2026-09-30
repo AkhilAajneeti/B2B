@@ -4,6 +4,7 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
 import QuickEditSheet from "./QuickEditSheet";
+import { isMaskedUser } from "utils/permission";
 
 const DealsTable = ({
   deals,
@@ -22,6 +23,11 @@ const DealsTable = ({
   onQuickUpdate,
   isLoading,
 }) => {
+  // Restricted users don't get the WhatsApp shortcut: its URL carries the full
+  // phone number in the address bar, which would hand back exactly what the
+  // masking withholds.
+  const masked = isMaskedUser();
+
   const [hoveredRow, setHoveredRow] = useState(null);
   // The lead whose Quick Edit bottom sheet is open (mobile only). null = closed.
   const [quickEditDeal, setQuickEditDeal] = useState(null);
@@ -476,18 +482,20 @@ const DealsTable = ({
                       </Button>
 
                       {/* WhatsApp */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => openWhatsapp(e, deal)}
-                        className="h-8 w-8 rounded-full hover:bg-green-100 transition-all duration-200"
-                      >
-                        <img
-                          src="/assets/whatsapp-logo.png"
-                          alt="WhatsApp"
-                          className="w-5 h-5 object-contain"
-                        />
-                      </Button>
+                      {!masked && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => openWhatsapp(e, deal)}
+                          className="h-8 w-8 rounded-full hover:bg-green-100 transition-all duration-200"
+                        >
+                          <img
+                            src="/assets/whatsapp-logo.png"
+                            alt="WhatsApp"
+                            className="w-5 h-5 object-contain"
+                          />
+                        </Button>
+                      )}
 
                       {canDelete(deal) && (
                         <Button
@@ -651,19 +659,21 @@ const DealsTable = ({
                       </Button>
 
                       {/* WhatsApp */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Open WhatsApp chat"
-                        onClick={(e) => openWhatsapp(e, deal)}
-                        className="h-10 w-10 rounded-full hover:bg-[#1fb85557] active:scale-95 transition-all duration-150 flex items-center justify-center"
-                      >
-                        <img
-                          src="/assets/whatsapp-logo.png"
-                          alt=""
-                          className="w-8 h-8 object-contain"
-                        />
-                      </Button>
+                      {!masked && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Open WhatsApp chat"
+                          onClick={(e) => openWhatsapp(e, deal)}
+                          className="h-10 w-10 rounded-full hover:bg-[#1fb85557] active:scale-95 transition-all duration-150 flex items-center justify-center"
+                        >
+                          <img
+                            src="/assets/whatsapp-logo.png"
+                            alt=""
+                            className="w-8 h-8 object-contain"
+                          />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
