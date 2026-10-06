@@ -1006,20 +1006,20 @@ const DealDrawer = ({
                   // Same reason as the table: with phoneNumber absent from the
                   // list response there is nothing to dial, so don't offer it.
                   !deal?.phoneNumber ? null : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!deal?.phoneNumber) return;
-                      window.location.href = `tel:${deal.phoneNumber}`;
-                    }}
-                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
-                      ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
-                      : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
-                      }`}
-                  >
-                    <Icon name="Phone" size={14} />
-                    {displayPhone(deal?.phoneNumber, true)}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!deal?.phoneNumber) return;
+                        window.location.href = `tel:${deal.phoneNumber}`;
+                      }}
+                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
+                        ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
+                        : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
+                        }`}
+                    >
+                      <Icon name="Phone" size={14} />
+                      {displayPhone(deal?.phoneNumber, true)}
+                    </button>
                   )
                 ) : (
                   <a
@@ -1667,8 +1667,8 @@ const DealDrawer = ({
                                               : undefined
                                           }
                                           className={`min-h-[44px] rounded-full border px-4 text-sm font-medium transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${active
-                                              ? `${getQuickEditStatusChip(value)} ring-2 ring-offset-1 ring-offset-background shadow-sm`
-                                              : "border-border bg-card text-muted-foreground hover:bg-muted"
+                                            ? `${getQuickEditStatusChip(value)} ring-2 ring-offset-1 ring-offset-background shadow-sm`
+                                            : "border-border bg-card text-muted-foreground hover:bg-muted"
                                             }`}
                                         >
                                           {label}
@@ -2026,7 +2026,7 @@ const DealDrawer = ({
                             </div>
                           </div>
 
-                          <div className="flex items-start gap-3">
+                          {/* <div className="flex items-start gap-3">
                             <FieldIcon name="MapPin" tint="rose" />
                             <div className="min-w-0">
                               <p className="text-xs text-muted-foreground mb-0.5">
@@ -2036,7 +2036,7 @@ const DealDrawer = ({
                                 {deal?.cLeadSource || "ACL"}
                               </p>
                             </div>
-                          </div>
+                          </div> */}
 
                           {/* Client Nomen — internal client-code; admin
                               only since reps don't deal with it. */}
