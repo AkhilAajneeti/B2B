@@ -360,6 +360,15 @@ const FollowupReminderManager = () => {
     }
   };
 
+  // Drop every active reminder at once. Same intent as Dismiss on a single
+  // card, applied to the whole stack. Cancels the auto-collapse timer first so
+  // nothing tries to re-fire against an empty stack.
+  const dismissAll = () => {
+    cancelAutoCollapse();
+    setActiveReminders([]);
+    setExpanded(false);
+  };
+
   return (
     <div
       className="fixed top-4 right-4 z-[60] w-[92vw] max-w-sm pointer-events-auto"
@@ -379,18 +388,7 @@ const FollowupReminderManager = () => {
               </p>
             </div>
             <button
-              onClick={() => {
-                // X = same intent as Dismiss on a single card, but applied
-                // to every active reminder in one click. Cancel the auto-
-                // collapse timer first so nothing tries to re-fire after
-                // the stack is empty.
-                if (autoExpandTimerRef.current) {
-                  clearTimeout(autoExpandTimerRef.current);
-                  autoExpandTimerRef.current = null;
-                }
-                setActiveReminders([]);
-                setExpanded(false);
-              }}
+              onClick={dismissAll}
               className="text-gray-400 hover:text-red-600 px-2 py-0.5 text-lg leading-none rounded hover:bg-red-50"
               aria-label="Dismiss all reminders"
               title="Dismiss all"
@@ -452,6 +450,13 @@ const FollowupReminderManager = () => {
         </div>
       ) : (
         /* COLLAPSED — deck-of-cards: top card with two ghost cards peeking */
+        /* COLLAPSED — the deck, plus a dismiss-all control that appears on
+           hover. The dismiss button is a SIBLING of the expand button, not a
+           child: the whole card is itself a <button>, and nesting one button
+           inside another is invalid HTML that browsers resolve unpredictably.
+           A wrapper with a named group lets hovering anywhere on the deck
+           reveal it without the two controls nesting. */
+        <div className="relative group/deck">
         <button
           type="button"
           onClick={() => {
@@ -499,6 +504,21 @@ const FollowupReminderManager = () => {
             </div>
           </div>
         </button>
+
+        {/* Dismiss all — hidden until the deck is hovered, so the resting card
+            stays clean. Also revealed on keyboard focus, and shown
+            unconditionally where hover doesn't exist (touch), since otherwise
+            it would be unreachable on a phone. */}
+        <button
+          type="button"
+          onClick={dismissAll}
+          className="absolute -top-2 -right-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-orange-200 bg-white text-gray-400 shadow-md opacity-0 transition-opacity hover:text-red-600 hover:border-red-200 hover:bg-red-50 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 group-hover/deck:opacity-100 [@media(hover:none)]:opacity-100"
+          aria-label={`Dismiss ${total} pending follow-up reminder${total > 1 ? "s" : ""}`}
+          title="Dismiss all"
+        >
+          <span className="text-sm leading-none">✕</span>
+        </button>
+        </div>
       )}
     </div>
   );
