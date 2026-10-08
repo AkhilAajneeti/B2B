@@ -265,6 +265,13 @@ const DealsTable = ({
     onDelete?.(deal);
   };
 
+  const callLead = (e, deal) => {
+    e.stopPropagation();
+    const phone = deal?.phoneNumber?.replace(/\D/g, "");
+    if (!phone) return;
+    window.location.href = `tel:${phone}`;
+  };
+
   const openWhatsapp = (e, deal) => {
     e.stopPropagation();
     const phone = deal?.phoneNumber?.replace(/\D/g, "");
@@ -481,11 +488,32 @@ const DealsTable = ({
                         <Icon name="Edit" size={14} />
                       </Button>
 
+                      {/* Call — opens the device dialer. Hidden for a
+                          restricted user when the row carries no number: their
+                          leads request omits phoneNumber, so it would be
+                          inert. */}
+                      {(!masked || deal?.phoneNumber) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Call lead"
+                          onClick={(e) => callLead(e, deal)}
+                          className="h-8 w-8 rounded-full hover:bg-blue-100 transition-all duration-200"
+                        >
+                          <Icon
+                            name="PhoneCall"
+                            size={14}
+                            className="text-blue-600"
+                          />
+                        </Button>
+                      )}
+
                       {/* WhatsApp */}
                       {!masked && (
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Open WhatsApp chat"
                           onClick={(e) => openWhatsapp(e, deal)}
                           className="h-8 w-8 rounded-full hover:bg-green-100 transition-all duration-200"
                         >
@@ -647,12 +675,7 @@ const DealsTable = ({
                         variant="ghost"
                         size="icon"
                         aria-label="Call lead"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const phone = deal?.phoneNumber?.replace(/\D/g, "");
-                          if (!phone) return;
-                          window.location.href = `tel:${phone}`;
-                        }}
+                        onClick={(e) => callLead(e, deal)}
                         className="h-10 w-10 rounded-full hover:bg-blue-400 active:scale-95 transition-all duration-150 flex items-center justify-center"
                       >
                         <Icon
