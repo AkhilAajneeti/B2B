@@ -929,16 +929,17 @@ const UserTab = () => {
                             type="text"
                             value={inviteData?.userName}
                             onChange={(e) => {
-                              // Normalize as the rep types: lowercase + any
-                              // run of whitespace → single underscore. So
-                              // "Akhil Kumar" turns into "akhil_kumar"
-                              // without an extra cleanup step. \s+ collapses
-                              // double-spaces so "Akhil  Kumar" doesn't
-                              // become "akhil__kumar".
+                              // Normalize as the rep types: lowercase, and
+                              // strip whitespace entirely rather than swapping
+                              // it for an underscore. "Akhil Kumar" becomes
+                              // "akhilkumar". Removing it also means a leading
+                              // or trailing space (easy to hit when pasting a
+                              // name) can't leave a stray "_" at either end,
+                              // which the underscore version did.
                               const raw = e?.target?.value || "";
                               const normalized = raw
                                 .toLowerCase()
-                                .replace(/\s+/g, "_");
+                                .replace(/\s+/g, "");
                               handleInviteChange("userName", normalized);
                             }}
                             placeholder="username"
