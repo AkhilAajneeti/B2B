@@ -725,11 +725,18 @@ const EXPORT_SELECT = [
   "emailAddress",
   "phoneNumber",
   "status",
+  // The table's Source column renders cSubSource (reps fill it freely) and
+  // falls back to source; the export asked for `source` alone, so the column
+  // came out blank or disagreeing with the screen.
   "source",
+  "cSubSource",
   "cProject",
   "cProjectName",
   "assignedUserName",
-  "cNextContact",
+  // `cNextContactAt` is the real attribute — the table, the filter and the
+  // drawer all use it. The export asked for `cNextContact`, which doesn't
+  // exist, so Next Contact was empty in every file ever exported.
+  "cNextContactAt",
   "createdAt",
 ].join(",");
 
@@ -777,6 +784,9 @@ export const fetchLeadsForExport = async ({
   orderBy = "createdAt",
   order = "desc",
   limit = 100,
+  // Called after each page with (fetched, target) so the UI can show real
+  // progress rather than a spinner that implies nothing in particular.
+  onProgress = null,
 }) => {
   const capped = Math.min(limit, EXPORT_SELECTION_LIMIT);
   const PAGE = 200;
@@ -793,6 +803,7 @@ export const fetchLeadsForExport = async ({
     });
     const list = res?.list || [];
     all.push(...list);
+    onProgress?.(Math.min(all.length, capped), capped);
     // Short page = no more matching leads, however many were asked for.
     if (list.length < PAGE) break;
   }

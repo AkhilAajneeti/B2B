@@ -11,6 +11,7 @@ import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
+import ExportDialog from "./components/ExportDialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createLead,
@@ -92,7 +93,13 @@ const DealsPage = () => {
   // the dialog can name it; null when the dialog is closed.
   const [leadToDelete, setLeadToDelete] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportPhase, setExportPhase] = useState("idle");
+  const [exportProgress, setExportProgress] = useState({
+    fetched: 0,
+    target: 0,
+  });
+  const [exportResultCount, setExportResultCount] = useState(0);
   const location = useLocation();
   const canCreateLead = canCreate("Lead");
 
@@ -301,10 +308,12 @@ const DealsPage = () => {
       Email: lead?.emailAddress || "",
       Phone: `"${lead?.phoneNumber || ""}"`,
       Status: lead?.status || "",
-      Source: lead?.source || "",
-      "Project Name": lead?.cProject || lead?.cProjectName,
+      // Mirror the table: it shows cSubSource and falls back to source.
+      Source: lead?.cSubSource || lead?.source || "",
+      "Project Name": lead?.cProject || lead?.cProjectName || "",
       "Assigned User": lead?.assignedUserName || "",
-      "Next Contact": lead?.cNextContact || "",
+      // Was reading `cNextContact`, which isn't a field — always blank.
+      "Next Contact": lead?.cNextContactAt || "",
       "Created At": lead?.createdAt || "",
     }));
 
@@ -556,32 +565,47 @@ const DealsPage = () => {
   // Export the first N matching the current filter + sort. No selection
   // involved — this is the "I want the top 500 of what I'm looking at" case,
   // which ticking checkboxes across five pages served badly.
+  const closeExportDialog = () => {
+    setExportDialogOpen(false);
+    setExportPhase("idle");
+    setExportProgress({ fetched: 0, target: 0 });
+  };
+
   const handleRangeExport = (count) => {
-    setExportMenuOpen(false);
     if (!isSupAdmin() || isMaskedUser()) {
       toast.error("Export isn't available for your account");
+      closeExportDialog();
       return;
     }
 
-    const toastId = toast.loading(`Preparing up to ${count} leads…`);
+    setExportPhase("working");
+    setExportProgress({ fetched: 0, target: count });
+
     fetchLeadsForExport({
       filters: filtersForBackend,
       orderBy: sortConfig?.key,
       order: sortConfig?.direction,
       limit: count,
+      onProgress: (fetched, target) => setExportProgress({ fetched, target }),
     })
       .then((rows) => {
         if (!rows.length) {
-          toast.error("No leads match the current filters", { id: toastId });
+          toast.error("No leads match the current filters");
+          closeExportDialog();
           return;
         }
         exportLeadsToCSV(rows, "leads_export");
-        // Fewer than asked for just means the filter doesn't have that many —
-        // say the real number rather than implying a full batch.
-        toast.success(`Exported ${rows.length} leads`, { id: toastId });
+        // Fewer than asked for just means the filter doesn't hold that many —
+        // show the real number rather than implying a full batch.
+        setExportResultCount(rows.length);
+        setExportPhase("done");
+        // Long enough to read the confirmation, short enough not to need
+        // dismissing. The file has already started downloading by here.
+        setTimeout(closeExportDialog, 1600);
       })
       .catch((err) => {
-        toast.error(err?.message || "Export failed", { id: toastId });
+        toast.error(err?.message || "Export failed");
+        closeExportDialog();
       });
   };
 
@@ -816,64 +840,19 @@ const DealsPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                {/* Export — admin only, matching Export Selected. Offers a
-                    row count rather than a page count: page size is already
-                    user-changeable (10/25/50/100), so "2 pages" means
-                    different things to different people.
-
-                    This replaces the old "Export All" button, which exported
-                    only the CURRENT PAGE while sitting next to a total of
-                    30,000+ — a label that promised something it never did.
-                    The counts below follow the active filter and sort, so
-                    "500" means the top 500 of what's on screen. */}
+                {/* Export — admin only, matching Export Selected. Opens a
+                    dialog rather than a dropdown so the export has somewhere
+                    to report progress; a menu that closes on click has no
+                    room to tell you a 3-request export is halfway done. */}
                 {isSupAdmin() && !isMaskedUser() && (
-                  <div className="relative">
-                    <Button
-                      className="linearbg-1 text-white hover:text-white"
-                      variant="outline"
-                      onClick={() => setExportMenuOpen((open) => !open)}
-                      aria-haspopup="menu"
-                      aria-expanded={exportMenuOpen}
-                    >
-                      <Icon name="Download" size={16} className="mr-2" />
-                      Export
-                      <Icon
-                        name="ChevronDown"
-                        size={14}
-                        className={`ml-1.5 transition-transform ${exportMenuOpen ? "rotate-180" : ""}`}
-                      />
-                    </Button>
-
-                    {exportMenuOpen && (
-                      <>
-                        {/* Click-away layer — closes the menu without needing
-                            a document listener. */}
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={() => setExportMenuOpen(false)}
-                        />
-                        <div
-                          role="menu"
-                          className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-border bg-card shadow-elevation-2 py-1"
-                        >
-                          <p className="px-3 py-1.5 text-[11px] text-muted-foreground">
-                            From the current filter &amp; sort
-                          </p>
-                          {EXPORT_RANGE_OPTIONS.map((count) => (
-                            <button
-                              key={count}
-                              type="button"
-                              role="menuitem"
-                              onClick={() => handleRangeExport(count)}
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 hover:text-primary transition-smooth"
-                            >
-                              First {count} leads
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  <Button
+                    className="linearbg-1 text-white hover:text-white"
+                    variant="outline"
+                    onClick={() => setExportDialogOpen(true)}
+                  >
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Export
+                  </Button>
                 )}
 
                 <Button
@@ -979,6 +958,16 @@ const DealsPage = () => {
                 }}
               />
             </div>
+
+            <ExportDialog
+              isOpen={exportDialogOpen}
+              onClose={closeExportDialog}
+              options={EXPORT_RANGE_OPTIONS}
+              onPick={handleRangeExport}
+              phase={exportPhase}
+              progress={exportProgress}
+              resultCount={exportResultCount}
+            />
 
             {/* Deal Drawer */}
             <DealDrawer
