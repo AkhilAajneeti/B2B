@@ -700,32 +700,53 @@ export const searchLeads = async ({ query = "", limit = 15, offset = 0 } = {}) =
 };
 
 
-// Hard ceiling on one export. Chosen so a single request stays small and the
-// CRM builds the file in one pass; selections above it are refused with a
-// message rather than silently trimmed, which is how the old page-bound export
-// lost rows without telling anyone.
+// Hard ceiling on one export. Keeps the request count small and bounded: at
+// EXPORT_CHUNK_SIZE per request this is at most 5 round trips, however many
+// leads are ticked. Selections above it are refused with a message rather than
+// silently trimmed, which is how the old page-bound export lost rows without
+// telling anyone.
 export const EXPORT_SELECTION_LIMIT = 500;
 
+// Ids per request. EspoCRM takes an `in` filter as one query param per value,
+// so the URL grows ~41 characters per id; 100 keeps it near 4KB, comfortably
+// under the ~8KB that servers and proxies typically cap a request line at.
+const EXPORT_CHUNK_SIZE = 100;
+
+// Only the columns the CSV actually writes. Fetching the full record for 500
+// leads would pull far more down the wire than the file needs.
+const EXPORT_SELECT = [
+  "id",
+  "name",
+  "emailAddress",
+  "phoneNumber",
+  "status",
+  "source",
+  "cProject",
+  "cProjectName",
+  "assignedUserName",
+  "cNextContact",
+  "createdAt",
+].join(",");
+
 /**
- * Export leads by id using EspoCRM's own export action.
+ * Fetch the full records for a set of lead ids, so the browser can build the
+ * export file from them.
  *
- * The rows never travel through the browser: the CRM runs one query, builds
- * the file, and returns an attachment id we then download. That's what makes
- * this scale — exporting 500 costs the same round trips as exporting 5, and
- * nothing is held in frontend memory.
+ * This is the fallback for EspoCRM's own export action
+ * (POST /Lead/action/export), which 500s on this gateway. If that is ever
+ * fixed server-side it is the better route — it builds the file in one query
+ * with nothing streaming through the browser — but this works against the
+ * plain list endpoint that the rest of the app already uses.
  *
- * Two steps, because the attachment is returned by reference:
- *   1. POST .../Lead/action/export  { ids }  ->  { id: <attachmentId> }
- *   2. GET  .../Attachment/file/<attachmentId>  ->  the file bytes
+ * Requests run SEQUENTIALLY on purpose. Five parallel queries would be faster
+ * by a second or so and is not worth adding a burst of concurrent load to a
+ * CRM that is also serving everyone else's list views.
  *
- * The download has to go through fetch rather than a plain <a href>: auth here
- * is a `token` HEADER, not a cookie, so a bare link would arrive unauthenticated.
- *
- * `format` is left to Espo's default columns on purpose — naming a fieldList
- * means guessing attribute names that differ per install and 400s the whole
- * request if one is wrong.
+ * Returns the records found. Fewer than requested means some ids no longer
+ * exist (deleted since selection) — the caller reports the difference rather
+ * than quietly handing over a short file.
  */
-export const exportLeadsByIds = async (ids = []) => {
+export const fetchLeadsByIds = async (ids = []) => {
   if (!ids.length) throw new Error("No leads selected");
   if (ids.length > EXPORT_SELECTION_LIMIT) {
     throw new Error(
@@ -734,47 +755,40 @@ export const exportLeadsByIds = async (ids = []) => {
   }
 
   const token = localStorage.getItem("auth_token");
-  const headers = { "Content-Type": "application/json", token };
+  const all = [];
 
-  const res = await fetch(
-    "https://gateway.aajneetiadvertising.com/Lead/action/export",
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ ids, format: "csv" }),
-    },
-  );
+  for (let i = 0; i < ids.length; i += EXPORT_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + EXPORT_CHUNK_SIZE);
 
-  if (!res.ok) {
-    if (res.status === 401) {
-      localStorage.clear();
-      window.location.href = "/login";
+    const params = new URLSearchParams();
+    params.append("maxSize", String(chunk.length));
+    params.append("offset", "0");
+    params.append("select", EXPORT_SELECT);
+    params.append("whereGroup[0][type]", "in");
+    params.append("whereGroup[0][attribute]", "id");
+    chunk.forEach((id) => params.append("whereGroup[0][value][]", id));
+
+    const res = await fetch(
+      `https://gateway.aajneetiadvertising.com/Lead?${params.toString()}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json", token },
+      },
+    );
+
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        localStorage.clear();
+        window.location.href = "/login";
+      }
+      throw new Error(`Could not load the selected leads (${res.status})`);
     }
-    // 403 = the role lacks Espo's Export permission; 404 = the gateway doesn't
-    // expose the action. Both are configuration, not a bug in this call, so say
-    // so rather than surfacing a bare status code.
-    if (res.status === 403) {
-      throw new Error("This account doesn't have export permission in the CRM");
-    }
-    if (res.status === 404) {
-      throw new Error("The CRM export endpoint isn't available on this gateway");
-    }
-    throw new Error(`Export failed (${res.status})`);
+
+    const data = await res.json();
+    all.push(...(data?.list || []));
   }
 
-  const data = await res.json();
-  const attachmentId = data?.id;
-  if (!attachmentId) throw new Error("Export returned no file");
-
-  const fileRes = await fetch(
-    `https://gateway.aajneetiadvertising.com/Attachment/file/${attachmentId}`,
-    { method: "GET", headers: { token } },
-  );
-  if (!fileRes.ok) {
-    throw new Error(`Could not download the export (${fileRes.status})`);
-  }
-
-  return fileRes.blob();
+  return all;
 };
 
 export const fetchLeadsById = async (id) => {

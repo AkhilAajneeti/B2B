@@ -393,6 +393,7 @@ const InactiveLeadsPage = () => {
               onClearFilters={handleClearFilters}
               dealCount={total}
               onBulkAction={handleBulkAction}
+              onClearSelection={() => setSelectedDeals([])}
               selectedCount={selectedDeals?.length}
               statusOptions={INACTIVE_STATUS_OPTIONS}
               total={total}

@@ -18,7 +18,7 @@ import {
   deleteActivity,
   deleteLead,
   updateLead,
-  exportLeadsByIds,
+  fetchLeadsByIds,
   EXPORT_SELECTION_LIMIT,
 } from "services/leads.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
@@ -63,21 +63,12 @@ const DealsPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  // Selection survives a reload and a trip into a lead drawer, because the
-  // filters/sort/page beside it already do — losing only the selection, after
-  // a rep has ticked their way across five pages, is the worst of both.
-  // sessionStorage, not localStorage: it should die with the tab rather than
-  // greet someone on Monday with a selection they made on Friday and then get
-  // acted on by Delete Selected.
-  const [selectedDeals, setSelectedDeals] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem("deals.tableState");
-      const parsed = raw ? JSON.parse(raw) : null;
-      return Array.isArray(parsed?.selectedDeals) ? parsed.selectedDeals : [];
-    } catch {
-      return [];
-    }
-  });
+  // Deliberately NOT persisted, unlike the filters/sort/page beside it. A
+  // refresh is the natural "start over" gesture, and coming back to a page
+  // that silently still has 400 leads ticked — then hitting a bulk action on
+  // them — is a worse failure than having to re-select. The Clear selection
+  // button in the toolbar covers doing it on purpose.
+  const [selectedDeals, setSelectedDeals] = useState([]);
 
   // const [currentPage, setCurrentPage] = useState(1);
   // const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -167,12 +158,12 @@ const DealsPage = () => {
     try {
       sessionStorage.setItem(
         DEALS_STATE_KEY,
-        JSON.stringify({ filters, sortConfig, page, selectedDeals }),
+        JSON.stringify({ filters, sortConfig, page }),
       );
     } catch {
       /* sessionStorage full / disabled — persistence degrades silently */
     }
-  }, [filters, sortConfig, page, selectedDeals]);
+  }, [filters, sortConfig, page]);
 
   // Team filter → fetch users in the selected team and expose their ids as an
   // internal `_teamUserIds` field on the filters object. Service translates it
@@ -603,24 +594,32 @@ const DealsPage = () => {
         return;
       }
 
-      // Send the IDS, not the rows. The previous version filtered `leads`,
-      // which only ever holds the current page — selecting across pages and
-      // exporting silently produced a file containing just the visible page.
-      // Passing ids lets the CRM build the file from the full selection.
+      // Fetch the selected records by ID, then build the file from those.
+      // The old version filtered `leads`, which only holds the current page —
+      // selecting across pages and exporting silently produced a file
+      // containing just the visible page. Fetching by id is what makes the
+      // full cross-page selection actually reach the CSV.
       const toastId = toast.loading(
         `Preparing ${selectedDeals.length} lead${selectedDeals.length === 1 ? "" : "s"}…`,
       );
-      exportLeadsByIds(selectedDeals)
-        .then((blob) => {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `selected_leads_${new Date().toISOString().split("T")[0]}.csv`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          toast.success(`Exported ${selectedDeals.length} leads`, { id: toastId });
+      fetchLeadsByIds(selectedDeals)
+        .then((rows) => {
+          if (!rows.length) {
+            toast.error("None of the selected leads could be loaded", {
+              id: toastId,
+            });
+            return;
+          }
+          exportLeadsToCSV(rows, "selected_leads");
+          // A short result means some selected leads no longer exist. Say so
+          // rather than handing over a file that's quietly missing rows.
+          const missing = selectedDeals.length - rows.length;
+          toast.success(
+            missing > 0
+              ? `Exported ${rows.length} leads (${missing} no longer exist)`
+              : `Exported ${rows.length} leads`,
+            { id: toastId },
+          );
         })
         .catch((err) => {
           toast.error(err?.message || "Export failed", { id: toastId });
@@ -812,6 +811,7 @@ const DealsPage = () => {
               dealCount={total}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
+              onClearSelection={() => setSelectedDeals([])}
               toggleAnalytics={() => setShowAnalytics((prev) => !prev)}
               total={total}
               limit={limit}

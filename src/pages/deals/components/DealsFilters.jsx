@@ -91,6 +91,8 @@ const DealsFilters = ({
   total,
   onBulkAction,
   selectedCount,
+  // Optional — pages that don't pass it simply don't show the button.
+  onClearSelection,
   toggleAnalytics,
   statusOptions = DEFAULT_STATUS_OPTIONS,
 }) => {
@@ -599,6 +601,22 @@ const DealsFilters = ({
                   {action.label}
                 </Button>
               ))}
+
+              {/* Clear selection — deliberately last and visually quietest of
+                  the three, so it doesn't compete with the actions. Ticking
+                  across several pages is easy; un-ticking them one by one is
+                  not, and a refresh no longer does it either. */}
+              {onClearSelection && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onClearSelection}
+                  className="text-violet-700 hover:text-violet-900 hover:bg-white/70"
+                >
+                  <Icon name="X" size={14} className="mr-1.5" />
+                  Clear selection
+                </Button>
+              )}
             </div>
           </div>
         </div>
