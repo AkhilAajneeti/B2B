@@ -41,6 +41,7 @@ import {
   getStoredUser,
   isElevated,
   isMaskedUser,
+  isSupAdmin,
 } from "utils/permission";
 import { useLocation } from "react-router-dom";
 
@@ -583,7 +584,10 @@ const DealsPage = () => {
         toast.error("Select at least one lead");
         return;
       }
-      if (isMaskedUser()) {
+      // Guarded here as well as on the button: hiding a control is
+      // presentation, and this handler is reachable from anything that can
+      // dispatch a bulk action.
+      if (!isSupAdmin() || isMaskedUser()) {
         toast.error("Export isn't available for your account");
         return;
       }

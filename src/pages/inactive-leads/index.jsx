@@ -16,7 +16,12 @@ import { useMetaData } from "hooks/useMetaData";
 import { useLeadDetails } from "hooks/useLeadDetails";
 import { useUsers } from "hooks/useUsers";
 import { useTeamUsers } from "hooks/useTeams";
-import { canEditRecord, canDeleteRecord, isMaskedUser } from "utils/permission";
+import {
+  canEditRecord,
+  canDeleteRecord,
+  isMaskedUser,
+  isSupAdmin,
+} from "utils/permission";
 
 /**
  * Inactive Leads — an independent page that surfaces ONLY the inactive / lost
@@ -317,6 +322,11 @@ const InactiveLeadsPage = () => {
     if (action === "export") {
       if (!selectedDeals.length) {
         toast.error("Select at least one lead");
+        return;
+      }
+      // Matches the Leads page: admin-only, and never for a restricted account.
+      if (!isSupAdmin() || isMaskedUser()) {
+        toast.error("Export isn't available for your account");
         return;
       }
       exportLeadsToCSV(selectedLeadRecords, "selected_inactive_leads");

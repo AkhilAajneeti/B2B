@@ -106,12 +106,15 @@ const DealsFilters = ({
   // non-admins never see the Delete button at all.
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
-    // Export Selected was handled in the page but never offered here, so the
-    // handler was unreachable. Hidden from restricted accounts, which are
-    // blocked from every other export path too.
-    ...(isMaskedUser()
-      ? []
-      : [{ value: "export", label: "Export Selected", icon: "Download" }]),
+    // Export Selected — admin only, the same `type === "admin"` gate Delete
+    // uses below (owners and managers don't qualify). Bulk-exporting customer
+    // contact details off the CRM is the same class of action as deleting
+    // them. The isMaskedUser check is kept as well: a restricted account that
+    // is also an admin is still restricted, since naming an account in
+    // MASKED_USERNAMES deliberately outranks the elevated escape hatch.
+    ...(isSupAdmin() && !isMaskedUser()
+      ? [{ value: "export", label: "Export Selected", icon: "Download" }]
+      : []),
     ...(isSupAdmin()
       ? [{ value: "delete", label: "Delete Selected", icon: "Trash2", destructive: true }]
       : []),
