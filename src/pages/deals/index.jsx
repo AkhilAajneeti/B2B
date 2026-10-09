@@ -11,7 +11,6 @@ import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
-import ExportDialog from "./components/ExportDialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createLead,
@@ -20,9 +19,7 @@ import {
   deleteLead,
   updateLead,
   fetchLeadsByIds,
-  fetchLeadsForExport,
   EXPORT_SELECTION_LIMIT,
-  EXPORT_RANGE_OPTIONS,
 } from "services/leads.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 import StatusChart from "./components/charts/StatusChart";
@@ -93,13 +90,6 @@ const DealsPage = () => {
   // the dialog can name it; null when the dialog is closed.
   const [leadToDelete, setLeadToDelete] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [exportPhase, setExportPhase] = useState("idle");
-  const [exportProgress, setExportProgress] = useState({
-    fetched: 0,
-    target: 0,
-  });
-  const [exportResultCount, setExportResultCount] = useState(0);
   const location = useLocation();
   const canCreateLead = canCreate("Lead");
 
@@ -565,50 +555,6 @@ const DealsPage = () => {
   // Export the first N matching the current filter + sort. No selection
   // involved — this is the "I want the top 500 of what I'm looking at" case,
   // which ticking checkboxes across five pages served badly.
-  const closeExportDialog = () => {
-    setExportDialogOpen(false);
-    setExportPhase("idle");
-    setExportProgress({ fetched: 0, target: 0 });
-  };
-
-  const handleRangeExport = (count) => {
-    if (!isSupAdmin() || isMaskedUser()) {
-      toast.error("Export isn't available for your account");
-      closeExportDialog();
-      return;
-    }
-
-    setExportPhase("working");
-    setExportProgress({ fetched: 0, target: count });
-
-    fetchLeadsForExport({
-      filters: filtersForBackend,
-      orderBy: sortConfig?.key,
-      order: sortConfig?.direction,
-      limit: count,
-      onProgress: (fetched, target) => setExportProgress({ fetched, target }),
-    })
-      .then((rows) => {
-        if (!rows.length) {
-          toast.error("No leads match the current filters");
-          closeExportDialog();
-          return;
-        }
-        exportLeadsToCSV(rows, "leads_export");
-        // Fewer than asked for just means the filter doesn't hold that many —
-        // show the real number rather than implying a full batch.
-        setExportResultCount(rows.length);
-        setExportPhase("done");
-        // Long enough to read the confirmation, short enough not to need
-        // dismissing. The file has already started downloading by here.
-        setTimeout(closeExportDialog, 1600);
-      })
-      .catch((err) => {
-        toast.error(err?.message || "Export failed");
-        closeExportDialog();
-      });
-  };
-
   const handleBulkAction = (action) => {
     if (action === "mass-update") {
       if (!selectedDeals.length) {
@@ -840,18 +786,25 @@ const DealsPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                {/* Export — admin only, matching Export Selected. Opens a
-                    dialog rather than a dropdown so the export has somewhere
-                    to report progress; a menu that closes on click has no
-                    room to tell you a 3-request export is halfway done. */}
+                {/* Export All — exports the CURRENT PAGE of the table.
+                    Admin only (type === "admin"), matching Export Selected;
+                    this was previously isElevated(), so owners and managers
+                    no longer see it.
+
+                    Note the label overstates what it does: it sits beside a
+                    total in the tens of thousands but hands back one page.
+                    Kept deliberately — the range-export version that replaced
+                    it (First 100/250/500 from the current filter) is still in
+                    the codebase, see ExportDialog.jsx and fetchLeadsForExport,
+                    ready to be wired back up. */}
                 {isSupAdmin() && !isMaskedUser() && (
                   <Button
                     className="linearbg-1 text-white hover:text-white"
                     variant="outline"
-                    onClick={() => setExportDialogOpen(true)}
+                    onClick={() => exportLeadsToCSV(leads, "all_leads")}
                   >
                     <Icon name="Download" size={16} className="mr-2" />
-                    Export
+                    Export All
                   </Button>
                 )}
 
@@ -958,16 +911,6 @@ const DealsPage = () => {
                 }}
               />
             </div>
-
-            <ExportDialog
-              isOpen={exportDialogOpen}
-              onClose={closeExportDialog}
-              options={EXPORT_RANGE_OPTIONS}
-              onPick={handleRangeExport}
-              phase={exportPhase}
-              progress={exportProgress}
-              resultCount={exportResultCount}
-            />
 
             {/* Deal Drawer */}
             <DealDrawer

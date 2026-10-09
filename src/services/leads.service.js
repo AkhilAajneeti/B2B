@@ -758,6 +758,10 @@ const EXPORT_SELECT = [
  * exist (deleted since selection) — the caller reports the difference rather
  * than quietly handing over a short file.
  */
+// NOT CURRENTLY CALLED — kept on purpose, alongside ExportDialog.jsx. This
+// pair implemented "export the first N matching the current filter" before the
+// Leads button was reverted to the simpler current-page "Export All". Both are
+// working and ready to be wired back up; don't remove as dead code.
 // Offered in the Export menu. Kept to round numbers rather than a free input
 // so nobody types 50,000 and waits.
 export const EXPORT_RANGE_OPTIONS = [100, 250, 500];
