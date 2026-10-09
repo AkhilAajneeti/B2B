@@ -8,7 +8,7 @@ import RoleGuard from "components/RoleGuard";
 import { useTeams } from "hooks/useTeams";
 import { useProjectOptions } from "hooks/useProjects";
 import { todayLocal } from "../../../utils/dateFilter";
-import { isSupAdmin } from "utils/permission";
+import { isSupAdmin, isMaskedUser } from "utils/permission";
 
 // Full status list — the default the Leads page uses (it passes no override, so
 // its behaviour is unchanged). Other pages (e.g. Inactive Leads) pass a narrowed
@@ -104,6 +104,12 @@ const DealsFilters = ({
   // non-admins never see the Delete button at all.
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
+    // Export Selected was handled in the page but never offered here, so the
+    // handler was unreachable. Hidden from restricted accounts, which are
+    // blocked from every other export path too.
+    ...(isMaskedUser()
+      ? []
+      : [{ value: "export", label: "Export Selected", icon: "Download" }]),
     ...(isSupAdmin()
       ? [{ value: "delete", label: "Delete Selected", icon: "Trash2", destructive: true }]
       : []),

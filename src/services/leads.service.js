@@ -699,6 +699,84 @@ export const searchLeads = async ({ query = "", limit = 15, offset = 0 } = {}) =
   return res.json();
 };
 
+
+// Hard ceiling on one export. Chosen so a single request stays small and the
+// CRM builds the file in one pass; selections above it are refused with a
+// message rather than silently trimmed, which is how the old page-bound export
+// lost rows without telling anyone.
+export const EXPORT_SELECTION_LIMIT = 500;
+
+/**
+ * Export leads by id using EspoCRM's own export action.
+ *
+ * The rows never travel through the browser: the CRM runs one query, builds
+ * the file, and returns an attachment id we then download. That's what makes
+ * this scale — exporting 500 costs the same round trips as exporting 5, and
+ * nothing is held in frontend memory.
+ *
+ * Two steps, because the attachment is returned by reference:
+ *   1. POST .../Lead/action/export  { ids }  ->  { id: <attachmentId> }
+ *   2. GET  .../Attachment/file/<attachmentId>  ->  the file bytes
+ *
+ * The download has to go through fetch rather than a plain <a href>: auth here
+ * is a `token` HEADER, not a cookie, so a bare link would arrive unauthenticated.
+ *
+ * `format` is left to Espo's default columns on purpose — naming a fieldList
+ * means guessing attribute names that differ per install and 400s the whole
+ * request if one is wrong.
+ */
+export const exportLeadsByIds = async (ids = []) => {
+  if (!ids.length) throw new Error("No leads selected");
+  if (ids.length > EXPORT_SELECTION_LIMIT) {
+    throw new Error(
+      `Select up to ${EXPORT_SELECTION_LIMIT} leads per export (${ids.length} selected)`,
+    );
+  }
+
+  const token = localStorage.getItem("auth_token");
+  const headers = { "Content-Type": "application/json", token };
+
+  const res = await fetch(
+    "https://gateway.aajneetiadvertising.com/Lead/action/export",
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ids, format: "csv" }),
+    },
+  );
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    // 403 = the role lacks Espo's Export permission; 404 = the gateway doesn't
+    // expose the action. Both are configuration, not a bug in this call, so say
+    // so rather than surfacing a bare status code.
+    if (res.status === 403) {
+      throw new Error("This account doesn't have export permission in the CRM");
+    }
+    if (res.status === 404) {
+      throw new Error("The CRM export endpoint isn't available on this gateway");
+    }
+    throw new Error(`Export failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  const attachmentId = data?.id;
+  if (!attachmentId) throw new Error("Export returned no file");
+
+  const fileRes = await fetch(
+    `https://gateway.aajneetiadvertising.com/Attachment/file/${attachmentId}`,
+    { method: "GET", headers: { token } },
+  );
+  if (!fileRes.ok) {
+    throw new Error(`Could not download the export (${fileRes.status})`);
+  }
+
+  return fileRes.blob();
+};
+
 export const fetchLeadsById = async (id) => {
   const token = localStorage.getItem("auth_token");
 

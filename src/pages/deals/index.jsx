@@ -18,6 +18,8 @@ import {
   deleteActivity,
   deleteLead,
   updateLead,
+  exportLeadsByIds,
+  EXPORT_SELECTION_LIMIT,
 } from "services/leads.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 import StatusChart from "./components/charts/StatusChart";
@@ -61,7 +63,21 @@ const DealsPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedDeals, setSelectedDeals] = useState([]);
+  // Selection survives a reload and a trip into a lead drawer, because the
+  // filters/sort/page beside it already do — losing only the selection, after
+  // a rep has ticked their way across five pages, is the worst of both.
+  // sessionStorage, not localStorage: it should die with the tab rather than
+  // greet someone on Monday with a selection they made on Friday and then get
+  // acted on by Delete Selected.
+  const [selectedDeals, setSelectedDeals] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem("deals.tableState");
+      const parsed = raw ? JSON.parse(raw) : null;
+      return Array.isArray(parsed?.selectedDeals) ? parsed.selectedDeals : [];
+    } catch {
+      return [];
+    }
+  });
 
   // const [currentPage, setCurrentPage] = useState(1);
   // const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -151,12 +167,12 @@ const DealsPage = () => {
     try {
       sessionStorage.setItem(
         DEALS_STATE_KEY,
-        JSON.stringify({ filters, sortConfig, page }),
+        JSON.stringify({ filters, sortConfig, page, selectedDeals }),
       );
     } catch {
       /* sessionStorage full / disabled — persistence degrades silently */
     }
-  }, [filters, sortConfig, page]);
+  }, [filters, sortConfig, page, selectedDeals]);
 
   // Team filter → fetch users in the selected team and expose their ids as an
   // internal `_teamUserIds` field on the filters object. Service translates it
@@ -484,12 +500,26 @@ const DealsPage = () => {
     setPage(1);
   };
 
+  // Changing the filter changes WHICH records match, so a carried-over
+  // selection would hold ids that are no longer on screen — harmless for an
+  // export, but Delete Selected would act on records the rep can't see.
+  // Deliberately not done on sort: sorting reorders the same matching set, so
+  // the selection stays both valid and visible.
+  const clearSelectionForNewResultSet = () => {
+    setSelectedDeals((prev) => {
+      if (prev.length) toast("Selection cleared", { icon: "\u2139\ufe0f" });
+      return [];
+    });
+  };
+
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
+    clearSelectionForNewResultSet();
     setPage(1);
   };
 
   const handleClearFilters = () => {
+    clearSelectionForNewResultSet();
     setFilters({
       search: "",
       status: [],
@@ -505,6 +535,30 @@ const DealsPage = () => {
     });
     setPage(1);
   };
+  // Why a bulk action is being refused — distinguishing the two very
+  // different causes that previously shared one message.
+  //
+  // Mass Update and Delete verify permissions per record, and the only records
+  // this page holds are the current page (`selectedLeadRecords` filters
+  // `leads`). A selection spanning pages therefore can't be fully verified, so
+  // the action is refused. That part is deliberate: failing closed on a
+  // destructive action is the right default. What was wrong is that it said
+  // "you don't have permission", sending people to hunt through roles for a
+  // problem that didn't exist.
+  //
+  // Export is unaffected — it sends ids to the CRM and never needs the records
+  // locally, which is why it handles the full selection.
+  const bulkBlockReason = (allowedIds, actionLabel, permissionVerb) => {
+    const offPage = selectedDeals.length - selectedLeadRecords.length;
+    if (offPage > 0) {
+      return `${selectedDeals.length} leads selected across pages — ${actionLabel} works one page at a time (${selectedLeadRecords.length} on this page). Use Export Selected for the whole selection.`;
+    }
+    if (!allowedIds.length || allowedIds.length !== selectedDeals.length) {
+      return `Select only leads you have permission to ${permissionVerb}`;
+    }
+    return null;
+  };
+
   const handleBulkAction = (action) => {
     if (action === "mass-update") {
       if (!selectedDeals.length) {
@@ -516,8 +570,13 @@ const DealsPage = () => {
         .filter((deal) => canEditRecord("Lead", getPermissionRecord(deal)))
         .map((deal) => deal.id);
 
-      if (!editableIds.length || editableIds.length !== selectedDeals.length) {
-        toast.error("Select only leads you have permission to edit");
+      const massUpdateBlock = bulkBlockReason(
+        editableIds,
+        "Mass Update",
+        "edit",
+      );
+      if (massUpdateBlock) {
+        toast.error(massUpdateBlock);
         return;
       }
 
@@ -533,12 +592,39 @@ const DealsPage = () => {
         toast.error("Select at least one lead");
         return;
       }
+      if (isMaskedUser()) {
+        toast.error("Export isn't available for your account");
+        return;
+      }
+      if (selectedDeals.length > EXPORT_SELECTION_LIMIT) {
+        toast.error(
+          `Export up to ${EXPORT_SELECTION_LIMIT} leads at a time — ${selectedDeals.length} selected`,
+        );
+        return;
+      }
 
-      const selectedRows = leads.filter((deal) =>
-        selectedDeals.includes(deal.id),
+      // Send the IDS, not the rows. The previous version filtered `leads`,
+      // which only ever holds the current page — selecting across pages and
+      // exporting silently produced a file containing just the visible page.
+      // Passing ids lets the CRM build the file from the full selection.
+      const toastId = toast.loading(
+        `Preparing ${selectedDeals.length} lead${selectedDeals.length === 1 ? "" : "s"}…`,
       );
-
-      exportLeadsToCSV(selectedRows, "selected_leads");
+      exportLeadsByIds(selectedDeals)
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `selected_leads_${new Date().toISOString().split("T")[0]}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          toast.success(`Exported ${selectedDeals.length} leads`, { id: toastId });
+        })
+        .catch((err) => {
+          toast.error(err?.message || "Export failed", { id: toastId });
+        });
       return;
     }
 
@@ -552,8 +638,9 @@ const DealsPage = () => {
         .filter((deal) => canDeleteRecord("Lead", getPermissionRecord(deal)))
         .map((deal) => deal.id);
 
-      if (!deletableIds.length || deletableIds.length !== selectedDeals.length) {
-        toast.error("Select only leads you have permission to delete");
+      const deleteBlock = bulkBlockReason(deletableIds, "Delete", "delete");
+      if (deleteBlock) {
+        toast.error(deleteBlock);
         return;
       }
 
@@ -584,8 +671,9 @@ const DealsPage = () => {
       .filter((deal) => canDeleteRecord("Lead", getPermissionRecord(deal)))
       .map((deal) => deal.id);
 
-    if (!deletableIds.length || deletableIds.length !== selectedDeals.length) {
-      toast.error("Select only leads you have permission to delete");
+    const confirmBlock = bulkBlockReason(deletableIds, "Delete", "delete");
+    if (confirmBlock) {
+      toast.error(confirmBlock);
       return;
     }
 
@@ -615,8 +703,11 @@ const DealsPage = () => {
         .filter((deal) => canEditRecord("Lead", getPermissionRecord(deal)))
         .map((deal) => deal.id);
 
-      if (!editableIds.length || editableIds.length !== selectedDeals.length) {
-        toast.error("Select only leads you have permission to edit");
+      // Same guard as the Mass Update entry point, so the drawer's submit
+      // can't slip past it with a selection that changed while it was open.
+      const updateBlock = bulkBlockReason(editableIds, "Mass Update", "edit");
+      if (updateBlock) {
+        toast.error(updateBlock);
         return;
       }
 
