@@ -39,6 +39,7 @@ import {
   canEditRecord,
   canDeleteRecord,
   getStoredUser,
+  isElevated,
   isMaskedUser,
   isSupAdmin,
 } from "utils/permission";
@@ -787,9 +788,9 @@ const DealsPage = () => {
               </div>
               <div className="flex items-center space-x-3">
                 {/* Export All — exports the CURRENT PAGE of the table.
-                    Admin only (type === "admin"), matching Export Selected;
-                    this was previously isElevated(), so owners and managers
-                    no longer see it.
+                    Visible to elevated users: admin (by type) or the Owner /
+                    Manager roles. Narrowing this to admin-only locked Owners
+                    out, which was a regression rather than an intent.
 
                     Note the label overstates what it does: it sits beside a
                     total in the tens of thousands but hands back one page.
@@ -797,7 +798,7 @@ const DealsPage = () => {
                     it (First 100/250/500 from the current filter) is still in
                     the codebase, see ExportDialog.jsx and fetchLeadsForExport,
                     ready to be wired back up. */}
-                {isSupAdmin() && !isMaskedUser() && (
+                {isElevated() && !isMaskedUser() && (
                   <Button
                     className="linearbg-1 text-white hover:text-white"
                     variant="outline"
