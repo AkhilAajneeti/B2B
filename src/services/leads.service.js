@@ -289,6 +289,9 @@ export const fetchNewLeads = async ({
   filters = {},
   orderBy = "createdAt",
   order = "desc",
+  // Optional column whitelist. The export uses it to pull only what the CSV
+  // writes; the table passes nothing and gets the full record as before.
+  select = null,
 }) => {
   const token = localStorage.getItem("auth_token");
   const offset = (page - 1) * limit;
@@ -628,7 +631,9 @@ export const fetchNewLeads = async ({
   // substitute for the EspoCRM role.
   const selectParam = isMaskedUser()
     ? `&select=${encodeURIComponent(MASKED_LEAD_SELECT)}`
-    : "";
+    : select
+      ? `&select=${encodeURIComponent(select)}`
+      : "";
 
   const baseUrl = `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=${safeOrderBy}&order=${safeOrder}${selectParam}`;
 
@@ -746,6 +751,55 @@ const EXPORT_SELECT = [
  * exist (deleted since selection) — the caller reports the difference rather
  * than quietly handing over a short file.
  */
+// Offered in the Export menu. Kept to round numbers rather than a free input
+// so nobody types 50,000 and waits.
+export const EXPORT_RANGE_OPTIONS = [100, 250, 500];
+
+/**
+ * The first N leads matching the CURRENT filter and sort — "give me the top
+ * 500 of what's on screen" without ticking a single checkbox.
+ *
+ * Deliberately built on `fetchNewLeads`, the exact call the table makes, so
+ * the export can't drift from what the user is looking at. Re-implementing the
+ * filter translation here is how the two would quietly diverge the next time a
+ * filter is added.
+ *
+ * Pages 200 at a time (3 requests for 500) and runs them sequentially — the
+ * whole point of this feature is to be lighter on the CRM than selection was.
+ *
+ * Caveat worth knowing: `offset` paging over live data can skip or repeat a
+ * row if leads are created mid-export, since the default sort is `createdAt
+ * desc` and new rows push the window along. Negligible at these sizes, but
+ * it's why this isn't the right tool for a full-database dump.
+ */
+export const fetchLeadsForExport = async ({
+  filters = {},
+  orderBy = "createdAt",
+  order = "desc",
+  limit = 100,
+}) => {
+  const capped = Math.min(limit, EXPORT_SELECTION_LIMIT);
+  const PAGE = 200;
+  const all = [];
+
+  for (let page = 1; all.length < capped; page += 1) {
+    const res = await fetchNewLeads({
+      limit: PAGE,
+      page,
+      filters,
+      orderBy,
+      order,
+      select: EXPORT_SELECT,
+    });
+    const list = res?.list || [];
+    all.push(...list);
+    // Short page = no more matching leads, however many were asked for.
+    if (list.length < PAGE) break;
+  }
+
+  return all.slice(0, capped);
+};
+
 export const fetchLeadsByIds = async (ids = []) => {
   if (!ids.length) throw new Error("No leads selected");
   if (ids.length > EXPORT_SELECTION_LIMIT) {

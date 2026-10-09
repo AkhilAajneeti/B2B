@@ -19,7 +19,9 @@ import {
   deleteLead,
   updateLead,
   fetchLeadsByIds,
+  fetchLeadsForExport,
   EXPORT_SELECTION_LIMIT,
+  EXPORT_RANGE_OPTIONS,
 } from "services/leads.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 import StatusChart from "./components/charts/StatusChart";
@@ -39,7 +41,6 @@ import {
   canEditRecord,
   canDeleteRecord,
   getStoredUser,
-  isElevated,
   isMaskedUser,
   isSupAdmin,
 } from "utils/permission";
@@ -91,6 +92,7 @@ const DealsPage = () => {
   // the dialog can name it; null when the dialog is closed.
   const [leadToDelete, setLeadToDelete] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const location = useLocation();
   const canCreateLead = canCreate("Lead");
 
@@ -551,6 +553,38 @@ const DealsPage = () => {
     return null;
   };
 
+  // Export the first N matching the current filter + sort. No selection
+  // involved — this is the "I want the top 500 of what I'm looking at" case,
+  // which ticking checkboxes across five pages served badly.
+  const handleRangeExport = (count) => {
+    setExportMenuOpen(false);
+    if (!isSupAdmin() || isMaskedUser()) {
+      toast.error("Export isn't available for your account");
+      return;
+    }
+
+    const toastId = toast.loading(`Preparing up to ${count} leads…`);
+    fetchLeadsForExport({
+      filters: filtersForBackend,
+      orderBy: sortConfig?.key,
+      order: sortConfig?.direction,
+      limit: count,
+    })
+      .then((rows) => {
+        if (!rows.length) {
+          toast.error("No leads match the current filters", { id: toastId });
+          return;
+        }
+        exportLeadsToCSV(rows, "leads_export");
+        // Fewer than asked for just means the filter doesn't have that many —
+        // say the real number rather than implying a full batch.
+        toast.success(`Exported ${rows.length} leads`, { id: toastId });
+      })
+      .catch((err) => {
+        toast.error(err?.message || "Export failed", { id: toastId });
+      });
+  };
+
   const handleBulkAction = (action) => {
     if (action === "mass-update") {
       if (!selectedDeals.length) {
@@ -782,19 +816,64 @@ const DealsPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                {/* Export All — visible to elevated users (Owner / Manager /
-                    Admin). Gated by role rather than the old `hidden` CSS so
-                    others can't reach it by un-hiding the element in devtools;
-                    when they aren't elevated it isn't rendered at all. */}
-                {isElevated() && (
-                  <Button
-                    className="linearbg-1 text-white hover:text-white"
-                    variant="outline"
-                    onClick={() => exportLeadsToCSV(leads, "all_leads")}
-                  >
-                    <Icon name="Download" size={16} className="mr-2" />
-                    Export All
-                  </Button>
+                {/* Export — admin only, matching Export Selected. Offers a
+                    row count rather than a page count: page size is already
+                    user-changeable (10/25/50/100), so "2 pages" means
+                    different things to different people.
+
+                    This replaces the old "Export All" button, which exported
+                    only the CURRENT PAGE while sitting next to a total of
+                    30,000+ — a label that promised something it never did.
+                    The counts below follow the active filter and sort, so
+                    "500" means the top 500 of what's on screen. */}
+                {isSupAdmin() && !isMaskedUser() && (
+                  <div className="relative">
+                    <Button
+                      className="linearbg-1 text-white hover:text-white"
+                      variant="outline"
+                      onClick={() => setExportMenuOpen((open) => !open)}
+                      aria-haspopup="menu"
+                      aria-expanded={exportMenuOpen}
+                    >
+                      <Icon name="Download" size={16} className="mr-2" />
+                      Export
+                      <Icon
+                        name="ChevronDown"
+                        size={14}
+                        className={`ml-1.5 transition-transform ${exportMenuOpen ? "rotate-180" : ""}`}
+                      />
+                    </Button>
+
+                    {exportMenuOpen && (
+                      <>
+                        {/* Click-away layer — closes the menu without needing
+                            a document listener. */}
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setExportMenuOpen(false)}
+                        />
+                        <div
+                          role="menu"
+                          className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-border bg-card shadow-elevation-2 py-1"
+                        >
+                          <p className="px-3 py-1.5 text-[11px] text-muted-foreground">
+                            From the current filter &amp; sort
+                          </p>
+                          {EXPORT_RANGE_OPTIONS.map((count) => (
+                            <button
+                              key={count}
+                              type="button"
+                              role="menuitem"
+                              onClick={() => handleRangeExport(count)}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 hover:text-primary transition-smooth"
+                            >
+                              First {count} leads
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
 
                 <Button
