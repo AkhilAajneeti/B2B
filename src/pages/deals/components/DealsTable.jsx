@@ -5,6 +5,7 @@ import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
 import QuickEditSheet from "./QuickEditSheet";
 import { isMaskedUser } from "utils/permission";
+import { toDialNumber, toWhatsappNumber } from "utils/phone";
 
 const DealsTable = ({
   deals,
@@ -267,14 +268,19 @@ const DealsTable = ({
 
   const callLead = (e, deal) => {
     e.stopPropagation();
-    const phone = deal?.phoneNumber?.replace(/\D/g, "");
+    // `replace(/\D/g, "")` used to be inline here, which dropped the "+" but
+    // kept the 91 — the dialler then got 12 digits it couldn't place. See
+    // utils/phone for why dialling and WhatsApp need different shapes.
+    const phone = toDialNumber(deal?.phoneNumber);
     if (!phone) return;
     window.location.href = `tel:${phone}`;
   };
 
   const openWhatsapp = (e, deal) => {
     e.stopPropagation();
-    const phone = deal?.phoneNumber?.replace(/\D/g, "");
+    // WhatsApp keeps the country code — the opposite of what the dialler
+    // needs. Named helper so this doesn't get "fixed" to match callLead.
+    const phone = toWhatsappNumber(deal?.phoneNumber);
     if (!phone) return;
     window.open(
       `https://api.whatsapp.com/send/?phone=${phone}`,
