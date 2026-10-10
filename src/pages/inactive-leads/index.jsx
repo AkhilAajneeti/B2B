@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import Papa from "papaparse";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
+import Button from "../../components/ui/Button";
+import Icon from "../../components/AppIcon";
 import DealsTable from "../deals/components/DealsTable";
 import DealsFilters from "../deals/components/DealsFilters";
 import DealDrawer from "../deals/components/DealDrawer";
@@ -19,6 +21,7 @@ import { useTeamUsers } from "hooks/useTeams";
 import {
   canEditRecord,
   canDeleteRecord,
+  isElevated,
   isMaskedUser,
   isSupAdmin,
 } from "utils/permission";
@@ -387,14 +390,32 @@ const InactiveLeadsPage = () => {
         <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
         <main className="lg:ml-64 pt-16">
           <div className="p-4 sm:p-6">
-            <div className="mb-6">
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                Inactive Leads
-              </h1>
-              <p className="text-muted-foreground mt-1 max-w-2xl">
-                Leads marked Broker, Dead, Low Budget, Duplicate, Invalid Number,
-                Irrelevant or Not Interested — review or re-assign them.
-              </p>
+            <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                  Inactive Leads
+                </h1>
+                <p className="text-muted-foreground mt-1 max-w-2xl">
+                  Leads marked Broker, Dead, Low Budget, Duplicate, Invalid Number,
+                  Irrelevant or Not Interested — review or re-assign them.
+                </p>
+              </div>
+
+              {/* Export All — mirrors the Leads page: exports the CURRENT PAGE
+                  of the table, visible to elevated users (admin / Owner /
+                  Manager) and never to a restricted account. This page had no
+                  export entry point at all before; the only way out was to
+                  select rows first and use the bulk action. */}
+              {isElevated() && !isMaskedUser() && (
+                <Button
+                  className="linearbg-1 text-white hover:text-white shrink-0"
+                  variant="outline"
+                  onClick={() => exportLeadsToCSV(leads, "inactive_leads")}
+                >
+                  <Icon name="Download" size={16} className="mr-2" />
+                  Export All
+                </Button>
+              )}
             </div>
 
             <DealsFilters
