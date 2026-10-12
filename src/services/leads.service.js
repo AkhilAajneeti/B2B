@@ -496,6 +496,24 @@ export const fetchNewLeads = async ({
     }
   }
 
+
+  // 🔹 PREVIOUSLY IN STATUS — `cStatusObj` is the ordered list of statuses a
+  // lead has passed through, so this answers "was it ever X" independently of
+  // what it is now. Pair it with the `status` filter above for was-X-now-Y:
+  // status in [Dead] + previousStatus [Follow up] = nurtured, then written off.
+  //
+  // `arrayAnyOf` is EspoCRM's operator for array attributes — matches when any
+  // listed value appears in the array. The builder below already serialises an
+  // array `value` as repeated `value[]` params, which is the exact shape Espo's
+  // own UI sends.
+  if (Array.isArray(filters.previousStatus) && filters.previousStatus.length > 0) {
+    where.push({
+      type: "arrayAnyOf",
+      attribute: "cStatusObj",
+      value: filters.previousStatus,
+    });
+  }
+
   // Exclude specific statuses — used by the Leads table to hide the inactive /
   // junk statuses by default (they live in the Inactive Leads section). Kept
   // separate from the include `status` filter above so both can coexist.

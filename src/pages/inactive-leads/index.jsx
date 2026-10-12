@@ -54,6 +54,7 @@ const INACTIVE_STATUS_OPTIONS = INACTIVE_STATUSES.map((s) => ({
 const DEFAULT_FILTERS = {
   search: "",
   status: [],
+  previousStatus: [],
   sector: "",
   cProject: "",
   // Set when the project was picked from the dropdown (see DealsFilters).

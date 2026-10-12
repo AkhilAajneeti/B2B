@@ -4,7 +4,7 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
 import QuickEditSheet from "./QuickEditSheet";
-import { isMaskedUser } from "utils/permission";
+import { isMaskedUser, isSupAdmin } from "utils/permission";
 import { toDialNumber, toWhatsappNumber } from "utils/phone";
 
 const DealsTable = ({
@@ -28,6 +28,9 @@ const DealsTable = ({
   // phone number in the address bar, which would hand back exactly what the
   // masking withholds.
   const masked = isMaskedUser();
+
+  // Admin-only for now, per request.
+  const canSeeStatusHistory = isSupAdmin();
 
   const [hoveredRow, setHoveredRow] = useState(null);
   // The lead whose Quick Edit bottom sheet is open (mobile only). null = closed.
@@ -220,6 +223,23 @@ const DealsTable = ({
     for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i)) >>> 0;
     return ASSIGNEE_PALETTE[hash % ASSIGNEE_PALETTE.length];
   };
+  // "Ever touched Follow up, and is now Dead" — a lead that was actively
+  // nurtured before being written off, which reads very differently from one
+  // that went straight to Dead.
+  //
+  // `cStatusObj` is the ordered list of statuses the lead has passed through.
+  // Deliberately `includes`, not an adjacency check: New -> Follow up ->
+  // Interested -> Dead still counts. Purely derived from data already on the
+  // record — nothing here writes, filters or sorts.
+  //
+  // Note it can only be as complete as the field itself: leads last touched
+  // before EspoCRM began populating cStatusObj have no history, so they won't
+  // be badged even if they did go through Follow up.
+  const wasFollowUpBeforeDead = (deal) =>
+    deal?.status === "Dead" &&
+    Array.isArray(deal?.cStatusObj) &&
+    deal.cStatusObj.includes("Follow up");
+
   const getInitials = (name = "") => {
     const parts = name.trim().split(/\s+/);
     if (!parts[0]) return "?";
@@ -419,12 +439,22 @@ const DealsTable = ({
                   </td>
 
                   <td className="px-4 py-4">
-                    <div
-                      className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
-                        deal?.status,
-                      )}`}
-                    >
-                      <span className="text-sm">{deal?.status}</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <div
+                        className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
+                          deal?.status,
+                        )}`}
+                      >
+                        <span className="text-sm">{deal?.status}</span>
+                      </div>
+                      {canSeeStatusHistory && wasFollowUpBeforeDead(deal) && (
+                        <span
+                          className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+                          title={`Status history: ${deal.cStatusObj.join(" → ")}`}
+                        >
+                          was Follow up
+                        </span>
+                      )}
                     </div>
                   </td>
 
@@ -619,6 +649,11 @@ const DealsTable = ({
                     >
                       {deal?.status}
                     </span>
+                    {canSeeStatusHistory && wasFollowUpBeforeDead(deal) && (
+                      <span className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                        was Follow up
+                      </span>
+                    )}
                   </div>
 
                   {/* Bottom */}

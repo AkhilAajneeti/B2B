@@ -128,6 +128,9 @@ const DealsPage = () => {
     // Multi-select — rep can pick e.g. ["Interested", "Follow up"].
     // Empty array = no status filter applied.
     status: [],
+    // Statuses the lead has PASSED THROUGH (cStatusObj), independent of its
+    // current status. Empty array = not filtering on history.
+    previousStatus: [],
     sector: "",
     cProject: "",
     // The CProjects record behind `cProject` when it was picked from the

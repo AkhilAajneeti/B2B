@@ -370,6 +370,26 @@ const DealsFilters = ({
       });
     }
 
+    // One pill per value, same as Status — so a rep can drop "Follow up"
+    // while keeping "Interested" applied.
+    if (
+      Array.isArray(filters?.previousStatus) &&
+      filters.previousStatus.length > 0
+    ) {
+      filters.previousStatus.forEach((prev) => {
+        pills.push({
+          key: `previousStatus-${prev}`,
+          label: "Previously",
+          value: prev,
+          onRemove: () =>
+            handleFilterChange(
+              "previousStatus",
+              filters.previousStatus.filter((x) => x !== prev),
+            ),
+        });
+      });
+    }
+
     if (filters?.cProject) {
       // Show the same short name the dropdown and the leads table use. Falls
       // back to the stored string for a free-typed search, which has no option.
@@ -685,6 +705,35 @@ const DealsFilters = ({
           }
           onChange={(value) => handleFilterChange("status", value || [])}
         />
+
+        {/* Previously in status — filters on `cStatusObj`, the list of statuses
+            the lead has passed through, so it answers "was it ever X" no matter
+            what it is now. Combined with the Status box above this expresses
+            any was-X-now-Y question: Status=Dead + Previously=Follow up finds
+            leads that were nurtured and then written off.
+
+            Admin-only for now, matching the "was Follow up" badge in the table.
+
+            "All" is stripped from the options: it's a pseudo-value the Leads
+            page reads as "drop the status filter", and it has no meaning as a
+            historical status. */}
+        {isSupAdmin() && (
+          <Select
+            placeholder="Previously in status"
+            options={statusOptions.filter((o) => o.value !== "All")}
+            multiple
+            searchable
+            clearable
+            value={
+              Array.isArray(filters?.previousStatus)
+                ? filters.previousStatus
+                : []
+            }
+            onChange={(value) =>
+              handleFilterChange("previousStatus", value || [])
+            }
+          />
+        )}
 
         {/* Project — a searchable dropdown of real projects rather than a bare
             text box. Two projects that only differ at the END of the name

@@ -175,6 +175,19 @@ export const filtersToWhereGroup = (filters = {}, { omitAttributes = [] } = {}) 
       });
     }
   }
+  // Mirrors the leads list — see the cStatusObj clause there for why this
+  // uses arrayAnyOf.
+  if (
+    Array.isArray(filters.previousStatus) &&
+    filters.previousStatus.length > 0 &&
+    !omit.has("cStatusObj")
+  ) {
+    where.push({
+      type: "arrayAnyOf",
+      attribute: "cStatusObj",
+      value: filters.previousStatus,
+    });
+  }
   if (filters.source && !omit.has("source")) {
     // Match the table: case-insensitive contains on cSubSource (reps fill it
     // freely, so exact-match misses casing/format variants).
