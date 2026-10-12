@@ -8,7 +8,7 @@ import RoleGuard from "components/RoleGuard";
 import { useTeams } from "hooks/useTeams";
 import { useProjectOptions } from "hooks/useProjects";
 import { todayLocal } from "../../../utils/dateFilter";
-import { isSupAdmin, isMaskedUser } from "utils/permission";
+import { isSupAdmin, isMaskedUser, canSeeStatusHistory } from "utils/permission";
 
 // Full status list — the default the Leads page uses (it passes no override, so
 // its behaviour is unchanged). Other pages (e.g. Inactive Leads) pass a narrowed
@@ -727,12 +727,13 @@ const DealsFilters = ({
             any was-X-now-Y question: Status=Dead + Previously=Follow up finds
             leads that were nurtured and then written off.
 
-            Admin-only for now, matching the "was Follow up" badge in the table.
+            Admin or Owner, matching the "was Follow up" badge in the table —
+            both read the same canSeeStatusHistory() helper.
 
             Always offers the FULL status list (see PREVIOUS_STATUS_OPTIONS),
             not the page's narrowed `statusOptions` — history can hold any
             status, whatever the page currently filters to. */}
-        {isSupAdmin() && (
+        {canSeeStatusHistory() && (
           <Select
             placeholder="Previously in status"
             options={PREVIOUS_STATUS_OPTIONS}

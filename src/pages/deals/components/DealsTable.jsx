@@ -4,7 +4,7 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
 import QuickEditSheet from "./QuickEditSheet";
-import { isMaskedUser, isSupAdmin } from "utils/permission";
+import { isMaskedUser, canSeeStatusHistory } from "utils/permission";
 import { toDialNumber, toWhatsappNumber } from "utils/phone";
 
 const DealsTable = ({
@@ -29,8 +29,8 @@ const DealsTable = ({
   // masking withholds.
   const masked = isMaskedUser();
 
-  // Admin-only for now, per request.
-  const canSeeStatusHistory = isSupAdmin();
+  // Admin or Owner — see canSeeStatusHistory in utils/permission.
+  const showStatusHistory = canSeeStatusHistory();
 
   const [hoveredRow, setHoveredRow] = useState(null);
   // The lead whose Quick Edit bottom sheet is open (mobile only). null = closed.
@@ -447,7 +447,7 @@ const DealsTable = ({
                       >
                         <span className="text-sm">{deal?.status}</span>
                       </div>
-                      {canSeeStatusHistory && wasFollowUpBeforeDead(deal) && (
+                      {showStatusHistory && wasFollowUpBeforeDead(deal) && (
                         <span
                           className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"
                           title={`Status history: ${deal.cStatusObj.join(" → ")}`}
@@ -649,7 +649,7 @@ const DealsTable = ({
                     >
                       {deal?.status}
                     </span>
-                    {canSeeStatusHistory && wasFollowUpBeforeDead(deal) && (
+                    {showStatusHistory && wasFollowUpBeforeDead(deal) && (
                       <span className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500">
                         was Follow up
                       </span>

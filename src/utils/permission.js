@@ -218,6 +218,17 @@ export const isElevated = () => {
   );
 };
 
+// Who can see lead STATUS HISTORY — the "was Follow up" badge in the table and
+// the "Previously in status" filter. Admin (by type) or the Owner role.
+//
+// Managers are deliberately NOT included: this surfaces how a lead was worked
+// before it was written off, which is review material rather than day-to-day
+// rep tooling. Widen to isElevated() if that changes.
+//
+// Named rather than repeated inline in both files, so the next change to who
+// qualifies is one edit and the badge and the filter can't drift apart.
+export const canSeeStatusHistory = () => isSupAdmin() || isOwner();
+
 // ---------------------------------------------------------------------------
 // Restricted (masked) users
 // ---------------------------------------------------------------------------
