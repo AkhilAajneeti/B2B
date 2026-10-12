@@ -42,6 +42,21 @@ const DEFAULT_STATUS_OPTIONS = [
   { value: "Switch Off", label: "Switch Off" },
 ];
 
+// Options for the "Previously in status" filter.
+//
+// Deliberately built from DEFAULT_STATUS_OPTIONS rather than the `statusOptions`
+// prop: a page may narrow which statuses a lead can currently BE (Inactive
+// Leads offers only the 7 inactive ones), but a lead's HISTORY can contain any
+// status at all — it's the active ones you most want to compare against, since
+// "was Follow up, now Dead" is the whole point. Inheriting the narrowed list
+// left Inactive Leads able to compare dead statuses against other dead ones.
+//
+// "All" is dropped: it's a pseudo-value meaning "drop the status filter", which
+// has no meaning as a historical status.
+const PREVIOUS_STATUS_OPTIONS = DEFAULT_STATUS_OPTIONS.filter(
+  (o) => o.value !== "All",
+);
+
 // One-tap quick date filters. Each drives the SAME `dateType` value as the
 // "Filter by date" dropdown, so the pill and the dropdown stay in sync; tapping
 // the already-active pill clears it. Hue per window (matches the app's pill
@@ -714,13 +729,13 @@ const DealsFilters = ({
 
             Admin-only for now, matching the "was Follow up" badge in the table.
 
-            "All" is stripped from the options: it's a pseudo-value the Leads
-            page reads as "drop the status filter", and it has no meaning as a
-            historical status. */}
+            Always offers the FULL status list (see PREVIOUS_STATUS_OPTIONS),
+            not the page's narrowed `statusOptions` — history can hold any
+            status, whatever the page currently filters to. */}
         {isSupAdmin() && (
           <Select
             placeholder="Previously in status"
-            options={statusOptions.filter((o) => o.value !== "All")}
+            options={PREVIOUS_STATUS_OPTIONS}
             multiple
             searchable
             clearable
