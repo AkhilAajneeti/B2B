@@ -4,7 +4,7 @@ import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
 import QuickEditSheet from "./QuickEditSheet";
-import { isMaskedUser, canSeeStatusHistory } from "utils/permission";
+import { isMaskedUser } from "utils/permission";
 import { toDialNumber, toWhatsappNumber } from "utils/phone";
 
 const DealsTable = ({
@@ -28,9 +28,6 @@ const DealsTable = ({
   // phone number in the address bar, which would hand back exactly what the
   // masking withholds.
   const masked = isMaskedUser();
-
-  // Admin or Owner — see canSeeStatusHistory in utils/permission.
-  const showStatusHistory = canSeeStatusHistory();
 
   const [hoveredRow, setHoveredRow] = useState(null);
   // The lead whose Quick Edit bottom sheet is open (mobile only). null = closed.
@@ -223,31 +220,6 @@ const DealsTable = ({
     for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i)) >>> 0;
     return ASSIGNEE_PALETTE[hash % ASSIGNEE_PALETTE.length];
   };
-  // "Ever touched Follow up, and has since moved on to something else" — a
-  // lead that was actively nurtured before landing wherever it is now, which
-  // reads very differently from one that went straight there.
-  //
-  // Was previously restricted to `status === "Dead"`, which missed every other
-  // outcome: a lead that went Follow up -> Broker, or Follow up -> Low Budget,
-  // was nurtured just as much and showed nothing.
-  //
-  // `cStatusObj` is the ordered list of statuses the lead has passed through.
-  // Deliberately `includes`, not an adjacency check — the same "ever touched"
-  // rule the Previously-in-status filter uses, so badge and filter agree:
-  // New -> Follow up -> Interested -> Dead still counts.
-  //
-  // Excluded when the lead is STILL in Follow up, where "was Follow up" would
-  // be noise rather than information.
-  //
-  // Purely derived from data already on the record — nothing here writes,
-  // filters or sorts. It can only be as complete as the field itself: leads
-  // last touched before EspoCRM began populating cStatusObj have no history,
-  // so they won't be badged even if they did go through Follow up.
-  const wasEverFollowUp = (deal) =>
-    deal?.status !== "Follow up" &&
-    Array.isArray(deal?.cStatusObj) &&
-    deal.cStatusObj.includes("Follow up");
-
   const getInitials = (name = "") => {
     const parts = name.trim().split(/\s+/);
     if (!parts[0]) return "?";
@@ -447,22 +419,12 @@ const DealsTable = ({
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="flex flex-col items-center gap-1">
-                      <div
-                        className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
-                          deal?.status,
-                        )}`}
-                      >
-                        <span className="text-sm">{deal?.status}</span>
-                      </div>
-                      {showStatusHistory && wasEverFollowUp(deal) && (
-                        <span
-                          className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"
-                          title={`Status history: ${deal.cStatusObj.join(" → ")}`}
-                        >
-                          was Follow up
-                        </span>
-                      )}
+                    <div
+                      className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
+                        deal?.status,
+                      )}`}
+                    >
+                      <span className="text-sm">{deal?.status}</span>
                     </div>
                   </td>
 
@@ -657,11 +619,6 @@ const DealsTable = ({
                     >
                       {deal?.status}
                     </span>
-                    {showStatusHistory && wasEverFollowUp(deal) && (
-                      <span className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                        was Follow up
-                      </span>
-                    )}
                   </div>
 
                   {/* Bottom */}
