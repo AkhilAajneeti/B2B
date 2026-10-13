@@ -223,20 +223,28 @@ const DealsTable = ({
     for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i)) >>> 0;
     return ASSIGNEE_PALETTE[hash % ASSIGNEE_PALETTE.length];
   };
-  // "Ever touched Follow up, and is now Dead" — a lead that was actively
-  // nurtured before being written off, which reads very differently from one
-  // that went straight to Dead.
+  // "Ever touched Follow up, and has since moved on to something else" — a
+  // lead that was actively nurtured before landing wherever it is now, which
+  // reads very differently from one that went straight there.
+  //
+  // Was previously restricted to `status === "Dead"`, which missed every other
+  // outcome: a lead that went Follow up -> Broker, or Follow up -> Low Budget,
+  // was nurtured just as much and showed nothing.
   //
   // `cStatusObj` is the ordered list of statuses the lead has passed through.
-  // Deliberately `includes`, not an adjacency check: New -> Follow up ->
-  // Interested -> Dead still counts. Purely derived from data already on the
-  // record — nothing here writes, filters or sorts.
+  // Deliberately `includes`, not an adjacency check — the same "ever touched"
+  // rule the Previously-in-status filter uses, so badge and filter agree:
+  // New -> Follow up -> Interested -> Dead still counts.
   //
-  // Note it can only be as complete as the field itself: leads last touched
-  // before EspoCRM began populating cStatusObj have no history, so they won't
-  // be badged even if they did go through Follow up.
-  const wasFollowUpBeforeDead = (deal) =>
-    deal?.status === "Dead" &&
+  // Excluded when the lead is STILL in Follow up, where "was Follow up" would
+  // be noise rather than information.
+  //
+  // Purely derived from data already on the record — nothing here writes,
+  // filters or sorts. It can only be as complete as the field itself: leads
+  // last touched before EspoCRM began populating cStatusObj have no history,
+  // so they won't be badged even if they did go through Follow up.
+  const wasEverFollowUp = (deal) =>
+    deal?.status !== "Follow up" &&
     Array.isArray(deal?.cStatusObj) &&
     deal.cStatusObj.includes("Follow up");
 
@@ -447,7 +455,7 @@ const DealsTable = ({
                       >
                         <span className="text-sm">{deal?.status}</span>
                       </div>
-                      {showStatusHistory && wasFollowUpBeforeDead(deal) && (
+                      {showStatusHistory && wasEverFollowUp(deal) && (
                         <span
                           className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500"
                           title={`Status history: ${deal.cStatusObj.join(" → ")}`}
@@ -649,7 +657,7 @@ const DealsTable = ({
                     >
                       {deal?.status}
                     </span>
-                    {showStatusHistory && wasFollowUpBeforeDead(deal) && (
+                    {showStatusHistory && wasEverFollowUp(deal) && (
                       <span className="whitespace-nowrap rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500">
                         was Follow up
                       </span>
