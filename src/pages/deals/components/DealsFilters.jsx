@@ -824,13 +824,15 @@ const DealsFilters = ({
             fills cols 3-4 so the button auto-flows to col 5; no-date-filter
             mode keeps col-span-3 so the button stays right-aligned across its
             wider cell. */}
+        {/* Lead Analytics — always its own full-width row, right-aligned.
+            It used to compute a column span/start from the date-filter mode,
+            which only worked while the number of controls above it was fixed.
+            It isn't any more: "Previously in status" renders for admins and
+            Owners only, so the same arithmetic lands the button in a different
+            cell depending on who is logged in. Spanning the full row is stable
+            whatever the control count turns out to be. */}
         {toggleAnalytics && (
-          <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-end ${!showDateInputs
-            ? "lg:col-span-2"
-            : filters?.dateType === "between"
-              ? "lg:col-span-1"
-              : "lg:col-start-5 lg:col-span-1"
-            }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end lg:col-span-full">
             <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
               <Icon name="Plus" size={16} className="mr-2" />
               Lead Analytics
