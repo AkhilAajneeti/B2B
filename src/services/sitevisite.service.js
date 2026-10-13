@@ -9,6 +9,7 @@ import {
   deleteLead,
   bulkDeleteleads,
 } from "./leads.service";
+import { handleUnauthorized } from "./session";
 
 const LEAD_URL = "https://gateway.aajneetiadvertising.com/Lead";
 
@@ -63,9 +64,8 @@ export const fetchSiteVisits = async ({ limit = 200, page = 1 } = {}) => {
   });
 
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch site visits");
   }

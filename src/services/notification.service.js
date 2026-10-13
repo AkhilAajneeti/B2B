@@ -1,3 +1,4 @@
+import { handleUnauthorized } from "./session";
 // `maxSize` defaults to 100 so the dropdown can paginate over the user's full
 // notification history client-side. The backend returns `total: -1`, so we
 // can't compute true totals from one request — fetching a generous batch up
@@ -19,9 +20,8 @@ export const fetchNotifications = async ({ maxSize = 100, offset = 0 } = {}) => 
   if (!res.ok) {
     console.log("STATUS:", res.status);
 
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
 
     throw new Error("Failed to fetch notifications ");
@@ -72,9 +72,8 @@ export const markAllNotificationsRead = async () => {
   );
 
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to mark notifications as read");
   }

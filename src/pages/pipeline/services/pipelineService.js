@@ -24,6 +24,7 @@ import {
   PIPELINE_CACHE_TTL,
   PIPELINE_PAGE_SIZE,
 } from "../utils/pipelineConstants";
+import { handleUnauthorized } from "services/session";
 
 const API_BASE = "https://gateway.aajneetiadvertising.com/Lead";
 
@@ -124,9 +125,8 @@ const fetchLeadsForPipeline = async ({ page, limit, dateFilter }) => {
   });
 
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch pipeline leads");
   }
@@ -194,9 +194,8 @@ const fetchBudgetIssueLeads = async ({ page, limit, dateFilter }) => {
   });
 
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch budget issue leads");
   }

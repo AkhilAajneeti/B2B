@@ -230,10 +230,19 @@ const DealsFilters = ({
 
     return (
       <>
+        {/* `lg:col-start-1` on both: a date input always begins a new grid row
+            rather than tucking into whatever cell the filters above happen to
+            leave free. "Date Range" already did this by accident — its
+            col-span-2 couldn't fit in a single leftover cell, so it wrapped —
+            while a single date (Before / After / Specific day) needs only one
+            cell and so landed stranded at the right of the filter row. Forcing
+            column 1 makes every date mode sit the same way, under a label,
+            below the filter it belongs to. */}
         {showXDays && (
           <Input
             type="number"
             placeholder="Enter days"
+            className="lg:col-start-1"
             value={filters?.[xDaysKey] || ""}
             onChange={(e) => handleFilterChange(xDaysKey, e.target.value)}
           />
@@ -241,7 +250,7 @@ const DealsFilters = ({
 
         {showRange && (
           <div
-            className={`flex gap-2 ${type === "between" ? "lg:col-span-2" : ""}`}
+            className={`flex gap-2 lg:col-start-1 ${type === "between" ? "lg:col-span-2" : ""}`}
           >
             <div className="flex-1 min-w-0">
               <Input

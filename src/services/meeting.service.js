@@ -1,3 +1,4 @@
+import { handleUnauthorized } from "./session";
 
 
 export const fetchAllMeeting = async ({ limit, page, filters }) => {
@@ -231,9 +232,8 @@ export const fetchAllMeeting = async ({ limit, page, filters }) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch accounts");
   }
@@ -254,9 +254,8 @@ export const fetchMeeting = async () => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch accounts");
   }
@@ -274,9 +273,8 @@ export const fetchMeetingById = async (id) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch meeting by id");
   }
@@ -365,9 +363,8 @@ export const meetingStreamById = async (id) => {
 
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch User's stream");
   }
@@ -430,9 +427,8 @@ export const leadActivitesById = async (id) => {
   console.log(res);
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch User's Activties");
   }
@@ -479,9 +475,8 @@ export const createLeadMeeting = async (id, payload) => {
   );
 
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
 
     throw new Error("Failed to create meeting");

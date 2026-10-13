@@ -1,5 +1,6 @@
 import { projectExactLeadCondition } from "pages/campaigns/utils/leadScope";
 import { isMaskedUser } from "utils/permission";
+import { handleUnauthorized } from "./session";
 
 // Fields the leads LIST actually needs, for the request made on behalf of a
 // restricted user. Espo's `select` is a whitelist with no "exclude" form, so
@@ -222,9 +223,8 @@ export const fetchLeadsCount = async (filters = []) => {
     const errorText = await res.text();
     console.error("❌ API Error:", res.status, errorText);
 
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
 
     throw new Error("Failed to fetch leads count");
@@ -263,9 +263,8 @@ export const fetchLeads = async ({ limit = 100, page = 1 }) => {
 
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch leads");
   }
@@ -713,9 +712,8 @@ export const searchLeads = async ({ query = "", limit = 15, offset = 0 } = {}) =
   );
 
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to search leads");
   }
@@ -864,10 +862,9 @@ export const fetchLeadsByIds = async (ids = []) => {
     );
 
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        localStorage.clear();
-        window.location.href = "/login";
-      }
+      if (res.status === 401) {
+      handleUnauthorized();
+    }
       throw new Error(`Could not load the selected leads (${res.status})`);
     }
 
@@ -890,9 +887,8 @@ export const fetchLeadsById = async (id) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch accounts by id");
   }
@@ -980,9 +976,8 @@ export const leadStreamById = async (id) => {
 
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch User's stream");
   }
@@ -1007,9 +1002,8 @@ export const updateStream = async (id, payload) => {
 
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch User's stream");
   }
@@ -1072,9 +1066,8 @@ export const leadActivitesById = async (id) => {
   console.log(res);
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch User's Activties");
   }
@@ -1102,9 +1095,8 @@ export const fetchLeadTask = async (id) => {
 
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch task for this lead");
   }
@@ -1129,9 +1121,8 @@ export const createLeadTask = async (id) => {
 
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch task for this lead");
   }

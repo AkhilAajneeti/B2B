@@ -1,3 +1,4 @@
+import { handleUnauthorized } from "./session";
 export const fetchProjects = async ({
   limit = 10,
   page = 1,
@@ -200,9 +201,8 @@ export const fetchProjects = async ({
 
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch projects");
   }
@@ -224,9 +224,8 @@ export const fetchProjectsById = async (id) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch projects by id");
   }

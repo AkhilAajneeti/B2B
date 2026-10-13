@@ -1,3 +1,4 @@
+import { handleUnauthorized } from "./session";
 // ── Users reference cache ────────────────────────────────────────────────
 // The user list is org reference data pulled on nearly every page/drawer
 // (assignee & collaborator pickers, filters), and fetchUser PAGINATES through
@@ -76,10 +77,9 @@ export const fetchUser = async () => {
     );
 
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        localStorage.clear();
-        window.location.href = "/login";
-      }
+      if (res.status === 401) {
+      handleUnauthorized();
+    }
       throw new Error("Failed to fetch User's");
     }
 
@@ -111,9 +111,8 @@ export const fetchUserById = async (id) => {
   });
   if (!res.ok) {
 
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch User's by id");
   }

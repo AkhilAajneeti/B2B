@@ -1,4 +1,5 @@
 import { projectExactLeadCondition } from "pages/campaigns/utils/leadScope";
+import { handleUnauthorized } from "services/session";
 
 
 const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
@@ -407,10 +408,9 @@ export const fetchLeadsForAnalytics = async ({
     });
 
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        localStorage.clear();
-        window.location.href = "/login";
-      }
+      if (res.status === 401) {
+      handleUnauthorized();
+    }
       throw new Error(`Analytics fetch failed: ${res.status}`);
     }
 
@@ -494,10 +494,9 @@ export const fetchProjectDataset = async ({ filters = {} }) => {
     });
 
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        localStorage.clear();
-        window.location.href = "/login";
-      }
+      if (res.status === 401) {
+      handleUnauthorized();
+    }
       throw new Error(`Project dataset fetch failed: ${res.status}`);
     }
 

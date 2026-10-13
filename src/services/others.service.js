@@ -1,3 +1,4 @@
+import { handleUnauthorized } from "./session";
 // lead-->source
 export const fetchSources = async () => {
     const token = localStorage.getItem("auth_token")
@@ -11,9 +12,11 @@ export const fetchSources = async () => {
     console.log(res);
     if (!res.ok) {
         console.log('status', res.status);
-        if (res.status == 401 && res.status == 403) {
-            localStorage.clear();
-            window.location.href = '/login';
+        // Was `401 && 403` — a status can't be both, so this never fired and a
+        // real 401 here was silently ignored. 403 is deliberately excluded:
+        // see services/session.js.
+        if (res.status === 401) {
+            handleUnauthorized();
         }
         throw new Error("Failed to fetch accounts");
 
@@ -33,9 +36,11 @@ export const fetchStatus = async () => {
     console.log(res);
     if (!res.ok) {
         console.log('status', res.status);
-        if (res.status == 401 && res.status == 403) {
-            localStorage.clear();
-            window.location.href = '/login';
+        // Was `401 && 403` — a status can't be both, so this never fired and a
+        // real 401 here was silently ignored. 403 is deliberately excluded:
+        // see services/session.js.
+        if (res.status === 401) {
+            handleUnauthorized();
         }
         throw new Error("Failed to fetch accounts");
 
@@ -77,9 +82,11 @@ export const fetchIndustries = async () => {
     console.log(res);
     if (!res.ok) {
         console.log('status', res.status);
-        if (res.status == 401 && res.status == 403) {
-            localStorage.clear();
-            window.location.href = '/login';
+        // Was `401 && 403` — a status can't be both, so this never fired and a
+        // real 401 here was silently ignored. 403 is deliberately excluded:
+        // see services/session.js.
+        if (res.status === 401) {
+            handleUnauthorized();
         }
         throw new Error("Failed to fetch accounts");
 
@@ -100,9 +107,11 @@ export const fetchAccountType = async () => {
     console.log(res);
     if (!res.ok) {
         console.log('status', res.status);
-        if (res.status == 401 && res.status == 403) {
-            localStorage.clear();
-            window.location.href = '/login';
+        // Was `401 && 403` — a status can't be both, so this never fired and a
+        // real 401 here was silently ignored. 403 is deliberately excluded:
+        // see services/session.js.
+        if (res.status === 401) {
+            handleUnauthorized();
         }
         throw new Error("Failed to fetch accounts");
 

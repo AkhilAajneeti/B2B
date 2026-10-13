@@ -1,3 +1,4 @@
+import { handleUnauthorized } from "./session";
 export const fetchAllCall = async ({ limit, page, filters }) => {
   const token = localStorage.getItem("auth_token");
   const offset = (page - 1) * limit;
@@ -200,9 +201,8 @@ export const fetchAllCall = async ({ limit, page, filters }) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch calls");
   }
@@ -223,9 +223,8 @@ export const fetchCall = async () => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch call");
   }
@@ -243,9 +242,8 @@ export const fetchCallById = async (id) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch Call by id");
   }
@@ -334,9 +332,8 @@ export const CallStreamById = async (id) => {
   console.log(res);
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch call stream");
   }
@@ -399,9 +396,8 @@ export const leadActivitesById = async (id) => {
   console.log(res);
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch Call's Activties");
   }

@@ -7,6 +7,7 @@
  */
 
 import { API_BASE, FIELD_OPTIONS, LEAD_STATUS_PILL } from "./constants";
+import { handleUnauthorized } from "services/session";
 
 // ---------------------------------------------------------------------------
 // Date helpers — EspoCRM datetimes are UTC strings ("YYYY-MM-DD HH:mm:ss").
@@ -200,9 +201,8 @@ export const fetchImports = async ({
   });
 
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch imports");
   }

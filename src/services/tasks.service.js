@@ -1,3 +1,4 @@
+import { handleUnauthorized } from "./session";
 // fetch all
 const toLocalISOString = (date) => {
   const tzOffset = date.getTimezoneOffset() * 60000;
@@ -200,9 +201,8 @@ export const fetchTasks = async () => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch tasks");
   }
@@ -220,9 +220,8 @@ export const fetchTasksById = async (id) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch task by id");
   }
@@ -311,9 +310,8 @@ export const taskStreamById = async (id) => {
   console.log(res);
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch User's stream");
   }
@@ -375,9 +373,8 @@ export const TaskActivitesById = async (id) => {
   console.log(res);
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch User's Activties");
   }

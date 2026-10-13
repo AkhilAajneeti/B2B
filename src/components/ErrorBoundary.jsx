@@ -14,7 +14,11 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     error.__ErrorBoundary = true;
     window.__COMPONENT_ERROR__?.(error, errorInfo);
-    // console.log("Error caught by ErrorBoundary:", error, errorInfo);
+    // Logged, not swallowed. This boundary renders a generic "Something went
+    // wrong" screen, so without this there is no way to tell a failed chunk
+    // load after a deploy from a genuine render error — and both look
+    // identical to the user.
+    console.error("Error caught by ErrorBoundary:", error, errorInfo);
   }
 
   render() {

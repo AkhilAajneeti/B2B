@@ -1,3 +1,4 @@
+import { handleUnauthorized } from "./session";
 // ── Teams reference cache ────────────────────────────────────────────────
 // Team list is org reference data pulled on many pages/drawers. Same approach
 // as the users cache in user.service.js: store the whole result in localStorage
@@ -77,10 +78,9 @@ export const fetchTeam = async () => {
       },
     );
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        localStorage.clear();
-        window.location.href = "/login";
-      }
+      if (res.status === 401) {
+      handleUnauthorized();
+    }
       throw new Error("Failed to fetch teams");
     }
 
@@ -111,9 +111,8 @@ export const fetchTeamById = async (id) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch team's by id");
   }
@@ -130,9 +129,8 @@ export const fetchTeamUser = async (id) => {
   });
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch team's by id");
   }

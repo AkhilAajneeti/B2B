@@ -1,4 +1,5 @@
 import { clearUsersCache } from "./user.service";
+import { handleUnauthorized } from "./session";
 
 export const fetchRoles=async()=>{
     const token = localStorage.getItem("auth_token");
@@ -13,9 +14,8 @@ export const fetchRoles=async()=>{
   
   if (!res.ok) {
     console.log("STATUS:", res.status);
-    if (res.status === 401 || res.status === 403) {
-      localStorage.clear();
-      window.location.href = "/login";
+    if (res.status === 401) {
+      handleUnauthorized();
     }
     throw new Error("Failed to fetch Roles");
   }
