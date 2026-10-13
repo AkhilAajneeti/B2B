@@ -198,7 +198,11 @@ export const getUserRoles = () => {
   ]
     .filter(Boolean)
     .map((r) => (typeof r === 'string' ? r : r?.name || ''))
-    .map((r) => r.toLowerCase());
+    // Trimmed as well as lowercased: role names are typed by hand in EspoCRM,
+    // and every check here is an exact match, so a stray trailing space on
+    // "Owner " silently failed isOwner() / isElevated() with no error.
+    .map((r) => r.trim().toLowerCase())
+    .filter(Boolean);
 };
 
 // True only for users holding the "Owner" role — NOT admins or managers.
