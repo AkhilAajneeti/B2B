@@ -831,6 +831,30 @@ const DealsFilters = ({
             Owners only, so the same arithmetic lands the button in a different
             cell depending on who is logged in. Spanning the full row is stable
             whatever the control count turns out to be. */}
+        {/* Conditional date inputs (From / To / X days) for both date filters.
+            These used to live in their own grids BELOW this one, which meant
+            they could never fill the empty cells the filter rows leave — so
+            picking "Date Range" opened a band of dead space with the inputs
+            stranded underneath. As direct children of this grid they flow into
+            the next free cell instead, and the "between" case still claims two
+            cells via its own lg:col-span-2. */}
+        {showDateConditional &&
+          renderDateConditional({
+            type: filters?.dateType,
+            fromKey: "closeDateFrom",
+            toKey: "closeDateTo",
+            xDaysKey: "xDays",
+            maxToday: true,
+          })}
+        {showNextContactConditional &&
+          renderDateConditional({
+            type: filters?.nextContactType,
+            fromKey: "nextContactFrom",
+            toKey: "nextContactTo",
+            xDaysKey: "nextContactXDays",
+            maxToday: false,
+          })}
+
         {toggleAnalytics && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end lg:col-span-full">
             <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
@@ -840,32 +864,6 @@ const DealsFilters = ({
           </div>
         )}
       </div>
-
-      {/* Date conditional grids — sit inside the card directly under
-          the filter grid. The outer wrapper no longer has padding, so
-          these get their own `px-4 pb-4` to stay aligned. */}
-      {showDateConditional && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 px-4 pb-4">
-          {renderDateConditional({
-            type: filters?.dateType,
-            fromKey: "closeDateFrom",
-            toKey: "closeDateTo",
-            xDaysKey: "xDays",
-            maxToday: true,
-          })}
-        </div>
-      )}
-      {showNextContactConditional && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 px-4 pb-4">
-          {renderDateConditional({
-            type: filters?.nextContactType,
-            fromKey: "nextContactFrom",
-            toKey: "nextContactTo",
-            xDaysKey: "nextContactXDays",
-            maxToday: false,
-          })}
-        </div>
-      )}
 
     </div>
   );
