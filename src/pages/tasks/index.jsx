@@ -380,7 +380,7 @@ const TaskPage = () => {
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."
         />
       </Helmet>
-      <div className="min-h-screen bg-background relative isolate">
+      <div className="min-h-screen bg-background relative">
       <TricolorBurst />
         
         

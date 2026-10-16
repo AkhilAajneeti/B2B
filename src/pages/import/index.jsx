@@ -147,7 +147,7 @@ const ImportPage = () => {
   // ---------- Render ----------
 
   return (
-    <div className="min-h-screen bg-background relative isolate">
+    <div className="min-h-screen bg-background relative">
       <TricolorBurst />
       
       

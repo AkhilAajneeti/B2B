@@ -358,7 +358,7 @@ const SiteVisitePage = () => {
         <title>Site Visits - CRM</title>
         <meta name="description" content="Confirm scheduled site visits and track which leads actually show up." />
       </Helmet>
-      <div className="min-h-screen bg-background relative isolate">
+      <div className="min-h-screen bg-background relative">
       <TricolorBurst />
         
         

@@ -101,7 +101,7 @@ const Pipeline = () => {
   }, [refetch]);
 
   return (
-    <div className="min-h-screen bg-background relative isolate">
+    <div className="min-h-screen bg-background relative">
       <TricolorBurst />
       <Helmet>
         <title>Pipeline - Aajneeti Connect ltd</title>

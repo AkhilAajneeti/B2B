@@ -260,7 +260,7 @@ const Reports = () => {
           content="Comprehensive sales analytics with interactive visualizations and export capabilities for data-driven decision making"
         />
       </Helmet>
-      <div className="min-h-screen bg-background relative isolate">
+      <div className="min-h-screen bg-background relative">
       <TricolorBurst />
         
         

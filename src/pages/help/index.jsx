@@ -70,7 +70,7 @@ const HelpPage = () => {
           content="CRM Help Center — short, beginner-friendly guides for leads, meetings, tasks, reports and more."
         />
       </Helmet>
-      <div className="min-h-screen bg-background relative isolate">
+      <div className="min-h-screen bg-background relative">
       <TricolorBurst />
         
         
