@@ -333,6 +333,8 @@ const Dashboard = () => {
       iconBg: "bg-yellow-100",
       iconColor: "#F59E0B",
       comparisonLabel: "last month",
+      // Amber accent, so the mandala tints gold here.
+      ornament: true,
     },
   ];
 

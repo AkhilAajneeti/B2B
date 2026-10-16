@@ -31,6 +31,7 @@ const KPICard = ({
   const tint = hexToRgba(iconColor, 0.12); // icon tile background
   const glow = hexToRgba(iconColor, 0.35); // hover halo shadow
   const blob = hexToRgba(iconColor, 0.22); // corner radial glow
+  const ornamentTint = hexToRgba(iconColor, 0.45); // mandala, tinted per card
 
   return (
     <div
@@ -48,31 +49,43 @@ const KPICard = ({
         style={{ background: `radial-gradient(circle, ${blob}, transparent 70%)` }}
       />
 
-      {/* Corner mandala, from the supplied artwork.
+      {/* Corner mandala.
+
+          Rendered as a CSS MASK rather than an <img>, so the artwork supplies
+          the shape and the card supplies the colour. One file then serves
+          every card — blue on This Month Leads (#3B82F6), amber on Interested
+          (#F59E0B) — instead of shipping a recoloured PNG per accent and
+          having to export another one each time a card's colour changes.
+
+          Tinting from `iconColor` is also what makes it read as part of the
+          card rather than pasted on: it's the same hue as the icon tile, the
+          corner glow and the hover halo, just further back.
 
           The source PNG had no alpha channel — the art was composited onto
-          opaque white, which would have painted a white block over the card
-          corner. It was keyed out and un-composited (alpha derived from
-          distance to white, colour divided back out of it) so the
-          anti-aliased edges keep their true hue instead of a pale fringe.
-          Result: /assets/images/festive-mandala.png.
+          opaque white, which would have painted a white block over the corner.
+          It was keyed out and un-composited (alpha from distance to white,
+          colour divided back out of it) so the anti-aliased petal edges keep
+          their shape in the mask instead of a hard fringe.
 
-          `transformOrigin` is the ROSETTE's centre, not the image's. The file
-          is a corner ornament, so its rosette sits at 83.5% / 83.8% — measured
-          by finding the innermost blank disc (137x134px, near-perfectly round
-          at that point). Rotating about the image centre instead would make
-          the whole ornament orbit rather than spin, which reads as a wobble.
-
-          180s per turn: at this size anything faster pulls the eye away from
-          the figure the card exists to show. motion-safe so it holds still for
-          reduced-motion users. */}
+          Static by request — it previously rotated about the rosette centre
+          (83.5%/83.8%, found by locating the innermost blank disc). If that
+          ever comes back, that origin is the value to use: rotating about the
+          image centre makes the ornament orbit rather than spin. */}
       {ornament && (
-        <img
-          src="/assets/images/festive-mandala.png"
-          alt=""
+        <div
           aria-hidden="true"
-          style={{ transformOrigin: "83.5% 83.8%" }}
-          className={`pointer-events-none absolute -bottom-5 -right-7 select-none opacity-60 motion-safe:animate-[spin_180s_linear_infinite] ${
+          style={{
+            backgroundColor: ornamentTint,
+            WebkitMaskImage: "url(/assets/images/festive-mandala.png)",
+            maskImage: "url(/assets/images/festive-mandala.png)",
+            WebkitMaskSize: "contain",
+            maskSize: "contain",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskPosition: "bottom right",
+            maskPosition: "bottom right",
+          }}
+          className={`pointer-events-none absolute -bottom-5 -right-7 aspect-[1421/1107] ${
             featured ? "w-60" : "w-52"
           }`}
         />
