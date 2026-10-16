@@ -269,18 +269,71 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
           <div className="flex items-center space-x-2">
             <div className="relative" ref={notificationRef}>
               {/* Notifications */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
+              {/* Notification button.
+                  Built to the proportions measured off the reference icon: a
+                  ~36px face inside a ~8px soft blue halo, so the whole thing
+                  reads at roughly 50px. The halo is a box-shadow rather than a
+                  border because it has to fade outward; a border steps.
+
+                  Three layers, outermost first:
+                    1. the conic gradient, clipped to a ring by (2);
+                    2. an inner face that covers all but a 1.5px rim;
+                    3. the bell itself, stroked with the same gradient.
+
+                  At rest the ring sits still and understated. On hover it
+                  rotates slowly and the bell shakes — both behind
+                  `motion-safe:` so the whole thing holds still for anyone who
+                  has asked the OS for reduced motion. */}
+              <button
+                type="button"
                 aria-label="Notifications"
                 onClick={handleClick}
+                className="group relative grid h-10 w-10 place-items-center rounded-full transition-shadow duration-300 shadow-[0_0_0_1px_rgba(147,197,253,0.45),0_0_12px_3px_rgba(96,165,250,0.30)] hover:shadow-[0_0_0_1px_rgba(147,197,253,0.8),0_0_18px_6px_rgba(96,165,250,0.50)]"
               >
-                <Icon
-                  name="Bell"
-                  size={20}
-                  className={`origin-top ${bellRinging ? "animate-bell-swing" : ""}`}
-                />
+                {/* 1 — rotating gradient */}
+                <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
+                  <span
+                    className="absolute inset-[-50%] opacity-70 transition-opacity duration-300 group-hover:opacity-100 motion-safe:group-hover:animate-[spin_7s_linear_infinite]"
+                    style={{
+                      background:
+                        "conic-gradient(from 0deg, #F4C72B, #34A853, #4295FC, #E94BA8, #F4C72B)",
+                    }}
+                  />
+                </span>
+
+                {/* 2 — face, leaving the gradient showing as a thin rim */}
+                <span className="pointer-events-none absolute inset-[1.5px] rounded-full bg-[#F8FAFD]" />
+
+                {/* 3 — the bell, stroked with the same gradient */}
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="url(#bellGradient)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`relative origin-top motion-safe:group-hover:animate-bell-vibrate ${bellRinging ? "animate-bell-swing" : ""}`}
+                >
+                  <defs>
+                    <linearGradient
+                      id="bellGradient"
+                      x1="0"
+                      y1="24"
+                      x2="24"
+                      y2="0"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop offset="0%" stopColor="#F4C72B" />
+                      <stop offset="45%" stopColor="#34A853" />
+                      <stop offset="100%" stopColor="#4295FC" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+                  <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+                </svg>
+
                 {count > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center">
                     {bellRinging && (
@@ -291,7 +344,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                     </span>
                   </span>
                 )}
-              </Button>
+              </button>
               {open && <NotificationDropdown />}
             </div>
             {/* User Dropdown */}

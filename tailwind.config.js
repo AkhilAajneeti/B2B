@@ -94,6 +94,10 @@ export default {
         'pulse-ring': 'pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         // Bell swing fired when a new notification arrives (Header).
         'bell-swing': 'bellSwing 900ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 1',
+        // Tight, fast shake while the notification button is hovered. Shorter
+        // throw and much shorter period than bell-swing, which is a one-shot
+        // announcement; this one loops for as long as the pointer is there.
+        'bell-vibrate': 'bellVibrate 450ms ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -108,6 +112,13 @@ export default {
           '0%': { transform: 'scale(1)', opacity: '0.55' },
           '70%': { transform: 'scale(2.6)', opacity: '0' },
           '100%': { transform: 'scale(2.6)', opacity: '0' },
+        },
+        bellVibrate: {
+          '0%, 100%': { transform: 'rotate(0deg)' },
+          '20%': { transform: 'rotate(-11deg)' },
+          '40%': { transform: 'rotate(9deg)' },
+          '60%': { transform: 'rotate(-6deg)' },
+          '80%': { transform: 'rotate(3deg)' },
         },
         bellSwing: {
           '0%, 100%': { transform: 'rotate(0)' },
