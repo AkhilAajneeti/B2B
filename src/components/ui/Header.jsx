@@ -269,42 +269,45 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
           <div className="flex items-center space-x-2">
             <div className="relative" ref={notificationRef}>
               {/* Notifications */}
-              {/* Notification button.
-                  Built to the proportions measured off the reference icon: a
-                  ~36px face inside a ~8px soft blue halo, so the whole thing
-                  reads at roughly 50px. The halo is a box-shadow rather than a
-                  border because it has to fade outward; a border steps.
+              {/* Notification button — matched to the reference icon by
+                  sampling its pixels rather than by eye.
 
-                  Three layers, outermost first:
-                    1. the conic gradient, clipped to a ring by (2);
-                    2. an inner face that covers all but a 1.5px rim;
-                    3. the bell itself, stroked with the same gradient.
+                  The key finding: the reference has NO coloured rim. Its blue
+                  is a RADIAL FILL, strongest at the circumference
+                  (rgb(208,231,254)) and fading inward to near-white
+                  (rgb(245,249,253)) over about a quarter of the radius. The
+                  only saturated colour anywhere in it is the glyph.
 
-                  At rest the ring sits still and understated. On hover it
-                  rotates slowly and the bell shakes — both behind
-                  `motion-safe:` so the whole thing holds still for anyone who
-                  has asked the OS for reduced motion. */}
+                  A first attempt used a conic gradient clipped to a rim, which
+                  produced a hard rainbow ring the reference doesn't have — the
+                  pixel profile showed saturation jumping to 107 at the edge
+                  against the reference's 46, and in the wrong hue.
+
+                  Hover keeps the request for moving gradient, but in blues
+                  only and heavily blurred, so it reads as light drifting round
+                  the rim rather than a spinning ring. Both animations sit
+                  behind motion-safe:. */}
               <button
                 type="button"
                 aria-label="Notifications"
                 onClick={handleClick}
-                className="group relative grid h-10 w-10 place-items-center rounded-full transition-shadow duration-300 shadow-[0_0_0_1px_rgba(147,197,253,0.45),0_0_12px_3px_rgba(96,165,250,0.30)] hover:shadow-[0_0_0_1px_rgba(147,197,253,0.8),0_0_18px_6px_rgba(96,165,250,0.50)]"
+                className="group relative grid h-10 w-10 place-items-center overflow-hidden rounded-full transition-shadow duration-300 shadow-[0_0_10px_2px_rgba(147,197,253,0.30)] hover:shadow-[0_0_16px_4px_rgba(147,197,253,0.50)]"
+                style={{
+                  background:
+                    "radial-gradient(circle, #F7FAFD 0%, #F3F8FD 52%, #D0E7FE 100%)",
+                }}
               >
-                {/* 1 — rotating gradient */}
-                <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
-                  <span
-                    className="absolute inset-[-50%] opacity-70 transition-opacity duration-300 group-hover:opacity-100 motion-safe:group-hover:animate-[spin_7s_linear_infinite]"
-                    style={{
-                      background:
-                        "conic-gradient(from 0deg, #F4C72B, #34A853, #4295FC, #E94BA8, #F4C72B)",
-                    }}
-                  />
-                </span>
+                {/* Drifting light — blue only, blurred, and under the glyph.
+                    Invisible at rest; fades in and rotates on hover. */}
+                <span
+                  className="pointer-events-none absolute inset-[-50%] opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-70 motion-safe:group-hover:animate-[spin_7s_linear_infinite]"
+                  style={{
+                    background:
+                      "conic-gradient(from 0deg, transparent 0%, transparent 55%, #BFDBFE 72%, #7FB4FB 85%, transparent 100%)",
+                  }}
+                />
 
-                {/* 2 — face, leaving the gradient showing as a thin rim */}
-                <span className="pointer-events-none absolute inset-[1.5px] rounded-full bg-[#F8FAFD]" />
-
-                {/* 3 — the bell, stroked with the same gradient */}
+                {/* The glyph carries the only real colour, as in the reference. */}
                 <svg
                   width="19"
                   height="19"
@@ -333,18 +336,21 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                   <path d="M10.268 21a2 2 0 0 0 3.464 0" />
                   <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
                 </svg>
-
-                {count > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center">
-                    {bellRinging && (
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70 animate-ping" />
-                    )}
-                    <span className="relative inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[11px] font-semibold leading-none rounded-full ring-2 ring-background">
-                      {count > 99 ? "99+" : count}
-                    </span>
-                  </span>
-                )}
               </button>
+
+              {/* Count badge — a sibling of the button, not a child: the button
+                  now clips to a circle (overflow-hidden) so the gradient can't
+                  escape it, and a badge inside would be clipped with it. */}
+              {count > 0 && (
+                <span className="pointer-events-none absolute -top-1.5 -right-1.5 flex items-center justify-center">
+                  {bellRinging && (
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70 animate-ping" />
+                  )}
+                  <span className="relative inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[11px] font-semibold leading-none rounded-full ring-2 ring-background">
+                    {count > 99 ? "99+" : count}
+                  </span>
+                </span>
+              )}
               {open && <NotificationDropdown />}
             </div>
             {/* User Dropdown */}
