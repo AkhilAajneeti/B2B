@@ -249,8 +249,15 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
               <Icon name={isSidebarOpen ? "X" : "Menu"} size={20} />
             </Button>
 
-            {/* Desktop Logo - Always visible on desktop */}
-            <div className="hidden lg:flex items-center space-x-3 ml-64">
+            {/* Desktop brand. Shown only when the sidebar is collapsed to its
+                icon rail — while the sidebar is expanded it already shows the
+                same logo and name, and this sat underneath it.
+                Visibility and offset live in index.css, keyed off the
+                `sidebar-collapsed` body class the Sidebar already sets. No
+                Tailwind display utility here on purpose: `lg:flex` and the
+                rule in index.css have identical specificity, so whichever
+                landed later would win by accident. */}
+            <div className="header-brand items-center space-x-3">
               <div className="w-8 h-8 bg-mahroon-200 rounded-lg flex items-center justify-center">
                 {/* <Icon name="Building2" size={20} color="white" /> */}
                 <img src="assets/images/aajneeti-favicon.png" alt="" />

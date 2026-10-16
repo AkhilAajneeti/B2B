@@ -60,6 +60,24 @@ select:focus {
   }
 }
 
+/* Header brand (logo + "CRM" + byline).
+   Hidden by default: on mobile the header renders its own compact brand block,
+   and on desktop with the sidebar expanded the sidebar already shows the logo
+   and name — this one simply sat behind it.
+   It appears only on the desktop icon rail, offset clear of the 4rem rail AND
+   the collapse chevron, which overhangs the rail's right edge by 0.75rem. */
+.header-brand {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  body.sidebar-collapsed .header-brand {
+    display: flex;
+    margin-left: 5.5rem;
+    transition: margin-left 300ms ease;
+  }
+}
+
 /* Shared 140deg brand gradient for page headings (Dashboard, Leads, …). Defined
    once so every page's main title uses the exact same colours. The gradient is
    clipped to the glyphs; readable on both light and dark grounds. Change the two
