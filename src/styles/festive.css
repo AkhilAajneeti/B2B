@@ -1,0 +1,95 @@
+/* ===========================================================================
+   Dussehra festive theme
+   ===========================================================================
+
+   EVERYTHING festive lives behind `body.festive`. Nothing in this file applies
+   unless utils/festive.js adds that class, which means the whole theme comes
+   off by deleting this file, its import in src/index.jsx, and the one call in
+   App.jsx — no hunting festive colours through component files afterwards.
+
+   That matters here specifically. The previous seasonal theme (Independence
+   Day tricolor) was removed by stubbing things out rather than deleting them,
+   and left behind `TricolorBurst` rendering null but still imported by eleven
+   pages, three no-op CSS classes, and an `isolate` on eleven page roots that
+   existed only to support it. That last leftover trapped drawer z-indexes in a
+   stacking context and put every drawer behind the header — a bug found months
+   later. This file is structured so the same can't happen again.
+
+   Component styling reads these variables rather than hardcoding hex values,
+   so a component carries no festive knowledge of its own.
+   ------------------------------------------------------------------------ */
+
+body.festive {
+  /* Core palette, sampled from the supplied mockup. */
+  --festive-saffron: #f59e0b;
+  --festive-marigold: #fb923c;
+  --festive-deep: #9f1239; /* deep maroon, the "Happy Dussehra" wordmark */
+  --festive-crimson: #ac2334; /* the existing brand red, kept as the anchor */
+  --festive-gold: #d9a441;
+  --festive-rose: #f43f5e;
+
+  /* Surfaces. Warm creams that sit under cards and banners. */
+  --festive-cream: #fffaf3;
+  --festive-cream-deep: #fdf0e3;
+  --festive-peach: #fde8d7;
+
+  /* Ornament tint — the alpha ornaments are drawn in, so they read as a
+     watermark rather than competing with the content above them. */
+  --festive-ornament: rgba(245, 158, 11, 0.18);
+  --festive-ornament-strong: rgba(245, 158, 11, 0.32);
+}
+
+/* The page ground warms slightly. Deliberately subtle: this sits behind every
+   screen in scope, so anything stronger fights the cards on top of it. */
+body.festive {
+  background-color: var(--festive-cream);
+}
+
+/* --------------------------------------------------------------------------
+   Ornament helpers
+   --------------------------------------------------------------------------
+   Applied to a positioned, overflow-hidden container. The image is supplied as
+   a transparent PNG and tinted by opacity alone, so one file works on any
+   surface colour.
+   ------------------------------------------------------------------------ */
+
+.festive-ornament {
+  position: absolute;
+  pointer-events: none; /* decoration must never swallow a click */
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.55;
+}
+
+/* Bottom-right mandala on the KPI cards. */
+body.festive .festive-ornament--mandala {
+  right: -0.5rem;
+  bottom: -0.75rem;
+  width: 7rem;
+  height: 7rem;
+  background-image: url("/assets/images/festive/mandala.png");
+  background-position: bottom right;
+}
+
+/* Temple arch above the sidebar footer. */
+body.festive .festive-ornament--arch {
+  position: relative;
+  width: 100%;
+  height: 5rem;
+  background-image: url("/assets/images/festive/temple-arch.png");
+  background-position: center bottom;
+  opacity: 0.75;
+}
+
+/* Marigold garland strip across the top of the dashboard banner. */
+body.festive .festive-ornament--garland {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3.5rem;
+  background-image: url("/assets/images/festive/garland.png");
+  background-position: top center;
+  background-size: auto 100%;
+  background-repeat: repeat-x;
+  opacity: 0.9;
+}
