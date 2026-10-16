@@ -258,9 +258,22 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 rule in index.css have identical specificity, so whichever
                 landed later would win by accident. */}
             <div className="header-brand items-center space-x-3">
-              <div className="w-8 h-8 bg-mahroon-200 rounded-lg flex items-center justify-center">
-                {/* <Icon name="Building2" size={20} color="white" /> */}
-                <img src="assets/images/aajneeti-favicon.png" alt="" />
+              {/* `bg-mahroon` not `bg-mahroon-200`: mahroon is defined as a
+                  flat colour in tailwind.config.js, not a scale, so the -200
+                  suffix never resolved and the tile had no background. */}
+              <div className="w-8 h-8 shrink-0 bg-mahroon rounded-lg flex items-center justify-center overflow-hidden">
+                {/* The source image is 50x50 and was rendered unconstrained in
+                    this 32x32 tile, overflowing 9px on every side and being
+                    clipped to a sliver. Constrained and object-contain so it
+                    scales instead.
+                    Leading slash on the src: it was relative, so on a nested
+                    route like /help/:category/:article it resolved to
+                    /help/category/assets/... and 404'd. */}
+                <img
+                  src="/assets/images/aajneeti-favicon.png"
+                  alt="Aajneeti"
+                  className="w-6 h-6 object-contain"
+                />
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-lg font-semibold flag-flow">

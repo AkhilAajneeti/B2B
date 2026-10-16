@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTodayFollowups } from "services/reminder.service";
+import Icon from "components/AppIcon";
 
 /**
  * FollowupReminderManager
@@ -379,21 +380,23 @@ const FollowupReminderManager = () => {
     >
       {expanded ? (
         /* EXPANDED — vertical list of all active reminders */
-        <div className="bg-white rounded-xl shadow-2xl border border-orange-200 overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2.5 bg-orange-50 border-b border-orange-100">
-            <div className="flex items-center gap-2">
-              <span className="text-orange-600 text-lg leading-none">📞</span>
-              <p className="text-sm font-semibold text-orange-900">
-                {total} follow-up{total > 1 ? "s" : ""} pending
-              </p>
-            </div>
+        <div className="bg-white rounded-2xl shadow-[0_18px_50px_-12px_rgba(249,115,22,0.30)] border border-orange-200/80 overflow-hidden">
+          {/* Header strip — cream ground, rounded-square icon tile, title in
+              deep orange rather than grey. */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-orange-50/90 border-b border-orange-100">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-100 text-orange-500">
+              <Icon name="Phone" size={18} strokeWidth={2.5} />
+            </span>
+            <p className="flex-1 text-[15px] font-bold text-orange-900">
+              {total} follow-up{total > 1 ? "s" : ""} pending
+            </p>
             <button
               onClick={dismissAll}
-              className="text-gray-400 hover:text-red-600 px-2 py-0.5 text-lg leading-none rounded hover:bg-red-50"
+              className="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
               aria-label="Dismiss all reminders"
               title="Dismiss all"
             >
-              ✕
+              <Icon name="X" size={18} />
             </button>
           </div>
 
@@ -405,17 +408,59 @@ const FollowupReminderManager = () => {
                 : "Call Later reminder";
               const subhead = entry.isGroup ? entry.namePreview : lead.name;
               return (
-                <div key={entry.id} className="p-3">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 text-lg">
-                      📞
+                <div key={entry.id} className="relative overflow-hidden p-4">
+                  {/* Decorative swooshes from the reference. Pure ornament, so
+                      aria-hidden and pointer-events-none — it must never
+                      intercept a click meant for the actions. */}
+                  <svg
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -right-6 bottom-0 h-32 w-56 text-orange-100"
+                    viewBox="0 0 220 130"
+                    fill="none"
+                  >
+                    <path
+                      d="M0 96c46-6 70-40 118-46 34-4 62 8 102 2v78H0z"
+                      fill="currentColor"
+                      opacity="0.55"
+                    />
+                    <path
+                      d="M8 120c54-10 78-34 128-38 32-3 58 6 84 2v46H8z"
+                      fill="currentColor"
+                      opacity="0.45"
+                    />
+                    <path
+                      d="M150 36c34 2 58 20 66 44"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray="1 9"
+                    />
+                  </svg>
+
+                  <div className="relative flex items-start gap-4">
+                    {/* Rounded-square tile with a dotted ring and a dot badge,
+                        matching the reference's larger glyph treatment. */}
+                    <div className="relative h-16 w-16 shrink-0">
+                      <div className="grid h-full w-full place-items-center rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100">
+                        <Icon
+                          name="Phone"
+                          size={26}
+                          strokeWidth={2.5}
+                          className="text-orange-500"
+                        />
+                      </div>
+                      <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
+
+                    <div className="min-w-0 flex-1">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-orange-600">
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
                         {headline}
+                      </span>
+                      <p className="mt-2 truncate text-lg font-bold text-slate-900">
+                        {subhead}
                       </p>
-                      <p className="text-sm text-gray-700 truncate">{subhead}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="mt-0.5 text-sm text-slate-500">
                         {formatTime(entry.time)}
                         {!entry.isGroup && lead.project
                           ? ` • ${lead.project}`
@@ -423,24 +468,34 @@ const FollowupReminderManager = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+
+                  {/* View is the circular button from the reference. Snooze and
+                      Dismiss stay as quiet text actions — the reference shows
+                      only the one control, but dropping the other two would
+                      remove working behaviour, so they are demoted rather than
+                      deleted. */}
+                  <div className="relative mt-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => handleSnooze(entry)}
+                        className="text-xs font-semibold text-slate-500 transition-colors hover:text-orange-600"
+                      >
+                        Snooze 10m
+                      </button>
+                      <button
+                        onClick={() => handleDismiss(entry)}
+                        className="text-xs font-semibold text-slate-400 transition-colors hover:text-red-600"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
                     <button
                       onClick={() => handleView(entry)}
-                      className="flex-1 py-2 text-xs font-semibold rounded-md bg-orange-500 text-white hover:bg-orange-600 active:scale-95 transition shadow-sm"
+                      aria-label={`View ${subhead}`}
+                      title="View lead"
+                      className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-orange-500 text-white shadow-[0_8px_20px_-6px_rgba(249,115,22,0.8)] ring-4 ring-white transition hover:bg-orange-600 active:scale-95"
                     >
-                      View
-                    </button>
-                    <button
-                      onClick={() => handleSnooze(entry)}
-                      className="flex-1 py-2 text-xs font-semibold rounded-md bg-amber-100 text-amber-800 hover:bg-amber-200 active:scale-95 transition border border-amber-200"
-                    >
-                      Snooze 10m
-                    </button>
-                    <button
-                      onClick={() => handleDismiss(entry)}
-                      className="flex-1 py-2 text-xs font-semibold rounded-md bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 active:scale-95 transition border border-gray-200"
-                    >
-                      Dismiss
+                      <Icon name="Eye" size={20} strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>
@@ -476,32 +531,45 @@ const FollowupReminderManager = () => {
           )}
 
           {/* Top card */}
-          <div className="relative bg-white rounded-xl shadow-lg border border-orange-200 p-4 group-hover:shadow-xl group-active:scale-[0.99] transition">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 text-xl">
-                📞
+          <div className="relative flex items-center gap-4 rounded-2xl border border-orange-200/80 bg-white p-4 shadow-[0_12px_32px_-12px_rgba(249,115,22,0.35)] transition group-hover:shadow-[0_16px_40px_-12px_rgba(249,115,22,0.45)] group-active:scale-[0.99]">
+            {/* Circular tile with a dot badge — the reference's collapsed
+                state uses a circle here, against the expanded state's rounded
+                square. */}
+            <div className="relative h-12 w-12 shrink-0">
+              <div className="grid h-full w-full place-items-center rounded-full bg-orange-100">
+                <Icon
+                  name="Phone"
+                  size={20}
+                  strokeWidth={2.5}
+                  className="text-orange-500"
+                />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900">
-                  {total === 1
-                    ? "Follow-up reminder"
-                    : `${total} follow-ups pending`}
-                </p>
-                <p className="text-xs text-gray-600 truncate mt-0.5">
-                  {topEntry.isGroup
-                    ? topEntry.namePreview
-                    : topEntry.items[0].name}
-                </p>
-                <p className="text-xs text-orange-600 mt-1 font-medium">
-                  Tap to view {total === 1 ? "" : "all"} →
-                </p>
-              </div>
-              {total > 1 && (
-                <span className="text-xs font-bold text-white bg-orange-500 rounded-full min-w-[24px] h-6 px-2 flex items-center justify-center shadow-sm">
-                  {total}
-                </span>
-              )}
+              <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-orange-500 ring-2 ring-white" />
             </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[15px] font-bold text-slate-900">
+                {total === 1
+                  ? "Follow-up reminder"
+                  : `${total} follow-ups pending`}
+              </p>
+              <p className="mt-0.5 truncate text-sm text-slate-500">
+                {topEntry.isGroup
+                  ? topEntry.namePreview
+                  : topEntry.items[0].name}
+              </p>
+            </div>
+
+            {total > 1 && (
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-orange-500 text-sm font-bold text-white">
+                {total}
+              </span>
+            )}
+            <Icon
+              name="ChevronRight"
+              size={20}
+              className="shrink-0 text-slate-400"
+            />
           </div>
         </button>
 

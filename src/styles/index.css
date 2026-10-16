@@ -67,14 +67,43 @@ select:focus {
    It appears only on the desktop icon rail, offset clear of the 4rem rail AND
    the collapse chevron, which overhangs the rail's right edge by 0.75rem. */
 .header-brand {
+  /* Below lg the header shows its own compact brand block, so this one is
+     removed from layout entirely rather than merely hidden. */
   display: none;
 }
 
 @media (min-width: 1024px) {
-  body.sidebar-collapsed .header-brand {
+  .header-brand {
     display: flex;
     margin-left: 5.5rem;
-    transition: margin-left 300ms ease;
+
+    /* Hidden via opacity/visibility rather than `display`, because `display`
+       cannot be transitioned: switching it flipped the brand in and out
+       instantly while the sidebar was still animating over 300ms, which read
+       as a flicker. `visibility` is delayed to the end of the fade so the
+       element stays untabbable and unreadable to screen readers while
+       invisible, instead of lingering as an invisible focus target. */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-0.5rem);
+    transition:
+      opacity 200ms ease,
+      transform 200ms ease,
+      visibility 0s linear 200ms;
+  }
+
+  body.sidebar-collapsed .header-brand {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    /* Appears on a short delay so the sidebar has begun narrowing first —
+       otherwise the brand fades in over a sidebar that is still full width. */
+    transition:
+      opacity 220ms ease 120ms,
+      transform 220ms ease 120ms,
+      visibility 0s;
   }
 }
 
