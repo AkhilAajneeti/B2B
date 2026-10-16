@@ -24,10 +24,14 @@ const KPICard = ({
   // `featured` = the hero card (full-width on mobile). Bigger number + roomier
   // padding so it earns the extra space through type, not dead air.
   featured = false,
+  // Draws a slowly rotating mandala into the bottom-right corner. Opt-in per
+  // card so it stays an accent rather than wallpaper repeated three times.
+  ornament = false,
 }) => {
   const tint = hexToRgba(iconColor, 0.12); // icon tile background
   const glow = hexToRgba(iconColor, 0.35); // hover halo shadow
   const blob = hexToRgba(iconColor, 0.22); // corner radial glow
+  const ornamentTint = hexToRgba(iconColor, 0.3); // mandala line colour
 
   return (
     <div
@@ -44,6 +48,71 @@ const KPICard = ({
         }`}
         style={{ background: `radial-gradient(circle, ${blob}, transparent 70%)` }}
       />
+
+      {/* Mandala — drawn rather than loaded as an image so it inherits the
+          card's accent (one component serves a blue, green or amber card
+          instead of one PNG per colour), stays crisp at any size, and can
+          rotate without a second asset.
+
+          Sits under the content: the card already clips with overflow-hidden,
+          so pushing it past the corner crops it exactly as in the design.
+          90s per turn — slow enough to read as drift rather than spin.
+          motion-safe so it holds still for reduced-motion users. */}
+      {ornament && (
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute -bottom-12 -right-12 motion-safe:animate-[spin_90s_linear_infinite] ${
+            featured ? 'h-48 w-48' : 'h-40 w-40'
+          }`}
+          style={{ color: ornamentTint }}
+        >
+          <svg viewBox="0 0 200 200" fill="none" className="h-full w-full">
+            {/* Concentric rings */}
+            <circle cx="100" cy="100" r="92" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="100" cy="100" r="74" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="100" cy="100" r="40" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="100" cy="100" r="30" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="100" cy="100" r="20" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="100" cy="100" r="10" stroke="currentColor" strokeWidth="1.5" />
+            {/* Dotted ring, echoing the reference's stippled band */}
+            <circle
+              cx="100"
+              cy="100"
+              r="57"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="0.5 7"
+            />
+            {/* Outer petal ring */}
+            {Array.from({ length: 16 }).map((_, i) => (
+              <ellipse
+                key={`outer-${i}`}
+                cx="100"
+                cy="57"
+                rx="9"
+                ry="22"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                transform={`rotate(${i * 22.5} 100 100)`}
+              />
+            ))}
+            {/* Inner petal ring, offset half a step so the two interleave */}
+            {Array.from({ length: 12 }).map((_, i) => (
+              <ellipse
+                key={`inner-${i}`}
+                cx="100"
+                cy="75"
+                rx="6"
+                ry="13"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                transform={`rotate(${i * 30 + 15} 100 100)`}
+              />
+            ))}
+          </svg>
+        </div>
+      )}
 
       <div className={`relative flex h-full items-center justify-between gap-3 ${isLoading ? 'opacity-50' : ''}`}>
         <div className="min-w-0">

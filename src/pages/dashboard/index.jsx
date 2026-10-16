@@ -305,6 +305,9 @@ const Dashboard = () => {
       iconBg: "bg-blue-100",
       iconColor: "#3B82F6",
       comparisonLabel: "last month",
+      // Rotating mandala in the corner. Only this card, so it reads as an
+      // accent on the hero figure rather than wallpaper on all three.
+      ornament: true,
     },
     {
       title: "Today Leads",
