@@ -87,6 +87,10 @@ export const usePipelineData = ({ limit = PIPELINE_PAGE_SIZE } = {}) => {
     isFetching: query.isFetching,
     isError: query.isError,
     error: query.error,
+    // When this data was last fetched from the network. Consumers that show a
+    // "last refreshed" time need the real timestamp, not the moment they
+    // mounted — the two differ as soon as a mount is served from cache.
+    dataUpdatedAt: query.dataUpdatedAt,
     refetch,
   };
 };

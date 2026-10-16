@@ -271,8 +271,18 @@ const NotificationRow = ({ deal, variant, onClick }) => {
  * lead id in router state — the deals page reads `location.state.leadId`,
  * fetches by id, and opens the drawer automatically.
  *
- * Refreshes on every dashboard visit: each mount triggers a refetch so the
- * urgent counts reflect the latest pipeline state, not stale cache. Plays a
+ * Freshness is left to React Query rather than forced on every mount.
+ *
+ * This widget reads the whole pipeline dataset, which the service fetches by
+ * fanning out one request per 200 leads — around 65 parallel requests on a
+ * busy month. Forcing a refetch on mount re-fired all of them on every single
+ * visit to the dashboard, even one seconds after the last.
+ *
+ * Dropping the force costs very little: `refetchOnMount` defaults to true, so
+ * React Query still refetches whenever the data is older than
+ * PIPELINE_STALE_TIME (2 minutes). The only behaviour that changes is a mount
+ * INSIDE that two-minute window, which now paints instantly from cache instead
+ * of re-running the fan-out. Plays a
  * soft chime once per visit when there's urgent work, dismissible via the X
  * (only for the current view — navigating away and back shows it again).
  */
@@ -287,20 +297,14 @@ const DashboardSummaryAlert = () => {
 
   // Shared with the Header notification dropdown — both surfaces stay synced
   // because they read from the same pipeline dataset via React Query cache.
-  const { refetch, isFetching, ...urgent } = useUrgentLeads();
+  const { refetch, isFetching, dataUpdatedAt, ...urgent } = useUrgentLeads();
 
-  // Force a fresh pipeline fetch on every dashboard visit. `refetch` from
-  // React Query bypasses staleTime and re-hits the network — exactly what
-  // we want for "show the latest data each time you land on the dashboard".
+  // Track when the data was actually fetched rather than when this mounted.
+  // React Query refreshes it on mount once it's older than staleTime, so this
+  // follows the real fetch instead of claiming a refresh that didn't happen.
   useEffect(() => {
-    if (!refetch) {
-      setLastRefreshedAt(new Date());
-      return;
-    }
-    refetch().finally(() => setLastRefreshedAt(new Date()));
-    // run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (dataUpdatedAt) setLastRefreshedAt(new Date(dataUpdatedAt));
+  }, [dataUpdatedAt]);
 
   // Chime plays once per visit when urgent data actually lands. The ref
   // guards against re-firing if the urgent count changes during the visit.
