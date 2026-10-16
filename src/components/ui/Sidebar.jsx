@@ -315,7 +315,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
             own stacking context), so they can never intercept a click.
             Suppressed on the collapsed rail — 4rem leaves no room for them. */}
         {!collapsed && (
-          /* Both mandalas sit WHOLE inside the rail.
+          /* One mandala, mid-height, sitting whole inside the rail. The one
+             that used to sit by the logo was removed — it crowded the brand.
              The supplied file is a corner ornament — the artwork is only a
              quarter of a mandala, rosette at its bottom-right with petals
              radiating up and left. Positioning could never make that read as a
@@ -324,12 +325,6 @@ const Sidebar = ({ isOpen = false, onClose }) => {
              1187/928 by locating the innermost blank disc) to build a
              symmetric whole: festive-mandala-full.png. */
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <img
-              src="/assets/images/festive-mandala-full.png"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute right-2 top-6 w-36 select-none opacity-40"
-            />
             <img
               src="/assets/images/festive-mandala-full.png"
               alt=""
