@@ -295,7 +295,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 ${collapsed ? "lg:w-16" : "lg:w-64"} bg-sidebar border-r border-border z-50 lg:z-30
+          fixed top-0 left-0 h-full w-64 ${collapsed ? "lg:w-16" : "lg:w-64"} border-r border-border z-50 lg:z-30
+          bg-gradient-to-b from-[#FFFDF8] via-[#FFF8EE] to-[#FFEFDC]
           transform transition-all duration-300 ease-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `} >
@@ -309,6 +310,27 @@ const Sidebar = ({ isOpen = false, onClose }) => {
         >
           <Icon name={collapsed ? "ChevronRight" : "ChevronLeft"} size={14} />
         </button>
+        {/* Festive ornaments. Decoration only: aria-hidden, pointer-events
+            none, and behind the nav (the content wrapper below establishes its
+            own stacking context), so they can never intercept a click.
+            Suppressed on the collapsed rail — 4rem leaves no room for them. */}
+        {!collapsed && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <img
+              src="/assets/images/festive-mandala.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-16 top-10 w-44 select-none opacity-40"
+            />
+            <img
+              src="/assets/images/festive-mandala.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-20 top-[46%] w-40 select-none opacity-30"
+            />
+          </div>
+        )}
+
         <div className="flex flex-col h-full">
           {/* Header */}
           <div
@@ -483,11 +505,28 @@ const Sidebar = ({ isOpen = false, onClose }) => {
 
           {/* Footer */}
           <div
-            className={`p-4 border-t border-border ${
+            className={`relative ${
               collapsed ? "lg:hidden" : ""
             }`}
           >
-            <div className="text-xs text-muted-foreground text-center">
+            {/* Archer scene. The supplied file was a screenshot crop — it
+                carried an opaque black frame and part of the "Help Center" nav
+                row along its top edge. Both were cropped out, residual near
+                black keyed to transparent (a dark fringe would be obvious on
+                this near white ground), then trimmed to content and resized to
+                512px: a 725px source for a 256px slot is wasted bandwidth.
+
+                Full-bleed to the rail's edges, and it carries its own
+                ornamental divider at the bottom, so the footer's old
+                `border-t` is dropped rather than drawing a second line
+                straight under it. */}
+            <img
+              src="/assets/images/festive-archer.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none w-full select-none"
+            />
+            <div className="px-4 pb-4 text-xs text-muted-foreground text-center">
               Developed by Aajneeti connect ltd.
               <br />© 2026 All rights reserved.
             </div>
