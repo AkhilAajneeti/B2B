@@ -315,12 +315,16 @@ const Sidebar = ({ isOpen = false, onClose }) => {
             own stacking context), so they can never intercept a click.
             Suppressed on the collapsed rail — 4rem leaves no room for them. */}
         {!collapsed && (
+          /* Two mandalas, deliberately different: the top one sits WHOLE
+             inside the rail, the middle one is cropped to exactly half by the
+             edge (w-40 is 10rem, -right-20 pulls 5rem off). They are not
+             meant to match. */
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <img
               src="/assets/images/festive-mandala.png"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute -right-16 top-10 w-44 select-none opacity-40"
+              className="pointer-events-none absolute right-1 top-8 w-36 select-none opacity-40"
             />
             <img
               src="/assets/images/festive-mandala.png"
