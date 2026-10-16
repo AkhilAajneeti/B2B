@@ -24,14 +24,10 @@ const KPICard = ({
   // `featured` = the hero card (full-width on mobile). Bigger number + roomier
   // padding so it earns the extra space through type, not dead air.
   featured = false,
-  // Draws a slowly rotating mandala into the bottom-right corner. Opt-in per
-  // card so it stays an accent rather than wallpaper repeated three times.
-  ornament = false,
 }) => {
   const tint = hexToRgba(iconColor, 0.12); // icon tile background
   const glow = hexToRgba(iconColor, 0.35); // hover halo shadow
   const blob = hexToRgba(iconColor, 0.22); // corner radial glow
-  const ornamentTint = hexToRgba(iconColor, 0.45); // mandala, tinted per card
 
   return (
     <div
@@ -48,48 +44,6 @@ const KPICard = ({
         }`}
         style={{ background: `radial-gradient(circle, ${blob}, transparent 70%)` }}
       />
-
-      {/* Corner mandala.
-
-          Rendered as a CSS MASK rather than an <img>, so the artwork supplies
-          the shape and the card supplies the colour. One file then serves
-          every card — blue on This Month Leads (#3B82F6), amber on Interested
-          (#F59E0B) — instead of shipping a recoloured PNG per accent and
-          having to export another one each time a card's colour changes.
-
-          Tinting from `iconColor` is also what makes it read as part of the
-          card rather than pasted on: it's the same hue as the icon tile, the
-          corner glow and the hover halo, just further back.
-
-          The source PNG had no alpha channel — the art was composited onto
-          opaque white, which would have painted a white block over the corner.
-          It was keyed out and un-composited (alpha from distance to white,
-          colour divided back out of it) so the anti-aliased petal edges keep
-          their shape in the mask instead of a hard fringe.
-
-          Static by request — it previously rotated about the rosette centre
-          (83.5%/83.8%, found by locating the innermost blank disc). If that
-          ever comes back, that origin is the value to use: rotating about the
-          image centre makes the ornament orbit rather than spin. */}
-      {ornament && (
-        <div
-          aria-hidden="true"
-          style={{
-            backgroundColor: ornamentTint,
-            WebkitMaskImage: "url(/assets/images/festive-mandala.png)",
-            maskImage: "url(/assets/images/festive-mandala.png)",
-            WebkitMaskSize: "contain",
-            maskSize: "contain",
-            WebkitMaskRepeat: "no-repeat",
-            maskRepeat: "no-repeat",
-            WebkitMaskPosition: "bottom right",
-            maskPosition: "bottom right",
-          }}
-          className={`pointer-events-none absolute -bottom-5 -right-7 aspect-[1421/1107] ${
-            featured ? "w-60" : "w-52"
-          }`}
-        />
-      )}
 
       <div className={`relative flex h-full items-center justify-between gap-3 ${isLoading ? 'opacity-50' : ''}`}>
         <div className="min-w-0">
