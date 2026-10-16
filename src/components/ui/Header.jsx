@@ -291,10 +291,13 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 type="button"
                 aria-label="Notifications"
                 onClick={handleClick}
-                className="group relative grid h-10 w-10 place-items-center overflow-hidden rounded-full transition-shadow duration-300 shadow-[0_0_10px_2px_rgba(147,197,253,0.30)] hover:shadow-[0_0_16px_4px_rgba(147,197,253,0.50)]"
+                className="group relative grid h-10 w-10 place-items-center overflow-hidden rounded-full transition-shadow duration-300 shadow-[0_0_0_1px_rgba(125,185,250,0.55),0_0_12px_3px_rgba(96,165,250,0.38)] hover:shadow-[0_0_0_1px_rgba(96,165,250,0.85),0_0_20px_6px_rgba(96,165,250,0.55)]"
                 style={{
+                  // Edge deepened from the sampled #D0E7FE to #BFDCFD: the
+                  // reference sits on a white page, this sits on the header's
+                  // warm off-white, where the original read as almost nothing.
                   background:
-                    "radial-gradient(circle, #F7FAFD 0%, #F3F8FD 52%, #D0E7FE 100%)",
+                    "radial-gradient(circle, #F7FAFD 0%, #F0F6FD 50%, #BFDCFD 100%)",
                 }}
               >
                 {/* Drifting light — blue only, blurred, and under the glyph.

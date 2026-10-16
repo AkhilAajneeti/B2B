@@ -94,10 +94,11 @@ export default {
         'pulse-ring': 'pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         // Bell swing fired when a new notification arrives (Header).
         'bell-swing': 'bellSwing 900ms cubic-bezier(0.36, 0.07, 0.19, 0.97) 1',
-        // Tight, fast shake while the notification button is hovered. Shorter
-        // throw and much shorter period than bell-swing, which is a one-shot
-        // announcement; this one loops for as long as the pointer is there.
-        'bell-vibrate': 'bellVibrate 450ms ease-in-out infinite',
+        // Tight, fast shake when the notification button is hovered. Runs ONCE
+        // per hover rather than looping — a shake that never stops reads as a
+        // fault rather than a response. Leaving and re-entering replays it,
+        // because the class is removed and re-added.
+        'bell-vibrate': 'bellVibrate 450ms ease-in-out 1',
       },
       keyframes: {
         fadeIn: {
