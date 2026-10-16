@@ -404,29 +404,45 @@ const FollowupReminderManager = () => {
                       decoration — aria-hidden and pointer-events-none so it can
                       never swallow a click meant for the eye button sitting on
                       top of it. */}
+                  {/* Ornament layer: two long, shallow ribbons sweeping up to
+                      the right, plus a dotted arc.
+
+                      `preserveAspectRatio="slice"`, NOT "none". "none"
+                      stretches the viewBox to the element's box, which
+                      squashed these curves out of shape and was why they read
+                      as angular rather than smooth. "slice" scales uniformly
+                      and crops the overflow, so the curvature is preserved.
+
+                      The paths deliberately start and end OUTSIDE the viewBox
+                      (x from -24 to 408) — a curve that terminates at the edge
+                      shows its endpoint as a visible corner; running it past
+                      the crop keeps the sweep continuous.
+
+                      aria-hidden + pointer-events-none: decoration must never
+                      intercept a click meant for the eye button above it. */}
                   <svg
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-y-0 right-0 h-full w-64 text-orange-100"
-                    viewBox="0 0 260 200"
+                    className="pointer-events-none absolute inset-0 h-full w-full text-orange-100"
+                    viewBox="0 0 384 140"
                     fill="none"
-                    preserveAspectRatio="none"
+                    preserveAspectRatio="xMidYMid slice"
                   >
                     <path
-                      d="M30 150c60-18 86-58 150-66 34-4 58 2 80-6v122H30z"
+                      d="M-24 104 C 70 100, 140 72, 232 54 S 356 26, 408 18 L408 164 L-24 164 Z"
+                      fill="currentColor"
+                      opacity="0.55"
+                    />
+                    <path
+                      d="M-24 134 C 86 130, 156 104, 252 88 S 364 68, 408 62 L408 164 L-24 164 Z"
                       fill="currentColor"
                       opacity="0.5"
                     />
                     <path
-                      d="M70 186c56-14 80-40 128-46 26-3 46 2 62-2v62H70z"
-                      fill="currentColor"
-                      opacity="0.45"
-                    />
-                    <path
-                      d="M150 46c46 4 80 30 96 66"
+                      d="M236 16 C 300 22, 346 50, 368 96"
                       stroke="currentColor"
-                      strokeWidth="3.5"
+                      strokeWidth="3"
                       strokeLinecap="round"
-                      strokeDasharray="0.5 10"
+                      strokeDasharray="0.5 9"
                       className="text-orange-200"
                     />
                   </svg>

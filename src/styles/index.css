@@ -82,9 +82,11 @@ select:focus {
        wordmark stayed pinned to the rail's edge no matter what value it was
        given. `space-x` never touches padding, so this holds.
 
-       7rem clears the 4rem icon rail plus the collapse chevron that overhangs
-       its right edge by 0.75rem, with room to spare. */
-    padding-left: 7rem;
+       The rail is 4rem and the collapse chevron overhangs its right edge by
+       0.75rem, so anything under 4.75rem gets clipped. 6rem leaves a ~1.25rem
+       gutter past the chevron — clear of it without the wide empty run that
+       7rem left. */
+    padding-left: 6rem;
 
     /* Hidden via opacity/visibility rather than `display`, because `display`
        cannot be transitioned: switching it flipped the brand in and out
