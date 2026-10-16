@@ -4,6 +4,37 @@ import Icon from "../AppIcon";
 import Button from "./Button";
 import { getStoredUser, isSupAdmin, isMaskedUser } from "../../utils/permission";
 
+
+// Per-item icon colour. Keyed by route so the navigationItems array stays
+// about navigation and this stays about appearance.
+//
+// Hues are semantic where the item allows it — Inactive Leads is deliberately
+// the only grey one, Site Visits green for "go", Campaigns amber for outbound
+// — and otherwise spaced around the wheel so adjacent rows never share a tone.
+//
+// Full literal class strings, not composed ones: Tailwind's JIT scans source
+// text, so `text-${hue}-500` would never be generated and the icon would ship
+// unstyled.
+const NAV_ICON_STYLES = {
+  "/dashboard": { icon: "text-indigo-500", tint: "group-hover:bg-indigo-50" },
+  "/leads": { icon: "text-rose-500", tint: "group-hover:bg-rose-50" },
+  "/inactive-leads": { icon: "text-slate-400", tint: "group-hover:bg-slate-100" },
+  "/campaigns": { icon: "text-amber-500", tint: "group-hover:bg-amber-50" },
+  "/pipeline": { icon: "text-violet-500", tint: "group-hover:bg-violet-50" },
+  "/sitevisite": { icon: "text-emerald-500", tint: "group-hover:bg-emerald-50" },
+  "/tasks": { icon: "text-blue-500", tint: "group-hover:bg-blue-50" },
+  "/activities": { icon: "text-fuchsia-500", tint: "group-hover:bg-fuchsia-50" },
+  "/reports": { icon: "text-cyan-600", tint: "group-hover:bg-cyan-50" },
+  "/import": { icon: "text-sky-500", tint: "group-hover:bg-sky-50" },
+  "/settings": { icon: "text-zinc-500", tint: "group-hover:bg-zinc-100" },
+  "/help": { icon: "text-teal-500", tint: "group-hover:bg-teal-50" },
+};
+
+const DEFAULT_NAV_ICON_STYLE = {
+  icon: "text-slate-500",
+  tint: "group-hover:bg-white",
+};
+
 const Sidebar = ({ isOpen = false, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -271,6 +302,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                 })
                 .map((item) => {
                 const isActive = location?.pathname === item?.path;
+                const iconStyle =
+                  NAV_ICON_STYLES[item?.path] || DEFAULT_NAV_ICON_STYLE;
 
                 return (
                   <button
@@ -308,7 +341,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                           transition-colors duration-200
                           ${isActive
                             ? "bg-white/15"
-                            : "bg-transparent group-hover:bg-white group-hover:shadow-sm"
+                            : `bg-transparent ${iconStyle.tint} group-hover:shadow-sm`
                           }
                         `}
                       >
@@ -317,7 +350,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                           size={18}
                           className={`
                             transition-transform duration-200 motion-safe:group-hover:scale-110
-                            ${isActive ? "text-white" : "text-slate-500 group-hover:text-primary"}
+                            ${isActive ? "text-white" : iconStyle.icon}
                           `}
                         />
                       </span>
