@@ -373,13 +373,24 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                     onClick={() => handleNavigation(item?.path)}
                     title={item?.label}
                     className={`
-                      group relative w-full flex items-center justify-between gap-2
-                      rounded-xl px-3 py-2.5 text-sm font-medium
+                      group relative w-full flex items-center gap-2
+                      rounded-xl py-2.5 text-sm font-medium
                       transition-all duration-200 ease-out
-                      ${collapsed ? "lg:justify-center lg:px-2" : ""}
+                      ${/* justify-between was unconditional, so with the label
+                           hidden the lone icon was pushed to the START of a
+                           full-width row rather than centred — and the
+                           lg:justify-center override only applied above lg.
+                           Collapsed now owns its own justification and
+                           padding outright. */ ""}
+                      ${collapsed ? "justify-center px-2" : "justify-between px-3"}
                       ${isActive
                         ? "linearbg-1 text-white shadow-[0_6px_18px_-8px_rgba(172,35,52,0.75)]"
-                        : `text-slate-600 hover:text-slate-900 ${iconStyle.row} motion-safe:hover:translate-x-0.5`
+                        : `text-slate-600 hover:text-slate-900 ${iconStyle.row} ${
+                            /* The hover nudge reads as motion in the full
+                               sidebar, but in the narrow rail it just knocks a
+                               centred icon off centre. */
+                            collapsed ? "" : "motion-safe:hover:translate-x-0.5"
+                          }`
                       }
                     `}
                     aria-current={isActive ? "page" : undefined}
@@ -405,7 +416,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                           transition-colors duration-200
                           ${isActive
                             ? "bg-white/15"
-                            : `bg-transparent ${iconStyle.tile} group-hover:shadow-sm`
+                            : `bg-white/70 ring-1 ring-slate-900/[0.04] shadow-[0_1px_2px_rgba(16,24,40,0.07)] backdrop-blur-sm ${iconStyle.tile} group-hover:shadow-[0_2px_6px_rgba(16,24,40,0.10)]`
                           }
                         `}
                       >
