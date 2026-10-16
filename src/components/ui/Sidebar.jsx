@@ -76,12 +76,14 @@ const Sidebar = ({ isOpen = false, onClose }) => {
     {
       label: "Inactive Leads",
       path: "/inactive-leads",
-      icon: "Recycle",
+      // Was "Recycle", which reads as re-engagement rather than "out of play".
+      icon: "UserX",
     },
     {
       label: "My Campaigns",
       path: "/campaigns",
-      icon: "Layers",
+      // Was "Layers" — generic stacking, nothing to do with campaigns.
+      icon: "Megaphone",
       // Visible only to elevated users — type=admin, role=owner, or
       // role=manager. The check happens via the `isAdmin` flag computed
       // at the top of this component (see the comment there for the full
@@ -124,7 +126,9 @@ const Sidebar = ({ isOpen = false, onClose }) => {
     {
       label: "Activities",
       path: "/activities",
-      icon: "Calendar",
+      // Was "Calendar", a near-duplicate of Site Visits' CalendarCheck two rows
+      // above — two calendar glyphs in one list are hard to tell apart at 18px.
+      icon: "Activity",
       badge: null,
     },
     {
@@ -154,7 +158,9 @@ const Sidebar = ({ isOpen = false, onClose }) => {
     {
       label: "Help Center",
       path: "/help",
-      icon: "NotebookText",
+      // LifeBuoy is the near-universal help affordance; a notebook reads as
+      // documentation or notes.
+      icon: "LifeBuoy",
       badge: null,
     },
 
@@ -272,36 +278,61 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                     onClick={() => handleNavigation(item?.path)}
                     title={item?.label}
                     className={`
-                      w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg
-                      transition-smooth group
-                      ${collapsed ? "lg:justify-center" : ""}
+                      group relative w-full flex items-center justify-between gap-2
+                      rounded-xl px-3 py-2.5 text-sm font-medium
+                      transition-all duration-200 ease-out
+                      ${collapsed ? "lg:justify-center lg:px-2" : ""}
                       ${isActive
-                        ? "linearbg-1 text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-mahroon"
+                        ? "linearbg-1 text-white shadow-[0_6px_18px_-8px_rgba(172,35,52,0.75)]"
+                        : "text-slate-600 hover:text-primary hover:bg-primary/[0.06] motion-safe:hover:translate-x-0.5"
                       }
                     `}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    <div className="flex items-center space-x-3">
-                      <Icon
-                        name={item?.icon}
-                        size={18}
+                    {/* Accent bar — wipes in from the left on hover. Gives the
+                        row a direction of travel instead of just a colour
+                        change, and costs nothing when idle because it is
+                        scaled to zero rather than unmounted. Suppressed on the
+                        active row, which already carries the gradient. */}
+                    {!isActive && (
+                      <span className="pointer-events-none absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 origin-center scale-y-0 rounded-r-full bg-primary transition-transform duration-200 ease-out group-hover:scale-y-100" />
+                    )}
+
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Icon tile. Giving the glyph its own surface makes the
+                          list read as designed rows rather than floating
+                          icons, and gives the hover somewhere to land. */}
+                      <span
                         className={`
-                          ${isActive ? "text-white" : "text-muted-foreground group-hover:text-foreground"}
+                          grid h-8 w-8 shrink-0 place-items-center rounded-lg
+                          transition-colors duration-200
+                          ${isActive
+                            ? "bg-white/15"
+                            : "bg-transparent group-hover:bg-white group-hover:shadow-sm"
+                          }
                         `}
-                      />
-                      <span className={collapsed ? "lg:hidden" : ""}>
+                      >
+                        <Icon
+                          name={item?.icon}
+                          size={18}
+                          className={`
+                            transition-transform duration-200 motion-safe:group-hover:scale-110
+                            ${isActive ? "text-white" : "text-slate-500 group-hover:text-primary"}
+                          `}
+                        />
+                      </span>
+                      <span className={collapsed ? "lg:hidden" : "truncate"}>
                         {item?.label}
                       </span>
                     </div>
                     {item?.badge > 0 && (
                       <span
                         className={`
-                          px-2 py-0.5 text-xs font-medium rounded-full
+                          px-2 py-0.5 text-xs font-semibold rounded-full tabular-nums
                           ${collapsed ? "lg:hidden" : ""}
                           ${isActive
-                            ? "bg-primary-foreground/20 text-primary-foreground"
-                            : "bg-mahroon-400 text-accent-foreground"
+                            ? "bg-white/20 text-white"
+                            : "bg-primary/10 text-primary"
                           }
                         `}
                       >
