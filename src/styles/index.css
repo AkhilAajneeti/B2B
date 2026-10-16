@@ -75,10 +75,16 @@ select:focus {
 @media (min-width: 1024px) {
   .header-brand {
     display: flex;
-    /* Clears the 4rem icon rail plus the collapse chevron that overhangs its
-       right edge by 0.75rem, with room to spare so the wordmark doesn't sit
-       jammed against the rail's border. */
-    margin-left: 7rem;
+    /* PADDING, not margin. The parent carries Tailwind's `space-x-4`, which
+       compiles to `.space-x-4 > :not([hidden]) ~ :not([hidden]) {margin-left:1rem}`
+       — specificity 0,3,0 against this rule's 0,1,0. Any margin-left set here
+       lost that cascade and was silently replaced by 1rem, which is why the
+       wordmark stayed pinned to the rail's edge no matter what value it was
+       given. `space-x` never touches padding, so this holds.
+
+       7rem clears the 4rem icon rail plus the collapse chevron that overhangs
+       its right edge by 0.75rem, with room to spare. */
+    padding-left: 7rem;
 
     /* Hidden via opacity/visibility rather than `display`, because `display`
        cannot be transitioned: switching it flipped the brand in and out
