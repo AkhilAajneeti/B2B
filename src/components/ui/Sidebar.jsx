@@ -317,18 +317,20 @@ const Sidebar = ({ isOpen = false, onClose }) => {
             }`}
           >
             <div className="flex items-center space-x-3">
-              {/* The real logo, same asset and treatment as the header — this
-                  was a generic "Zap" bolt, which is a placeholder, not the
-                  brand. Absolute src: a relative one resolves against the
-                  current path and 404s on nested routes like
+              {/* The real mark, rendered clean rather than boxed.
+                  aajneeti-favicon.png is a cluster of small hexagons, so it
+                  needs its full footprint to be legible: inside a tinted tile
+                  at 24px it collapsed into unreadable specks and stopped
+                  looking like the brand at all. No background, no inset — the
+                  artwork carries its own colour.
+                  Absolute src: a relative one resolves against the current
+                  path and 404s on nested routes like
                   /help/:category/:article. */}
-              <div className="w-8 h-8 bg-mahroon rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
-                <img
-                  src="/assets/images/aajneeti-favicon.png"
-                  alt="Aajneeti"
-                  className="w-6 h-6 object-contain"
-                />
-              </div>
+              <img
+                src="/assets/images/aajneeti-favicon.png"
+                alt="Aajneeti"
+                className="w-9 h-9 shrink-0 object-contain"
+              />
               <div
                 className={`flex items-center space-x-2 min-w-0 ${
                   collapsed ? "lg:hidden" : ""

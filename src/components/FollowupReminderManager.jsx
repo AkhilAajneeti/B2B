@@ -24,7 +24,6 @@ import Icon from "components/AppIcon";
  */
 
 const SETTIMEOUT_MAX = 2 ** 31 - 1; // ~24.8 days; today's max delay is < 24h
-const SNOOZE_MS = 10 * 60 * 1000;
 // How long the stack auto-pops open after a new reminder lands. Just enough
 // for the rep to register the new arrival without being intrusive.
 const AUTO_EXPAND_MS = 3 * 1000;
@@ -120,7 +119,6 @@ const FollowupReminderManager = () => {
   const token = localStorage.getItem("auth_token");
 
   const timerRef = useRef(null);
-  const snoozeTimersRef = useRef([]);
   const firedRef = useRef(loadFired());
   // Stack rendering — `activeReminders` holds every entry currently on-screen
   // (newest at the end). `expanded` is the open/closed state of the deck.
@@ -265,11 +263,6 @@ const FollowupReminderManager = () => {
     removeReminder(entry.id);
   };
 
-  const handleSnooze = (entry) => {
-    const handle = setTimeout(() => addReminder(entry.items), SNOOZE_MS);
-    snoozeTimersRef.current.push(handle);
-    removeReminder(entry.id);
-  };
 
   const handleDismiss = (entry) => removeReminder(entry.id);
 
@@ -330,11 +323,9 @@ const FollowupReminderManager = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reminders]);
 
-  // Clean up any pending snooze timers + the auto-expand timer on unmount.
+  // Clean up the auto-expand timer on unmount.
   useEffect(() => {
-    const snoozeTimers = snoozeTimersRef.current;
     return () => {
-      snoozeTimers.forEach((h) => clearTimeout(h));
       if (autoExpandTimerRef.current) clearTimeout(autoExpandTimerRef.current);
     };
   }, []);
@@ -342,11 +333,8 @@ const FollowupReminderManager = () => {
   // ---------------------------------------------------------------------
   // STACK UI — replaces the per-toast popups. Collapsed view shows ONE card
   // with peek-cards behind it and a count badge. Click to expand into the
-  // full list with View / Snooze / Dismiss buttons per entry, color-coded
-  // so the intent of each action is obvious at a glance:
-  //   View   → orange (primary action)
-  //   Snooze → amber  (defer)
-  //   Dismiss → gray, red hover (passive remove)
+  // full list. One primary action per entry — the circular View button — with
+  // Dismiss as a quiet text action beside it. Snooze was removed on request.
   // ---------------------------------------------------------------------
   if (activeReminders.length === 0) return null;
 
@@ -383,20 +371,22 @@ const FollowupReminderManager = () => {
         <div className="bg-white rounded-2xl shadow-[0_18px_50px_-12px_rgba(249,115,22,0.30)] border border-orange-200/80 overflow-hidden">
           {/* Header strip — cream ground, rounded-square icon tile, title in
               deep orange rather than grey. */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-orange-50/90 border-b border-orange-100">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-100 text-orange-500">
-              <Icon name="Phone" size={18} strokeWidth={2.5} />
+          {/* Header tile is a CIRCLE here and a rounded square in the body
+              below — the reference deliberately uses both shapes. */}
+          <div className="flex items-center gap-3.5 px-5 py-4 bg-orange-50/90 border-b border-orange-100">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-500">
+              <Icon name="Phone" size={20} strokeWidth={2.5} />
             </span>
-            <p className="flex-1 text-[15px] font-bold text-orange-900">
+            <p className="flex-1 text-lg font-bold text-orange-900">
               {total} follow-up{total > 1 ? "s" : ""} pending
             </p>
             <button
               onClick={dismissAll}
-              className="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="grid h-9 w-9 place-items-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
               aria-label="Dismiss all reminders"
               title="Dismiss all"
             >
-              <Icon name="X" size={18} />
+              <Icon name="X" size={22} strokeWidth={2} />
             </button>
           </div>
 
@@ -408,94 +398,106 @@ const FollowupReminderManager = () => {
                 : "Call Later reminder";
               const subhead = entry.isGroup ? entry.namePreview : lead.name;
               return (
-                <div key={entry.id} className="relative overflow-hidden p-4">
-                  {/* Decorative swooshes from the reference. Pure ornament, so
-                      aria-hidden and pointer-events-none — it must never
-                      intercept a click meant for the actions. */}
+                <div key={entry.id} className="relative overflow-hidden p-5">
+                  {/* Ornament layer: the two soft swooshes bottom-right and
+                      the dotted arc sweeping in from the right edge. Pure
+                      decoration — aria-hidden and pointer-events-none so it can
+                      never swallow a click meant for the eye button sitting on
+                      top of it. */}
                   <svg
                     aria-hidden="true"
-                    className="pointer-events-none absolute -right-6 bottom-0 h-32 w-56 text-orange-100"
-                    viewBox="0 0 220 130"
+                    className="pointer-events-none absolute inset-y-0 right-0 h-full w-64 text-orange-100"
+                    viewBox="0 0 260 200"
                     fill="none"
+                    preserveAspectRatio="none"
                   >
                     <path
-                      d="M0 96c46-6 70-40 118-46 34-4 62 8 102 2v78H0z"
+                      d="M30 150c60-18 86-58 150-66 34-4 58 2 80-6v122H30z"
                       fill="currentColor"
-                      opacity="0.55"
+                      opacity="0.5"
                     />
                     <path
-                      d="M8 120c54-10 78-34 128-38 32-3 58 6 84 2v46H8z"
+                      d="M70 186c56-14 80-40 128-46 26-3 46 2 62-2v62H70z"
                       fill="currentColor"
                       opacity="0.45"
                     />
                     <path
-                      d="M150 36c34 2 58 20 66 44"
+                      d="M150 46c46 4 80 30 96 66"
                       stroke="currentColor"
-                      strokeWidth="3"
+                      strokeWidth="3.5"
                       strokeLinecap="round"
-                      strokeDasharray="1 9"
+                      strokeDasharray="0.5 10"
+                      className="text-orange-200"
                     />
                   </svg>
 
                   <div className="relative flex items-start gap-4">
-                    {/* Rounded-square tile with a dotted ring and a dot badge,
-                        matching the reference's larger glyph treatment. */}
-                    <div className="relative h-16 w-16 shrink-0">
-                      <div className="grid h-full w-full place-items-center rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100">
+                    {/* Rounded-square tile with a gradient ground, a dotted
+                        ring inside it, and a dot badge — all three are in the
+                        reference and the first pass had only the gradient. */}
+                    <div className="relative h-[72px] w-[72px] shrink-0">
+                      <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-[18px] bg-gradient-to-br from-orange-50 via-orange-50 to-orange-100">
+                        <svg
+                          aria-hidden="true"
+                          className="absolute inset-2.5 text-orange-300"
+                          viewBox="0 0 100 100"
+                          fill="none"
+                        >
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="46"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            strokeLinecap="round"
+                            strokeDasharray="0.5 11"
+                          />
+                        </svg>
                         <Icon
                           name="Phone"
-                          size={26}
+                          size={30}
                           strokeWidth={2.5}
-                          className="text-orange-500"
+                          className="relative text-orange-500"
                         />
                       </div>
-                      <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
+                      <span className="absolute right-2 top-2 h-3.5 w-3.5 rounded-full bg-orange-500 ring-[3px] ring-white" />
                     </div>
 
-                    <div className="min-w-0 flex-1">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-orange-600">
-                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-orange-600">
+                        <span className="h-2 w-2 rounded-full bg-orange-400" />
                         {headline}
                       </span>
-                      <p className="mt-2 truncate text-lg font-bold text-slate-900">
+                      <p className="mt-2.5 truncate text-2xl font-extrabold tracking-tight text-slate-900">
                         {subhead}
                       </p>
-                      <p className="mt-0.5 text-sm text-slate-500">
+                      <p className="mt-1 text-[15px] text-slate-500">
                         {formatTime(entry.time)}
                         {!entry.isGroup && lead.project
-                          ? ` • ${lead.project}`
+                          ? ` \u2022 ${lead.project}`
                           : ""}
                       </p>
                     </div>
                   </div>
 
-                  {/* View is the circular button from the reference. Snooze and
-                      Dismiss stay as quiet text actions — the reference shows
-                      only the one control, but dropping the other two would
-                      remove working behaviour, so they are demoted rather than
-                      deleted. */}
-                  <div className="relative mt-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => handleSnooze(entry)}
-                        className="text-xs font-semibold text-slate-500 transition-colors hover:text-orange-600"
-                      >
-                        Snooze 10m
-                      </button>
-                      <button
-                        onClick={() => handleDismiss(entry)}
-                        className="text-xs font-semibold text-slate-400 transition-colors hover:text-red-600"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
+                  {/* Hairline rule with the eye button straddling it, as in the
+                      reference. Snooze removed on request; Dismiss stays as a
+                      quiet text action so the reminder can still be cleared
+                      without opening the lead. */}
+                  <div className="relative mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                    <button
+                      onClick={() => handleDismiss(entry)}
+                      className="text-sm font-semibold text-slate-400 transition-colors hover:text-red-600"
+                    >
+                      Dismiss
+                    </button>
                     <button
                       onClick={() => handleView(entry)}
                       aria-label={`View ${subhead}`}
                       title="View lead"
-                      className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-orange-500 text-white shadow-[0_8px_20px_-6px_rgba(249,115,22,0.8)] ring-4 ring-white transition hover:bg-orange-600 active:scale-95"
+                      className="-mt-7 grid h-14 w-14 shrink-0 place-items-center rounded-full bg-orange-500 text-white shadow-[0_10px_24px_-6px_rgba(249,115,22,0.85)] ring-[5px] ring-white transition hover:bg-orange-600 active:scale-95"
                     >
-                      <Icon name="Eye" size={20} strokeWidth={2.5} />
+                      <Icon name="Eye" size={24} strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>
@@ -531,29 +533,31 @@ const FollowupReminderManager = () => {
           )}
 
           {/* Top card */}
-          <div className="relative flex items-center gap-4 rounded-2xl border border-orange-200/80 bg-white p-4 shadow-[0_12px_32px_-12px_rgba(249,115,22,0.35)] transition group-hover:shadow-[0_16px_40px_-12px_rgba(249,115,22,0.45)] group-active:scale-[0.99]">
-            {/* Circular tile with a dot badge — the reference's collapsed
-                state uses a circle here, against the expanded state's rounded
-                square. */}
-            <div className="relative h-12 w-12 shrink-0">
-              <div className="grid h-full w-full place-items-center rounded-full bg-orange-100">
+          <div className="relative flex items-center gap-4 rounded-[20px] border border-orange-200/70 bg-white p-5 shadow-[0_14px_36px_-14px_rgba(249,115,22,0.38)] transition group-hover:shadow-[0_18px_44px_-14px_rgba(249,115,22,0.5)] group-active:scale-[0.99]">
+            {/* Circle here, rounded square in the expanded body — the
+                reference uses both. Two nested discs give the concentric ring
+                the flat first pass was missing. */}
+            <div className="relative h-14 w-14 shrink-0">
+              <div className="absolute inset-0 rounded-full bg-orange-100/60" />
+              <div className="absolute inset-[7px] rounded-full bg-orange-100" />
+              <div className="relative grid h-full w-full place-items-center">
                 <Icon
                   name="Phone"
-                  size={20}
+                  size={24}
                   strokeWidth={2.5}
                   className="text-orange-500"
                 />
               </div>
-              <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-orange-500 ring-2 ring-white" />
+              <span className="absolute right-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-orange-500 ring-[3px] ring-white" />
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-bold text-slate-900">
+              <p className="truncate text-lg font-bold tracking-tight text-slate-900">
                 {total === 1
                   ? "Follow-up reminder"
                   : `${total} follow-ups pending`}
               </p>
-              <p className="mt-0.5 truncate text-sm text-slate-500">
+              <p className="mt-0.5 truncate text-[15px] text-slate-500">
                 {topEntry.isGroup
                   ? topEntry.namePreview
                   : topEntry.items[0].name}
@@ -561,13 +565,14 @@ const FollowupReminderManager = () => {
             </div>
 
             {total > 1 && (
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-orange-500 text-sm font-bold text-white">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange-500 text-base font-bold text-white">
                 {total}
               </span>
             )}
             <Icon
               name="ChevronRight"
-              size={20}
+              size={22}
+              strokeWidth={2.5}
               className="shrink-0 text-slate-400"
             />
           </div>
