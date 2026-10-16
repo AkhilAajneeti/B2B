@@ -39,10 +39,25 @@ body.festive {
   --festive-ornament-strong: rgba(245, 158, 11, 0.32);
 }
 
-/* The page ground warms slightly. Deliberately subtle: this sits behind every
-   screen in scope, so anything stronger fights the cards on top of it. */
+/* --------------------------------------------------------------------------
+   Surface overrides
+   --------------------------------------------------------------------------
+   The app's components are written against --color-background / --color-card /
+   --color-border / --color-sidebar, so re-pointing those four here warms every
+   surface at once without touching a single component. Defining festive
+   variables alone changed nothing visible, because nothing painted with them.
+
+   Values stay close to the originals on purpose: these sit behind every screen,
+   and a strong tint fights the content rather than framing it.
+   ------------------------------------------------------------------------ */
 body.festive {
-  background-color: var(--festive-cream);
+  --color-background: #fff6ea; /* was #FAF8F6 — cool off-white */
+  --color-card: #fffdfa; /* was #FFFFFF — a hint of warmth */
+  --color-border: #f2e0c9; /* was #E2E8F0 — cool slate */
+  --color-muted: #fdf3e7; /* was #F1F5F9 */
+  --color-sidebar: #fff9f0; /* was #F9F9F8 */
+
+  background-color: var(--color-background);
 }
 
 /* --------------------------------------------------------------------------
