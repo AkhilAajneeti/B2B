@@ -382,7 +382,15 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                            lg:justify-center override only applied above lg.
                            Collapsed now owns its own justification and
                            padding outright. */ ""}
-                      ${collapsed ? "justify-center px-2" : "justify-between px-3"}
+                      ${/* No horizontal padding when collapsed. The rail is
+                           lg:w-16 (64px) and the nav container already spends
+                           24px of that on its own px-3, leaving 40px. A px-2
+                           here took 16px more, so the 32px icon tile had only
+                           24px to sit in — and being shrink-0 it couldn't
+                           compress, so it overflowed to one side instead of
+                           centring. With px-0 the tile gets the full 40px and
+                           lands dead centre with 4px either side. */ ""}
+                      ${collapsed ? "justify-center px-0" : "justify-between px-3"}
                       ${isActive
                         ? "linearbg-1 text-white shadow-[0_6px_18px_-8px_rgba(172,35,52,0.75)]"
                         : `text-slate-600 hover:text-slate-900 ${iconStyle.row} ${
