@@ -315,22 +315,26 @@ const Sidebar = ({ isOpen = false, onClose }) => {
             own stacking context), so they can never intercept a click.
             Suppressed on the collapsed rail — 4rem leaves no room for them. */}
         {!collapsed && (
-          /* Two mandalas, deliberately different: the top one sits WHOLE
-             inside the rail, the middle one is cropped to exactly half by the
-             edge (w-40 is 10rem, -right-20 pulls 5rem off). They are not
-             meant to match. */
+          /* Both mandalas sit WHOLE inside the rail.
+             The supplied file is a corner ornament — the artwork is only a
+             quarter of a mandala, rosette at its bottom-right with petals
+             radiating up and left. Positioning could never make that read as a
+             full circle, because a full circle wasn't in the file. The quarter
+             was mirrored into four around the rosette centre (measured at
+             1187/928 by locating the innermost blank disc) to build a
+             symmetric whole: festive-mandala-full.png. */
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <img
-              src="/assets/images/festive-mandala.png"
+              src="/assets/images/festive-mandala-full.png"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute right-1 top-8 w-36 select-none opacity-40"
+              className="pointer-events-none absolute right-2 top-6 w-36 select-none opacity-40"
             />
             <img
-              src="/assets/images/festive-mandala.png"
+              src="/assets/images/festive-mandala-full.png"
               alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute -right-20 top-[46%] w-40 select-none opacity-30"
+              className="pointer-events-none absolute right-3 top-[48%] w-32 select-none opacity-30"
             />
           </div>
         )}
