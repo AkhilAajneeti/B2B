@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import Icon from "../../components/AppIcon";
 
 /* ==================================================================== *
@@ -204,8 +203,8 @@ const ProjectPage = () => {
         <title>Projects — Aajneeti Connect ltd</title>
       </Helmet>
       <div className="min-h-screen bg-background">
-        <Header onMenuToggle={() => setIsSidebarOpen((o) => !o)} isSidebarOpen={isSidebarOpen} />
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        
+        
 
         <main className="lg:ml-64 pt-16">
           <div className="mx-auto max-w-[1220px] p-4 lg:p-6">

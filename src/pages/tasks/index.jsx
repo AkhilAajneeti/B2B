@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import TricolorBurst from "../../components/TricolorBurst";
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
@@ -80,7 +79,6 @@ const TaskPage = () => {
   // isn't on the current page / filter). Shares its ["task", id] queryKey with
   // the drawer's own detail fetch, so React Query dedupes — no extra request.
   const { data: deepLinkTask } = useTask(taskIdFromUrl, !!taskIdFromUrl);
-
 
   const totalPages = Math.ceil(total / limit);
 
@@ -384,8 +382,8 @@ const TaskPage = () => {
       </Helmet>
       <div className="min-h-screen bg-background relative isolate">
       <TricolorBurst />
-        <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
-        <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+        
+        
 
         <main className="lg:ml-64 pt-16">
           <div className="p-4 lg:p-6">

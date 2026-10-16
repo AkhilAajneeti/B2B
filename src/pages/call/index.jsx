@@ -1,15 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
 import TablePagination from "./components/TablePagination";
-
 
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 import {
@@ -53,7 +51,6 @@ const CallPage = () => {
   const visibleCalls = calls.filter(call => canEntityRecord("Call", "read", call));
 
   const canCreateCall = canCreate("Call");
-
 
   // Mock deals data
   const handleDealClick = (deal) => {
@@ -289,8 +286,8 @@ const CallPage = () => {
         />
       </Helmet>
       <div className="min-h-screen bg-background">
-        <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
-        <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+        
+        
 
         <main className="lg:ml-64 pt-16">
           <div className="p-4 lg:p-6">

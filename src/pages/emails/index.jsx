@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/ui/Header';
-import Sidebar from '../../components/ui/Sidebar';
+
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import EmailConnectionCard from './components/EmailConnectionCard';
@@ -187,8 +186,8 @@ const EmailsPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onMenuToggle={handleSidebarToggle} isSidebarOpen={isSidebarOpen} />
-      <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+      
+      
       <main className="lg:ml-64 pt-16">
         <div className="h-[calc(100vh-4rem)] flex flex-col">
           {/* Page Header */}

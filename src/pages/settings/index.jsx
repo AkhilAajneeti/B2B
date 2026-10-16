@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import TricolorBurst from "../../components/TricolorBurst";
 import Icon from "../../components/AppIcon";
 import CompanyTab from "./components/CompanyTab";
@@ -53,11 +52,8 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background relative isolate">
       <TricolorBurst />
-      <Header
-        onMenuToggle={handleSidebarToggle}
-        isSidebarOpen={isSidebarOpen}
-      />
-      <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+      
+      
       <main className="lg:ml-64 pt-16">
         <div className="p-4 lg:p-8">
           {/* Page Header */}

@@ -4,6 +4,7 @@ import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import FollowupReminderManager from "components/FollowupReminderManager";
 import ProtectedRoute from "routes/ProtectedRoute";
+import AppLayout from "components/ui/AppLayout";
 
 // Eager: Login is the first screen for unauthenticated users — no point
 // splitting it into its own chunk and showing a fallback spinner BEFORE
@@ -58,13 +59,22 @@ const Routes = () => {
           <RouterRoutes>
             {/* Define your route here */}
             <Route path="/login" element={<Login />} />
+
+            {/* Everything below shares one Header + Sidebar, mounted once by
+                AppLayout. Previously each page rendered its own pair, so every
+                navigation threw the chrome away and built it again. The guard
+                sits on the layout, so it runs once per navigation instead of
+                once per route element. */}
             <Route
-              path="/"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <AppLayout />
                 </ProtectedRoute>
               }
+            >
+            <Route
+              path="/"
+              element={<Dashboard />}
             />
             <Route
               path="/settings"
@@ -76,178 +86,96 @@ const Routes = () => {
             />
             <Route
               path="/integrations"
-              element={
-                <ProtectedRoute>
-                  <IntegrationsPage />
-                </ProtectedRoute>
-              }
+              element={<IntegrationsPage />}
             />
 
             <Route
               path="/leads"
-              element={
-                <ProtectedRoute>
-                  <DealsPage />
-                </ProtectedRoute>
-              }
+              element={<DealsPage />}
             />
 
             <Route
               path="/inactive-leads"
-              element={
-                <ProtectedRoute>
-                  <InactiveLeadsPage />
-                </ProtectedRoute>
-              }
+              element={<InactiveLeadsPage />}
             />
             <Route
               path="/sales-team"
-              element={
-                <ProtectedRoute>
-                  <SalesTeam />
-                </ProtectedRoute>
-              }
+              element={<SalesTeam />}
             />
             {/* <Route path="/contacts" element={<ContactsPage />} /> */}
             <Route
               path="/emails"
-              element={
-                <ProtectedRoute>
-                  <EmailsPage />
-                </ProtectedRoute>
-              }
+              element={<EmailsPage />}
             />
             <Route
               path="/campaigns"
-              element={
-                <ProtectedRoute>
-                  <ProjectsPage />
-                </ProtectedRoute>
-              }
+              element={<ProjectsPage />}
             />
             <Route
               path="/project"
-              element={
-                <ProtectedRoute>
-                  <ProjectDemoPage />
-                </ProtectedRoute>
-              }
+              element={<ProjectDemoPage />}
             />
             <Route
               path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
+              element={<Dashboard />}
             />
             <Route
               path="/tasks"
-              element={
-                <ProtectedRoute>
-                  <TaskPage />
-                </ProtectedRoute>
-              }
+              element={<TaskPage />}
             />
             {/* Deep-linkable task — same page, opens the given task's drawer
                 directly so a particular task can be shared via URL. */}
             <Route
               path="/tasks/:taskId"
-              element={
-                <ProtectedRoute>
-                  <TaskPage />
-                </ProtectedRoute>
-              }
+              element={<TaskPage />}
             />
             <Route
               path="/reports"
-              element={
-                <ProtectedRoute>
-                  <Reports />
-                </ProtectedRoute>
-              }
+              element={<Reports />}
             />
             <Route
               path="/activities"
-              element={
-                <ProtectedRoute>
-                  <Activities />
-                </ProtectedRoute>
-              }
+              element={<Activities />}
             />
             <Route
               path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
+              element={<Profile />}
             />
             <Route
               path="/meeting"
-              element={
-                <ProtectedRoute>
-                  <MeetingPage />
-                </ProtectedRoute>
-              }
+              element={<MeetingPage />}
             />
             <Route
               path="/sitevisite"
-              element={
-                <ProtectedRoute>
-                  <SiteVisitePage />
-                </ProtectedRoute>
-              }
+              element={<SiteVisitePage />}
             />
             <Route
               path="/import"
-              element={
-                <ProtectedRoute>
-                  <ImportPage />
-                </ProtectedRoute>
-              }
+              element={<ImportPage />}
             />
             <Route
               path="/call"
-              element={
-                <ProtectedRoute>
-                  <CallPage />
-                </ProtectedRoute>
-              }
+              element={<CallPage />}
             />
             <Route
               path="/pipeline"
-              element={
-                <ProtectedRoute>
-                  <Pipeline />
-                </ProtectedRoute>
-              }
+              element={<Pipeline />}
             />
             {/* Help Center — three patterns, same component, dispatches via useParams */}
             <Route
               path="/help"
-              element={
-                <ProtectedRoute>
-                  <HelpPage />
-                </ProtectedRoute>
-              }
+              element={<HelpPage />}
             />
             <Route
               path="/help/:categoryId"
-              element={
-                <ProtectedRoute>
-                  <HelpPage />
-                </ProtectedRoute>
-              }
+              element={<HelpPage />}
             />
             <Route
               path="/help/:categoryId/:articleId"
-              element={
-                <ProtectedRoute>
-                  <HelpPage />
-                </ProtectedRoute>
-              }
+              element={<HelpPage />}
             />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </RouterRoutes>
         </Suspense>

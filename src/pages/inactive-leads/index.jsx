@@ -2,8 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import Papa from "papaparse";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import Button from "../../components/ui/Button";
 import Icon from "../../components/AppIcon";
 import DealsTable from "../deals/components/DealsTable";
@@ -387,8 +386,8 @@ const InactiveLeadsPage = () => {
         <title>Inactive Leads</title>
       </Helmet>
       <div className="min-h-screen bg-background">
-        <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
-        <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+        
+        
         <main className="lg:ml-64 pt-16">
           <div className="p-4 sm:p-6">
             <div className="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">

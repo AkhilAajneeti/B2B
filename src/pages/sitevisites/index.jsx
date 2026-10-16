@@ -2,8 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import TricolorBurst from "../../components/TricolorBurst";
 import Icon from "../../components/AppIcon";
 import { useSiteVisits } from "hooks/useSiteVisits";
@@ -12,7 +11,6 @@ import DateTimePicker from "./components/DateTimePicker";
 import ScheduleVisitDialog from "./components/ScheduleVisitDialog";
 import { isMaskedUser } from "utils/permission";
 import { displayPhone } from "utils/privacy";
-
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -362,8 +360,8 @@ const SiteVisitePage = () => {
       </Helmet>
       <div className="min-h-screen bg-background relative isolate">
       <TricolorBurst />
-        <Header onMenuToggle={() => setIsSidebarOpen((o) => !o)} isSidebarOpen={isSidebarOpen} />
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        
+        
 
         <main className="lg:ml-64 pt-16">
           <div className="p-4 lg:p-6">

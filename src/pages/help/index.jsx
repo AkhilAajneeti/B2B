@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Helmet } from "react-helmet";
 import { useParams } from "react-router-dom";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import TricolorBurst from "../../components/TricolorBurst";
 import HelpSidebar from "./components/HelpSidebar";
 import HelpHome from "./components/HelpHome";
@@ -73,14 +72,8 @@ const HelpPage = () => {
       </Helmet>
       <div className="min-h-screen bg-background relative isolate">
       <TricolorBurst />
-        <Header
-          onMenuToggle={() => setIsAppSidebarOpen((v) => !v)}
-          isSidebarOpen={isAppSidebarOpen}
-        />
-        <Sidebar
-          isOpen={isAppSidebarOpen}
-          onClose={() => setIsAppSidebarOpen(false)}
-        />
+        
+        
 
         <main className="lg:ml-64 pt-16">
           <div className="p-4 lg:p-8">

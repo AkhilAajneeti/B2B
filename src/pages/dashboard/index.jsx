@@ -1,7 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import TricolorBurst from "../../components/TricolorBurst";
 import KPICard from "./components/KPICard";
 import ActivityFunnel from "./components/ActivityFunnel";
@@ -126,7 +125,6 @@ const Dashboard = () => {
       : Math.round(
         ((interested - interestedLastMonth) / interestedLastMonth) * 100
       );
-
 
   // leads
   const { data, isLoading } = useQuery({
@@ -338,8 +336,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background relative isolate">
       <TricolorBurst />
-      <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
-      <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+      
+      
       <main className="lg:ml-64 pt-16">
         <div className="m-6">
           <h1 className="text-2xl lg:text-3xl font-bold heading-gradient mb-2">
@@ -387,7 +385,6 @@ const Dashboard = () => {
               transition={{ duration: 0.5 }}
             >
 
-
               {/* Pipeline Chart — lazy. Suspense shows a skeleton card
                   until the chunk downloads + the chart's first render. */}
               <div className="sm:m-5 py-3">
@@ -400,7 +397,6 @@ const Dashboard = () => {
                   <MultiLineChart leads={leads} />
                 </Suspense>
               </div>
-
 
               {/* Today's Activity funnel */}
               <div className="sm:m-5 py-3">

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import Icon from "../../components/AppIcon";
 import ProfileTab from "./components/ProfileTab";
 import ChangePassword from "./components/changePassword";
@@ -45,11 +44,8 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header
-        onMenuToggle={handleSidebarToggle}
-        isSidebarOpen={isSidebarOpen}
-      />
-      <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+      
+      
        <main className="lg:ml-64 pt-16">
         <div className="p-4 lg:p-8">
           {/* Page Header */}

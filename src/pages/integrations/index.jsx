@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import toast from "react-hot-toast";
@@ -307,14 +306,10 @@ const IntegrationsPage = () => {
     setSelectedIntegration(null);
   };
 
-
   return (
     <div className="min-h-screen bg-background">
-      <Header
-        onMenuToggle={handleSidebarToggle}
-        isSidebarOpen={isSidebarOpen}
-      />
-      <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+      
+      
       <main className="lg:ml-64 pt-16">
         <div className="p-6 lg:p-8 max-w-7xl mx-auto">
           {/* Page Header */}
@@ -392,7 +387,6 @@ const IntegrationsPage = () => {
               isLoading={loading}
             />
           </div>
-
 
         </div>
       </main>

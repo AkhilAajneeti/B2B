@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import ContactsTable from "./components/ContactsTable";
@@ -396,8 +395,8 @@ const SalesTeam = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onMenuToggle={handleMenuToggle} isSidebarOpen={isSidebarOpen} />
-      <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+      
+      
       <main className="lg:ml-64 pt-16">
         <div className="p-6 lg:p-6">
           {/* Page Header */}

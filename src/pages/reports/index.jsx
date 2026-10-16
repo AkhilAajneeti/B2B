@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet";
-import Header from "../../components/ui/Header";
-import Sidebar from "../../components/ui/Sidebar";
+
 import TricolorBurst from "../../components/TricolorBurst";
 import MetricsCard from "./components/MetricsCard";
 import FilterControls from "./components/FilterControls";
@@ -125,7 +124,6 @@ const Reports = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-
   // fetch status
   // useEffect(() => {
   //   const loadStatus = async () => {
@@ -224,7 +222,6 @@ const Reports = () => {
     }
   };
 
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -254,7 +251,6 @@ const Reports = () => {
   // cards exactly as it narrows the table below them.
   const { metricsData } = useFilteredMetrics({ filters: filtersForBackend });
 
-
   return (
     <>
       <Helmet>
@@ -266,11 +262,8 @@ const Reports = () => {
       </Helmet>
       <div className="min-h-screen bg-background relative isolate">
       <TricolorBurst />
-        <Header
-          onMenuToggle={handleSidebarToggle}
-          isSidebarOpen={isSidebarOpen}
-        />
-        <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
+        
+        
 
         <main className="lg:ml-64 pt-16">
           <div className="p-4 lg:p-8">
