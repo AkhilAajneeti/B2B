@@ -75,7 +75,10 @@ select:focus {
 @media (min-width: 1024px) {
   .header-brand {
     display: flex;
-    margin-left: 5.5rem;
+    /* Clears the 4rem icon rail plus the collapse chevron that overhangs its
+       right edge by 0.75rem, with room to spare so the wordmark doesn't sit
+       jammed against the rail's border. */
+    margin-left: 7rem;
 
     /* Hidden via opacity/visibility rather than `display`, because `display`
        cannot be transitioned: switching it flipped the brand in and out

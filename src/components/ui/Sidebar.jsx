@@ -316,35 +316,42 @@ const Sidebar = ({ isOpen = false, onClose }) => {
               collapsed ? "lg:px-3" : ""
             }`}
           >
-            <div className="flex items-center space-x-3">
-              {/* The real mark, rendered clean rather than boxed.
-                  aajneeti-favicon.png is a cluster of small hexagons, so it
-                  needs its full footprint to be legible: inside a tinted tile
-                  at 24px it collapsed into unreadable specks and stopped
-                  looking like the brand at all. No background, no inset — the
-                  artwork carries its own colour.
-                  Absolute src: a relative one resolves against the current
-                  path and 404s on nested routes like
-                  /help/:category/:article. */}
-              <img
-                src="/assets/images/aajneeti-favicon.png"
-                alt="Aajneeti"
-                className="w-9 h-9 shrink-0 object-contain"
-              />
-              <div
-                className={`flex items-center space-x-2 min-w-0 ${
+            {/* Brand stacks in two rows: mark + "CRM" together on top, the
+                byline centred beneath. Keeping the byline on the same line as
+                "CRM" forced the pill to wrap inside the 16rem rail, which
+                deformed it. */}
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
+              <div className="flex items-center gap-3">
+                {/* The real mark, rendered clean rather than boxed.
+                    aajneeti-favicon.png is a cluster of small hexagons, so it
+                    needs its full footprint to be legible: inside a tinted tile
+                    at 24px it collapsed into unreadable specks and stopped
+                    looking like the brand at all. No background, no inset —
+                    the artwork carries its own colour.
+                    Absolute src: a relative one resolves against the current
+                    path and 404s on nested routes like
+                    /help/:category/:article. */}
+                <img
+                  src="/assets/images/aajneeti-favicon.png"
+                  alt="Aajneeti"
+                  className="w-9 h-9 shrink-0 object-contain"
+                />
+                <span
+                  className={`text-lg font-semibold flag-flow ${
+                    collapsed ? "lg:hidden" : ""
+                  }`}
+                >
+                  CRM
+                </span>
+              </div>
+
+              <span
+                className={`whitespace-nowrap rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-medium text-accent-foreground ${
                   collapsed ? "lg:hidden" : ""
                 }`}
               >
-                <span className="text-lg font-semibold flag-flow">
-                  CRM
-                </span>
-                {/* whitespace-nowrap: the pill was wrapping onto two lines in
-                    the 16rem rail, which broke the pill shape. */}
-                <span className="whitespace-nowrap px-2 py-0.5 text-[11px] font-medium bg-accent text-accent-foreground rounded-full">
-                  By Aajneeti Connect ltd.
-                </span>
-              </div>
+                By Aajneeti Connect ltd.
+              </span>
             </div>
 
             {/* Close button for mobile */}

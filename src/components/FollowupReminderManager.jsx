@@ -373,20 +373,20 @@ const FollowupReminderManager = () => {
               deep orange rather than grey. */}
           {/* Header tile is a CIRCLE here and a rounded square in the body
               below — the reference deliberately uses both shapes. */}
-          <div className="flex items-center gap-3.5 px-5 py-4 bg-orange-50/90 border-b border-orange-100">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-500">
-              <Icon name="Phone" size={20} strokeWidth={2.5} />
+          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-orange-50/90 border-b border-orange-100">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-500">
+              <Icon name="Phone" size={16} strokeWidth={2.5} />
             </span>
-            <p className="flex-1 text-lg font-bold text-orange-900">
+            <p className="flex-1 text-[15px] font-bold text-orange-900">
               {total} follow-up{total > 1 ? "s" : ""} pending
             </p>
             <button
               onClick={dismissAll}
-              className="grid h-9 w-9 place-items-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
               aria-label="Dismiss all reminders"
               title="Dismiss all"
             >
-              <Icon name="X" size={22} strokeWidth={2} />
+              <Icon name="X" size={18} strokeWidth={2} />
             </button>
           </div>
 
@@ -398,7 +398,7 @@ const FollowupReminderManager = () => {
                 : "Call Later reminder";
               const subhead = entry.isGroup ? entry.namePreview : lead.name;
               return (
-                <div key={entry.id} className="relative overflow-hidden p-5">
+                <div key={entry.id} className="relative overflow-hidden p-3.5">
                   {/* Ornament layer: the two soft swooshes bottom-right and
                       the dotted arc sweeping in from the right edge. Pure
                       decoration — aria-hidden and pointer-events-none so it can
@@ -431,15 +431,15 @@ const FollowupReminderManager = () => {
                     />
                   </svg>
 
-                  <div className="relative flex items-start gap-4">
+                  <div className="relative flex items-start gap-3">
                     {/* Rounded-square tile with a gradient ground, a dotted
                         ring inside it, and a dot badge — all three are in the
                         reference and the first pass had only the gradient. */}
-                    <div className="relative h-[72px] w-[72px] shrink-0">
-                      <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-[18px] bg-gradient-to-br from-orange-50 via-orange-50 to-orange-100">
+                    <div className="relative h-14 w-14 shrink-0">
+                      <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-orange-50 via-orange-50 to-orange-100">
                         <svg
                           aria-hidden="true"
-                          className="absolute inset-2.5 text-orange-300"
+                          className="absolute inset-[7px] text-orange-300"
                           viewBox="0 0 100 100"
                           fill="none"
                         >
@@ -455,23 +455,23 @@ const FollowupReminderManager = () => {
                         </svg>
                         <Icon
                           name="Phone"
-                          size={30}
+                          size={22}
                           strokeWidth={2.5}
                           className="relative text-orange-500"
                         />
                       </div>
-                      <span className="absolute right-2 top-2 h-3.5 w-3.5 rounded-full bg-orange-500 ring-[3px] ring-white" />
+                      <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
                     </div>
 
                     <div className="min-w-0 flex-1 pt-0.5">
-                      <span className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-orange-600">
-                        <span className="h-2 w-2 rounded-full bg-orange-400" />
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-orange-600">
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
                         {headline}
                       </span>
-                      <p className="mt-2.5 truncate text-2xl font-extrabold tracking-tight text-slate-900">
+                      <p className="mt-1.5 truncate text-lg font-extrabold tracking-tight text-slate-900">
                         {subhead}
                       </p>
-                      <p className="mt-1 text-[15px] text-slate-500">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         {formatTime(entry.time)}
                         {!entry.isGroup && lead.project
                           ? ` \u2022 ${lead.project}`
@@ -484,10 +484,10 @@ const FollowupReminderManager = () => {
                       reference. Snooze removed on request; Dismiss stays as a
                       quiet text action so the reminder can still be cleared
                       without opening the lead. */}
-                  <div className="relative mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                  <div className="relative mt-2.5 flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
                     <button
                       onClick={() => handleDismiss(entry)}
-                      className="text-sm font-semibold text-slate-400 transition-colors hover:text-red-600"
+                      className="text-xs font-semibold text-slate-400 transition-colors hover:text-red-600"
                     >
                       Dismiss
                     </button>
@@ -495,9 +495,9 @@ const FollowupReminderManager = () => {
                       onClick={() => handleView(entry)}
                       aria-label={`View ${subhead}`}
                       title="View lead"
-                      className="-mt-7 grid h-14 w-14 shrink-0 place-items-center rounded-full bg-orange-500 text-white shadow-[0_10px_24px_-6px_rgba(249,115,22,0.85)] ring-[5px] ring-white transition hover:bg-orange-600 active:scale-95"
+                      className="-mt-5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange-500 text-white shadow-[0_8px_18px_-6px_rgba(249,115,22,0.85)] ring-4 ring-white transition hover:bg-orange-600 active:scale-95"
                     >
-                      <Icon name="Eye" size={24} strokeWidth={2.5} />
+                      <Icon name="Eye" size={18} strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>
@@ -533,31 +533,31 @@ const FollowupReminderManager = () => {
           )}
 
           {/* Top card */}
-          <div className="relative flex items-center gap-4 rounded-[20px] border border-orange-200/70 bg-white p-5 shadow-[0_14px_36px_-14px_rgba(249,115,22,0.38)] transition group-hover:shadow-[0_18px_44px_-14px_rgba(249,115,22,0.5)] group-active:scale-[0.99]">
+          <div className="relative flex items-center gap-3 rounded-2xl border border-orange-200/70 bg-white p-3.5 shadow-[0_12px_30px_-14px_rgba(249,115,22,0.38)] transition group-hover:shadow-[0_18px_44px_-14px_rgba(249,115,22,0.5)] group-active:scale-[0.99]">
             {/* Circle here, rounded square in the expanded body — the
                 reference uses both. Two nested discs give the concentric ring
                 the flat first pass was missing. */}
-            <div className="relative h-14 w-14 shrink-0">
+            <div className="relative h-11 w-11 shrink-0">
               <div className="absolute inset-0 rounded-full bg-orange-100/60" />
-              <div className="absolute inset-[7px] rounded-full bg-orange-100" />
+              <div className="absolute inset-[5px] rounded-full bg-orange-100" />
               <div className="relative grid h-full w-full place-items-center">
                 <Icon
                   name="Phone"
-                  size={24}
+                  size={18}
                   strokeWidth={2.5}
                   className="text-orange-500"
                 />
               </div>
-              <span className="absolute right-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-orange-500 ring-[3px] ring-white" />
+              <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-bold tracking-tight text-slate-900">
+              <p className="truncate text-[15px] font-bold tracking-tight text-slate-900">
                 {total === 1
                   ? "Follow-up reminder"
                   : `${total} follow-ups pending`}
               </p>
-              <p className="mt-0.5 truncate text-[15px] text-slate-500">
+              <p className="mt-0.5 truncate text-[13px] text-slate-500">
                 {topEntry.isGroup
                   ? topEntry.namePreview
                   : topEntry.items[0].name}
@@ -565,13 +565,13 @@ const FollowupReminderManager = () => {
             </div>
 
             {total > 1 && (
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange-500 text-base font-bold text-white">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-500 text-sm font-bold text-white">
                 {total}
               </span>
             )}
             <Icon
               name="ChevronRight"
-              size={22}
+              size={18}
               strokeWidth={2.5}
               className="shrink-0 text-slate-400"
             />
