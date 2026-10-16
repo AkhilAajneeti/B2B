@@ -291,13 +291,22 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                 type="button"
                 aria-label="Notifications"
                 onClick={handleClick}
-                className="group relative grid h-10 w-10 place-items-center overflow-hidden rounded-full transition-shadow duration-300 shadow-[0_0_0_1px_rgba(125,185,250,0.55),0_0_12px_3px_rgba(96,165,250,0.38)] hover:shadow-[0_0_0_1px_rgba(96,165,250,0.85),0_0_20px_6px_rgba(96,165,250,0.55)]"
+                className="group relative grid h-10 w-10 place-items-center overflow-hidden rounded-full transition-shadow duration-300 hover:shadow-[0_0_14px_4px_rgba(96,165,250,0.40)]"
                 style={{
-                  // Edge deepened from the sampled #D0E7FE to #BFDCFD: the
-                  // reference sits on a white page, this sits on the header's
-                  // warm off-white, where the original read as almost nothing.
+                  // Matched to the reference's measured profile: strongest blue
+                  // at the circumference, fading smoothly inward to near-white
+                  // by the halfway point. The blue lives entirely in the FILL.
+                  //
+                  // No rim shadow and no resting glow, deliberately. A 1px rim
+                  // showed up in the pixel profile as a saturation spike (83
+                  // against the reference's smooth 46 and falling) and an outer
+                  // glow added a fuzzy halo the reference doesn't have. Both
+                  // read as "not quite right" without being obvious why.
+                  //
+                  // Hover still lifts a glow — that's an affordance, and it
+                  // doesn't disturb the resting shape.
                   background:
-                    "radial-gradient(circle, #F7FAFD 0%, #F0F6FD 50%, #BFDCFD 100%)",
+                    "radial-gradient(circle, #FAFCFE 0%, #F2F7FD 46%, #D0E7FE 100%)",
                 }}
               >
                 {/* Drifting light — blue only, blurred, and under the glyph.
