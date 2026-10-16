@@ -31,7 +31,6 @@ const KPICard = ({
   const tint = hexToRgba(iconColor, 0.12); // icon tile background
   const glow = hexToRgba(iconColor, 0.35); // hover halo shadow
   const blob = hexToRgba(iconColor, 0.22); // corner radial glow
-  const ornamentTint = hexToRgba(iconColor, 0.3); // mandala line colour
 
   return (
     <div
@@ -49,69 +48,34 @@ const KPICard = ({
         style={{ background: `radial-gradient(circle, ${blob}, transparent 70%)` }}
       />
 
-      {/* Mandala — drawn rather than loaded as an image so it inherits the
-          card's accent (one component serves a blue, green or amber card
-          instead of one PNG per colour), stays crisp at any size, and can
-          rotate without a second asset.
+      {/* Corner mandala, from the supplied artwork.
 
-          Sits under the content: the card already clips with overflow-hidden,
-          so pushing it past the corner crops it exactly as in the design.
-          90s per turn — slow enough to read as drift rather than spin.
-          motion-safe so it holds still for reduced-motion users. */}
+          The source PNG had no alpha channel — the art was composited onto
+          opaque white, which would have painted a white block over the card
+          corner. It was keyed out and un-composited (alpha derived from
+          distance to white, colour divided back out of it) so the
+          anti-aliased edges keep their true hue instead of a pale fringe.
+          Result: /assets/images/festive-mandala.png.
+
+          `transformOrigin` is the ROSETTE's centre, not the image's. The file
+          is a corner ornament, so its rosette sits at 83.5% / 83.8% — measured
+          by finding the innermost blank disc (137x134px, near-perfectly round
+          at that point). Rotating about the image centre instead would make
+          the whole ornament orbit rather than spin, which reads as a wobble.
+
+          180s per turn: at this size anything faster pulls the eye away from
+          the figure the card exists to show. motion-safe so it holds still for
+          reduced-motion users. */}
       {ornament && (
-        <div
+        <img
+          src="/assets/images/festive-mandala.png"
+          alt=""
           aria-hidden="true"
-          className={`pointer-events-none absolute -bottom-12 -right-12 motion-safe:animate-[spin_90s_linear_infinite] ${
-            featured ? 'h-48 w-48' : 'h-40 w-40'
+          style={{ transformOrigin: "83.5% 83.8%" }}
+          className={`pointer-events-none absolute -bottom-5 -right-7 select-none opacity-60 motion-safe:animate-[spin_180s_linear_infinite] ${
+            featured ? "w-60" : "w-52"
           }`}
-          style={{ color: ornamentTint }}
-        >
-          <svg viewBox="0 0 200 200" fill="none" className="h-full w-full">
-            {/* Concentric rings */}
-            <circle cx="100" cy="100" r="92" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="100" cy="100" r="74" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="100" cy="100" r="40" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="100" cy="100" r="30" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="100" cy="100" r="20" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="100" cy="100" r="10" stroke="currentColor" strokeWidth="1.5" />
-            {/* Dotted ring, echoing the reference's stippled band */}
-            <circle
-              cx="100"
-              cy="100"
-              r="57"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeDasharray="0.5 7"
-            />
-            {/* Outer petal ring */}
-            {Array.from({ length: 16 }).map((_, i) => (
-              <ellipse
-                key={`outer-${i}`}
-                cx="100"
-                cy="57"
-                rx="9"
-                ry="22"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                transform={`rotate(${i * 22.5} 100 100)`}
-              />
-            ))}
-            {/* Inner petal ring, offset half a step so the two interleave */}
-            {Array.from({ length: 12 }).map((_, i) => (
-              <ellipse
-                key={`inner-${i}`}
-                cx="100"
-                cy="75"
-                rx="6"
-                ry="13"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                transform={`rotate(${i * 30 + 15} 100 100)`}
-              />
-            ))}
-          </svg>
-        </div>
+        />
       )}
 
       <div className={`relative flex h-full items-center justify-between gap-3 ${isLoading ? 'opacity-50' : ''}`}>
