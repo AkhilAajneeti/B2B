@@ -16,23 +16,85 @@ import { getStoredUser, isSupAdmin, isMaskedUser } from "../../utils/permission"
 // text, so `text-${hue}-500` would never be generated and the icon would ship
 // unstyled.
 const NAV_ICON_STYLES = {
-  "/dashboard": { icon: "text-indigo-500", tint: "group-hover:bg-indigo-50" },
-  "/leads": { icon: "text-rose-500", tint: "group-hover:bg-rose-50" },
-  "/inactive-leads": { icon: "text-slate-400", tint: "group-hover:bg-slate-100" },
-  "/campaigns": { icon: "text-amber-500", tint: "group-hover:bg-amber-50" },
-  "/pipeline": { icon: "text-violet-500", tint: "group-hover:bg-violet-50" },
-  "/sitevisite": { icon: "text-emerald-500", tint: "group-hover:bg-emerald-50" },
-  "/tasks": { icon: "text-blue-500", tint: "group-hover:bg-blue-50" },
-  "/activities": { icon: "text-fuchsia-500", tint: "group-hover:bg-fuchsia-50" },
-  "/reports": { icon: "text-cyan-600", tint: "group-hover:bg-cyan-50" },
-  "/import": { icon: "text-sky-500", tint: "group-hover:bg-sky-50" },
-  "/settings": { icon: "text-zinc-500", tint: "group-hover:bg-zinc-100" },
-  "/help": { icon: "text-teal-500", tint: "group-hover:bg-teal-50" },
+  "/dashboard": {
+    icon: "text-indigo-500",
+    row: "hover:bg-indigo-50",
+    tile: "group-hover:bg-indigo-100",
+    bar: "bg-indigo-500",
+  },
+  "/leads": {
+    icon: "text-rose-500",
+    row: "hover:bg-rose-50",
+    tile: "group-hover:bg-rose-100",
+    bar: "bg-rose-500",
+  },
+  "/inactive-leads": {
+    icon: "text-slate-400",
+    row: "hover:bg-slate-100",
+    tile: "group-hover:bg-slate-200",
+    bar: "bg-slate-400",
+  },
+  "/campaigns": {
+    icon: "text-amber-500",
+    row: "hover:bg-amber-50",
+    tile: "group-hover:bg-amber-100",
+    bar: "bg-amber-500",
+  },
+  "/pipeline": {
+    icon: "text-violet-500",
+    row: "hover:bg-violet-50",
+    tile: "group-hover:bg-violet-100",
+    bar: "bg-violet-500",
+  },
+  "/sitevisite": {
+    icon: "text-emerald-500",
+    row: "hover:bg-emerald-50",
+    tile: "group-hover:bg-emerald-100",
+    bar: "bg-emerald-500",
+  },
+  "/tasks": {
+    icon: "text-blue-500",
+    row: "hover:bg-blue-50",
+    tile: "group-hover:bg-blue-100",
+    bar: "bg-blue-500",
+  },
+  "/activities": {
+    icon: "text-fuchsia-500",
+    row: "hover:bg-fuchsia-50",
+    tile: "group-hover:bg-fuchsia-100",
+    bar: "bg-fuchsia-500",
+  },
+  "/reports": {
+    icon: "text-cyan-600",
+    row: "hover:bg-cyan-50",
+    tile: "group-hover:bg-cyan-100",
+    bar: "bg-cyan-600",
+  },
+  "/import": {
+    icon: "text-sky-500",
+    row: "hover:bg-sky-50",
+    tile: "group-hover:bg-sky-100",
+    bar: "bg-sky-500",
+  },
+  "/settings": {
+    icon: "text-zinc-500",
+    row: "hover:bg-zinc-100",
+    tile: "group-hover:bg-zinc-200",
+    bar: "bg-zinc-500",
+  },
+  "/help": {
+    icon: "text-teal-500",
+    row: "hover:bg-teal-50",
+    tile: "group-hover:bg-teal-100",
+    bar: "bg-teal-500",
+  },
 };
 
 const DEFAULT_NAV_ICON_STYLE = {
   icon: "text-slate-500",
-  tint: "group-hover:bg-white",
+  row: "hover:bg-slate-100",
+  tile: "group-hover:bg-slate-200",
+  bar: "bg-slate-400",
 };
 
 const Sidebar = ({ isOpen = false, onClose }) => {
@@ -317,7 +379,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                       ${collapsed ? "lg:justify-center lg:px-2" : ""}
                       ${isActive
                         ? "linearbg-1 text-white shadow-[0_6px_18px_-8px_rgba(172,35,52,0.75)]"
-                        : "text-slate-600 hover:text-primary hover:bg-primary/[0.06] motion-safe:hover:translate-x-0.5"
+                        : `text-slate-600 hover:text-slate-900 ${iconStyle.row} motion-safe:hover:translate-x-0.5`
                       }
                     `}
                     aria-current={isActive ? "page" : undefined}
@@ -328,7 +390,9 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                         scaled to zero rather than unmounted. Suppressed on the
                         active row, which already carries the gradient. */}
                     {!isActive && (
-                      <span className="pointer-events-none absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 origin-center scale-y-0 rounded-r-full bg-primary transition-transform duration-200 ease-out group-hover:scale-y-100" />
+                      <span
+                        className={`pointer-events-none absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 origin-center scale-y-0 rounded-r-full transition-transform duration-200 ease-out group-hover:scale-y-100 ${iconStyle.bar}`}
+                      />
                     )}
 
                     <div className="flex items-center gap-3 min-w-0">
@@ -341,7 +405,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                           transition-colors duration-200
                           ${isActive
                             ? "bg-white/15"
-                            : `bg-transparent ${iconStyle.tint} group-hover:shadow-sm`
+                            : `bg-transparent ${iconStyle.tile} group-hover:shadow-sm`
                           }
                         `}
                       >
