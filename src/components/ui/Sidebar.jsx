@@ -317,18 +317,29 @@ const Sidebar = ({ isOpen = false, onClose }) => {
             }`}
           >
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                <Icon name="Zap" size={20} color="white" />
+              {/* The real logo, same asset and treatment as the header — this
+                  was a generic "Zap" bolt, which is a placeholder, not the
+                  brand. Absolute src: a relative one resolves against the
+                  current path and 404s on nested routes like
+                  /help/:category/:article. */}
+              <div className="w-8 h-8 bg-mahroon rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                <img
+                  src="/assets/images/aajneeti-favicon.png"
+                  alt="Aajneeti"
+                  className="w-6 h-6 object-contain"
+                />
               </div>
               <div
-                className={`flex items-center space-x-2 ${
+                className={`flex items-center space-x-2 min-w-0 ${
                   collapsed ? "lg:hidden" : ""
                 }`}
               >
                 <span className="text-lg font-semibold flag-flow">
                   CRM
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
+                {/* whitespace-nowrap: the pill was wrapping onto two lines in
+                    the 16rem rail, which broke the pill shape. */}
+                <span className="whitespace-nowrap px-2 py-0.5 text-[11px] font-medium bg-accent text-accent-foreground rounded-full">
                   By Aajneeti Connect ltd.
                 </span>
               </div>
