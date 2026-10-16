@@ -221,7 +221,20 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-40">
+      {/* z-30, not z-40.
+          The header is persistent chrome, so it needs to sit above ordinary
+          page content — but BELOW anything modal, or it covers the thing the
+          user just opened. At z-40 it tied with the lead drawer's backdrop and
+          won on DOM order, clipping the top of every drawer.
+
+          Stacking scale in use:
+            content   auto
+            sidebar   lg:z-30   (z-50 on mobile, where it IS the modal)
+            header    z-30
+            drawers   z-40 backdrop / z-50 panel
+            reminders z-60
+            dialogs   z-70                                                */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-30">
         <div className="flex items-center justify-between h-full px-4 lg:px-6">
           {/* Left Section - Mobile Menu & Logo */}
           <div className="flex items-center space-x-4">
