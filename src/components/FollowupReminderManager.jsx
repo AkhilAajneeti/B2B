@@ -398,55 +398,7 @@ const FollowupReminderManager = () => {
                 : "Call Later reminder";
               const subhead = entry.isGroup ? entry.namePreview : lead.name;
               return (
-                <div key={entry.id} className="relative overflow-hidden p-3.5">
-                  {/* Ornament layer: the two soft swooshes bottom-right and
-                      the dotted arc sweeping in from the right edge. Pure
-                      decoration — aria-hidden and pointer-events-none so it can
-                      never swallow a click meant for the eye button sitting on
-                      top of it. */}
-                  {/* Ornament layer: two long, shallow ribbons sweeping up to
-                      the right, plus a dotted arc.
-
-                      `preserveAspectRatio="slice"`, NOT "none". "none"
-                      stretches the viewBox to the element's box, which
-                      squashed these curves out of shape and was why they read
-                      as angular rather than smooth. "slice" scales uniformly
-                      and crops the overflow, so the curvature is preserved.
-
-                      The paths deliberately start and end OUTSIDE the viewBox
-                      (x from -24 to 408) — a curve that terminates at the edge
-                      shows its endpoint as a visible corner; running it past
-                      the crop keeps the sweep continuous.
-
-                      aria-hidden + pointer-events-none: decoration must never
-                      intercept a click meant for the eye button above it. */}
-                  <svg
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 h-full w-full text-orange-100"
-                    viewBox="0 0 384 140"
-                    fill="none"
-                    preserveAspectRatio="xMidYMid slice"
-                  >
-                    <path
-                      d="M-24 104 C 70 100, 140 72, 232 54 S 356 26, 408 18 L408 164 L-24 164 Z"
-                      fill="currentColor"
-                      opacity="0.55"
-                    />
-                    <path
-                      d="M-24 134 C 86 130, 156 104, 252 88 S 364 68, 408 62 L408 164 L-24 164 Z"
-                      fill="currentColor"
-                      opacity="0.5"
-                    />
-                    <path
-                      d="M236 16 C 300 22, 346 50, 368 96"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeDasharray="0.5 9"
-                      className="text-orange-200"
-                    />
-                  </svg>
-
+                <div key={entry.id} className="relative p-3.5">
                   <div className="relative flex items-start gap-3">
                     {/* Rounded-square tile with a gradient ground, a dotted
                         ring inside it, and a dot badge — all three are in the
@@ -511,9 +463,9 @@ const FollowupReminderManager = () => {
                       onClick={() => handleView(entry)}
                       aria-label={`View ${subhead}`}
                       title="View lead"
-                      className="-mt-5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange-500 text-white shadow-[0_8px_18px_-6px_rgba(249,115,22,0.85)] ring-4 ring-white transition hover:bg-orange-600 active:scale-95"
+                      className="-mt-4 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-orange-500 text-white shadow-[0_6px_14px_-5px_rgba(249,115,22,0.85)] ring-[3px] ring-white transition hover:bg-orange-600 active:scale-95"
                     >
-                      <Icon name="Eye" size={18} strokeWidth={2.5} />
+                      <Icon name="Eye" size={16} strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>
