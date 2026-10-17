@@ -372,17 +372,21 @@ const Dashboard = () => {
             Height is a straight trade against crop. The artwork is 2131x738,
             i.e. 2.89:1, and the dashboard's content column is ~1600px wide, so
             showing the composition WHOLE would mean a 550px-tall hero — far
-            too much of the fold for a decorative band. At h-56 (224px) a little
-            over half the height survives, centred: the whole "Happy Dussehra"
-            lockup, the archer from head to waist, and the temple line. What
-            goes is sky at the top and the hem of his robe at the bottom. */}
+            too much of the fold for a decorative band. At h-52 (208px) about 40%
+            survives, and WHICH 40% is set by object-position rather than left
+            to centre. Measured on the asset (554px tall): "Happy" occupies
+            y=162-204 and "Dussehra" y=216-294, so 46% is the highest the frame
+            can ride before it starts shaving the top off "Happy". That window
+            keeps the full lockup, the archer's head, arms and bow, and the
+            temple line; what it loses is dead sky above and the hem of his
+            robe below. Pushing further up trades the lockup for his legs. */}
         <div className="m-4 sm:m-6">
           <section className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
             <img
               src="/assets/images/festive-banner.jpg"
               alt=""
               aria-hidden="true"
-              className="h-36 w-full select-none object-cover object-center sm:h-48 lg:h-56"
+              className="h-32 w-full select-none object-cover object-[50%_46%] sm:h-44 lg:h-52"
             />
 
             {/* Legibility wash for the greeting, and only the greeting.
@@ -399,10 +403,17 @@ const Dashboard = () => {
                 carry text over his hair — and completely clear by 46%, which
                 is short of the bow. The artwork keeps its full saturation from
                 the figure rightward; only the strip the words occupy is
-                lifted. */}
+                lifted.
+
+                The stops MUST be bracketed — `via-[26%]`, not `via-26%`.
+                Tailwind's gradient stop-position scale only has multiples of
+                5, so `via-26%`/`to-46%` are not classes at all; they compile to
+                nothing and the gradient silently falls back to its defaults
+                (50% and 100%), which puts 75% cream across the entire banner.
+                That is exactly how this washed out the whole artwork twice. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] from-0% via-[#FFF4E2]/75 via-26% to-transparent to-46%"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] from-0% via-[#FFF4E2]/75 via-[26%] to-transparent to-[46%]"
             />
 
             <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center px-5 sm:max-w-[34%] sm:px-8">
