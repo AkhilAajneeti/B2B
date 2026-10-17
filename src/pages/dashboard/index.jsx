@@ -372,30 +372,37 @@ const Dashboard = () => {
             Height is a straight trade against crop. The artwork is 2131x738,
             i.e. 2.89:1, and the dashboard's content column is ~1600px wide, so
             showing the composition WHOLE would mean a 550px-tall hero — far
-            too much of the fold for a decorative band. At h-72 (288px) roughly
-            70% of the height survives: the marigold strands at the top, the
-            whole "Happy Dussehra" lockup, and the archer down past his waist.
-            Raising it further only buys more sky and the hem of his robe. */}
+            too much of the fold for a decorative band. At h-56 (224px) a little
+            over half the height survives, centred: the whole "Happy Dussehra"
+            lockup, the archer from head to waist, and the temple line. What
+            goes is sky at the top and the hem of his robe at the bottom. */}
         <div className="m-4 sm:m-6">
           <section className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
             <img
               src="/assets/images/festive-banner.jpg"
               alt=""
               aria-hidden="true"
-              className="h-44 w-full select-none object-cover object-center sm:h-60 lg:h-72"
+              className="h-36 w-full select-none object-cover object-center sm:h-48 lg:h-56"
             />
 
-            {/* Legibility wash, confined to the LEFT THIRD and fully clear by
-                38%. It previously ran cream at 80% opacity across the middle
-                and only reached transparent at the far right, which is where
-                the artwork's own content lives: the archer came through as a
-                ghost and the maroon "Happy Dussehra" lettering flattened to
-                pale pink. The greeting sits over the banner's open sky, which
-                is already light (mean value 229), so it needs a light touch at
-                the very left and nothing at all past the figure. */}
+            {/* Legibility wash for the greeting, and only the greeting.
+                Two failure modes to sit between. Originally this ran cream at
+                80% across the whole middle and only cleared at the far right,
+                which is where the artwork's content lives — the archer came
+                through as a ghost and the maroon "Happy Dussehra" lettering
+                flattened to pale pink. Pulled back to /30 clearing at 38%, the
+                opposite happened: the archer's hair starts around x=15%, well
+                inside the text column, so the subtitle's second line ran into
+                it with nothing behind to separate them.
+
+                So: opaque at the left edge, still 75% at 26% across — enough to
+                carry text over his hair — and completely clear by 46%, which
+                is short of the bow. The artwork keeps its full saturation from
+                the figure rightward; only the strip the words occupy is
+                lifted. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2]/90 from-0% via-[#FFF4E2]/30 via-20% to-transparent to-38%"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] from-0% via-[#FFF4E2]/75 via-26% to-transparent to-46%"
             />
 
             <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center px-5 sm:max-w-[34%] sm:px-8">
