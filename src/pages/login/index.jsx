@@ -20,8 +20,8 @@ const PIPELINE = [
   { label: "Pipeline", meta: "ROUTED & CLOSED", active: true },
 ];
 
-/* Ten drifting leaves, split between the two columns because each column has
-   to carry its own layer — see LeafFall below. Six on the hero, four on the
+/* Fifteen drifting leaves, split between the two columns because each column
+   has to carry its own layer — see LeafFall below. Nine on the hero, six on the
    form, roughly matching the 60/40 split so the density looks even across the
    page. `left` is a percentage OF ITS OWN COLUMN, not of the page.
 
@@ -29,19 +29,24 @@ const PIPELINE = [
    read as wind-blown, the delays spread to 1.5s so the last leaf still clears
    the viewport inside ~4.6s, and the sizes vary to fake depth. */
 const HERO_LEAVES = [
-  { left: "8%", delay: "0s", size: "w-5" },
-  { left: "22%", delay: "0.7s", size: "w-7" },
-  { left: "38%", delay: "0.25s", size: "w-4" },
-  { left: "55%", delay: "1.1s", size: "w-6" },
-  { left: "71%", delay: "0.45s", size: "w-5" },
-  { left: "88%", delay: "1.35s", size: "w-6" },
+  { left: "5%", delay: "0.8s", size: "w-4" },
+  { left: "14%", delay: "0s", size: "w-5" },
+  { left: "24%", delay: "1.25s", size: "w-6" },
+  { left: "33%", delay: "0.35s", size: "w-7" },
+  { left: "45%", delay: "1.6s", size: "w-4" },
+  { left: "56%", delay: "0.6s", size: "w-5" },
+  { left: "67%", delay: "1.05s", size: "w-6" },
+  { left: "79%", delay: "0.2s", size: "w-4" },
+  { left: "91%", delay: "1.45s", size: "w-6" },
 ];
 
 const FORM_LEAVES = [
-  { left: "10%", delay: "0.55s", size: "w-5" },
-  { left: "36%", delay: "1.5s", size: "w-4" },
-  { left: "62%", delay: "0.15s", size: "w-6" },
-  { left: "86%", delay: "0.95s", size: "w-4" },
+  { left: "7%", delay: "1.15s", size: "w-4" },
+  { left: "21%", delay: "0.4s", size: "w-6" },
+  { left: "38%", delay: "1.55s", size: "w-4" },
+  { left: "54%", delay: "0.1s", size: "w-5" },
+  { left: "71%", delay: "0.9s", size: "w-6" },
+  { left: "88%", delay: "1.7s", size: "w-4" },
 ];
 
 /* One run of falling leaves over whatever it is dropped into.
