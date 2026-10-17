@@ -369,24 +369,37 @@ const Dashboard = () => {
             (semi-transparent throughout rather than masked). Flattened to JPEG
             and resized to 1600px: 125KB, a 95% saving on a decorative image.
 
-            Height is a straight trade against crop. The artwork is 2131x738,
-            i.e. 2.89:1, and the dashboard's content column is ~1600px wide, so
-            showing the composition WHOLE would mean a 550px-tall hero — far
-            too much of the fold for a decorative band. At h-52 (208px) about 40%
-            survives, and WHICH 40% is set by object-position rather than left
-            to centre. Measured on the asset (554px tall): "Happy" occupies
-            y=162-204 and "Dussehra" y=216-294, so 46% is the highest the frame
-            can ride before it starts shaving the top off "Happy". That window
-            keeps the full lockup, the archer's head, arms and bow, and the
-            temple line; what it loses is dead sky above and the hem of his
-            robe below. Pushing further up trades the lockup for his legs. */}
+            The asset is RECOMPOSED for this card, not merely cropped. The
+            supplied artwork is 2131x738 — 2.89:1 — and this card is about
+            7:1, so object-cover was discarding ~60% of the height: the temple
+            line, the archer below the waist and the lower garlands all fell
+            outside the frame, and no object-position could recover them.
+
+            festive-banner-v2.jpg is built by scripts/make-festive-banner.py,
+            which keeps the artwork WHOLE at the card's height and extends the
+            sky leftwards to fill the width:
+
+              - the left decorative strip (x<330: foliage and garland) is cut,
+                since the old crop destroyed it anyway and removing it leaves a
+                clean column to extend from;
+              - the rest is scaled to 260px tall, so nothing is cropped, and
+                anchored right — it occupies the last 35% of the canvas;
+              - the remaining 65% is a 150px strip stretched and blurred at
+                radius 70, which keeps the vertical colour structure (pale sky
+                above, warm haze below) while losing every feature that would
+                otherwise smear into a horizontal stripe;
+              - the join is feathered over 90px, because a hard paste left a
+                visible vertical edge where blurred sky met sharp artwork.
+
+            Result: 1800x260 at 45KB, every element of the design visible, and
+            a genuinely empty left two-thirds for the greeting to sit on. */}
         <div className="m-4 sm:m-6">
           <section className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
             <img
-              src="/assets/images/festive-banner.jpg"
+              src="/assets/images/festive-banner-v2.jpg"
               alt=""
               aria-hidden="true"
-              className="h-32 w-full select-none object-cover object-[50%_46%] sm:h-44 lg:h-52"
+              className="h-32 w-full select-none object-cover object-center sm:h-44 lg:h-52"
             />
 
             {/* Legibility wash for the greeting, and only the greeting.
@@ -413,10 +426,10 @@ const Dashboard = () => {
                 That is exactly how this washed out the whole artwork twice. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] from-0% via-[#FFF4E2]/75 via-[26%] to-transparent to-[46%]"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2]/70 from-0% via-[#FFF4E2]/25 via-[38%] to-transparent to-[60%]"
             />
 
-            <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center px-5 sm:max-w-[34%] sm:px-8">
+            <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center px-5 sm:max-w-[48%] sm:px-8">
               <p className="text-xs font-semibold text-[#9F1239] sm:text-sm">
                 {greeting},
               </p>
