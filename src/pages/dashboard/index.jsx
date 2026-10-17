@@ -367,22 +367,38 @@ const Dashboard = () => {
 
             The source PNG was 2131px and 2.4MB with a uniform 216-252 alpha
             (semi-transparent throughout rather than masked). Flattened to JPEG
-            and resized to 1600px: 125KB, a 95% saving on a decorative image. */}
+            and resized to 1600px: 125KB, a 95% saving on a decorative image.
+
+            Height is a straight trade against crop. The artwork is 2131x738,
+            i.e. 2.89:1, and the dashboard's content column is ~1600px wide, so
+            showing the composition WHOLE would mean a 550px-tall hero — far
+            too much of the fold for a decorative band. At h-72 (288px) roughly
+            70% of the height survives: the marigold strands at the top, the
+            whole "Happy Dussehra" lockup, and the archer down past his waist.
+            Raising it further only buys more sky and the hem of his robe. */}
         <div className="m-4 sm:m-6">
           <section className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
             <img
               src="/assets/images/festive-banner.jpg"
               alt=""
               aria-hidden="true"
-              className="h-36 w-full select-none object-cover object-center sm:h-44 lg:h-52"
+              className="h-44 w-full select-none object-cover object-center sm:h-60 lg:h-72"
             />
 
+            {/* Legibility wash, confined to the LEFT THIRD and fully clear by
+                38%. It previously ran cream at 80% opacity across the middle
+                and only reached transparent at the far right, which is where
+                the artwork's own content lives: the archer came through as a
+                ghost and the maroon "Happy Dussehra" lettering flattened to
+                pale pink. The greeting sits over the banner's open sky, which
+                is already light (mean value 229), so it needs a light touch at
+                the very left and nothing at all past the figure. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] via-[#FFF4E2]/80 to-transparent"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2]/90 from-0% via-[#FFF4E2]/30 via-20% to-transparent to-38%"
             />
 
-            <div className="absolute inset-y-0 left-0 flex max-w-[62%] flex-col justify-center px-5 sm:max-w-[46%] sm:px-8">
+            <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center px-5 sm:max-w-[34%] sm:px-8">
               <p className="text-xs font-semibold text-[#9F1239] sm:text-sm">
                 {greeting},
               </p>
