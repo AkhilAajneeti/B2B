@@ -197,12 +197,12 @@ const LoginPage = () => {
 
           {/* Logo */}
           <motion.img
-            src="/assets/images/aajneeti-logo.png"
+            src="/assets/images/logo.webp"
             alt="AAJneeti"
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative z-10 w-32 rounded-md"
+            className="relative z-10 w-36"
           />
 
           {/* Headline block */}
@@ -378,9 +378,9 @@ const LoginPage = () => {
               />
               <div className="relative z-10">
                 <img
-                  src="/assets/images/aajneeti-logo.png"
+                  src="/assets/images/logo.webp"
                   alt="AAJneeti"
-                  className="w-28 rounded-md"
+                  className="w-32"
                 />
                 <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#AC2334]">
                   Performance Marketing × CRM
