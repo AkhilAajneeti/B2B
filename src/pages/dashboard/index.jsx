@@ -392,14 +392,23 @@ const Dashboard = () => {
                 visible vertical edge where blurred sky met sharp artwork.
 
             Result: 1800x260 at 45KB, every element of the design visible, and
-            a genuinely empty left two-thirds for the greeting to sit on. */}
+            a genuinely empty left two-thirds for the greeting to sit on.
+
+            At lg the height is AUTO rather than fixed. A fixed h-52 made the
+            card ~7.4:1 against the asset's 6.92:1, so object-cover went back to
+            cropping — this time horizontally, which sliced "Dussehra" off the
+            right edge. Letting the height follow the width means the card
+            always matches the asset exactly and nothing is ever cut. Below lg
+            it stays fixed-height and cover-cropped, because at phone widths the
+            natural height would collapse to ~50px, too short for the greeting
+            that sits on top of it. */}
         <div className="m-4 sm:m-6">
           <section className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
             <img
               src="/assets/images/festive-banner-v2.jpg"
               alt=""
               aria-hidden="true"
-              className="h-32 w-full select-none object-cover object-center sm:h-44 lg:h-52"
+              className="h-32 w-full select-none object-cover object-center sm:h-40 lg:h-auto lg:object-fill"
             />
 
             {/* Legibility wash for the greeting, and only the greeting.
