@@ -10,6 +10,7 @@ import { fetchLeads } from "services/leads.service";
 import { fetchMeeting } from "services/meeting.service";
 import { useLeadsCount } from "hooks/useLeads";
 import { useQuery } from "@tanstack/react-query";
+import { getStoredUser, formatUserDisplayName } from "utils/permission";
 
 // Heavy chart components — lazy so the dashboard shell paints instantly.
 // Each chart pulls in recharts + framer-motion + its own per-bucket
@@ -333,19 +334,66 @@ const Dashboard = () => {
     },
   ];
 
+  // "Good Morning / Afternoon / Evening" from the clock, and the first name
+  // from the stored login. formatUserDisplayName turns "akhil_aajneeti_admin"
+  // into "Akhil Aajneeti Admin"; only the first word belongs in a greeting.
+  const greetingHour = new Date().getHours();
+  const greeting =
+    greetingHour < 12
+      ? "Good Morning"
+      : greetingHour < 17
+        ? "Good Afternoon"
+        : "Good Evening";
+  const firstName = formatUserDisplayName(
+    getStoredUser()?.username,
+    "there",
+  ).split(" ")[0];
+
   return (
     <div className="min-h-screen bg-background relative">
       <TricolorBurst />
       
       
       <main className="lg:ml-64 pt-16">
-        <div className="m-6">
-          <h1 className="text-2xl lg:text-3xl font-bold heading-gradient mb-2">
-            Dashboard
-          </h1>
-          <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your sales today.
-          </p>
+        {/* Festive hero. The artwork already carries "Happy Dussehra" and its
+            blessing on the RIGHT, so the greeting takes the left, where the
+            banner is open sky and garlands.
+
+            The scrim matters: this is text over a photograph, and the area
+            behind the greeting shifts as the banner is cropped at different
+            widths. A cream gradient fading to transparent keeps the words
+            legible at every size without hiding the art — without it the
+            greeting would wash out over the bright sun at some breakpoints.
+
+            The source PNG was 2131px and 2.4MB with a uniform 216-252 alpha
+            (semi-transparent throughout rather than masked). Flattened to JPEG
+            and resized to 1600px: 125KB, a 95% saving on a decorative image. */}
+        <div className="m-4 sm:m-6">
+          <section className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
+            <img
+              src="/assets/images/festive-banner.jpg"
+              alt=""
+              aria-hidden="true"
+              className="h-36 w-full select-none object-cover object-center sm:h-44 lg:h-52"
+            />
+
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] via-[#FFF4E2]/80 to-transparent"
+            />
+
+            <div className="absolute inset-y-0 left-0 flex max-w-[62%] flex-col justify-center px-5 sm:max-w-[46%] sm:px-8">
+              <p className="text-xs font-semibold text-[#9F1239] sm:text-sm">
+                {greeting},
+              </p>
+              <h1 className="mt-0.5 truncate text-xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                {firstName} 👋
+              </h1>
+              <p className="mt-1 text-[11px] leading-snug text-slate-600 sm:text-sm">
+                Let's continue building stronger connections this Dussehra.
+              </p>
+            </div>
+          </section>
         </div>
 
         {/* Summary alert — overdue + follow-up-today leads. Plays a chime,

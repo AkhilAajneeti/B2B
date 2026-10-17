@@ -175,3 +175,46 @@ select:focus {
   /* Tricolor gradient removed — "CRM" wordmark uses a solid colour. */
   color: var(--color-foreground);
 }
+
+/* ── Festive: falling leaves on the login hero ─────────────────────────────
+   Deliberately a ONE-SHOT animation, not a loop. The Dussehra artwork is a
+   still illustration; leaves drifting down forever behind a password field is
+   movement with nothing to say, and it keeps a compositor layer alive for as
+   long as the page is open. Each leaf runs once (~3.1s) with a stagger of up
+   to 0.9s, so the whole effect is over inside four seconds and the panel
+   settles into the static design.
+
+   `forwards` holds the final frame — opacity 0, well below the fold — so the
+   leaves do not snap back to the top when the animation ends. */
+@keyframes festive-leaf-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -12vh, 0) rotate(0deg);
+  }
+  12% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(2.5rem, 45vh, 0) rotate(160deg);
+  }
+  80% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-1rem, 108vh, 0) rotate(320deg);
+  }
+}
+
+.festive-leaf-fall {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: festive-leaf-fall 3.1s ease-in 1 forwards;
+}
+
+/* Users who ask the OS for less motion get the design without the drift. */
+@media (prefers-reduced-motion: reduce) {
+  .festive-leaf-fall {
+    animation: none;
+  }
+}

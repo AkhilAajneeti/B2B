@@ -220,19 +220,27 @@ const LoginForm = () => {
         <label htmlFor="username" className={labelClass}>
           Username <span className="text-[#AC2334]">*</span>
         </label>
-        <input
-          id="username"
-          name="username"
-          type="text"
-          value={formData.username}
-          onChange={handleInputChange}
-          disabled={isLoading}
-          placeholder="you@aajneeti.social"
-          autoComplete="username"
-          aria-invalid={!!errors.username}
-          aria-describedby={errors.username ? "username-error" : undefined}
-          className={inputClass(!!errors.username)}
-        />
+        {/* Leading icons on both fields, as in the design. Wrapped in a
+            relative box and marked pointer-events-none so clicking the icon
+            still focuses the input underneath it. */}
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <Icon name="User" size={18} />
+          </span>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            value={formData.username}
+            onChange={handleInputChange}
+            disabled={isLoading}
+            placeholder="you@aajneeti.social"
+            autoComplete="username"
+            aria-invalid={!!errors.username}
+            aria-describedby={errors.username ? "username-error" : undefined}
+            className={`${inputClass(!!errors.username)} pl-11`}
+          />
+        </div>
         {errors.username && (
           <p id="username-error" className="mt-1.5 text-xs text-red-600">
             {errors.username}
@@ -246,6 +254,9 @@ const LoginForm = () => {
           Password <span className="text-[#AC2334]">*</span>
         </label>
         <div className="relative">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <Icon name="Lock" size={18} />
+          </span>
           <input
             id="password"
             name="password"
@@ -257,7 +268,7 @@ const LoginForm = () => {
             autoComplete="current-password"
             aria-invalid={!!errors.password}
             aria-describedby={errors.password ? "password-error" : undefined}
-            className={`${inputClass(!!errors.password)} pr-12`}
+            className={`${inputClass(!!errors.password)} pl-11 pr-12`}
           />
           <button
             type="button"
