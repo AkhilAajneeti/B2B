@@ -57,11 +57,11 @@ const FORM_LEAVES = [
    side. Each column therefore gets its own layer, stacked above that column's
    background but below its content.
 
-   One ~3s run on mount, never a loop. The design is a still illustration, and
-   permanent background motion on a page people are typing a password into is a
-   distraction that also keeps a compositor layer alive for the life of the tab.
-   Each leaf finishes at opacity 0; the layer is inert to hit-testing and hidden
-   from assistive tech, and prefers-reduced-motion skips it in the stylesheet. */
+   The fall repeats: ~3.1s of drift, then a ~5s pause, then again. Both phases
+   live in one looping keyframe set (see festive-leaf-fall in index.css) rather
+   than in a timer, so the idle gap costs no JS and no re-renders. The layer is
+   inert to hit-testing and hidden from assistive tech, and
+   prefers-reduced-motion skips the animation entirely in the stylesheet. */
 const LeafFall = ({ leaves, className = "" }) => (
   <div
     aria-hidden
@@ -438,6 +438,22 @@ const LoginPage = () => {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* "Powered by" credit, bottom-right of the form panel. Quiet on
+                purpose — 10px, wide letterspacing, muted grey, mark at 80% —
+                because this is the second AAJneeti lockup on the page (the
+                hero carries one top-left), so it has to read as a footer
+                credit rather than compete with the brand mark. */}
+            <div className="mt-6 flex flex-col items-end">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                Powered by
+              </p>
+              <img
+                src="/assets/images/logo.webp"
+                alt="AAJneeti"
+                className="mt-1.5 w-24 select-none opacity-80"
+              />
             </div>
           </motion.div>
         </div>

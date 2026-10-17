@@ -177,29 +177,38 @@ select:focus {
 }
 
 /* ── Festive: falling leaves on the login hero ─────────────────────────────
-   Deliberately a ONE-SHOT animation, not a loop. The Dussehra artwork is a
-   still illustration; leaves drifting down forever behind a password field is
-   movement with nothing to say, and it keeps a compositor layer alive for as
-   long as the page is open. Each leaf runs once (~3.1s) with a stagger of up
-   to 0.9s, so the whole effect is over inside four seconds and the panel
-   settles into the static design.
+   A repeating cycle with a deliberate pause: the leaves fall for ~3.1s, then
+   the panel sits still for ~5s before they fall again.
 
-   `forwards` holds the final frame — opacity 0, well below the fold — so the
-   leaves do not snap back to the top when the animation ends. */
+   The pause is built into the KEYFRAMES, not into JS. One animation runs
+   infinitely over an 8.1s cycle, of which the fall occupies the first 38%
+   (3.08s) and the remaining 62% (5.02s) holds every leaf at opacity 0 below
+   the fold. So the idle gap costs nothing — no timers, no re-renders, no state
+   — and the per-leaf animation-delay still staggers them, because a delay
+   offsets the whole repeating timeline rather than just the first pass.
+
+   Percentages here are therefore fractions of 8.1s, not of the fall: 5% is
+   0.4s in, 38% is the moment the last leaf leaves the screen. Changing the
+   duration without rescaling these breaks the pause. */
 @keyframes festive-leaf-fall {
   0% {
     opacity: 0;
     transform: translate3d(0, -12vh, 0) rotate(0deg);
   }
-  12% {
+  5% {
     opacity: 0.9;
   }
-  50% {
+  19% {
     transform: translate3d(2.5rem, 45vh, 0) rotate(160deg);
   }
-  80% {
+  31% {
     opacity: 0.85;
   }
+  38% {
+    opacity: 0;
+    transform: translate3d(-1rem, 108vh, 0) rotate(320deg);
+  }
+  /* Idle tail: held off-screen and invisible until the cycle restarts. */
   100% {
     opacity: 0;
     transform: translate3d(-1rem, 108vh, 0) rotate(320deg);
@@ -209,7 +218,7 @@ select:focus {
 .festive-leaf-fall {
   opacity: 0;
   will-change: transform, opacity;
-  animation: festive-leaf-fall 3.1s ease-in 1 forwards;
+  animation: festive-leaf-fall 8.1s ease-in infinite;
 }
 
 /* Users who ask the OS for less motion get the design without the drift. */
