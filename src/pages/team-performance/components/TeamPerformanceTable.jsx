@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Icon from "../../../components/AppIcon";
+import TablePagination from "../../reports/components/TablePagination";
 import { MIN_SAMPLE } from "../utils/qualification";
 
 const pct = (n) => `${(n ?? 0).toFixed(1)}%`;
@@ -34,6 +35,8 @@ const indexTone = (index) => {
 
 const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
   const [sort, setSort] = useState({ key: "index", dir: "desc" });
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
 
   const sorted = useMemo(() => {
     const copy = [...rows];
@@ -54,6 +57,22 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
     });
     return copy;
   }, [rows, sort]);
+
+  // Paginate AFTER sorting, never before — slicing first would sort only the
+  // visible page and the ranking would change as you clicked through.
+  const paged = useMemo(
+    () => sorted.slice((page - 1) * perPage, page * perPage),
+    [sorted, page, perPage],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+
+  // Any change to the ordering or the underlying rows invalidates the current
+  // page number — page 3 of a re-sorted table shows unrelated reps, and page 3
+  // of a shorter result set shows nothing at all.
+  useEffect(() => {
+    setPage(1);
+  }, [sort.key, sort.dir, perPage, rows.length]);
 
   const toggle = (key) =>
     setSort((s) =>
@@ -108,7 +127,7 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
           </thead>
 
           <tbody>
-            {sorted.map((row) => (
+            {paged.map((row) => (
               <tr
                 key={row.id}
                 className={`border-b border-border last:border-0 hover:bg-muted/30 ${
@@ -142,6 +161,9 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
             ))}
           </tbody>
 
+          {/* Totals are for the WHOLE team, not the visible page. A footer
+              that re-totalled per page would read as the team's numbers while
+              silently meaning "these 20 reps", which is worse than no footer. */}
           {totals && (
             <tfoot>
               <tr className="border-t-2 border-border bg-muted/40 font-semibold">
@@ -165,6 +187,17 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
           )}
         </table>
       </div>
+
+      {sorted.length > perPage && (
+        <TablePagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={sorted.length}
+          itemsPerPage={perPage}
+          onPageChange={setPage}
+          onItemsPerPageChange={(n) => setPerPage(Number(n))}
+        />
+      )}
     </div>
   );
 };

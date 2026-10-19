@@ -26,6 +26,33 @@ import {
  * All aggregation is a single pass over the records. The dataset can run to
  * thousands of leads, and the per-project index below needs the same pass, so
  * building both in one loop keeps this O(n) rather than O(n x projects).
+ *
+ * WHY THE FETCH IS NOT PAGED, even though the table is.
+ *
+ * Every number here is an aggregate over the whole period. Net Q% is a rep's
+ * qualified leads over their connected leads; the qualification index is that
+ * rate measured against the TEAM's rate on the same projects. Both need every
+ * lead in the window counted before either can be stated.
+ *
+ * Fetch 20 leads at a time and the arithmetic quietly changes meaning: a rep
+ * would be ranked on whichever slice happened to load, the team baseline would
+ * shift with every page, and the ranking would reorder as you clicked. It would
+ * render fine and be wrong — the worst failure mode in a report people make
+ * staffing decisions from.
+ *
+ * So the load is reduced where it can be reduced honestly:
+ *   - the period defaults to one MONTH, not a year (~12x fewer rows);
+ *   - the select carries seven fields, not the full lead record;
+ *   - pages after the first are fetched concurrently, capped at MAX_LEADS;
+ *   - the result is cached in localStorage and shared with the Reports charts
+ *     under the same query key, so a second view costs nothing.
+ *
+ * The table itself paginates at 20 rows, which is what pagination can safely
+ * do here: it limits what is RENDERED, not what is counted.
+ *
+ * Paging the fetch becomes correct only when the backend can aggregate — the
+ * spec's daily summary table (date, project, source, rep). Then this page asks
+ * for a handful of pre-computed rows instead of every lead.
  */
 export const useTeamPerformance = ({ filters = {}, year }) => {
   const { data, isLoading, isFetching, isError } = useQuery({

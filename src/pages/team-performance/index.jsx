@@ -20,8 +20,46 @@ import { MIN_SAMPLE } from "./utils/qualification";
  *     page is one typed URL away for anybody.
  */
 
-const CURRENT_YEAR = new Date().getFullYear();
-const YEARS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
+/**
+ * Reporting period.
+ *
+ * This is the lever that controls how much data crosses the wire, and it
+ * defaults to the current MONTH rather than the year. The dataset service pulls
+ * every lead in the window so the aggregates can be computed, so a year-wide
+ * default meant ~12x the rows for a report most people read month to month.
+ *
+ * Why the window and not a paged fetch: see the note on the fetch in
+ * hooks/useTeamPerformance.js. Narrowing the window is the only way to load
+ * less without making the numbers wrong.
+ */
+const pad = (n) => String(n).padStart(2, "0");
+const fmt = (d, endOfDay = false) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${
+    endOfDay ? "23:59:59" : "00:00:00"
+  }`;
+
+const monthRange = (offset = 0) => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+  return [fmt(start), fmt(end, true)];
+};
+
+const PERIODS = [
+  { key: "thisMonth", label: "This month", range: () => monthRange(0) },
+  { key: "lastMonth", label: "Last month", range: () => monthRange(-1) },
+  {
+    key: "last3", label: "Last 3 months",
+    range: () => [monthRange(-2)[0], monthRange(0)[1]],
+  },
+  {
+    key: "thisYear", label: "This year",
+    range: () => {
+      const y = new Date().getFullYear();
+      return [`${y}-01-01 00:00:00`, `${y}-12-31 23:59:59`];
+    },
+  },
+];
 
 const Tile = ({ label, value, hint }) => (
   <div className="rounded-xl border border-border bg-card p-4" title={hint}>
@@ -35,12 +73,30 @@ const Tile = ({ label, value, hint }) => (
 );
 
 const TeamPerformance = () => {
-  const [year, setYear] = useState(CURRENT_YEAR);
+  const [periodKey, setPeriodKey] = useState("thisMonth");
   const [project, setProject] = useState("");
+
+  const period = PERIODS.find((p) => p.key === periodKey) ?? PERIODS[0];
 
   // Debounce-free on purpose: the dataset service dedupes in-flight requests
   // and caches per filter set, so typing re-reads cache rather than re-fetching.
-  const filters = useMemo(() => ({ cProject: project.trim() }), [project]);
+  const { filters, year } = useMemo(() => {
+    const [startDate, endDate] = period.range();
+    return {
+      filters: {
+        cProject: project.trim(),
+        // `between` on createdAt — the service falls back to a whole-year
+        // window when no explicit range is given, which is what we are
+        // avoiding here.
+        dateFilter: "between",
+        startDate,
+        endDate,
+      },
+      // Only used to namespace the cache key; the range above is what the
+      // query actually filters on.
+      year: Number(startDate.slice(0, 4)),
+    };
+  }, [period, project]);
 
   const { rows, totals, historyAvailable, recordCount, isLoading, isFetching, isError } =
     useTeamPerformance({ filters, year });
@@ -75,13 +131,13 @@ const TeamPerformance = () => {
                 className="h-9 w-48 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
               <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
+                value={periodKey}
+                onChange={(e) => setPeriodKey(e.target.value)}
                 className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
-                {YEARS.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
+                {PERIODS.map((p) => (
+                  <option key={p.key} value={p.key}>
+                    {p.label}
                   </option>
                 ))}
               </select>
@@ -123,7 +179,7 @@ const TeamPerformance = () => {
             <Tile
               label="Leads"
               value={totals?.leads ?? 0}
-              hint="Base for every ratio"
+              hint={`Base for every ratio · ${period.label.toLowerCase()}`}
             />
             <Tile
               label="Ever-Qualified"
