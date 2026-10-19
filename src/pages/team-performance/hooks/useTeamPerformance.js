@@ -54,13 +54,17 @@ import {
  * spec's daily summary table (date, project, source, rep). Then this page asks
  * for a handful of pre-computed rows instead of every lead.
  */
-export const useTeamPerformance = ({ filters = {}, year }) => {
+export const useTeamPerformance = ({ filters = {}, year, enabled = true }) => {
   const { data, isLoading, isFetching, isError } = useQuery({
     // Same key PREFIX as the Reports charts on purpose: when the filters and
     // year match, this page and the funnel / win-rate charts resolve to one
     // cache entry and one network request instead of two.
     queryKey: ["win-rate-dataset", filters, year],
     queryFn: () => fetchWinRateDataset({ filters, year }),
+
+    // Lets the page hold the request while a team selection resolves to user
+    // ids. Without it the first render would pull every lead unscoped.
+    enabled,
 
     // Paint instantly from the localStorage snapshot, then revalidate.
     //

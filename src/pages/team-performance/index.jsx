@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import Icon from "../../components/AppIcon";
 import TeamPerformanceTable from "./components/TeamPerformanceTable";
+import { useTeams, useTeamUsers } from "hooks/useTeams";
 import { useTeamPerformance } from "./hooks/useTeamPerformance";
 import { MIN_SAMPLE } from "./utils/qualification";
 
@@ -45,20 +46,13 @@ const monthRange = (offset = 0) => {
   return [fmt(start), fmt(end, true)];
 };
 
+// Month windows only, deliberately. A quarter or a year runs past the dataset
+// service's 5,000-lead cap at this volume, and over that cap the aggregates are
+// computed on a TRUNCATED set with nothing on screen saying so. Wider windows
+// come back when the backend can aggregate, not before.
 const PERIODS = [
   { key: "thisMonth", label: "This month", range: () => monthRange(0) },
   { key: "lastMonth", label: "Last month", range: () => monthRange(-1) },
-  {
-    key: "last3", label: "Last 3 months",
-    range: () => [monthRange(-2)[0], monthRange(0)[1]],
-  },
-  {
-    key: "thisYear", label: "This year",
-    range: () => {
-      const y = new Date().getFullYear();
-      return [`${y}-01-01 00:00:00`, `${y}-12-31 23:59:59`];
-    },
-  },
 ];
 
 const Tile = ({ label, value, hint }) => (
@@ -75,8 +69,31 @@ const Tile = ({ label, value, hint }) => (
 const TeamPerformance = () => {
   const [periodKey, setPeriodKey] = useState("thisMonth");
   const [project, setProject] = useState("");
+  const [team, setTeam] = useState("");
 
   const period = PERIODS.find((p) => p.key === periodKey) ?? PERIODS[0];
+
+  // TEAM FILTER. Lead has no native team attribute, so "filter by team" means
+  // "assigned to anyone on that team": the selected team's users are resolved
+  // to ids and applied as assignedUserId IN [...]. Same approach as the Reports
+  // and Deals pages, so all three agree on what a team contains.
+  const { data: teamsData } = useTeams();
+  const { data: teamUsersData, isSuccess: teamUsersLoaded } = useTeamUsers(team);
+
+  // null = "not known yet", [] = "this team genuinely has no users".
+  // The distinction matters: `|| []` while the request is still in flight would
+  // read as an empty team and the query would resolve to "match nothing",
+  // flashing an empty report before the real one arrives.
+  const teamUserIds = useMemo(() => {
+    if (!team) return null;
+    if (!teamUsersLoaded) return null;
+    return (teamUsersData?.list || []).map((u) => u.id);
+  }, [team, teamUsersLoaded, teamUsersData]);
+
+  const teamOptions = (teamsData?.list || []).map((t) => ({
+    value: t.id,
+    label: t.name,
+  }));
 
   // Debounce-free on purpose: the dataset service dedupes in-flight requests
   // and caches per filter set, so typing re-reads cache rather than re-fetching.
@@ -85,6 +102,8 @@ const TeamPerformance = () => {
     return {
       filters: {
         cProject: project.trim(),
+        // Only present once the team's users are known — see teamUserIds above.
+        ...(team && teamUserIds ? { _teamUserIds: teamUserIds } : {}),
         // `between` on createdAt — the service falls back to a whole-year
         // window when no explicit range is given, which is what we are
         // avoiding here.
@@ -96,10 +115,17 @@ const TeamPerformance = () => {
       // query actually filters on.
       year: Number(startDate.slice(0, 4)),
     };
-  }, [period, project]);
+  }, [period, project, team, teamUserIds]);
 
+  // Hold the dataset request until the team resolves. Firing it early would
+  // fetch the WHOLE team's leads unscoped, then immediately refetch scoped —
+  // a wasted full pull, and a second of wrong numbers on screen.
   const { rows, totals, historyAvailable, recordCount, isLoading, isFetching, isError } =
-    useTeamPerformance({ filters, year });
+    useTeamPerformance({
+      filters,
+      year,
+      enabled: !team || teamUserIds !== null,
+    });
 
   const rankedCount = rows.filter((r) => !r.lowSample).length;
 
@@ -130,6 +156,18 @@ const TeamPerformance = () => {
                 placeholder="Filter by project…"
                 className="h-9 w-48 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
+              <select
+                value={team}
+                onChange={(e) => setTeam(e.target.value)}
+                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="">All teams</option>
+                {teamOptions.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
               <select
                 value={periodKey}
                 onChange={(e) => setPeriodKey(e.target.value)}
