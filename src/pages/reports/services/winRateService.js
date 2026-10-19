@@ -13,7 +13,8 @@ import { handleUnauthorized } from "services/session";
 
 const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
 
-const DATASET_KEY_PREFIX = "win_rate_dataset_v1";
+// v2: the select gained cStatusObj + cProject. See the note beside it.
+const DATASET_KEY_PREFIX = "win_rate_dataset_v2";
 const DATASET_TTL = 1000 * 60 * 10;
 const DATASET_GC = 1000 * 60 * 60 * 24;
 
@@ -216,13 +217,25 @@ export const fetchWinRateDataset = async ({ filters = {}, year }) => {
     const query = buildQuery(whereGroup);
     // Keep in sync with what the aggregation hooks read: useWinRateAnalytics
     // needs status/createdAt; useFunnelAnalytics additionally groups by
-    // assignedUserId/assignedUserName for its per-rep breakdown.
+    // assignedUserId/assignedUserName for its per-rep breakdown; Team
+    // Performance adds cStatusObj (the statuses a lead has passed through,
+    // which is what makes Ever-Qualified computable without a backend change)
+    // and cProject (so its qualification index can compare reps on the same
+    // project mix).
+    //
+    // Both are additive — existing consumers ignore them — but the cache key
+    // below HAD to be bumped alongside this. A localStorage entry written
+    // before these fields existed deserialises fine and simply has no
+    // cStatusObj, which would make every lead read as never-qualified: a
+    // plausible-looking wrong number rather than an error.
     const select = [
       "id",
       "status",
       "createdAt",
       "assignedUserId",
       "assignedUserName",
+      "cStatusObj",
+      "cProject",
     ].join(",");
 
     const fetchPage = async (offset) => {

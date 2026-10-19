@@ -70,6 +70,12 @@ const NAV_ICON_STYLES = {
     tile: "group-hover:bg-cyan-100",
     bar: "bg-cyan-600",
   },
+  "/team-performance": {
+    icon: "text-teal-600",
+    row: "hover:bg-teal-50",
+    tile: "group-hover:bg-teal-100",
+    bar: "bg-teal-600",
+  },
   "/import": {
     icon: "text-sky-500",
     row: "hover:bg-sky-50",
@@ -229,6 +235,18 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       path: "/reports",
       icon: "BarChart3",
       badge: null,
+    },
+    {
+      label: "Team Performance",
+      path: "/team-performance",
+      icon: "Trophy",
+      badge: null,
+      // type=admin ONLY — stricter than adminOnly, so Owner and Manager are
+      // hidden too. The Reports module rebuild lands here first, and nobody
+      // should be reading half-built numbers as if they were the real report.
+      // The route carries the same gate via ProtectedRoute's supAdminOnly;
+      // this flag only hides the button.
+      isSupAdmin: true,
     },
     {
       label: "Import",

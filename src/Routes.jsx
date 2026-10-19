@@ -23,6 +23,7 @@ const DealsPage       = lazy(() => import("./pages/deals"));
 const InactiveLeadsPage = lazy(() => import("./pages/inactive-leads"));
 const EmailsPage      = lazy(() => import("./pages/emails"));
 const Reports         = lazy(() => import("./pages/reports"));
+const TeamPerformance = lazy(() => import("./pages/team-performance"));
 const Activities      = lazy(() => import("./pages/activities"));
 const Profile         = lazy(() => import("pages/profile"));
 const TaskPage        = lazy(() => import("pages/tasks"));
@@ -132,6 +133,17 @@ const Routes = () => {
             <Route
               path="/reports"
               element={<Reports />}
+            />
+            {/* Admin-only while the Reports module rebuild is in progress.
+                The sidebar entry is gated too, but that is presentation —
+                this is what actually closes the URL. */}
+            <Route
+              path="/team-performance"
+              element={
+                <ProtectedRoute supAdminOnly>
+                  <TeamPerformance />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/activities"
