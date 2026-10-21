@@ -129,7 +129,6 @@ const TeamPerformance = () => {
   const {
     rows,
     totals,
-    reversalHistogram,
     historyAvailable,
     recordCount,
     isLoading,
@@ -270,11 +269,7 @@ const TeamPerformance = () => {
           </div>
 
           <div className="mb-6">
-            <QualificationCharts
-              histogram={reversalHistogram}
-              rows={rows}
-              suspectHours={suspectHours}
-            />
+            <QualificationCharts totals={totals} rows={rows} />
           </div>
 
           <TeamPerformanceTable

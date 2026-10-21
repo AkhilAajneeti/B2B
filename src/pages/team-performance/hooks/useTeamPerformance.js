@@ -7,8 +7,6 @@ import {
 import {
   DEFAULT_SUSPECT_HOURS,
   MIN_SAMPLE,
-  REVERSAL_BUCKETS,
-  bucketFor,
   hasStatusHistory,
   hasSiteVisitDone,
   isClosedWithoutReaching,
@@ -16,7 +14,6 @@ import {
   isEverQualified,
   isQualifiedThenDropped,
   isSuspectQualification,
-  lifespanHours,
 } from "../utils/qualification";
 
 /**
@@ -111,12 +108,6 @@ export const useTeamPerformance = ({
     // project -> { connected, qualified } across the WHOLE team
     const teamByProject = new Map();
 
-    // Time-to-reversal histogram, over every qualified-then-dropped lead.
-    // Counted for ALL of them, not only those inside the threshold — the point
-    // of the chart is to show where the pile-up sits so the threshold can be
-    // chosen from the data instead of guessed.
-    const buckets = new Map(REVERSAL_BUCKETS.map((b) => [b.key, 0]));
-
     const projectOf = (lead) =>
       lead?.cProject || lead?.cProjectName || "Unassigned project";
 
@@ -150,12 +141,6 @@ export const useTeamPerformance = ({
       if (qualified) rep.everQualified += 1;
       if (isQualifiedThenDropped(lead)) {
         rep.qualifiedThenDropped += 1;
-
-        const hours = lifespanHours(lead);
-        if (hours !== null) {
-          const bucket = bucketFor(hours);
-          buckets.set(bucket.key, (buckets.get(bucket.key) || 0) + 1);
-        }
         if (isSuspectQualification(lead, suspectHours)) rep.suspect += 1;
       }
       if (isClosedWithoutReaching(lead)) rep.closedWithoutReaching += 1;
@@ -256,18 +241,9 @@ export const useTeamPerformance = ({
       },
     );
 
-    const reversalHistogram = REVERSAL_BUCKETS.map((b) => ({
-      key: b.key,
-      label: b.label,
-      count: buckets.get(b.key) || 0,
-      // Drives the bar colour: inside the window = a reversal we do not trust.
-      suspect: b.max <= suspectHours,
-    }));
-
     return {
       rows,
       totals,
-      reversalHistogram,
       // Drives the warning banner. Without history every "ever" metric quietly
       // degrades to "currently", which is the exact flaw this report fixes.
       historyAvailable: hasStatusHistory(records),

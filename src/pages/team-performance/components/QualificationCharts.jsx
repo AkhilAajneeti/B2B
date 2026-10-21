@@ -3,8 +3,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  LabelList,
   Legend,
   ResponsiveContainer,
   Tooltip,
@@ -13,56 +11,71 @@ import {
 } from "recharts";
 
 /**
- * The two charts behind the suspect-qualification guard.
+ * Qualified leads, shown as a COMPOSITION rather than a distribution.
  *
- * COLOUR. Two roles only, and the same two in both charts so "red = a
- * qualification we do not trust" never changes meaning between them:
+ * The question these answer is the one the team actually asks: of everything we
+ * call qualified, how much is still qualified today, and how much is a lead
+ * that was qualified and then changed to Not Interested or another negative
+ * status? Both halves count — that is the whole point of the Ever-Qualified
+ * rule — so the right picture is one total split in two, not two separate
+ * numbers and not a timing histogram.
  *
- *   trusted  -> categorical blue   #2a78d6 light / #3987e5 dark
- *   suspect  -> status critical    #d03b3b, fixed in both modes
+ *   Still qualified   = Ever-Qualified - Qualified-then-changed
+ *   Changed after     = held a qualifying status, now negative
+ *   -------------------------------------------------------
+ *   together          = Ever-Qualified
  *
- * That pair was validated rather than eyeballed — colour-vision separation
- * ΔE 23.8 light / 25.7 dark against a ≥8 target, normal-vision 31.6 / 31.9
- * against a ≥15 floor, both above 3:1 contrast on their surface. Colour also
- * never carries the meaning alone: both charts keep a legend, and the grouped
- * bars are directly labelled.
+ * An earlier version plotted how LONG each lead took to be reversed. It was
+ * answering a question nobody asked (is anyone gaming the status?) and burying
+ * the one they did. That signal now lives in the Suspect tile and column, where
+ * a 5-out-of-1,843 number belongs — far too small to earn a chart segment, and
+ * as a third colour it would have been invisible.
  *
- * The app has no dark theme today, but the dark steps are declared anyway —
- * they are separately chosen values for the dark surface, not an automatic
- * inversion of the light ones, which would fail contrast.
+ * COLOUR. Two slots, same meaning in both charts:
+ *   still qualified -> blue   #2a78d6 light / #3987e5 dark
+ *   changed after   -> orange #eb6834 light / #d95926 dark
+ *
+ * Validated, not eyeballed: colour-vision separation ΔE 24.7 light / 26.8 dark
+ * against a ≥8 target, normal-vision 33.6 / 31.8 against a ≥15 floor, both over
+ * 3:1 on their surface. A blue/orange/red three-segment version was tried first and
+ * FAILED — orange beside red measures ΔE 10.8 normal-vision in light mode and
+ * 6.8 in dark, i.e. hard to tell apart even with full colour vision.
  */
 
 const VIZ_STYLE = `
 .tp-viz {
-  --viz-trusted: #2a78d6;
-  --viz-suspect: #d03b3b;
+  --viz-kept: #2a78d6;
+  --viz-changed: #eb6834;
   --viz-grid: #e1e0d9;
   --viz-axis: #898781;
+  --viz-surface: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .tp-viz {
-    --viz-trusted: #3987e5;
-    --viz-suspect: #d03b3b;
+    --viz-kept: #3987e5;
+    --viz-changed: #d95926;
     --viz-grid: #2c2c2a;
     --viz-axis: #898781;
+    --viz-surface: #1a1a19;
   }
 }
 :root[data-theme="dark"] .tp-viz {
-  --viz-trusted: #3987e5;
-  --viz-suspect: #d03b3b;
+  --viz-kept: #3987e5;
+  --viz-changed: #d95926;
   --viz-grid: #2c2c2a;
   --viz-axis: #898781;
+  --viz-surface: #1a1a19;
 }
 `;
 
-const AXIS = {
-  stroke: "var(--viz-axis)",
-  fontSize: 11,
-  tickLine: false,
-};
+const KEPT = "Still qualified";
+const CHANGED = "Changed after qualifying";
 
-const TooltipBox = ({ active, payload, label, suffix }) => {
+const AXIS = { stroke: "var(--viz-axis)", fontSize: 11, tickLine: false };
+
+const TooltipBox = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
+  const total = payload.reduce((n, e) => n + (e.value || 0), 0);
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-lg">
       <p className="font-semibold text-foreground">{label}</p>
@@ -72,43 +85,28 @@ const TooltipBox = ({ active, payload, label, suffix }) => {
             className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle"
             style={{ background: entry.color }}
           />
-          {entry.name}: <span className="font-semibold text-foreground">{entry.value}</span>
-          {suffix}
+          {entry.name}:{" "}
+          <span className="font-semibold text-foreground">{entry.value}</span>
+          {total > 0 && ` (${Math.round((entry.value / total) * 100)}%)`}
         </p>
       ))}
+      <p className="mt-1 border-t border-border pt-1 font-semibold text-foreground">
+        Qualified: {total}
+      </p>
     </div>
   );
 };
 
-/* The histogram is one data series whose COLOUR carries a second meaning, so
-   it needs its own key — Recharts' legend would only say "Leads". Without this
-   the red/blue split would be colour alone, which is exactly what the
-   accessibility rule forbids. */
-const Key = ({ items }) => (
-  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-    {items.map((item) => (
-      <span key={item.label} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-        <span
-          className="inline-block h-2 w-2 rounded-full"
-          style={{ background: item.color }}
-        />
-        {item.label}
-      </span>
-    ))}
-  </div>
-);
-
-const Panel = ({ title, subtitle, children, empty, legend }) => (
+const Panel = ({ title, subtitle, height = "h-64", children, empty }) => (
   <div className="rounded-xl border border-border bg-card p-4">
     <h3 className="text-sm font-semibold text-foreground">{title}</h3>
     <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
       {subtitle}
     </p>
-    {legend}
-    <div className="mt-4 h-64">
+    <div className={`mt-4 ${height}`}>
       {empty ? (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-          Nothing to plot in this period.
+          No qualified leads in this period.
         </div>
       ) : (
         children
@@ -117,77 +115,87 @@ const Panel = ({ title, subtitle, children, empty, legend }) => (
   </div>
 );
 
-const QualificationCharts = ({ histogram = [], rows = [], suspectHours }) => {
-  const histogramEmpty = histogram.every((b) => !b.count);
+/* A 2px ring in the surface colour separates stacked segments, so the boundary
+   reads as a break rather than two colours touching. */
+const SEGMENT_GAP = { stroke: "var(--viz-surface)", strokeWidth: 2 };
 
-  // Only reps who actually qualified something, worst first — the chart exists
-  // to surface where reversals concentrate, and reps with nothing to show would
-  // just dilute the axis. Capped so the bars stay readable; the full picture is
-  // in the table below.
+const QualificationCharts = ({ totals, rows = [] }) => {
+  const kept = Math.max(0, (totals?.everQualified ?? 0) - (totals?.qualifiedThenDropped ?? 0));
+  const changed = totals?.qualifiedThenDropped ?? 0;
+  const total = kept + changed;
+
+  const teamData = [{ name: "Team", [KEPT]: kept, [CHANGED]: changed }];
+
+  // Sorted by TOTAL qualified, largest first. The previous version sorted by
+  // flagged count, which pushed a rep with 146 qualified leads into the middle
+  // of the chart behind reps with two.
   const repData = rows
     .filter((r) => r.everQualified > 0)
-    .sort((a, b) => b.suspect - a.suspect || b.everQualified - a.everQualified)
-    .slice(0, 8)
     .map((r) => ({
       name: (r.name || "Unassigned").split(" ")[0],
-      Trusted: r.genuine,
-      Suspect: r.suspect,
-    }));
+      [KEPT]: Math.max(0, r.everQualified - r.qualifiedThenDropped),
+      [CHANGED]: r.qualifiedThenDropped,
+      total: r.everQualified,
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  const pctChanged = total ? Math.round((changed / total) * 100) : 0;
 
   return (
     <div className="tp-viz grid gap-4 lg:grid-cols-2">
       <style>{VIZ_STYLE}</style>
 
       <Panel
-        title="How long before a qualified lead was reversed"
-        subtitle={`Every lead that held a qualifying status and is now negative, by how long it lived. A pile-up in the first bars is the signal — it means the status was tagged and undone, not worked. Bars inside the ${suspectHours}-hour window are counted as suspect.`}
-        empty={histogramEmpty}
-        legend={
-          <Key
-            items={[
-              { label: `Suspect — reversed within ${suspectHours}h`, color: "var(--viz-suspect)" },
-              { label: "Trusted — reversed later", color: "var(--viz-trusted)" },
-            ]}
-          />
-        }
+        title="What makes up our qualified leads"
+        subtitle={`${total.toLocaleString()} qualified in this period. ${changed.toLocaleString()} of them (${pctChanged}%) were qualified first and changed to a negative status afterwards — they still count, because the buyer was genuinely interested at the time.`}
+        height="h-40"
+        empty={total === 0}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={histogram} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-            <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
-            <XAxis dataKey="label" {...AXIS} axisLine={{ stroke: "var(--viz-grid)" }} interval={0} angle={-20} textAnchor="end" height={48} />
-            <YAxis {...AXIS} axisLine={false} allowDecimals={false} />
-            <Tooltip cursor={{ fill: "var(--viz-grid)", opacity: 0.35 }} content={<TooltipBox suffix=" leads" />} />
-            {/* 4px rounded data-ends, anchored to the baseline. */}
-            <Bar dataKey="count" name="Leads" radius={[4, 4, 0, 0]} maxBarSize={48}>
-              {histogram.map((b) => (
-                <Cell
-                  key={b.key}
-                  fill={b.suspect ? "var(--viz-suspect)" : "var(--viz-trusted)"}
-                />
-              ))}
-            </Bar>
+          <BarChart
+            layout="vertical"
+            data={teamData}
+            margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
+          >
+            <XAxis type="number" {...AXIS} axisLine={false} />
+            <YAxis type="category" dataKey="name" hide />
+            <Tooltip cursor={{ fill: "var(--viz-grid)", opacity: 0.35 }} content={<TooltipBox />} />
+            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+            <Bar dataKey={KEPT} stackId="q" fill="var(--viz-kept)" {...SEGMENT_GAP} maxBarSize={56} />
+            <Bar
+              dataKey={CHANGED}
+              stackId="q"
+              fill="var(--viz-changed)"
+              {...SEGMENT_GAP}
+              maxBarSize={56}
+              radius={[0, 4, 4, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </Panel>
 
       <Panel
-        title="Trusted vs suspect qualifications, by rep"
-        subtitle="Suspect leads are still counted as qualified — nothing is removed. This is the split, so a reversal pattern belongs to a person rather than to the team average. Worst first, top 8."
+        title="The same split, by rep"
+        subtitle="Each bar is that rep's total qualified leads. The orange part is what they qualified and later lost — a tall orange share is a nurturing problem, not a qualifying one. Top 10 by volume."
         empty={repData.length === 0}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={repData} margin={{ top: 16, right: 8, left: -18, bottom: 0 }} barGap={2}>
+          <BarChart data={repData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
             <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
             <XAxis dataKey="name" {...AXIS} axisLine={{ stroke: "var(--viz-grid)" }} interval={0} />
             <YAxis {...AXIS} axisLine={false} allowDecimals={false} />
             <Tooltip cursor={{ fill: "var(--viz-grid)", opacity: 0.35 }} content={<TooltipBox />} />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 4 }} />
-            <Bar dataKey="Trusted" fill="var(--viz-trusted)" radius={[4, 4, 0, 0]} maxBarSize={28}>
-              <LabelList dataKey="Trusted" position="top" fontSize={10} fill="var(--viz-axis)" />
-            </Bar>
-            <Bar dataKey="Suspect" fill="var(--viz-suspect)" radius={[4, 4, 0, 0]} maxBarSize={28}>
-              <LabelList dataKey="Suspect" position="top" fontSize={10} fill="var(--viz-axis)" />
-            </Bar>
+            <Bar dataKey={KEPT} stackId="q" fill="var(--viz-kept)" {...SEGMENT_GAP} maxBarSize={40} />
+            <Bar
+              dataKey={CHANGED}
+              stackId="q"
+              fill="var(--viz-changed)"
+              {...SEGMENT_GAP}
+              maxBarSize={40}
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </Panel>

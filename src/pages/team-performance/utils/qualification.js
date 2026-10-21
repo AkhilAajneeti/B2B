@@ -221,22 +221,3 @@ export const isSuspectQualification = (lead, thresholdHours = DEFAULT_SUSPECT_HO
   const hours = lifespanHours(lead);
   return hours !== null && hours <= thresholdHours;
 };
-
-/**
- * Buckets for the time-to-reversal histogram, in hours. Deliberately fine below
- * 2h and coarse above it: the whole question is whether reversals pile up in
- * the first couple of hours, and uniform buckets would hide that spike inside a
- * wide first bar.
- */
-export const REVERSAL_BUCKETS = [
-  { key: "<30m", label: "< 30 min", max: 0.5 },
-  { key: "30-60m", label: "30–60 min", max: 1 },
-  { key: "1-2h", label: "1–2 hrs", max: 2 },
-  { key: "2-6h", label: "2–6 hrs", max: 6 },
-  { key: "6-24h", label: "6–24 hrs", max: 24 },
-  { key: "1-3d", label: "1–3 days", max: 72 },
-  { key: ">3d", label: "> 3 days", max: Infinity },
-];
-
-export const bucketFor = (hours) =>
-  REVERSAL_BUCKETS.find((b) => hours <= b.max) ?? REVERSAL_BUCKETS[REVERSAL_BUCKETS.length - 1];
