@@ -27,40 +27,9 @@ import { fetchLeadsCount } from "services/leads.service";
 // green / amber / violet / rose — so the four cards never read as similar.
 // (Call Not Picked moved red→amber: a missed call is "retry", not "dead", and
 // it keeps it distinct from the red Not Interested card.)
-/*
- * "Being worked right now" — one CURRENT status each. Reps live in this row, so
- * the titles are the words they use, not report language. Ordered by what needs
- * doing first: an open task, then a booked callback, then someone who did not
- * pick up, then a lead already lost.
- *
- * Follow Up is back. It was removed once, and it was the single most useful
- * card here: it is the only one that answers "what do I work today".
- */
+// Current-status cards. Ordered by how much each demands attention: a lead
+// written off, then one that never picked up, then a scheduled callback.
 export const METRIC_DEFS = [
-  {
-    title: "To Follow Up",
-    status: "Follow up",
-    icon: "TrendingUp",
-    from: "#10B981",
-    to: "#059669",
-    description: "Open leads waiting on you",
-  },
-  {
-    title: "Callback Booked",
-    status: "Call Later",
-    icon: "Clock",
-    from: "#8B5CF6",
-    to: "#7C3AED",
-    description: "They asked you to call back later",
-  },
-  {
-    title: "No Answer",
-    status: "Call Not Picked",
-    icon: "PhoneOff",
-    from: "#F59E0B",
-    to: "#F97316",
-    description: "Called, but never picked up",
-  },
   {
     title: "Not Interested",
     // RAW stored value — lower-case "interested". The dropdown label is title
@@ -69,7 +38,23 @@ export const METRIC_DEFS = [
     icon: "XCircle",
     from: "#F43F5E",
     to: "#E11D48",
-    description: "Told us no",
+    description: "Leads marked as not interested",
+  },
+  {
+    title: "Call Not Picked",
+    status: "Call Not Picked",
+    icon: "PhoneOff",
+    from: "#F59E0B",
+    to: "#F97316",
+    description: "Leads not reachable on call",
+  },
+  {
+    title: "Call Later",
+    status: "Call Later",
+    icon: "Clock",
+    from: "#8B5CF6",
+    to: "#7C3AED",
+    description: "Leads scheduled for future follow-up",
   },
 ];
 

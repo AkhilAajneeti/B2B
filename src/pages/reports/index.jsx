@@ -319,20 +319,12 @@ const Reports = () => {
 
             {/* Key Metrics Cards */}
 
-            {/* Two labelled sections, deliberately.
-                The rows measure different things — a lead's JOURNEY above, its
-                CURRENT status below — and they overlap: a lead that was Follow
-                up and is now Not Interested is counted in both. Added together
-                they exceed the total. Without headings that reads as broken
-                data; with them it reads as two views of the same leads. */}
-            {showQualification && qualificationData?.length > 0 && (
-              <h2 className="mb-3 text-sm font-semibold text-foreground">
-                Where leads ended up
-                <span className="ml-2 font-normal text-muted-foreground">
-                  · the journey, so far
-                </span>
-              </h2>
-            )}
+            {/* NOTE for whoever reads these numbers next: the two rows count
+                different things and OVERLAP. The row above is a lead's journey
+                (was it ever qualified); the row below is its current status. A
+                lead that was Follow up and is now Not Interested appears in
+                both "Qualified, Then Lost" and "Not Interested", so adding the
+                rows together exceeds the total. That is correct, not a bug. */}
             {showQualification && qualificationData?.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -378,17 +370,11 @@ const Reports = () => {
               />
             )}
 
-            <h2 className="mb-3 text-sm font-semibold text-foreground">
-              Being worked right now
-              <span className="ml-2 font-normal text-muted-foreground">
-                · where each lead stands today
-              </span>
-            </h2>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.15 }}
-              className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-8"
+              className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5 mb-8"
             >
               {metricsData?.map((metric) => (
                 <MetricsCard
