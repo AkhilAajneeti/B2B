@@ -18,7 +18,7 @@
  * so identical queries across sessions hit cache, not network.
  */
 import { useMemo } from "react";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { fetchLeadsCount } from "services/leads.service";
 
 // Card definitions — single source of truth for what each tile means.
@@ -27,7 +27,40 @@ import { fetchLeadsCount } from "services/leads.service";
 // green / amber / violet / rose — so the four cards never read as similar.
 // (Call Not Picked moved red→amber: a missed call is "retry", not "dead", and
 // it keeps it distinct from the red Not Interested card.)
+/*
+ * "Being worked right now" — one CURRENT status each. Reps live in this row, so
+ * the titles are the words they use, not report language. Ordered by what needs
+ * doing first: an open task, then a booked callback, then someone who did not
+ * pick up, then a lead already lost.
+ *
+ * Follow Up is back. It was removed once, and it was the single most useful
+ * card here: it is the only one that answers "what do I work today".
+ */
 export const METRIC_DEFS = [
+  {
+    title: "To Follow Up",
+    status: "Follow up",
+    icon: "TrendingUp",
+    from: "#10B981",
+    to: "#059669",
+    description: "Open leads waiting on you",
+  },
+  {
+    title: "Callback Booked",
+    status: "Call Later",
+    icon: "Clock",
+    from: "#8B5CF6",
+    to: "#7C3AED",
+    description: "They asked you to call back later",
+  },
+  {
+    title: "No Answer",
+    status: "Call Not Picked",
+    icon: "PhoneOff",
+    from: "#F59E0B",
+    to: "#F97316",
+    description: "Called, but never picked up",
+  },
   {
     title: "Not Interested",
     // RAW stored value — lower-case "interested". The dropdown label is title
@@ -36,23 +69,7 @@ export const METRIC_DEFS = [
     icon: "XCircle",
     from: "#F43F5E",
     to: "#E11D48",
-    description: "Leads marked as not interested",
-  },
-  {
-    title: "Call Not Picked",
-    status: "Call Not Picked",
-    icon: "PhoneOff",
-    from: "#F59E0B",
-    to: "#F97316",
-    description: "Leads not reachable on call",
-  },
-  {
-    title: "Call Later",
-    status: "Call Later",
-    icon: "Clock",
-    from: "#8B5CF6",
-    to: "#7C3AED",
-    description: "Leads scheduled for future follow-up",
+    description: "Told us no",
   },
 ];
 
@@ -95,37 +112,47 @@ const QDTD_STATUS = "QDTD";
 
 const ALL_QUALIFYING = [...QUALIFYING_STATUSES, QDTD_STATUS];
 
+/*
+ * "Where leads ended up" — these describe a lead's JOURNEY, not its current
+ * status, and the three qualified cards partition every lead that was ever
+ * qualified: it is either still qualified, qualified on delay, or lost.
+ *
+ * They therefore OVERLAP the working-status row: a lead that was Follow up and
+ * is now Not Interested appears in both "Qualified, Then Lost" here and "Not
+ * Interested" there. Adding the two rows together exceeds the total, which is
+ * why each row carries a heading saying what it counts. Do not merge them.
+ */
 export const QUALIFICATION_DEFS = [
   {
-    title: "Total Leads",
+    title: "All Leads",
     icon: "Users",
     from: "#3B82F6",
     to: "#2563EB",
-    description: "Every lead in the current filter",
+    description: "Everything in this view — the base for every % below",
     clauses: [],
   },
   {
-    title: "Genuinely Qualified",
+    title: "Qualified Now",
     icon: "BadgeCheck",
     from: "#14B8A6",
     to: "#0D9488",
-    description: "Sitting in a qualifying status right now",
+    description: "Interested today — tap to see the split",
     clauses: [{ type: "in", attribute: "status", value: QUALIFYING_STATUSES }],
   },
   {
-    title: "Qualified Due To Delay",
+    title: "Qualified On Delay",
     icon: "Hourglass",
     from: "#6366F1",
     to: "#4338CA",
-    description: "Qualified only because of delay (QDTD)",
+    description: "Status is QDTD — qualified, but on delay",
     clauses: [{ type: "equals", attribute: "status", value: QDTD_STATUS }],
   },
   {
-    title: "Dropped After Qualified",
+    title: "Qualified, Then Lost",
     icon: "TrendingDown",
     from: "#78716C",
     to: "#57534E",
-    description: "Was qualified once, has since moved off it",
+    description: "Was interested once, has since gone cold",
     clauses: [
       // Ever held a qualifying status. arrayAnyOf is EspoCRM's operator for
       // array attributes and is the same one the "Previously in status" filter
@@ -306,11 +333,41 @@ export const useFilteredMetrics = ({
 
   const breakdownResults = useQueries({ queries: breakdownQueries });
 
+  // The denominator behind every "% of all leads" badge.
+  //
+  // Fetched for EVERY role, not just admins. The share is what turns a bare
+  // "5,853" into something a rep can act on, and the admin-only journey row
+  // cannot be the thing that supplies it.
+  //
+  // Shares a query key with the "All Leads" card above, so on an admin screen
+  // the two resolve to one request rather than counting the same thing twice.
+  const totalQuery = useQuery({
+    queryKey: ["qualification-metric", "All Leads", baseWhere],
+    queryFn: () => fetchLeadsCount(baseWhere),
+    enabled,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    placeholderData: (prev) => prev,
+    retry: 1,
+  });
+
+  const totalLeads = totalQuery.data ?? 0;
+
+  // One decimal below 1%, so a genuinely small slice does not round to "0%"
+  // and read as nothing.
+  const shareOf = (value) =>
+    totalLeads > 0 && value > 0
+      ? `${((value / totalLeads) * 100).toFixed(value / totalLeads < 0.01 ? 1 : 0)}%`
+      : undefined;
+
   const metricsData = useMemo(() => {
     return METRIC_DEFS.map((m, i) => ({
       title: m.title,
       status: m.status, // used by the Reports page to filter the table on click
       value: results[i]?.data ?? 0,
+      share: shareOf(results[i]?.data ?? 0),
       change: "—",
       changeType: "positive",
       icon: m.icon,
@@ -318,19 +375,24 @@ export const useFilteredMetrics = ({
       to: m.to,
       description: m.description,
     }));
-  }, [results]);
+  }, [results, totalLeads]);
 
   const qualificationData = useMemo(() => {
     if (!includeQualification) return [];
-    return QUALIFICATION_DEFS.map((m, i) => ({
-      title: m.title,
-      value: qualificationResults[i]?.data ?? 0,
-      icon: m.icon,
-      from: m.from,
-      to: m.to,
-      description: m.description,
-    }));
-  }, [qualificationResults, includeQualification]);
+    return QUALIFICATION_DEFS.map((m, i) => {
+      const value = qualificationResults[i]?.data ?? 0;
+      return {
+        title: m.title,
+        value,
+        // The base card does not get a badge reading "100%".
+        share: i === 0 ? undefined : shareOf(value),
+        icon: m.icon,
+        from: m.from,
+        to: m.to,
+        description: m.description,
+      };
+    });
+  }, [qualificationResults, includeQualification, totalLeads]);
 
   const qualifyingBreakdown = useMemo(() => {
     if (!includeQualifyingBreakdown) return [];

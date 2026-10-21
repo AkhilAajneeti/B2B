@@ -273,7 +273,7 @@ const Reports = () => {
   });
 
   const qualifiedTotal =
-    qualificationData?.find((m) => m.title === "Genuinely Qualified")?.value ?? 0;
+    qualificationData?.find((m) => m.title === "Qualified Now")?.value ?? 0;
 
   return (
     <>
@@ -319,9 +319,20 @@ const Reports = () => {
 
             {/* Key Metrics Cards */}
 
-            {/* Ordered by importance, biggest picture first: the total, then
-                how much of it qualified, on what basis, and how much was lost.
-                Admin only while the Reports rebuild is in progress. */}
+            {/* Two labelled sections, deliberately.
+                The rows measure different things — a lead's JOURNEY above, its
+                CURRENT status below — and they overlap: a lead that was Follow
+                up and is now Not Interested is counted in both. Added together
+                they exceed the total. Without headings that reads as broken
+                data; with them it reads as two views of the same leads. */}
+            {showQualification && qualificationData?.length > 0 && (
+              <h2 className="mb-3 text-sm font-semibold text-foreground">
+                Where leads ended up
+                <span className="ml-2 font-normal text-muted-foreground">
+                  · the journey, so far
+                </span>
+              </h2>
+            )}
             {showQualification && qualificationData?.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -333,7 +344,7 @@ const Reports = () => {
                   // Only this card expands; the others are plain counts, and
                   // giving them a pointer cursor would promise an interaction
                   // that is not there.
-                  const expandable = metric?.title === "Genuinely Qualified";
+                  const expandable = metric?.title === "Qualified Now";
                   return (
                     <MetricsCard
                       key={metric?.title}
@@ -343,6 +354,9 @@ const Reports = () => {
                       from={metric?.from}
                       to={metric?.to}
                       description={metric?.description}
+                      share={metric?.share}
+                      expandable={expandable}
+                      expanded={expandable && qualifiedOpen}
                       selected={expandable && qualifiedOpen}
                       onClick={
                         expandable
@@ -364,11 +378,17 @@ const Reports = () => {
               />
             )}
 
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
+              Being worked right now
+              <span className="ml-2 font-normal text-muted-foreground">
+                · where each lead stands today
+              </span>
+            </h2>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.15 }}
-              className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5 mb-8"
+              className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-8"
             >
               {metricsData?.map((metric) => (
                 <MetricsCard
@@ -379,6 +399,7 @@ const Reports = () => {
                   from={metric?.from}
                   to={metric?.to}
                   description={metric?.description}
+                  share={metric?.share}
                   selected={filters.status === metric?.status}
                   onClick={() => handleMetricClick(metric?.status)}
                 />
