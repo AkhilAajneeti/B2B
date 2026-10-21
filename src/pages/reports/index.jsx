@@ -7,6 +7,7 @@ import MetricsCard from "./components/MetricsCard";
 import FilterControls from "./components/FilterControls";
 import ConversionFunnelChart from "./components/ConversionFunnelChart";
 import WinRateChart from "./components/WinRateChart";
+import StatusBreakdownChart from "./components/StatusBreakdownChart";
 import TablePagination from "./components/TablePagination";
 // import { fetchSources, fetchStatus } from "services/others.service";
 import Button from "components/ui/Button";
@@ -389,7 +390,23 @@ const Reports = () => {
                     filters={chartFilters}
                     enabled={showAnalytics}
                   />
-                  <WinRateChart filters={chartFilters} enabled={showAnalytics} />
+                  {/* Admins get the status breakdown in the Win Rate slot;
+                      everyone else keeps Win Rate unchanged. Swapped rather
+                      than stacked so the page does not grow a third panel
+                      while the Reports rebuild is still admin-only.
+
+                      Win rate is a weak headline here anyway: bookings close at
+                      the builder's office weeks later and are rarely written
+                      back, so it sits near zero and says little about lead
+                      quality. */}
+                  {showQualification ? (
+                    <StatusBreakdownChart
+                      filters={chartFilters}
+                      enabled={showAnalytics}
+                    />
+                  ) : (
+                    <WinRateChart filters={chartFilters} enabled={showAnalytics} />
+                  )}
                 </div>
               </>
             )}
