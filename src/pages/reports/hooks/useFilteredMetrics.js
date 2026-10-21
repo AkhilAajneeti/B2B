@@ -29,12 +29,14 @@ import { fetchLeadsCount } from "services/leads.service";
 // it keeps it distinct from the red Not Interested card.)
 export const METRIC_DEFS = [
   {
-    title: "Follow Up",
-    status: "Follow up",
-    icon: "TrendingUp",
-    from: "#10B981",
-    to: "#059669",
-    description: "Leads awaiting action",
+    title: "Not Interested",
+    // RAW stored value — lower-case "interested". The dropdown label is title
+    // case; querying the label returns a count of 0 rather than an error.
+    status: "Not interested",
+    icon: "XCircle",
+    from: "#F43F5E",
+    to: "#E11D48",
+    description: "Leads marked as not interested",
   },
   {
     title: "Call Not Picked",
@@ -51,14 +53,6 @@ export const METRIC_DEFS = [
     from: "#8B5CF6",
     to: "#7C3AED",
     description: "Leads scheduled for future follow-up",
-  },
-  {
-    title: "Not Interested",
-    status: "Not interested",
-    icon: "XCircle",
-    from: "#F43F5E",
-    to: "#E11D48",
-    description: "Leads marked as not interested",
   },
 ];
 
@@ -84,8 +78,10 @@ export const METRIC_DEFS = [
  * ------------------------------------------------------------------------- */
 
 // Qualifying statuses, excluding QDTD so the two cards never double-count the
-// same lead.
-const QUALIFYING_STATUSES = [
+// same lead. Exported because the Genuinely Qualified card expands into a
+// per-status breakdown built from this exact list — the breakdown has to sum to
+// the card, so both must read one definition.
+export const QUALIFYING_STATUSES = [
   "Follow up",
   "Interested",
   "Site Visit Scheduled",
@@ -235,6 +231,10 @@ export const useFilteredMetrics = ({
   // as they are for every other role, and so the extra count queries are not
   // fired for users who will never see them.
   includeQualification = false,
+  // Per-status breakdown behind the Genuinely Qualified card. Off until the
+  // card is actually opened, so six extra count queries are not fired for a
+  // panel nobody has looked at.
+  includeQualifyingBreakdown = false,
 }) => {
   const baseWhere = useMemo(() => buildBaseWhere(filters), [filters]);
 
@@ -284,6 +284,28 @@ export const useFilteredMetrics = ({
 
   const qualificationResults = useQueries({ queries: qualificationQueries });
 
+  const breakdownQueries = useMemo(() => {
+    if (!includeQualification || !includeQualifyingBreakdown) return [];
+    return QUALIFYING_STATUSES.map((status) => {
+      // Base filters + this one status — the same shape the parent card uses
+      // with `in`, so the parts add up to the whole.
+      const where = [...baseWhere, { type: "equals", attribute: "status", value: status }];
+      return {
+        queryKey: ["qualifying-breakdown", status, where],
+        queryFn: () => fetchLeadsCount(where),
+        enabled,
+        staleTime: 1000 * 60 * 2,
+        gcTime: 1000 * 60 * 30,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        placeholderData: (prev) => prev,
+        retry: 1,
+      };
+    });
+  }, [baseWhere, enabled, includeQualification, includeQualifyingBreakdown]);
+
+  const breakdownResults = useQueries({ queries: breakdownQueries });
+
   const metricsData = useMemo(() => {
     return METRIC_DEFS.map((m, i) => ({
       title: m.title,
@@ -310,9 +332,21 @@ export const useFilteredMetrics = ({
     }));
   }, [qualificationResults, includeQualification]);
 
+  const qualifyingBreakdown = useMemo(() => {
+    if (!includeQualifyingBreakdown) return [];
+    return QUALIFYING_STATUSES.map((status, i) => ({
+      status,
+      value: breakdownResults[i]?.data ?? 0,
+    }));
+  }, [breakdownResults, includeQualifyingBreakdown]);
+
+  const breakdownLoading = breakdownResults.some((r) => r.isLoading);
+
   return {
     metricsData,
     qualificationData,
+    qualifyingBreakdown,
+    breakdownLoading,
     isLoading: results.some((r) => r.isLoading),
     isFetching: results.some((r) => r.isFetching),
   };

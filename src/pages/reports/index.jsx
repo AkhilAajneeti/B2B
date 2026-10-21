@@ -4,10 +4,10 @@ import { Helmet } from "react-helmet";
 
 import TricolorBurst from "../../components/TricolorBurst";
 import MetricsCard from "./components/MetricsCard";
+import QualifiedBreakdownPanel from "./components/QualifiedBreakdownPanel";
 import FilterControls from "./components/FilterControls";
 import ConversionFunnelChart from "./components/ConversionFunnelChart";
 import WinRateChart from "./components/WinRateChart";
-import StatusBreakdownChart from "./components/StatusBreakdownChart";
 import TablePagination from "./components/TablePagination";
 // import { fetchSources, fetchStatus } from "services/others.service";
 import Button from "components/ui/Button";
@@ -256,10 +256,24 @@ const Reports = () => {
   // rendering and hiding) also means the four extra count queries never fire
   // for anyone who would not see them.
   const showQualification = isSupAdmin();
-  const { metricsData, qualificationData } = useFilteredMetrics({
+
+  // The Genuinely Qualified card opens a drawer with its per-status split.
+  // Its queries are tied to this flag, so an unopened drawer costs nothing.
+  const [qualifiedOpen, setQualifiedOpen] = useState(false);
+
+  const {
+    metricsData,
+    qualificationData,
+    qualifyingBreakdown,
+    breakdownLoading,
+  } = useFilteredMetrics({
     filters: filtersForBackend,
     includeQualification: showQualification,
+    includeQualifyingBreakdown: showQualification && qualifiedOpen,
   });
+
+  const qualifiedTotal =
+    qualificationData?.find((m) => m.title === "Genuinely Qualified")?.value ?? 0;
 
   return (
     <>
@@ -305,11 +319,56 @@ const Reports = () => {
 
             {/* Key Metrics Cards */}
 
+            {/* Ordered by importance, biggest picture first: the total, then
+                how much of it qualified, on what basis, and how much was lost.
+                Admin only while the Reports rebuild is in progress. */}
+            {showQualification && qualificationData?.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-8"
+              >
+                {qualificationData.map((metric) => {
+                  // Only this card expands; the others are plain counts, and
+                  // giving them a pointer cursor would promise an interaction
+                  // that is not there.
+                  const expandable = metric?.title === "Genuinely Qualified";
+                  return (
+                    <MetricsCard
+                      key={metric?.title}
+                      title={metric?.title}
+                      value={metric?.value}
+                      icon={metric?.icon}
+                      from={metric?.from}
+                      to={metric?.to}
+                      description={metric?.description}
+                      selected={expandable && qualifiedOpen}
+                      onClick={
+                        expandable
+                          ? () => setQualifiedOpen((open) => !open)
+                          : undefined
+                      }
+                    />
+                  );
+                })}
+              </motion.div>
+            )}
+
+            {showQualification && (
+              <QualifiedBreakdownPanel
+                open={qualifiedOpen}
+                rows={qualifyingBreakdown}
+                total={qualifiedTotal}
+                isLoading={breakdownLoading}
+              />
+            )}
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-8"
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5 mb-8"
             >
               {metricsData?.map((metric) => (
                 <MetricsCard
@@ -325,31 +384,6 @@ const Reports = () => {
                 />
               ))}
             </motion.div>
-
-            {/* Where the leads ended up — admin only. Separate row from the
-                status cards above because it answers a different question:
-                those count a current status each, these account for the
-                qualification journey. */}
-            {showQualification && qualificationData?.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.15 }}
-                className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-8"
-              >
-                {qualificationData.map((metric) => (
-                  <MetricsCard
-                    key={metric?.title}
-                    title={metric?.title}
-                    value={metric?.value}
-                    icon={metric?.icon}
-                    from={metric?.from}
-                    to={metric?.to}
-                    description={metric?.description}
-                  />
-                ))}
-              </motion.div>
-            )}
 
             {/* Filter Controls */}
             <FilterControls
@@ -390,23 +424,7 @@ const Reports = () => {
                     filters={chartFilters}
                     enabled={showAnalytics}
                   />
-                  {/* Admins get the status breakdown in the Win Rate slot;
-                      everyone else keeps Win Rate unchanged. Swapped rather
-                      than stacked so the page does not grow a third panel
-                      while the Reports rebuild is still admin-only.
-
-                      Win rate is a weak headline here anyway: bookings close at
-                      the builder's office weeks later and are rarely written
-                      back, so it sits near zero and says little about lead
-                      quality. */}
-                  {showQualification ? (
-                    <StatusBreakdownChart
-                      filters={chartFilters}
-                      enabled={showAnalytics}
-                    />
-                  ) : (
-                    <WinRateChart filters={chartFilters} enabled={showAnalytics} />
-                  )}
+                  <WinRateChart filters={chartFilters} enabled={showAnalytics} />
                 </div>
               </>
             )}
