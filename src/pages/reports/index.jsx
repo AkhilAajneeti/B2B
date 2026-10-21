@@ -15,6 +15,7 @@ import DealsTable from "./components/DealsTable";
 // import { fetchLeads } from "services/leads.service";
 import { useNewLeads } from "hooks/useLeads";
 import { useTeamUsers } from "hooks/useTeams";
+import { isSupAdmin } from "utils/permission";
 import { useFilteredMetrics } from "./hooks/useFilteredMetrics";
 
 const Reports = () => {
@@ -249,7 +250,15 @@ const Reports = () => {
   // full filtered dataset, so the numbers stay correct beyond page 1.
   // Uses `filtersForBackend` (not raw `filters`) so the team filter narrows the
   // cards exactly as it narrows the table below them.
-  const { metricsData } = useFilteredMetrics({ filters: filtersForBackend });
+  // The qualification row is admin-only while the Reports rebuild is in
+  // progress, matching the Team Performance page. Passing the flag (rather than
+  // rendering and hiding) also means the four extra count queries never fire
+  // for anyone who would not see them.
+  const showQualification = isSupAdmin();
+  const { metricsData, qualificationData } = useFilteredMetrics({
+    filters: filtersForBackend,
+    includeQualification: showQualification,
+  });
 
   return (
     <>
@@ -315,6 +324,31 @@ const Reports = () => {
                 />
               ))}
             </motion.div>
+
+            {/* Where the leads ended up — admin only. Separate row from the
+                status cards above because it answers a different question:
+                those count a current status each, these account for the
+                qualification journey. */}
+            {showQualification && qualificationData?.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+                className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-8"
+              >
+                {qualificationData.map((metric) => (
+                  <MetricsCard
+                    key={metric?.title}
+                    title={metric?.title}
+                    value={metric?.value}
+                    icon={metric?.icon}
+                    from={metric?.from}
+                    to={metric?.to}
+                    description={metric?.description}
+                  />
+                ))}
+              </motion.div>
+            )}
 
             {/* Filter Controls */}
             <FilterControls

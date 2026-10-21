@@ -62,6 +62,85 @@ export const METRIC_DEFS = [
   },
 ];
 
+/* ---------------------------------------------------------------------------
+ * Qualification cards (admin only)
+ *
+ * The four cards above each count ONE current status. These answer the
+ * different question of where leads ended up: how many are qualified right now,
+ * how many qualified only because of delay, and how many qualified at some
+ * point and have since moved off it.
+ *
+ * Status values here are the RAW stored strings, which are not always the
+ * dropdown labels — the stored value is "Not interested" with a lower-case i,
+ * and the Not Interested card above relies on that exact spelling. Getting one
+ * wrong does not raise an error: EspoCRM returns a count of 0 and the card
+ * reads as "none", which is indistinguishable from a true zero.
+ *
+ * That is why "Dropped after qualified" is expressed as notIn(qualifying)
+ * rather than in(negative statuses). Defining it by what it is NOT means the
+ * only strings that have to be right are the qualifying ones — the same values
+ * the working status filter already sends — instead of the ten or so negative
+ * labels, every one of which would be a silent-zero risk.
+ * ------------------------------------------------------------------------- */
+
+// Qualifying statuses, excluding QDTD so the two cards never double-count the
+// same lead.
+const QUALIFYING_STATUSES = [
+  "Follow up",
+  "Interested",
+  "Site Visit Scheduled",
+  "Invitation Sent",
+  "Site Visit Done",
+  "Purchased",
+];
+
+// Stored as the code; "Qualify Due To Delay" is only the label.
+const QDTD_STATUS = "QDTD";
+
+const ALL_QUALIFYING = [...QUALIFYING_STATUSES, QDTD_STATUS];
+
+export const QUALIFICATION_DEFS = [
+  {
+    title: "Total Leads",
+    icon: "Users",
+    from: "#3B82F6",
+    to: "#2563EB",
+    description: "Every lead in the current filter",
+    clauses: [],
+  },
+  {
+    title: "Genuinely Qualified",
+    icon: "BadgeCheck",
+    from: "#14B8A6",
+    to: "#0D9488",
+    description: "Sitting in a qualifying status right now",
+    clauses: [{ type: "in", attribute: "status", value: QUALIFYING_STATUSES }],
+  },
+  {
+    title: "Qualified Due To Delay",
+    icon: "Hourglass",
+    from: "#6366F1",
+    to: "#4338CA",
+    description: "Qualified only because of delay (QDTD)",
+    clauses: [{ type: "equals", attribute: "status", value: QDTD_STATUS }],
+  },
+  {
+    title: "Dropped After Qualified",
+    icon: "TrendingDown",
+    from: "#78716C",
+    to: "#57534E",
+    description: "Was qualified once, has since moved off it",
+    clauses: [
+      // Ever held a qualifying status. arrayAnyOf is EspoCRM's operator for
+      // array attributes and is the same one the "Previously in status" filter
+      // uses, so it is proven against this backend.
+      { type: "arrayAnyOf", attribute: "cStatusObj", value: ALL_QUALIFYING },
+      // ...and is not in one now.
+      { type: "notIn", attribute: "status", value: ALL_QUALIFYING },
+    ],
+  },
+];
+
 // Page-level filter object -> ESPO whereGroup array.
 // Mirrors fetchNewLeads' mapping, EXCEPT we leave the status filter for the
 // caller to add — each card injects its own status on top.
@@ -149,7 +228,14 @@ const buildBaseWhere = (filters = {}) => {
   return where;
 };
 
-export const useFilteredMetrics = ({ filters, enabled = true }) => {
+export const useFilteredMetrics = ({
+  filters,
+  enabled = true,
+  // Admin-only extra row. Off by default so the four status cards stay exactly
+  // as they are for every other role, and so the extra count queries are not
+  // fired for users who will never see them.
+  includeQualification = false,
+}) => {
   const baseWhere = useMemo(() => buildBaseWhere(filters), [filters]);
 
   const queries = useMemo(() => {
@@ -178,6 +264,26 @@ export const useFilteredMetrics = ({ filters, enabled = true }) => {
 
   const results = useQueries({ queries });
 
+  const qualificationQueries = useMemo(() => {
+    if (!includeQualification) return [];
+    return QUALIFICATION_DEFS.map((m) => {
+      const where = [...baseWhere, ...m.clauses];
+      return {
+        queryKey: ["qualification-metric", m.title, where],
+        queryFn: () => fetchLeadsCount(where),
+        enabled,
+        staleTime: 1000 * 60 * 2,
+        gcTime: 1000 * 60 * 30,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        placeholderData: (prev) => prev,
+        retry: 1,
+      };
+    });
+  }, [baseWhere, enabled, includeQualification]);
+
+  const qualificationResults = useQueries({ queries: qualificationQueries });
+
   const metricsData = useMemo(() => {
     return METRIC_DEFS.map((m, i) => ({
       title: m.title,
@@ -192,8 +298,21 @@ export const useFilteredMetrics = ({ filters, enabled = true }) => {
     }));
   }, [results]);
 
+  const qualificationData = useMemo(() => {
+    if (!includeQualification) return [];
+    return QUALIFICATION_DEFS.map((m, i) => ({
+      title: m.title,
+      value: qualificationResults[i]?.data ?? 0,
+      icon: m.icon,
+      from: m.from,
+      to: m.to,
+      description: m.description,
+    }));
+  }, [qualificationResults, includeQualification]);
+
   return {
     metricsData,
+    qualificationData,
     isLoading: results.some((r) => r.isLoading),
     isFetching: results.some((r) => r.isFetching),
   };
