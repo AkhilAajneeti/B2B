@@ -16,7 +16,6 @@ import DealsTable from "./components/DealsTable";
 // import { fetchLeads } from "services/leads.service";
 import { useNewLeads } from "hooks/useLeads";
 import { useTeamUsers } from "hooks/useTeams";
-import { isSupAdmin } from "utils/permission";
 import { useFilteredMetrics } from "./hooks/useFilteredMetrics";
 
 const Reports = () => {
@@ -255,9 +254,7 @@ const Reports = () => {
   // progress, matching the Team Performance page. Passing the flag (rather than
   // rendering and hiding) also means the four extra count queries never fire
   // for anyone who would not see them.
-  const showQualification = isSupAdmin();
-
-  // The Genuinely Qualified card opens a drawer with its per-status split.
+  // The Qualified Now card opens a drawer with its per-status split.
   // Its queries are tied to this flag, so an unopened drawer costs nothing.
   const [qualifiedOpen, setQualifiedOpen] = useState(false);
 
@@ -268,8 +265,8 @@ const Reports = () => {
     breakdownLoading,
   } = useFilteredMetrics({
     filters: filtersForBackend,
-    includeQualification: showQualification,
-    includeQualifyingBreakdown: showQualification && qualifiedOpen,
+    includeQualification: true,
+    includeQualifyingBreakdown: qualifiedOpen,
   });
 
   const qualifiedTotal =
@@ -325,7 +322,7 @@ const Reports = () => {
                 lead that was Follow up and is now Not Interested appears in
                 both "Qualified, Then Lost" and "Not Interested", so adding the
                 rows together exceeds the total. That is correct, not a bug. */}
-            {showQualification && qualificationData?.length > 0 && (
+            {qualificationData?.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -361,14 +358,12 @@ const Reports = () => {
               </motion.div>
             )}
 
-            {showQualification && (
-              <QualifiedBreakdownPanel
-                open={qualifiedOpen}
-                rows={qualifyingBreakdown}
-                total={qualifiedTotal}
-                isLoading={breakdownLoading}
-              />
-            )}
+            <QualifiedBreakdownPanel
+              open={qualifiedOpen}
+              rows={qualifyingBreakdown}
+              total={qualifiedTotal}
+              isLoading={breakdownLoading}
+            />
 
             <motion.div
               initial={{ opacity: 0 }}
