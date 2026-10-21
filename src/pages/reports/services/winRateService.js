@@ -13,8 +13,9 @@ import { handleUnauthorized } from "services/session";
 
 const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
 
-// v2: the select gained cStatusObj + cProject. See the note beside it.
-const DATASET_KEY_PREFIX = "win_rate_dataset_v2";
+// v3: the select gained modifiedAt (v2 added cStatusObj + cProject). The key
+// MUST move with the select — see the note beside it.
+const DATASET_KEY_PREFIX = "win_rate_dataset_v3";
 const DATASET_TTL = 1000 * 60 * 10;
 const DATASET_GC = 1000 * 60 * 60 * 24;
 
@@ -236,6 +237,9 @@ export const fetchWinRateDataset = async ({ filters = {}, year }) => {
       "assignedUserName",
       "cStatusObj",
       "cProject",
+      // modifiedAt powers the suspect-qualification guard: a lead qualified and
+      // reversed within a couple of hours was never really qualified.
+      "modifiedAt",
     ].join(",");
 
     const fetchPage = async (offset) => {

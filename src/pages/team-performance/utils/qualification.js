@@ -36,6 +36,10 @@ export const QUALIFYING = new Set([
   "invitation sent",
   "site visit done",
   "purchased",
+  // Stored as the code "QDTD"; the label is "Qualify Due To Delay". Easy to
+  // miss precisely because the stored value looks like neither, and leaving it
+  // out silently counted every delayed-qualification lead as never qualified.
+  "qdtd",
 ]);
 
 /**
@@ -158,3 +162,81 @@ export const MIN_SAMPLE = 30;
  */
 export const hasStatusHistory = (records = []) =>
   records.some((lead) => Array.isArray(lead?.cStatusObj) && lead.cStatusObj.length > 0);
+
+
+/* ===========================================================================
+ * SUSPECT QUALIFICATION — the anti-gaming guard
+ * ===========================================================================
+ *
+ * Because a qualifying status counts forever, "Follow up" is cheap to tag and
+ * expensive to audit. The pattern to catch is a rep marking a lead Follow up
+ * and reversing it to Not Interested an hour or two later: on paper a
+ * qualification, in practice a lead that was never worked.
+ *
+ * The signal is the gap between the lead's createdAt and modifiedAt. A lead
+ * that was qualified, is now negative, and whose whole life lasted a couple of
+ * hours did not have a real conversation behind it.
+ *
+ * WHAT THIS MEASURE CANNOT DO, and it matters:
+ *
+ *   modifiedAt is the last modification of ANYTHING on the lead, not the moment
+ *   the status changed. Touch the lead later — a note, a reassignment, a
+ *   corrected phone number — and modifiedAt moves forward, so a genuinely
+ *   reversed lead starts to look legitimate. This UNDER-detects; it does not
+ *   over-accuse. The exact per-change timestamp lives in EspoCRM's Note stream
+ *   and is the upgrade path once these numbers have been sanity-checked.
+ *
+ * Flagged leads are NEVER removed from Ever-Qualified. They are counted
+ * alongside it, so the honest total and the suspect share are both visible and
+ * a rep can be shown their own list rather than quietly marked down.
+ */
+
+/** Threshold options, in hours. The page lets an admin move this. */
+export const SUSPECT_THRESHOLDS = [1, 2, 4, 6];
+
+/** Default window. Picked as the wide end of the 1–2h pattern reps described. */
+export const DEFAULT_SUSPECT_HOURS = 2;
+
+const HOUR = 1000 * 60 * 60;
+
+/**
+ * Hours between creation and last modification, or null when either timestamp
+ * is missing or unparseable — null means "unknown", never zero. Treating a
+ * missing date as a 0-hour gap would flag the lead as suspect on no evidence.
+ */
+export const lifespanHours = (lead) => {
+  const created = Date.parse(lead?.createdAt || "");
+  const modified = Date.parse(lead?.modifiedAt || "");
+  if (!Number.isFinite(created) || !Number.isFinite(modified)) return null;
+  const hours = (modified - created) / HOUR;
+  return hours >= 0 ? hours : null;
+};
+
+/**
+ * Qualified, then reversed inside the window — a qualification we should not
+ * trust. Requires an actual gap: an unknown lifespan is not evidence.
+ */
+export const isSuspectQualification = (lead, thresholdHours = DEFAULT_SUSPECT_HOURS) => {
+  if (!isQualifiedThenDropped(lead)) return false;
+  const hours = lifespanHours(lead);
+  return hours !== null && hours <= thresholdHours;
+};
+
+/**
+ * Buckets for the time-to-reversal histogram, in hours. Deliberately fine below
+ * 2h and coarse above it: the whole question is whether reversals pile up in
+ * the first couple of hours, and uniform buckets would hide that spike inside a
+ * wide first bar.
+ */
+export const REVERSAL_BUCKETS = [
+  { key: "<30m", label: "< 30 min", max: 0.5 },
+  { key: "30-60m", label: "30–60 min", max: 1 },
+  { key: "1-2h", label: "1–2 hrs", max: 2 },
+  { key: "2-6h", label: "2–6 hrs", max: 6 },
+  { key: "6-24h", label: "6–24 hrs", max: 24 },
+  { key: "1-3d", label: "1–3 days", max: 72 },
+  { key: ">3d", label: "> 3 days", max: Infinity },
+];
+
+export const bucketFor = (hours) =>
+  REVERSAL_BUCKETS.find((b) => hours <= b.max) ?? REVERSAL_BUCKETS[REVERSAL_BUCKETS.length - 1];

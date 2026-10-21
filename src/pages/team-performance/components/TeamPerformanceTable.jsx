@@ -19,6 +19,7 @@ const COLUMNS = [
   { key: "leads", label: "Leads", hint: "Base for every ratio" },
   { key: "contact", label: "Contact %", hint: "Reached at least once. Status-derived, so this is a floor", format: pct },
   { key: "everQualified", label: "Ever-Qualified", hint: "Held a qualifying status at any point, even if closed now" },
+  { key: "suspect", label: "Suspect", hint: "Of those, qualified and reversed inside the window — counted, but not trusted" },
   { key: "netQ", label: "Net Q%", hint: "Ever-Qualified / Connected — conversation skill", format: pct },
   { key: "index", label: "Index", hint: "Rep's Net Q% vs the team's, on the same projects. 1.20 = 20% better than peers" },
   { key: "qualifiedThenDropped", label: "Dropped", hint: "Qualified, then went cold — the coaching list" },
@@ -150,6 +151,22 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
                 <td className="px-4 py-3 text-right tabular-nums font-semibold text-foreground">
                   {row.everQualified}
                 </td>
+                {/* Tinted only when there is something to flag — a column of
+                    red zeroes would read as an alert on every rep. */}
+                <td
+                  className={`px-4 py-3 text-right tabular-nums ${
+                    row.suspect > 0
+                      ? "font-semibold text-rose-600 dark:text-rose-400"
+                      : "text-muted-foreground"
+                  }`}
+                  title={
+                    row.suspect > 0
+                      ? `${row.suspect} of ${row.everQualified} reversed quickly (${row.suspectRate.toFixed(0)}%)`
+                      : undefined
+                  }
+                >
+                  {row.suspect}
+                </td>
                 <td className="px-4 py-3 text-right tabular-nums">{pct(row.netQ)}</td>
                 <td className={`px-4 py-3 text-right tabular-nums font-semibold ${indexTone(row.lowSample ? null : row.index)}`}>
                   {row.lowSample || row.index == null ? "—" : row.index.toFixed(2)}
@@ -173,6 +190,7 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
                   {pct(totals.leads ? (totals.connected / totals.leads) * 100 : 0)}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">{totals.everQualified}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{totals.suspect}</td>
                 <td className="px-4 py-3 text-right tabular-nums">
                   {pct(totals.connected ? (totals.everQualified / totals.connected) * 100 : 0)}
                 </td>

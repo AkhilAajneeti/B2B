@@ -1,10 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import Icon from "../../components/AppIcon";
+import QualificationCharts from "./components/QualificationCharts";
 import TeamPerformanceTable from "./components/TeamPerformanceTable";
 import { useTeams, useTeamUsers } from "hooks/useTeams";
 import { useTeamPerformance } from "./hooks/useTeamPerformance";
-import { MIN_SAMPLE } from "./utils/qualification";
+import {
+  DEFAULT_SUSPECT_HOURS,
+  MIN_SAMPLE,
+  SUSPECT_THRESHOLDS,
+} from "./utils/qualification";
 
 /**
  * Team Performance — Report 2 of the CRM Reports Module spec.
@@ -70,6 +75,7 @@ const TeamPerformance = () => {
   const [periodKey, setPeriodKey] = useState("thisMonth");
   const [project, setProject] = useState("");
   const [team, setTeam] = useState("");
+  const [suspectHours, setSuspectHours] = useState(DEFAULT_SUSPECT_HOURS);
 
   const period = PERIODS.find((p) => p.key === periodKey) ?? PERIODS[0];
 
@@ -120,11 +126,21 @@ const TeamPerformance = () => {
   // Hold the dataset request until the team resolves. Firing it early would
   // fetch the WHOLE team's leads unscoped, then immediately refetch scoped —
   // a wasted full pull, and a second of wrong numbers on screen.
-  const { rows, totals, historyAvailable, recordCount, isLoading, isFetching, isError } =
+  const {
+    rows,
+    totals,
+    reversalHistogram,
+    historyAvailable,
+    recordCount,
+    isLoading,
+    isFetching,
+    isError,
+  } =
     useTeamPerformance({
       filters,
       year,
       enabled: !team || teamUserIds !== null,
+      suspectHours,
     });
 
   const rankedCount = rows.filter((r) => !r.lowSample).length;
@@ -156,6 +172,18 @@ const TeamPerformance = () => {
                 placeholder="Filter by project…"
                 className="h-9 w-48 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
+              <select
+                value={suspectHours}
+                onChange={(e) => setSuspectHours(Number(e.target.value))}
+                title="A lead qualified and reversed inside this window is counted as suspect"
+                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                {SUSPECT_THRESHOLDS.map((h) => (
+                  <option key={h} value={h}>
+                    Suspect &le; {h}h
+                  </option>
+                ))}
+              </select>
               <select
                 value={team}
                 onChange={(e) => setTeam(e.target.value)}
@@ -213,7 +241,7 @@ const TeamPerformance = () => {
             </div>
           )}
 
-          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
             <Tile
               label="Leads"
               value={totals?.leads ?? 0}
@@ -230,9 +258,22 @@ const TeamPerformance = () => {
               hint="Still counted as qualified. This is the weekly coaching list."
             />
             <Tile
+              label="Suspect"
+              value={totals?.suspect ?? 0}
+              hint={`Qualified and reversed within ${suspectHours}h — counted, but not trusted. Nothing is removed from Ever-Qualified.`}
+            />
+            <Tile
               label="Reps ranked"
               value={`${rankedCount} / ${rows.length}`}
               hint={`Reps with at least ${MIN_SAMPLE} leads. Below that they are shown but not ranked.`}
+            />
+          </div>
+
+          <div className="mb-6">
+            <QualificationCharts
+              histogram={reversalHistogram}
+              rows={rows}
+              suspectHours={suspectHours}
             />
           </div>
 
@@ -251,7 +292,10 @@ const TeamPerformance = () => {
             honest way to measure response time yet — that needs a status-change
             log on the backend. Contact&nbsp;% is derived from statuses alone and
             so is a floor: a rep who spoke to a buyer without moving the status
-            reads as not connected.
+            reads as not connected. The suspect guard compares a lead&apos;s
+            created and last-modified times, which is the last change of
+            anything on the lead rather than the status change itself — so it
+            under-reports rather than over-accuses.
           </p>
         </div>
       </main>
