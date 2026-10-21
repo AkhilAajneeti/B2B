@@ -17,25 +17,14 @@ import {
 } from "../services/winRateService";
 
 /**
- * Where leads ARE, and where leads STOP. Admin-only; replaces the Win Rate
- * panel for those accounts.
+ * How many leads are sitting in each positive status. Admin-only; replaces the
+ * Win Rate panel for those accounts.
  *
- * Two charts because they answer two different questions that a single chart
- * cannot answer at once:
- *
- *   1. CURRENT STATUS — how many leads sit in each positive status right now.
- *      A snapshot. Useful for "what is on our plate".
- *
- *   2. EVER-REACHED FUNNEL — how many leads have reached each stage at any
- *      point, counting a lead at EVERY stage up to its furthest.
- *
- * Why the second one has to exist. A funnel drawn from current status is
- * nonsense: a lead that bought is no longer counted in Follow up, so the bars
- * do not decrease and the "drops" between them are comparing different leads.
- * That is where "Highest drop: Invitation Sent -100%" comes from — nobody is
- * sitting in Invitation Sent today, while Visit Done has leads that passed
- * straight through it. The ever-reached version counts each lead once per stage
- * it actually reached, so it decreases by construction and every drop is real.
+ * ONE chart on purpose. An earlier version put an "ever reached" funnel beside
+ * this one, and the two were read as a single thing — the obvious reading of
+ * the second chart was "these are the leads that dropped", which is not what it
+ * showed. Two charts answering adjacent questions side by side invite exactly
+ * that confusion. The drop-off numbers already have a home in the cards above.
  *
  * FORM. Horizontal bars, held in pipeline order rather than sorted by size.
  * Horizontal because the stage names are long — "Site Visit Scheduled",
@@ -47,14 +36,14 @@ import {
  * reorder the axes while the numbers stay identical, so the most prominent
  * thing on it encodes nothing; it also loops the last stage back to the first,
  * implying a cycle a pipeline does not have; and on one radial axis a stage
- * with 2 leads is indistinguishable from one with 20 when another has 594.
+ * with 3 leads is indistinguishable from one with 22 when another has 631.
  *
  * COLOUR. One hue, darker further down the pipeline — this is magnitude on an
  * ordered scale, not seven competing identities, so a sequential ramp is the
  * honest encoding and categorical hues would imply a distinction that is not
- * there. Steps are taken from the validated blue ramp and kept at or above
- * step 250 in light mode, the documented floor for an ordinal ramp (a lighter
- * step would recede into the surface).
+ * there. Steps come from the validated blue ramp and stay at or above step 250
+ * in light mode, the documented floor for an ordinal ramp (a lighter step would
+ * recede into the surface).
  */
 
 const YEAR = new Date().getFullYear();
@@ -100,11 +89,6 @@ const TooltipBox = ({ active, payload, caption }) => {
         </span>{" "}
         {caption}
       </p>
-      {row.pct != null && (
-        <p className="mt-0.5 text-muted-foreground">
-          {row.pct}% of everyone who reached the first stage
-        </p>
-      )}
     </div>
   );
 };
@@ -153,7 +137,7 @@ const Panel = ({ title, subtitle, children, state }) => (
   <div className="rounded-2xl border border-border bg-card p-5">
     <h3 className="text-base font-semibold text-foreground">{title}</h3>
     <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{subtitle}</p>
-    <div className="mt-4 h-[272px]">
+    <div className="mt-5 h-[320px]">
       {state ? (
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
           {state}
@@ -181,44 +165,20 @@ const StatusBreakdownChart = ({ filters = {}, enabled = true }) => {
     retry: 1,
   });
 
-  const { current, reached, total } = useMemo(() => {
+  const { current, total } = useMemo(() => {
     const records = Array.isArray(data) ? data : [];
     const now = new Map(STAGES.map((s) => [norm(s.status), 0]));
-    const ever = new Map(STAGES.map((s) => [norm(s.status), 0]));
 
     for (const lead of records) {
       const status = norm(lead?.status);
       if (now.has(status)) now.set(status, now.get(status) + 1);
-
-      // Ever-reached: the union of the lead's history and where it stands now.
-      // Counted once per stage, so a lead that bounced in and out of Follow up
-      // does not inflate that stage.
-      const held = new Set();
-      if (Array.isArray(lead?.cStatusObj)) {
-        lead.cStatusObj.forEach((s) => held.add(norm(s)));
-      }
-      if (status) held.add(status);
-      for (const stage of held) {
-        if (ever.has(stage)) ever.set(stage, ever.get(stage) + 1);
-      }
     }
 
-    const currentRows = STAGES.map((s) => ({
-      label: s.label,
-      value: now.get(norm(s.status)) || 0,
-    }));
-
-    const reachedRaw = STAGES.map((s) => ever.get(norm(s.status)) || 0);
-    const base = reachedRaw[0] || 0;
-    const reachedRows = STAGES.map((s, i) => ({
-      label: s.label,
-      value: reachedRaw[i],
-      pct: base ? Math.round((reachedRaw[i] / base) * 100) : null,
-    }));
-
     return {
-      current: currentRows,
-      reached: reachedRows,
+      current: STAGES.map((s) => ({
+        label: s.label,
+        value: now.get(norm(s.status)) || 0,
+      })),
       total: records.length,
     };
   }, [data]);
@@ -232,23 +192,15 @@ const StatusBreakdownChart = ({ filters = {}, enabled = true }) => {
         : null;
 
   return (
-    <div className="sb-viz grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="sb-viz">
       <style>{VIZ_STYLE}</style>
 
       <Panel
-        title="Where leads are now"
-        subtitle={`Leads sitting in each positive status today, in pipeline order · ${YEAR}. A snapshot of what is on the team's plate — not a funnel, because a lead only appears in the one stage it currently occupies.`}
+        title="Leads by status"
+        subtitle={`How many leads are sitting in each positive status right now, in pipeline order · ${YEAR}. Each lead appears once, in the one status it currently holds.`}
         state={emptyState}
       >
         <Chart data={current} caption="leads in this status now" />
-      </Panel>
-
-      <Panel
-        title="Where leads stop"
-        subtitle="Every lead counted at each stage it has ever reached, so this decreases down the pipeline and each gap is a real drop-off. A lead that went straight to Visit Done still counts at Follow up and Interested."
-        state={emptyState}
-      >
-        <Chart data={reached} caption="leads reached this stage" />
       </Panel>
     </div>
   );
