@@ -97,6 +97,16 @@ const QDTD_STATUS = "QDTD";
 
 const ALL_QUALIFYING = [...QUALIFYING_STATUSES, QDTD_STATUS];
 
+// Statuses where the lead is still in play — nobody has given up on it. Kept
+// out of "Qualified, Then Lost", because a booked callback or an unanswered
+// phone is not a lost lead. Spellings taken from the working status filter.
+const STILL_IN_PLAY = [
+  "New",
+  "Call Later",
+  "Call Not Picked",
+  "Call Not Connecting",
+];
+
 /*
  * "Where leads ended up" — these describe a lead's JOURNEY, not its current
  * status, and the three qualified cards partition every lead that was ever
@@ -137,14 +147,28 @@ export const QUALIFICATION_DEFS = [
     icon: "TrendingDown",
     from: "#78716C",
     to: "#57534E",
-    description: "Was interested once, has since gone cold",
+    description: "Showed real interest once, now written off",
     clauses: [
-      // Ever held a qualifying status. arrayAnyOf is EspoCRM's operator for
-      // array attributes and is the same one the "Previously in status" filter
-      // uses, so it is proven against this backend.
-      { type: "arrayAnyOf", attribute: "cStatusObj", value: ALL_QUALIFYING },
-      // ...and is not in one now.
+      // QUALIFYING_STATUSES, deliberately NOT ALL_QUALIFYING — QDTD is excluded
+      // from what counts as "was interested".
+      //
+      // QDTD is applied when a new lead sits unworked long enough to age out.
+      // Nobody ever said they were interested; the status records a delay on
+      // our side. So New -> QDTD -> Dead is not a lead we lost after winning
+      // it, it is a lead we never worked. Counting it here inflated the number
+      // with leads that never showed interest at all — and with QDTD at 11,474
+      // leads, that was potentially most of them.
+      //
+      // A lead that reached QDTD *after* a real qualifying status still counts,
+      // because cStatusObj holds the whole history: Follow up -> QDTD -> Dead
+      // matches on the Follow up.
+      { type: "arrayAnyOf", attribute: "cStatusObj", value: QUALIFYING_STATUSES },
+      // Not qualified now (ALL_QUALIFYING, so a lead currently sitting in QDTD
+      // belongs to the On Delay card rather than being counted as lost)...
       { type: "notIn", attribute: "status", value: ALL_QUALIFYING },
+      // ...and not still being worked. Without this, Follow up -> Call Later
+      // read as "gone cold" while the rep had a callback booked.
+      { type: "notIn", attribute: "status", value: STILL_IN_PLAY },
     ],
   },
 ];
