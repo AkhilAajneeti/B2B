@@ -3,6 +3,9 @@ import { motion } from "framer-motion";
 
 import TricolorBurst from "../../components/TricolorBurst";
 import KPICard from "./components/KPICard";
+import MetricsCard from "../reports/components/MetricsCard";
+import QualifiedBreakdownPanel from "../reports/components/QualifiedBreakdownPanel";
+import { useFilteredMetrics } from "../reports/hooks/useFilteredMetrics";
 import ActivityFunnel from "./components/ActivityFunnel";
 import InsightSheet from "./components/InsightSheet";
 import DashboardSummaryAlert from "./components/DashboardSummaryAlert";
@@ -310,6 +313,29 @@ const Dashboard = () => {
     setActiveInsight(key);
   };
 
+  // Qualification cards, shared with the Reports page rather than duplicated —
+  // one definition of what "qualified" means, so the two pages can never drift
+  // apart and quietly disagree.
+  //
+  // No filters here: the Dashboard has no filter bar, so these are all-time
+  // totals. `includeStatusCards: false` skips the three current-status count
+  // queries the Reports page needs and this one does not.
+  const [qualifiedOpen, setQualifiedOpen] = useState(false);
+
+  const {
+    qualificationData,
+    qualifyingBreakdown,
+    breakdownLoading,
+  } = useFilteredMetrics({
+    filters: {},
+    includeQualification: true,
+    includeStatusCards: false,
+    includeQualifyingBreakdown: qualifiedOpen,
+  });
+
+  const qualifiedTotal =
+    qualificationData?.find((m) => m.title === "Qualified Now")?.value ?? 0;
+
   const kpiData = [
     {
       title: "This Month Leads",
@@ -483,6 +509,47 @@ const Dashboard = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* Lead qualification — the same four cards as the Reports page.
+            Below the KPI row because those answer "how are we doing this
+            month"; these answer "what happened to all our leads". */}
+        {qualificationData?.length > 0 && (
+          <div className="m-3 sm:m-5">
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5">
+              {qualificationData.map((metric) => {
+                const expandable = metric?.title === "Qualified Now";
+                return (
+                  <MetricsCard
+                    key={metric?.title}
+                    title={metric?.title}
+                    value={metric?.value}
+                    icon={metric?.icon}
+                    from={metric?.from}
+                    to={metric?.to}
+                    description={metric?.description}
+                    share={metric?.share}
+                    expandable={expandable}
+                    expanded={expandable && qualifiedOpen}
+                    selected={expandable && qualifiedOpen}
+                    onClick={
+                      expandable
+                        ? () => setQualifiedOpen((open) => !open)
+                        : undefined
+                    }
+                  />
+                );
+              })}
+            </div>
+
+            <QualifiedBreakdownPanel
+              open={qualifiedOpen}
+              rows={qualifyingBreakdown}
+              total={qualifiedTotal}
+              isLoading={breakdownLoading}
+            />
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
           {/* Main Content */}
           <div className="flex-1 p-4 lg:p-0 xl:pr-0">

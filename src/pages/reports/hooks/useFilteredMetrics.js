@@ -279,10 +279,15 @@ export const useFilteredMetrics = ({
   // card is actually opened, so six extra count queries are not fired for a
   // panel nobody has looked at.
   includeQualifyingBreakdown = false,
+  // The three current-status cards. The Dashboard reuses this hook for the
+  // qualification row only, and firing their count queries there would be three
+  // requests for cards that page never renders.
+  includeStatusCards = true,
 }) => {
   const baseWhere = useMemo(() => buildBaseWhere(filters), [filters]);
 
   const queries = useMemo(() => {
+    if (!includeStatusCards) return [];
     return METRIC_DEFS.map((m) => {
       // Compose the card's where clause: base filters + the card's OWN status.
       // The page-level status filter is intentionally excluded so selecting one
@@ -304,7 +309,7 @@ export const useFilteredMetrics = ({
         retry: 1,
       };
     });
-  }, [baseWhere, enabled]);
+  }, [baseWhere, enabled, includeStatusCards]);
 
   const results = useQueries({ queries });
 
@@ -380,6 +385,7 @@ export const useFilteredMetrics = ({
       : undefined;
 
   const metricsData = useMemo(() => {
+    if (!includeStatusCards) return [];
     return METRIC_DEFS.map((m, i) => ({
       title: m.title,
       status: m.status, // used by the Reports page to filter the table on click
@@ -392,7 +398,7 @@ export const useFilteredMetrics = ({
       to: m.to,
       description: m.description,
     }));
-  }, [results, totalLeads]);
+  }, [results, totalLeads, includeStatusCards]);
 
   const qualificationData = useMemo(() => {
     if (!includeQualification) return [];
