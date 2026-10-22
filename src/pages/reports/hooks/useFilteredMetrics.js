@@ -97,14 +97,21 @@ const QDTD_STATUS = "QDTD";
 
 const ALL_QUALIFYING = [...QUALIFYING_STATUSES, QDTD_STATUS];
 
-// Statuses where the lead is still in play — nobody has given up on it. Kept
-// out of "Qualified, Then Lost", because a booked callback or an unanswered
-// phone is not a lost lead. Spellings taken from the working status filter.
-const STILL_IN_PLAY = [
+// Statuses that do NOT mean a buyer we lost, so they stay out of "Qualified,
+// Then Lost". Two different reasons, one list:
+//
+//   - still in play: a booked callback or an unanswered phone is not a lost
+//     lead, nobody has given up on it;
+//   - Broker: a channel partner, not a buyer. Reclassifying a lead as Broker
+//     says what the contact IS, not that we failed to close them.
+//
+// Spellings taken from the working status filter.
+const NOT_LOST = [
   "New",
   "Call Later",
   "Call Not Picked",
   "Call Not Connecting",
+  "Broker",
 ];
 
 /*
@@ -166,9 +173,10 @@ export const QUALIFICATION_DEFS = [
       // Not qualified now (ALL_QUALIFYING, so a lead currently sitting in QDTD
       // belongs to the On Delay card rather than being counted as lost)...
       { type: "notIn", attribute: "status", value: ALL_QUALIFYING },
-      // ...and not still being worked. Without this, Follow up -> Call Later
-      // read as "gone cold" while the rep had a callback booked.
-      { type: "notIn", attribute: "status", value: STILL_IN_PLAY },
+      // ...and not in a status that means something other than a lost buyer.
+      // Without this, Follow up -> Call Later read as "gone cold" while the rep
+      // had a callback booked.
+      { type: "notIn", attribute: "status", value: NOT_LOST },
     ],
   },
 ];
