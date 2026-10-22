@@ -340,13 +340,53 @@ const LoginPage = () => {
               <LoginForm />
             </div>
 
+            {/* "Powered by" credit, sharing the footer rule with the
+                copyright. Quiet on purpose — 10px, wide letterspacing, muted
+                grey, mark at 80% — because the hero already carries the
+                AAJneeti lockup top-left, so this has to read as a footer credit
+                rather than compete with the brand mark.
+
+                Uses the DARK lockup (logo.webp), not the knockout-white
+                aajneeti-logo.png the hero uses: the hero is navy, this side is
+                white, and the white mark's "neeti" script would disappear here.
+
+                Pinned to the panel's bottom-right from lg up, where the
+                two-column layout gives it room below the vertically-centred
+                form. Below lg it falls back into the footer row beside the
+                copyright: at phone widths the form is full-width and a pinned
+                mark would land on top of it. */}
             <div className="mt-10 border-t border-slate-200 pt-6">
               <p className="text-xs text-slate-400">
                 © {new Date().getFullYear()} AAJneeti Connect Limited. All rights
                 reserved.
               </p>
+
             </div>
           </motion.div>
+
+          {/* "Powered by" credit, pinned to the panel's bottom-right.
+              A DIRECT CHILD of this column, which is the positioned ancestor it
+              needs. An earlier version lived inside the form wrapper — also
+              `relative` — so it resolved against the 420px form and landed on
+              the Sign in button.
+
+              Absolute rather than in flow, because in flow it consumed layout
+              height and pushed the vertically-centred form off centre. It also
+              takes no reserved padding, which is what produced a scrollbar on
+              the attempt before that.
+
+              Dark lockup, not the hero's knockout-white mark: this side of the
+              page is light, and the white "neeti" script would disappear. */}
+          <div className="pointer-events-none absolute bottom-8 right-6 flex flex-col items-end sm:right-10 lg:right-14">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+              Powered by
+            </p>
+            <img
+              src="/assets/images/logo.webp"
+              alt="AAJneeti"
+              className="mt-1.5 w-24 select-none opacity-80"
+            />
+          </div>
         </div>
       </div>
     </>
