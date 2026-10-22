@@ -420,8 +420,17 @@ const DealDrawer = ({
       }
     };
 
-    loadData();
-  }, []);
+    // GUARDED ON isOpen, and isOpen is in the deps so it still loads the first
+    // time the drawer is actually opened.
+    //
+    // This drawer is mounted unconditionally by the Call page and hidden with a
+    // CSS transform rather than unmounted, so with `[]` deps these FIVE
+    // requests — users, teams, accounts, leads, contacts — fired on every visit
+    // to the page, for a panel nobody had opened. On a page that already loads
+    // its own list, that is five connections of the browser's per-host budget
+    // spent before the content the user asked for.
+    if (isOpen) loadData();
+  }, [isOpen]);
 
   const userOptions = users
     ?.filter((u) => u?.isActive) // ✅ only active users

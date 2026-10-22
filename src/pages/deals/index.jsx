@@ -42,7 +42,7 @@ import {
   isMaskedUser,
   isSupAdmin,
 } from "utils/permission";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 // Inactive / junk statuses hidden from the Leads table by default — these leads
 // live in the Inactive Leads section instead, so the Leads table shows only
@@ -338,17 +338,24 @@ const DealsPage = () => {
     setSelectedDeal(null);
     setMode("add");
     setIsDrawerOpen(true);
+    // An "add" drawer must never sit on a /leads/:id URL — that link would
+    // reopen someone else's lead.
+    syncLeadUrl(null);
   };
 
   const handleDealClick = (deal) => {
     setSelectedDeal(deal);
     setMode("view");
     setIsDrawerOpen(true);
+    // Open from the row data we already hold — instant — and put the id on the
+    // URL so the open lead is shareable. No fetch, no navigation.
+    syncLeadUrl(deal?.id);
   };
 
   const handleDrawerClose = () => {
     setIsDrawerOpen(false);
     setSelectedDeal(null);
+    syncLeadUrl(null);
   };
   const handleCreateLead = async (payload) => {
     try {
@@ -581,6 +588,7 @@ const DealsPage = () => {
       setSelectedDeal(null);
       setMode("mass-update");
       setIsDrawerOpen(true);
+      syncLeadUrl(null);
 
       return;
     }
@@ -740,24 +748,57 @@ const DealsPage = () => {
 //redirect to perticular lead (from pipeline DealCard / meeting / etc.)
   const leadIdFromState = location.state?.leadId;
 
+  // URL deep-link — /leads/:leadId opens that lead's drawer, so a lead can be
+  // shared or bookmarked and survives a refresh.
+  const { leadId: leadIdFromUrl } = useParams();
+
+  // Either source opens the same drawer; the URL wins when both are present.
+  const targetLeadId = leadIdFromUrl || leadIdFromState;
+
+  /**
+   * Write the lead id onto the address bar WITHOUT routing.
+   *
+   * Deliberately history.replaceState and not navigate(). react-router-dom is
+   * pinned at 6.0.2, where optional params (":leadId?") do not exist, so
+   * /leads and /leads/:leadId have to be two separate <Route> entries — and
+   * navigating between them risks remounting this page. That would throw away
+   * the filters, the current page, the sort AND the cross-page checkbox
+   * selection, which is a far worse bug than the one a shareable URL solves.
+   *
+   * replaceState changes the bar only: no route match, no remount, nothing
+   * reset. The /leads/:leadId route above still exists so a pasted link
+   * resolves on a cold load.
+   *
+   * The trade-off, stated plainly: because this replaces rather than pushes,
+   * the browser Back button does not close the drawer. Closing it is the
+   * drawer's own X / overlay, as before.
+   */
+  const syncLeadUrl = (id) => {
+    try {
+      window.history.replaceState(null, "", id ? `/leads/${id}` : "/leads");
+    } catch {
+      /* history blocked (rare, e.g. sandboxed iframe) — the drawer still works */
+    }
+  };
+
   // Fetch the linked lead BY ID — bypasses pagination & filters so the drawer
   // opens even when the target lead isn't on the first page of `useNewLeads`.
   // Shares its queryKey ["leadDetails", id] with the drawer's own detail
   // fetch, so React Query dedupes — no extra network round-trip.
-  const { data: redirectLeadData } = useLeadDetails(leadIdFromState, "view");
+  const { data: redirectLeadData } = useLeadDetails(targetLeadId, "view");
 
   useEffect(() => {
-    if (!leadIdFromState || !redirectLeadData) return;
+    if (!targetLeadId || !redirectLeadData) return;
 
     // Safe comparison — protects against number/string id drift between sources.
-    if (String(redirectLeadData.id) === String(leadIdFromState)) {
+    if (String(redirectLeadData.id) === String(targetLeadId)) {
       setSelectedDeal(redirectLeadData);
       setMode("view");
       setIsDrawerOpen(true);
     }
     // location.key changes on every navigation, so clicking the same lead
     // twice from the pipeline re-opens the drawer instead of being a no-op.
-  }, [leadIdFromState, redirectLeadData, location.key]);
+  }, [targetLeadId, redirectLeadData, location.key]);
 
   return (
     <>

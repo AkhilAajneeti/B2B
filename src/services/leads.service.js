@@ -262,11 +262,18 @@ export const fetchLeads = async ({ limit = 100, page = 1 }) => {
   );
 
   if (!res.ok) {
-    console.log("STATUS:", res.status);
     if (res.status === 401) {
       handleUnauthorized();
     }
-    throw new Error("Failed to fetch leads");
+    // Carry the status ON the error. Callers were throwing away the only fact
+    // that makes a failure diagnosable: a toast reading "Failed to load" is
+    // identical whether the session expired (401), the role is not allowed
+    // (403), the gateway is rate-limiting (429) or it fell over (5xx), and
+    // every one of those needs a different fix. Now the message a user screen-
+    // shots names the status.
+    const err = new Error(`Failed to fetch leads (HTTP ${res.status})`);
+    err.status = res.status;
+    throw err;
   }
 
   return await res.json();

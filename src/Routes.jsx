@@ -94,6 +94,15 @@ const Routes = () => {
               path="/leads"
               element={<DealsPage />}
             />
+            {/* Deep-linkable lead — same page, opens that lead's drawer.
+                Exists so a pasted /leads/:id URL resolves on a cold load.
+                In-app the id is written straight onto the address bar with
+                history.replaceState rather than by navigating here, so the
+                list never remounts. See the note in pages/deals/index.jsx. */}
+            <Route
+              path="/leads/:leadId"
+              element={<DealsPage />}
+            />
 
             <Route
               path="/inactive-leads"
@@ -103,7 +112,6 @@ const Routes = () => {
               path="/sales-team"
               element={<SalesTeam />}
             />
-            {/* <Route path="/contacts" element={<ContactsPage />} /> */}
             <Route
               path="/emails"
               element={<EmailsPage />}

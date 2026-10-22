@@ -155,14 +155,26 @@ const DealDrawer = ({
 
       } catch (err) {
         console.error("Parent fetch failed", err);
-        toast.error("Failed to load parent data");
+        toast.error(
+          err?.status
+            ? `Could not load leads (error ${err.status})`
+            : "Could not load leads — check your connection",
+        );
       }
     };
 
-    if (formData.parentName) {
+    // GUARDED ON isOpen. These drawers are mounted unconditionally by
+    // their parent and hidden with a CSS transform rather than unmounted
+    // (see the commented-out `if (!isOpen) return null` below), so without
+    // this check the effect ran on every page load for a drawer nobody had
+    // opened. The Leads page mounts DealDrawer, which mounts two of these,
+    // so each visit fired two unnecessary /Lead requests — and when they
+    // failed, three "Failed to load parent data" toasts appeared over a
+    // page the user had not interacted with.
+    if (isOpen && formData.parentName) {
       loadParentData();
     }
-  }, [formData.parentName]);
+  }, [isOpen, formData.parentName]);
   const currentUserId = JSON.parse(localStorage.getItem("login_object"))?.id;
   // if (!isOpen) return null;
   const canEditDeal = (deal) =>

@@ -360,6 +360,12 @@ const DealDrawer = ({
   };
 
   useEffect(() => {
+    // Guarded on isOpen. This drawer is mounted by its page unconditionally
+    // and hidden with a CSS transform rather than unmounted, so an unguarded
+    // effect fires on every visit to that page for a panel nobody opened.
+    // isOpen is in the deps so it still loads the first time it IS opened.
+    if (!isOpen) return;
+
     // Load the three lists INDEPENDENTLY. Previously all three were awaited in
     // a single Promise.all, so if any one rejected (e.g. fetchContacts erroring
     // or timing out on initial page load) the shared catch skipped every
@@ -378,7 +384,7 @@ const DealDrawer = ({
     fetchContacts()
       .then((res) => setContact(res.list || []))
       .catch((err) => console.error("Failed to load contacts", err));
-  }, []);
+  }, [isOpen]);
 
   // For non-admin roles (Owner / rep), /User only returns users in their
   // own scope (often just themselves + their direct team). That makes the
@@ -393,6 +399,8 @@ const DealDrawer = ({
   // Triggers on deal.id so it runs once per opened campaign, not on every
   // formData change.
   useEffect(() => {
+    if (!isOpen) return;
+
     const teamIds = deal?.teamsIds || [];
     if (!teamIds.length) return;
 
@@ -413,7 +421,7 @@ const DealDrawer = ({
       }
     };
     loadTeamUsers();
-  }, [deal?.id]);
+  }, [isOpen, deal?.id]);
 
   // userOptions = active users from /User, with any saved collaborators
   // injected if /User doesn't return them.

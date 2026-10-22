@@ -160,8 +160,12 @@ const ContactDrawer = ({
       }
     };
 
-    loadData();
-  }, []);
+    // Guarded on isOpen. This drawer is mounted by its page unconditionally
+    // and hidden with a CSS transform rather than unmounted, so an unguarded
+    // effect fires on every visit to that page for a panel nobody opened.
+    // isOpen is in the deps so it still loads the first time it IS opened.
+    if (isOpen) loadData();
+  }, [isOpen]);
 
   const userOptions = users
     ?.filter((u) => u?.isActive) // ✅ only active users
