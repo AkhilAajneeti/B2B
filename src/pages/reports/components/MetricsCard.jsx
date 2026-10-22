@@ -56,10 +56,13 @@ const MetricsCard = ({
         '--card-ring': from,
         ...(selected ? { borderColor: from, boxShadow: `0 0 0 1.5px ${from}` } : {}),
       }}
-      className={`group relative h-full w-full overflow-hidden rounded-2xl border border-[rgba(20,20,30,0.07)] bg-card p-4 sm:p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--card-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none ${
-        interactive
-          ? 'cursor-pointer hover:-translate-y-1 hover:border-[rgba(20,20,30,0.12)] hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--card-glow)] motion-reduce:hover:translate-y-0'
-          : 'cursor-default'
+      // The hover lift and glow are PRESENTATION and apply to every card, so
+      // the row reacts as one surface. Only the CURSOR is conditional: that is
+      // what promises a click, and a card with no handler should not make the
+      // promise. An earlier version tied the whole hover treatment to
+      // interactivity, which left three cards looking dead next to the rest.
+      className={`group relative h-full w-full overflow-hidden rounded-2xl border border-[rgba(20,20,30,0.07)] bg-card p-4 sm:p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:border-[rgba(20,20,30,0.12)] hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--card-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--card-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+        interactive ? 'cursor-pointer' : 'cursor-default'
       }`}
     >
       {/* Soft accent glow, brightens on hover. */}
