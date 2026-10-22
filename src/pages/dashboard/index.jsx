@@ -30,6 +30,20 @@ const ChartSkeleton = ({ height = 320 }) => (
     <div className="bg-slate-100 rounded-lg" style={{ height }} />
   </div>
 );
+/**
+ * Festive hero switch.
+ *
+ * The Dussehra banner is kept, not deleted, so it can be brought back for
+ * Diwali or the next festival — flip this to true and the greeting, artwork and
+ * scrim return exactly as they were. The plain "Dashboard" heading renders
+ * otherwise.
+ *
+ * A flag rather than a commented-out block on purpose: the hero carries its own
+ * {/* ... *\/} comments, and JSX comments do not nest — commenting the block out
+ * would end at the first inner close and break the build.
+ */
+const FESTIVE_HERO = false;
+
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeInsight, setActiveInsight] = useState(null);
@@ -380,55 +394,66 @@ const Dashboard = () => {
             keeps the full lockup, the archer's head, arms and bow, and the
             temple line; what it loses is dead sky above and the hem of his
             robe below. Pushing further up trades the lockup for his legs. */}
-        <div className="m-4 sm:m-6">
-          <section className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
-            <img
-              src="/assets/images/festive-banner.jpg"
-              alt=""
-              aria-hidden="true"
-              className="h-32 w-full select-none object-cover object-[50%_46%] sm:h-44 lg:h-52"
-            />
+        {FESTIVE_HERO ? (
+          <div className="m-4 sm:m-6">
+            <section className="relative overflow-hidden rounded-2xl border border-border shadow-sm">
+              <img
+                src="/assets/images/festive-banner.jpg"
+                alt=""
+                aria-hidden="true"
+                className="h-32 w-full select-none object-cover object-[50%_46%] sm:h-44 lg:h-52"
+              />
 
-            {/* Legibility wash for the greeting, and only the greeting.
-                Two failure modes to sit between. Originally this ran cream at
-                80% across the whole middle and only cleared at the far right,
-                which is where the artwork's content lives — the archer came
-                through as a ghost and the maroon "Happy Dussehra" lettering
-                flattened to pale pink. Pulled back to /30 clearing at 38%, the
-                opposite happened: the archer's hair starts around x=15%, well
-                inside the text column, so the subtitle's second line ran into
-                it with nothing behind to separate them.
+              {/* Legibility wash for the greeting, and only the greeting.
+                  Two failure modes to sit between. Originally this ran cream at
+                  80% across the whole middle and only cleared at the far right,
+                  which is where the artwork's content lives — the archer came
+                  through as a ghost and the maroon "Happy Dussehra" lettering
+                  flattened to pale pink. Pulled back to /30 clearing at 38%, the
+                  opposite happened: the archer's hair starts around x=15%, well
+                  inside the text column, so the subtitle's second line ran into
+                  it with nothing behind to separate them.
 
-                So: opaque at the left edge, still 75% at 26% across — enough to
-                carry text over his hair — and completely clear by 46%, which
-                is short of the bow. The artwork keeps its full saturation from
-                the figure rightward; only the strip the words occupy is
-                lifted.
+                  So: opaque at the left edge, still 75% at 26% across — enough to
+                  carry text over his hair — and completely clear by 46%, which
+                  is short of the bow. The artwork keeps its full saturation from
+                  the figure rightward; only the strip the words occupy is
+                  lifted.
 
-                The stops MUST be bracketed — `via-[26%]`, not `via-26%`.
-                Tailwind's gradient stop-position scale only has multiples of
-                5, so `via-26%`/`to-46%` are not classes at all; they compile to
-                nothing and the gradient silently falls back to its defaults
-                (50% and 100%), which puts 75% cream across the entire banner.
-                That is exactly how this washed out the whole artwork twice. */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] from-0% via-[#FFF4E2]/75 via-[26%] to-transparent to-[46%]"
-            />
+                  The stops MUST be bracketed — `via-[26%]`, not `via-26%`.
+                  Tailwind's gradient stop-position scale only has multiples of
+                  5, so `via-26%`/`to-46%` are not classes at all; they compile to
+                  nothing and the gradient silently falls back to its defaults
+                  (50% and 100%), which puts 75% cream across the entire banner.
+                  That is exactly how this washed out the whole artwork twice. */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] from-0% via-[#FFF4E2]/75 via-[26%] to-transparent to-[46%]"
+              />
 
-            <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center px-5 sm:max-w-[34%] sm:px-8">
-              <p className="text-xs font-semibold text-[#9F1239] sm:text-sm">
-                {greeting},
-              </p>
-              <h1 className="mt-0.5 truncate text-xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-                {firstName} 👋
-              </h1>
-              <p className="mt-1 text-[11px] leading-snug text-slate-600 sm:text-sm">
-                Let's continue building stronger connections this Dussehra.
-              </p>
-            </div>
-          </section>
-        </div>
+              <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center px-5 sm:max-w-[34%] sm:px-8">
+                <p className="text-xs font-semibold text-[#9F1239] sm:text-sm">
+                  {greeting},
+                </p>
+                <h1 className="mt-0.5 truncate text-xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+                  {firstName} 👋
+                </h1>
+                <p className="mt-1 text-[11px] leading-snug text-slate-600 sm:text-sm">
+                  Let's continue building stronger connections this Dussehra.
+                </p>
+              </div>
+            </section>
+          </div>
+        ) : (
+          <div className="m-6">
+            <h1 className="text-2xl lg:text-3xl font-bold heading-gradient mb-2">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Welcome back! Here's what's happening with your sales today.
+            </p>
+          </div>
+        )}
 
         {/* Summary alert — overdue + follow-up-today leads. Plays a chime,
             lists clickable leads that open the lead drawer. Tighter mobile

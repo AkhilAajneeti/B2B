@@ -328,30 +328,6 @@ const Sidebar = ({ isOpen = false, onClose }) => {
         >
           <Icon name={collapsed ? "ChevronRight" : "ChevronLeft"} size={14} />
         </button>
-        {/* Festive ornaments. Decoration only: aria-hidden, pointer-events
-            none, and behind the nav (the content wrapper below establishes its
-            own stacking context), so they can never intercept a click.
-            Suppressed on the collapsed rail — 4rem leaves no room for them. */}
-        {!collapsed && (
-          /* One mandala, mid-height, sitting whole inside the rail. The one
-             that used to sit by the logo was removed — it crowded the brand.
-             The supplied file is a corner ornament — the artwork is only a
-             quarter of a mandala, rosette at its bottom-right with petals
-             radiating up and left. Positioning could never make that read as a
-             full circle, because a full circle wasn't in the file. The quarter
-             was mirrored into four around the rosette centre (measured at
-             1187/928 by locating the innermost blank disc) to build a
-             symmetric whole: festive-mandala-full.png. */
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <img
-              src="/assets/images/festive-mandala-full.png"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute right-3 top-[48%] w-32 select-none opacity-30"
-            />
-          </div>
-        )}
-
         <div className="flex flex-col h-full">
           {/* Header */}
           <div
@@ -530,24 +506,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
               collapsed ? "lg:hidden" : ""
             }`}
           >
-            {/* Archer scene. The supplied file was a screenshot crop — it
-                carried an opaque black frame and part of the "Help Center" nav
-                row along its top edge. Both were cropped out, residual near
-                black keyed to transparent (a dark fringe would be obvious on
-                this near white ground), then trimmed to content and resized to
-                512px: a 725px source for a 256px slot is wasted bandwidth.
-
-                Full-bleed to the rail's edges, and it carries its own
-                ornamental divider at the bottom, so the footer's old
-                `border-t` is dropped rather than drawing a second line
-                straight under it. */}
-            <img
-              src="/assets/images/festive-archer.png"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none w-full select-none"
-            />
-            <div className="px-4 pb-4 text-xs text-muted-foreground text-center">
+            <div className="border-t border-border px-4 py-4 text-xs text-muted-foreground text-center">
               Developed by Aajneeti connect ltd.
               <br />© 2026 All rights reserved.
             </div>
