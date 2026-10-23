@@ -65,13 +65,71 @@ const getLocalCache = () => {
   }
 };
 
+// Hard ceiling on how many counts we keep. Every distinct filter combination
+// produced one permanent entry, and nothing ever removed them: a rep flipping
+// through projects, dates, sources and teams generates hundreds in a session,
+// all in a single localStorage key that only ever grew.
+const MAX_CACHE_ENTRIES = 300;
+
+/**
+ * Drop anything that can no longer be served, then the oldest, until the cache
+ * is back under the ceiling.
+ *
+ * Entries older than the longest TTL are dead weight by definition — a reader
+ * would re-fetch them anyway — so they go first.
+ */
+const pruneCache = (cache) => {
+  const now = Date.now();
+  const entries = Object.entries(cache).filter(
+    ([, v]) => v && now - v.timestamp < CACHE_TTL_LONG,
+  );
+  entries.sort((a, b) => b[1].timestamp - a[1].timestamp);
+  return Object.fromEntries(entries.slice(0, MAX_CACHE_ENTRIES));
+};
+
+/**
+ * Persist one count, and NEVER let the attempt break the caller.
+ *
+ * This used to be a bare localStorage.setItem with no try/catch and no
+ * pruning, which made it a slow-acting outage:
+ *
+ *   1. the blob grew without limit, one entry per filter combination;
+ *   2. eventually the write hit the ~5MB quota and threw QuotaExceededError;
+ *   3. the throw happened AFTER a successful network fetch, inside
+ *      fetchLeadsCount, so it propagated out and React Query marked the query
+ *      failed — the user saw "no data" for a request that had actually
+ *      succeeded;
+ *   4. refreshing did not help, because storage was still full.
+ *
+ * And it is shared storage: once full, the LOGIN writes fail too, which is
+ * how a full cache turns into "I can't see my data at all".
+ *
+ * Now: prune first, and if the write still fails, prune hard and retry once;
+ * if that also fails, drop the cache entirely. Caching is an optimisation and
+ * must never be the reason a number does not appear.
+ */
 const setLocalCache = (key, value) => {
+  const storageKey = getCacheKey();
   const cache = getLocalCache();
-  cache[key] = {
-    value,
-    timestamp: Date.now(),
-  };
-  localStorage.setItem(getCacheKey(), JSON.stringify(cache));
+  cache[key] = { value, timestamp: Date.now() };
+
+  const write = (payload) =>
+    localStorage.setItem(storageKey, JSON.stringify(payload));
+
+  try {
+    write(Object.keys(cache).length > MAX_CACHE_ENTRIES ? pruneCache(cache) : cache);
+  } catch {
+    try {
+      // Quota, most likely. Keep only this entry and the freshest few.
+      write(pruneCache({ ...cache }));
+    } catch {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {
+        /* storage disabled entirely — carry on without a cache */
+      }
+    }
+  }
 };
 
 // Relative date types that always reach into "now" (so the count keeps changing
@@ -672,6 +730,12 @@ export const fetchNewLeads = async ({
   });
 
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.error("API FAILED:", res.status);
     throw new Error("Failed to fetch leads");
   }
@@ -913,6 +977,12 @@ export const createLead = async (payload) => {
   });
 
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.error("API ERROR:", text);
     throw new Error("Lead is not created", text);
   }
@@ -939,6 +1009,12 @@ export const updateLead = async (id, payload) => {
 
   console.log("response from contact.service.js", res);
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error(text || "Lead update failed");
   }
 
@@ -955,6 +1031,12 @@ export const deleteLead = async (id) => {
     }
   );
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error("Failed to delete contact");
   }
   return res.json();
@@ -1028,6 +1110,12 @@ export const deleteActivity = async (id) => {
     }
   );
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error("Failed to delete Activity");
   }
   return res.json();
@@ -1045,6 +1133,12 @@ export const createLeadActivity = async (payload) => {
   });
 
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.error("API ERROR:", text);
     throw new Error("Activity is not created", text);
   }

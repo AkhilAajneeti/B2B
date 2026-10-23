@@ -71,6 +71,12 @@ export const integrateAcc = async (payload) => {
   const data = await res.json();
 
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.log("ERROR RESPONSE:", data);
     throw new Error(data?.message || "Failed to submit lead");
   }
@@ -97,6 +103,12 @@ export const updateIntergrateAcc = async (id, payload) => {
   const text = await res.text();
   console.log("response from integration.servicejs", res);
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error(text || "Integrated Account updation failed");
   }
 

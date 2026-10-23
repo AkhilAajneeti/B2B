@@ -261,6 +261,12 @@ export const createCall = async (payload) => {
   });
   const text = await res.text();
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.error("API ERROR:", text);
     throw new Error("Call is not created", text);
   }
@@ -287,6 +293,12 @@ export const updateCall = async (id, payload) => {
   const text = await res.text();
   console.log("response from Call.service.js", res);
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error(text || "Call update failed");
   }
 
@@ -303,6 +315,12 @@ export const deleteCall = async (id) => {
     },
   );
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error("Failed to delete Call");
   }
   return res.json();
@@ -351,6 +369,12 @@ export const deleteActivity = async (id) => {
     },
   );
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error("Failed to delete call activity");
   }
   return res.json();
@@ -368,6 +392,12 @@ export const createCallStream = async (payload) => {
   });
   const text = await res.text();
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.error("API ERROR:", text);
     throw new Error("Activity is not created", text);
   }

@@ -147,6 +147,12 @@ export const createTeam = async (payload) => {
   });
 
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     // Read the backend error body so the thrown message is the real reason,
     // not a ReferenceError from the previously-undefined `text`.
     const text = await res.text().catch(() => "");
@@ -175,6 +181,12 @@ export const updateTeam = async (id, payload) => {
 
 
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     const text = await res.text().catch(() => "");
     throw new Error(text || "Team update failed");
   }
@@ -194,6 +206,12 @@ export const deleteTeam = async (id) => {
     }
   );
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error("Failed to delete team");
   }
   clearTeamsCache();

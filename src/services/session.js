@@ -53,13 +53,48 @@ export const clearSession = () => {
   }
 };
 
+/** Key the login screen reads to explain itself. sessionStorage, not local:
+ *  it must survive the redirect below but not outlive the tab. */
+export const SESSION_EXPIRED_KEY = "session_expired";
+
+// These pages fire several requests at once, so an expired token produces
+// several 401s within milliseconds. Without this latch each one would clear
+// the session again and re-assign window.location, racing the navigation
+// already in progress.
+let tearingDown = false;
+
 /**
  * Called when a request comes back 401. Tears down the session and sends the
  * user to the login screen.
  *
  * Deliberately NOT called for 403 — see the note above.
+ *
+ * Records WHY and WHERE FROM before leaving. Being dumped on a login screen
+ * with no explanation reads as a crash, and landing back on the dashboard
+ * afterwards loses whatever the person was actually doing — the lead they had
+ * open, the filters they had set.
  */
 export const handleUnauthorized = () => {
+  if (tearingDown) return;
+  tearingDown = true;
+
+  try {
+    const from = window.location.pathname + window.location.search;
+    sessionStorage.setItem(
+      SESSION_EXPIRED_KEY,
+      // Only ever a same-origin relative path, and never /login itself —
+      // otherwise a successful sign-in would bounce straight back here.
+      JSON.stringify({
+        at: Date.now(),
+        from: from.startsWith("/") && !from.startsWith("//") && !from.startsWith("/login")
+          ? from
+          : "",
+      }),
+    );
+  } catch {
+    /* sessionStorage unavailable — the redirect still works, just unexplained */
+  }
+
   clearSession();
   window.location.href = "/login";
 };

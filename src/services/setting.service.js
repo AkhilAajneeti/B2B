@@ -31,6 +31,12 @@ export const createUser = async (payload) => {
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     // EspoCRM rejects a duplicate userName/email with 409 (or a "not unique" /
     // "already used" reason). Surface that as a clean, specific error so the UI
     // can toast "User already exists". `text` was previously referenced before

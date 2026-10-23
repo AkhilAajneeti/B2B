@@ -82,25 +82,47 @@ const IndustryChart = () => {
       "WikipediaPoliticians",
     ];
 
-    const results = await Promise.all(
-      IMPORTANT_SECTORS.map((sector) =>
-        fetchLeadsCount([
-          ...baseFilters,
-          {
-            type: "equals",
-            attribute: "industry",
-            value: sector,
-          },
-        ])
-      )
-    );
+    // BATCHED, and allSettled rather than all.
+    //
+    // This fired all 35 sector counts at once. Browsers allow roughly six
+    // concurrent connections per host, so the other 29 queued — and every
+    // other request the dashboard needs (KPIs, the summary alert, the other
+    // charts) queued behind them. That is the dashboard "not loading
+    // properly": the data was coming, just last.
+    //
+    // Promise.all made it worse: one rejected sector threw the whole chart
+    // away, so a single slow or failing count rendered an empty panel. With
+    // allSettled a failed sector is simply 0 and the rest still draw.
+    //
+    // Batched at 5, matching MultiLineChart's existing treatment, which leaves
+    // room in the connection budget for the rest of the page.
+    const BATCH_SIZE = 5;
+    const results = [];
+
+    for (let i = 0; i < IMPORTANT_SECTORS.length; i += BATCH_SIZE) {
+      const settled = await Promise.allSettled(
+        IMPORTANT_SECTORS.slice(i, i + BATCH_SIZE).map((sector) =>
+          fetchLeadsCount([
+            ...baseFilters,
+            {
+              type: "equals",
+              attribute: "industry",
+              value: sector,
+            },
+          ])
+        )
+      );
+      settled.forEach((r) => results.push(r.status === "fulfilled" ? r.value : 0));
+    }
 
     const data = IMPORTANT_SECTORS.map((sector, i) => ({
       name: sector,
       value: results[i],
     }));
 
-    const total = await fetchLeadsCount(baseFilters);
+    // Total can fail too; 0 simply means no "Others" slice rather than a
+    // rejected promise taking the whole chart with it.
+    const total = await fetchLeadsCount(baseFilters).catch(() => 0);
 
     const knownTotal = results.reduce((sum, val) => sum + val, 0);
 
@@ -119,6 +141,12 @@ const IndustryChart = () => {
 
     getSectorData(filters)
       .then(setChartData)
+      .catch((err) => {
+        // Without this the promise rejected unhandled and chartData kept its
+        // previous value behind a spinner that never cleared.
+        console.error("Sector chart failed to load", err);
+        setChartData([]);
+      })
       .finally(() => setLoading(false));
   }, [filters]);
 

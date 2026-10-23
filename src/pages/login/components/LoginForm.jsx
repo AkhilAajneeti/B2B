@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
+import { SESSION_EXPIRED_KEY } from "services/session";
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -14,6 +15,32 @@ const LoginForm = () => {
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // Where to return after signing in. Set only when we arrived here because a
+  // session expired mid-work; otherwise sign-in goes to the dashboard.
+  const [returnTo, setReturnTo] = useState("");
+
+  // Explain an involuntary logout. Without this the person is dropped on a
+  // login screen with no reason given, which reads as the app having crashed —
+  // and they land back on the dashboard afterwards, having lost the lead they
+  // had open and the filters they had set.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(SESSION_EXPIRED_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(SESSION_EXPIRED_KEY);
+
+      const { at, from } = JSON.parse(raw) || {};
+      // Ignore a stale marker — a tab left open for hours should not claim the
+      // session "just" expired.
+      if (!at || Date.now() - at > 10 * 60 * 1000) return;
+
+      setErrors({ general: "Your session expired. Please sign in again." });
+      if (from) setReturnTo(from);
+    } catch {
+      /* sessionStorage unavailable — fall back to a plain login screen */
+    }
+  }, []);
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     const isAuthenticated = localStorage.getItem("isAuthenticated");
@@ -147,12 +174,53 @@ const LoginForm = () => {
       const jsonString = JSON.stringify(loginObj);
       const myToken = btoa(jsonString);
 
-      // ✅ Store everything
-      localStorage.setItem("auth_token", myToken); // MAIN TOKEN
-      localStorage.setItem("login_object", jsonString); // optional (debug/use)
-      localStorage.setItem("isAuthenticated", "true");
-      if (data.acl) {
-        localStorage.setItem("acl", JSON.stringify(data.acl));
+      // ✅ Store everything.
+      //
+      // Guarded, because these four writes share one storage quota with every
+      // cache the app keeps — and they were previously bare setItem calls.
+      // When storage was full the writes threw PART WAY THROUGH, which is the
+      // worst possible outcome: auth_token and login_object land, `acl` (the
+      // largest of the four) does not, and the user is "logged in" with no
+      // permissions at all. Every ACL-gated read then comes back empty and it
+      // looks exactly like "my data is not loading".
+      //
+      // So: clear the app's own caches and retry once — they are all
+      // re-derivable from the server — and only give up if that still fails,
+      // with a message that names the real problem instead of a login error.
+      const writeSession = () => {
+        localStorage.setItem("auth_token", myToken);
+        localStorage.setItem("login_object", jsonString);
+        localStorage.setItem("isAuthenticated", "true");
+        if (data.acl) {
+          localStorage.setItem("acl", JSON.stringify(data.acl));
+        }
+      };
+
+      try {
+        writeSession();
+      } catch {
+        try {
+          // Drop every cache we own, keeping nothing but what we are about to
+          // write. Counts, teams, users and datasets all rebuild on demand.
+          Object.keys(localStorage)
+            .filter(
+              (k) =>
+                k.startsWith("leads_count_cache_") ||
+                k.startsWith("users_cache_") ||
+                k.startsWith("teams_cache_") ||
+                k.startsWith("win_rate_dataset_") ||
+                k.startsWith("project_options_"),
+            )
+            .forEach((k) => localStorage.removeItem(k));
+          writeSession();
+        } catch {
+          setErrors({
+            general:
+              "Your browser storage is full, so the session could not be saved. Clear this site's data and try again.",
+          });
+          setIsLoading(false);
+          return;
+        }
       }
 
       try {
@@ -162,7 +230,9 @@ const LoginForm = () => {
         // sessionStorage unavailable — alert will just behave as if first-visit
       }
 
-      navigate("/dashboard");
+      // Back to whatever they were doing when the session died, else the
+      // dashboard. `returnTo` is always a validated same-origin path.
+      navigate(returnTo || "/dashboard");
     } catch (err) {
       console.error("Login error:", err);
       setErrors({ general: err.message });

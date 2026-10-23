@@ -179,14 +179,70 @@ export const readCachedDataset = (filters, year) => {
   }
 };
 
-export const writeCachedDataset = (filters, year, list) => {
+// How many filter/year datasets to keep at once.
+//
+// This is the biggest thing the app puts in localStorage BY FAR: one entry per
+// (filters x year), each holding up to MAX_LEADS records — roughly a megabyte
+// apiece. Nothing used to remove them. readCachedDataset only drops an entry
+// when something reads it and finds it stale, so a dataset for a filter
+// combination nobody revisits stayed forever, and a few afternoons of changing
+// filters on Reports was enough to fill the ~5MB origin quota.
+//
+// The write itself was already in a try/catch, so it failed silently — but a
+// full quota is shared, and it was breaking OTHER writes that were not
+// guarded, including the session written at login. Three is enough for the
+// pattern people actually use (current filters, plus flipping back and forth).
+const MAX_DATASETS = 3;
+
+/** Remove expired datasets, then the oldest, until only MAX_DATASETS remain. */
+const pruneDatasets = (keepKey) => {
   try {
-    localStorage.setItem(
-      cacheKeyFor(filters, year),
-      JSON.stringify({ list, timestamp: Date.now() }),
-    );
+    const now = Date.now();
+    const entries = [];
+
+    Object.keys(localStorage).forEach((k) => {
+      if (!k.startsWith(DATASET_KEY_PREFIX) || k === keepKey) return;
+      let ts = 0;
+      try {
+        ts = JSON.parse(localStorage.getItem(k))?.timestamp || 0;
+      } catch {
+        ts = 0; // unparseable entry — treat as oldest so it is dropped first
+      }
+      if (!ts || now - ts > DATASET_GC) {
+        localStorage.removeItem(k);
+      } else {
+        entries.push([k, ts]);
+      }
+    });
+
+    entries.sort((a, b) => b[1] - a[1]);
+    entries.slice(MAX_DATASETS - 1).forEach(([k]) => localStorage.removeItem(k));
   } catch {
-    // localStorage quota / disabled — skip silently.
+    /* storage disabled — nothing to prune */
+  }
+};
+
+export const writeCachedDataset = (filters, year, list) => {
+  const key = cacheKeyFor(filters, year);
+  const payload = JSON.stringify({ list, timestamp: Date.now() });
+
+  // Prune BEFORE writing, so the new entry has room rather than being the one
+  // that gets rejected.
+  pruneDatasets(key);
+
+  try {
+    localStorage.setItem(key, payload);
+  } catch {
+    // Still no room. Drop every other dataset and try once more; a cache miss
+    // is cheap, a quota that stays full breaks unrelated writes.
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(DATASET_KEY_PREFIX) && k !== key)
+        .forEach((k) => localStorage.removeItem(k));
+      localStorage.setItem(key, payload);
+    } catch {
+      /* give up: the dataset simply will not be cached this time */
+    }
   }
 };
 
@@ -277,8 +333,23 @@ export const fetchWinRateDataset = async ({ filters = {}, year }) => {
       const offsets = [];
       for (let o = PAGE_SIZE; o < total; o += PAGE_SIZE) offsets.push(o);
 
-      const pages = await Promise.all(offsets.map((o) => fetchPage(o)));
-      for (const page of pages) all.push(...(page?.list || []));
+      // BATCHED, not all-at-once and not one-at-a-time.
+      //
+      // At the 5,000-lead cap this is 24 page requests. Firing them together
+      // (the previous behaviour) saturates the browser's ~6 connections per
+      // host, so every other request the page needs — counts, teams, the lead
+      // list — waits behind them. Awaiting them one by one, which is what this
+      // replaced, was 24 sequential round trips and took ~10s to paint.
+      //
+      // Five at a time keeps the pipe busy while leaving room for the rest of
+      // the page, matching the batching already used by the dashboard charts.
+      const PAGE_BATCH = 5;
+      for (let i = 0; i < offsets.length; i += PAGE_BATCH) {
+        const batch = await Promise.all(
+          offsets.slice(i, i + PAGE_BATCH).map((o) => fetchPage(o)),
+        );
+        for (const page of batch) all.push(...(page?.list || []));
+      }
     }
 
     // Guard against the backend reporting a larger `total` than it pages out.

@@ -181,6 +181,12 @@ export const fetchAllTasks = async ({ limit, page, filters = {} }) => {
   });
 
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.log("STATUS:", res.status);
     throw new Error("Failed to fetch tasks");
   }
@@ -239,6 +245,12 @@ export const createTasks = async (payload) => {
   });
   const text = await res.text();
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.error("API ERROR:", text);
     throw new Error("Task is not created", text);
   }
@@ -265,6 +277,12 @@ export const updateTasks = async (id, payload) => {
   const text = await res.text();
   console.log("response from tasks.service.js", res);
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error(text || "task update failed");
   }
 
@@ -281,6 +299,12 @@ export const deleteTasks = async (id) => {
     }
   );
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error("Failed to delete task");
   }
   return res.json();
@@ -329,6 +353,12 @@ export const deleteActivity = async (id) => {
     }
   );
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error("Failed to delete Activity");
   }
   return res.json();
@@ -346,6 +376,12 @@ export const createLeadActivity = async (payload) => {
   });
   const text = await res.text();
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     console.error("API ERROR:", text);
     throw new Error("Activity is not created", text);
   }

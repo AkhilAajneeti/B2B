@@ -47,6 +47,12 @@ export const fetchUnreadCount = async () => {
   );
   console.log("STATUS:", res.status);
   if (!res.ok) {
+    // Session is gone — send them to login rather than leaving a dead
+    // page. 401 ONLY: a 403 means this role may not read THIS entity,
+    // which is routine under per-role ACLs and must not end the session.
+    if (res.status === 401) {
+      handleUnauthorized();
+    }
     throw new Error("Failed to fetch notifications Count");
   }
   const data = await res.json(); // 🔥 FIX HERE
