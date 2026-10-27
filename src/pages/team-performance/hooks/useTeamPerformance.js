@@ -5,7 +5,6 @@ import {
   readCachedDataset,
 } from "../../reports/services/winRateService";
 import {
-  DEFAULT_SUSPECT_HOURS,
   MIN_SAMPLE,
   hasStatusHistory,
   hasSiteVisitDone,
@@ -13,7 +12,6 @@ import {
   isConnected,
   isEverQualified,
   isQualifiedThenDropped,
-  isSuspectQualification,
 } from "../utils/qualification";
 
 /**
@@ -60,7 +58,6 @@ export const useTeamPerformance = ({
   filters = {},
   year,
   enabled = true,
-  suspectHours = DEFAULT_SUSPECT_HOURS,
 }) => {
   const { data, isLoading, isFetching, isError } = useQuery({
     // Same key PREFIX as the Reports charts on purpose: when the filters and
@@ -126,7 +123,6 @@ export const useTeamPerformance = ({
           qualifiedThenDropped: 0,
           closedWithoutReaching: 0,
           siteVisitsDone: 0,
-          suspect: 0,
           // project -> { connected, qualified } for this rep only
           byProject: new Map(),
         };
@@ -139,10 +135,7 @@ export const useTeamPerformance = ({
       rep.leads += 1;
       if (connected) rep.connected += 1;
       if (qualified) rep.everQualified += 1;
-      if (isQualifiedThenDropped(lead)) {
-        rep.qualifiedThenDropped += 1;
-        if (isSuspectQualification(lead, suspectHours)) rep.suspect += 1;
-      }
+      if (isQualifiedThenDropped(lead)) rep.qualifiedThenDropped += 1;
       if (isClosedWithoutReaching(lead)) rep.closedWithoutReaching += 1;
       if (hasSiteVisitDone(lead)) rep.siteVisitsDone += 1;
 
@@ -189,17 +182,8 @@ export const useTeamPerformance = ({
       }
       const index = expected > 0 ? rep.everQualified / expected : null;
 
-      // Flagged leads are counted, never deleted — the honest Ever-Qualified
-      // total stays intact and the suspect share sits beside it.
-      const genuine = Math.max(0, rep.everQualified - rep.suspect);
-      const suspectRate = rep.everQualified
-        ? (rep.suspect / rep.everQualified) * 100
-        : 0;
-
       return {
         ...rep,
-        genuine,
-        suspectRate,
         grossQ,
         netQ,
         contact,
@@ -226,8 +210,6 @@ export const useTeamPerformance = ({
         closedWithoutReaching:
           acc.closedWithoutReaching + r.closedWithoutReaching,
         siteVisitsDone: acc.siteVisitsDone + r.siteVisitsDone,
-        suspect: acc.suspect + r.suspect,
-        genuine: acc.genuine + r.genuine,
       }),
       {
         leads: 0,
@@ -236,8 +218,6 @@ export const useTeamPerformance = ({
         qualifiedThenDropped: 0,
         closedWithoutReaching: 0,
         siteVisitsDone: 0,
-        suspect: 0,
-        genuine: 0,
       },
     );
 
@@ -249,7 +229,7 @@ export const useTeamPerformance = ({
       historyAvailable: hasStatusHistory(records),
       recordCount: records.length,
     };
-  }, [data, suspectHours]);
+  }, [data]);
 
   return { ...result, isLoading, isFetching, isError };
 };

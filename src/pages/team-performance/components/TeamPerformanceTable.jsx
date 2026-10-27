@@ -19,12 +19,21 @@ const COLUMNS = [
   { key: "leads", label: "Leads", hint: "Base for every ratio" },
   { key: "contact", label: "Contact %", hint: "Reached at least once. Status-derived, so this is a floor", format: pct },
   { key: "everQualified", label: "Ever-Qualified", hint: "Held a qualifying status at any point, even if closed now" },
-  { key: "suspect", label: "Suspect", hint: "Of those, qualified and reversed inside the window — counted, but not trusted" },
   { key: "netQ", label: "Net Q%", hint: "Ever-Qualified / Connected — conversation skill", format: pct },
   { key: "index", label: "Index", hint: "Rep's Net Q% vs the team's, on the same projects. 1.20 = 20% better than peers" },
   { key: "qualifiedThenDropped", label: "Dropped", hint: "Qualified, then went cold — the coaching list" },
   { key: "closedWithoutReaching", label: "Never reached", hint: "Closed having never had a conversation — a discipline flag" },
-  { key: "siteVisitsDone", label: "Visits", hint: "Site visits done" },
+  {
+    key: "siteVisitsDone",
+    label: "Visits",
+    // Scope matters here and it is easy to misread. Every column on this table
+    // counts LEADS CREATED in the selected period — the dataset filters on
+    // createdAt — so this is "leads from this month that reached Visit Done",
+    // not "visits that happened this month". A visit done today on a lead
+    // created in September is not counted, which is why this number reads
+    // lower than a status filter on the Leads page.
+    hint: "Leads from this period that reached Site Visit Done. Counts the lead's creation month, not the visit date.",
+  },
 ];
 
 const indexTone = (index) => {
@@ -99,17 +108,17 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/40">
+        <table className="w-full border-collapse">
+          <thead className="border-b border-border bg-muted/50">
+            <tr>
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
                   title={col.hint}
                   onClick={() => toggle(col.key)}
-                  className={`cursor-pointer select-none whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground ${
+                  className={`cursor-pointer select-none whitespace-nowrap px-6 py-4 text-xs font-bold uppercase tracking-[0.05em] text-muted-foreground transition-colors hover:text-foreground ${
                     col.align === "left" ? "text-left" : "text-right"
                   }`}
                 >
@@ -131,49 +140,29 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
             {paged.map((row) => (
               <tr
                 key={row.id}
-                className={`border-b border-border last:border-0 hover:bg-muted/30 ${
+                className={`border-b border-border/60 transition-colors even:bg-muted/[0.18] last:border-b-0 hover:bg-sky-50 ${
                   row.lowSample ? "opacity-60" : ""
                 }`}
               >
-                <td className="whitespace-nowrap px-4 py-3 text-left font-medium text-foreground">
+                <td className="whitespace-nowrap px-6 py-4 text-left text-[15px] font-semibold text-foreground">
+                  {/* The "LOW SAMPLE" badge is gone — it shouted on every row
+                      it touched. The signal is kept more quietly: the row is
+                      dimmed, it sorts last, and its Index reads "—" with the
+                      reason on hover. */}
                   {row.name}
-                  {row.lowSample && (
-                    <span
-                      title={`Fewer than ${MIN_SAMPLE} leads — shown but not ranked, because a percentage on this few leads is noise`}
-                      className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
-                    >
-                      low sample
-                    </span>
-                  )}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums">{row.leads}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{pct(row.contact)}</td>
-                <td className="px-4 py-3 text-right tabular-nums font-semibold text-foreground">
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{row.leads}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{pct(row.contact)}</td>
+                <td className="px-6 py-4 text-right text-[15px] font-semibold tabular-nums text-foreground">
                   {row.everQualified}
                 </td>
-                {/* Tinted only when there is something to flag — a column of
-                    red zeroes would read as an alert on every rep. */}
-                <td
-                  className={`px-4 py-3 text-right tabular-nums ${
-                    row.suspect > 0
-                      ? "font-semibold text-rose-600 dark:text-rose-400"
-                      : "text-muted-foreground"
-                  }`}
-                  title={
-                    row.suspect > 0
-                      ? `${row.suspect} of ${row.everQualified} reversed quickly (${row.suspectRate.toFixed(0)}%)`
-                      : undefined
-                  }
-                >
-                  {row.suspect}
-                </td>
-                <td className="px-4 py-3 text-right tabular-nums">{pct(row.netQ)}</td>
-                <td className={`px-4 py-3 text-right tabular-nums font-semibold ${indexTone(row.lowSample ? null : row.index)}`}>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{pct(row.netQ)}</td>
+                <td className={`px-6 py-4 text-right text-[15px] tabular-nums font-semibold ${indexTone(row.lowSample ? null : row.index)}`}>
                   {row.lowSample || row.index == null ? "—" : row.index.toFixed(2)}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums">{row.qualifiedThenDropped}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{row.closedWithoutReaching}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{row.siteVisitsDone}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{row.qualifiedThenDropped}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{row.closedWithoutReaching}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{row.siteVisitsDone}</td>
               </tr>
             ))}
           </tbody>
@@ -183,23 +172,22 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
               silently meaning "these 20 reps", which is worse than no footer. */}
           {totals && (
             <tfoot>
-              <tr className="border-t-2 border-border bg-muted/40 font-semibold">
-                <td className="px-4 py-3 text-left">Team</td>
-                <td className="px-4 py-3 text-right tabular-nums">{totals.leads}</td>
-                <td className="px-4 py-3 text-right tabular-nums">
+              <tr className="border-t-2 border-border bg-muted/50 text-[15px] font-bold">
+                <td className="px-6 py-4 text-left">Team</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{totals.leads}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">
                   {pct(totals.leads ? (totals.connected / totals.leads) * 100 : 0)}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums">{totals.everQualified}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{totals.suspect}</td>
-                <td className="px-4 py-3 text-right tabular-nums">
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{totals.everQualified}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">
                   {pct(totals.connected ? (totals.everQualified / totals.connected) * 100 : 0)}
                 </td>
                 {/* The team is its own baseline, so its index is 1.00 by
                     definition — printing it would imply a comparison. */}
-                <td className="px-4 py-3 text-right text-muted-foreground">—</td>
-                <td className="px-4 py-3 text-right tabular-nums">{totals.qualifiedThenDropped}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{totals.closedWithoutReaching}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{totals.siteVisitsDone}</td>
+                <td className="px-6 py-4 text-right text-muted-foreground">—</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{totals.qualifiedThenDropped}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{totals.closedWithoutReaching}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{totals.siteVisitsDone}</td>
               </tr>
             </tfoot>
           )}

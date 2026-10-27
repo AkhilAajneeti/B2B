@@ -4,11 +4,7 @@ import Icon from "../../components/AppIcon";
 import TeamPerformanceTable from "./components/TeamPerformanceTable";
 import { useTeams, useTeamUsers } from "hooks/useTeams";
 import { useTeamPerformance } from "./hooks/useTeamPerformance";
-import {
-  DEFAULT_SUSPECT_HOURS,
-  MIN_SAMPLE,
-  SUSPECT_THRESHOLDS,
-} from "./utils/qualification";
+import { MIN_SAMPLE } from "./utils/qualification";
 
 /**
  * Team Performance — Report 2 of the CRM Reports Module spec.
@@ -79,7 +75,6 @@ const TeamPerformance = () => {
   const [periodKey, setPeriodKey] = useState("thisMonth");
   const [project, setProject] = useState("");
   const [team, setTeam] = useState("");
-  const [suspectHours, setSuspectHours] = useState(DEFAULT_SUSPECT_HOURS);
 
   const period = PERIODS.find((p) => p.key === periodKey) ?? PERIODS[0];
 
@@ -143,7 +138,6 @@ const TeamPerformance = () => {
       filters,
       year,
       enabled: !team || teamUserIds !== null,
-      suspectHours,
     });
 
   const rankedCount = rows.filter((r) => !r.lowSample).length;
@@ -164,7 +158,10 @@ const TeamPerformance = () => {
               <p className="mt-1 text-sm text-muted-foreground">
                 Ranked on qualification, counting every lead that was{" "}
                 <span className="font-medium text-foreground">ever</span>{" "}
-                qualified — not only those qualified today.
+                qualified — not only those qualified today. Every number counts
+                leads <span className="font-medium text-foreground">created</span>{" "}
+                in the selected period, so it will not match an all-time filter
+                on the Leads page.
               </p>
             </div>
 
@@ -175,18 +172,6 @@ const TeamPerformance = () => {
                 placeholder="Filter by project…"
                 className="h-9 w-48 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <select
-                value={suspectHours}
-                onChange={(e) => setSuspectHours(Number(e.target.value))}
-                title="A lead qualified and reversed inside this window is counted as suspect"
-                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                {SUSPECT_THRESHOLDS.map((h) => (
-                  <option key={h} value={h}>
-                    Suspect &le; {h}h
-                  </option>
-                ))}
-              </select>
               <select
                 value={team}
                 onChange={(e) => setTeam(e.target.value)}
@@ -244,7 +229,7 @@ const TeamPerformance = () => {
             </div>
           )}
 
-          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Tile
               label="Leads"
               value={totals?.leads ?? 0}
@@ -259,11 +244,6 @@ const TeamPerformance = () => {
               label="Qualified, then dropped"
               value={totals?.qualifiedThenDropped ?? 0}
               hint="Still counted as qualified. This is the weekly coaching list."
-            />
-            <Tile
-              label="Suspect"
-              value={totals?.suspect ?? 0}
-              hint={`Qualified and reversed within ${suspectHours}h — counted, but not trusted. Nothing is removed from Ever-Qualified.`}
             />
             <Tile
               label="Reps ranked"
@@ -287,10 +267,7 @@ const TeamPerformance = () => {
             honest way to measure response time yet — that needs a status-change
             log on the backend. Contact&nbsp;% is derived from statuses alone and
             so is a floor: a rep who spoke to a buyer without moving the status
-            reads as not connected. The suspect guard compares a lead&apos;s
-            created and last-modified times, which is the last change of
-            anything on the lead rather than the status change itself — so it
-            under-reports rather than over-accuses.
+            reads as not connected.
           </p>
         </div>
       </main>
