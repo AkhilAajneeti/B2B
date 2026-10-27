@@ -3,8 +3,6 @@ import Icon from "../../../components/AppIcon";
 import TablePagination from "../../reports/components/TablePagination";
 import { MIN_SAMPLE } from "../utils/qualification";
 
-const pct = (n) => `${(n ?? 0).toFixed(1)}%`;
-
 /**
  * Columns.
  *
@@ -16,13 +14,44 @@ const pct = (n) => `${(n ?? 0).toFixed(1)}%`;
  */
 const COLUMNS = [
   { key: "name", label: "Rep", align: "left", numeric: false },
-  { key: "leads", label: "Leads", hint: "Base for every ratio" },
-  { key: "contact", label: "Contact %", hint: "Reached at least once. Status-derived, so this is a floor", format: pct },
-  { key: "everQualified", label: "Ever-Qualified", hint: "Held a qualifying status at any point, even if closed now" },
-  { key: "netQ", label: "Net Q%", hint: "Ever-Qualified / Connected — conversation skill", format: pct },
-  { key: "index", label: "Index", hint: "Rep's Net Q% vs the team's, on the same projects. 1.20 = 20% better than peers" },
-  { key: "qualifiedThenDropped", label: "Dropped", hint: "Qualified, then went cold — the coaching list" },
-  { key: "closedWithoutReaching", label: "Never reached", hint: "Closed having never had a conversation — a discipline flag" },
+  {
+    key: "leads",
+    label: "Leads",
+    hint: "Leads assigned to this rep that were created in the selected period. Every other column is measured against these.",
+  },
+  {
+    key: "connected",
+    label: "Reached",
+    hint: "How many of those leads the rep actually got through to at least once. Read from the lead's status — anything past New or Call Not Picked counts as reached — so with no call logs this is a floor, not an exact figure.",
+  },
+  {
+    key: "everQualified",
+    label: "Qualified",
+    hint: "Leads that EVER showed real interest — Follow up, Interested, Site Visit Scheduled, Invitation Sent, Site Visit Done or Purchased — even if the lead is written off today.",
+  },
+  {
+    key: "netQ",
+    label: "Qualified of reached",
+    hint: "Of the leads this rep actually spoke to, how many they qualified. Measured against Reached and not Leads on purpose: judging someone on numbers nobody could get through to punishes them for bad data, not bad selling.",
+    // Rendered as "22 of 37" rather than 59.5% — the two counts say the same
+    // thing, and a rep can check them against their own list in a way they
+    // cannot check a percentage.
+  },
+  {
+    key: "index",
+    label: "Index",
+    hint: "This rep compared with the rest of the team ON THE SAME PROJECTS. 1.00 is exactly team average, 1.20 is 20% better, 0.80 is 20% worse. Compared project by project so whoever works the harder campaign is not punished for it.",
+  },
+  {
+    key: "qualifiedThenDropped",
+    label: "Dropped",
+    hint: "Leads this rep qualified and later lost. They still count as qualified — this is the weekly coaching list, not a penalty.",
+  },
+  {
+    key: "closedWithoutReaching",
+    label: "Never reached",
+    hint: "Leads written off without a single conversation — straight from New or Call Not Picked to dead. Nobody ever got through, so this is a discipline and data-quality signal rather than a selling one.",
+  },
   {
     key: "siteVisitsDone",
     label: "Visits",
@@ -122,7 +151,13 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
                     col.align === "left" ? "text-left" : "text-right"
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1">
+                  <span
+                    className={`inline-flex items-center gap-1 ${
+                      col.hint
+                        ? "cursor-help decoration-dotted underline-offset-4 hover:underline"
+                        : ""
+                    }`}
+                  >
                     {col.label}
                     {sort.key === col.key && (
                       <Icon
@@ -152,11 +187,17 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
                   {row.name}
                 </td>
                 <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{row.leads}</td>
-                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{pct(row.contact)}</td>
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">
+                  {row.connected}
+                </td>
                 <td className="px-6 py-4 text-right text-[15px] font-semibold tabular-nums text-foreground">
                   {row.everQualified}
                 </td>
-                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{pct(row.netQ)}</td>
+                {/* Counts, not a percentage — "22 of 37" is checkable against
+                    a rep's own list in a way that "59.5%" never is. */}
+                <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">
+                  {row.everQualified} <span className="text-muted-foreground/70">of</span> {row.connected}
+                </td>
                 <td className={`px-6 py-4 text-right text-[15px] tabular-nums font-semibold ${indexTone(row.lowSample ? null : row.index)}`}>
                   {row.lowSample || row.index == null ? "—" : row.index.toFixed(2)}
                 </td>
@@ -176,11 +217,11 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
                 <td className="px-6 py-4 text-left">Team</td>
                 <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{totals.leads}</td>
                 <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">
-                  {pct(totals.leads ? (totals.connected / totals.leads) * 100 : 0)}
+                  {totals.connected}
                 </td>
                 <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{totals.everQualified}</td>
                 <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">
-                  {pct(totals.connected ? (totals.everQualified / totals.connected) * 100 : 0)}
+                  {totals.everQualified} <span className="text-muted-foreground/70">of</span> {totals.connected}
                 </td>
                 {/* The team is its own baseline, so its index is 1.00 by
                     definition — printing it would imply a comparison. */}
