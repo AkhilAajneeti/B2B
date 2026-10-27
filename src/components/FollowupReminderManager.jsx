@@ -343,40 +343,20 @@ const FollowupReminderManager = () => {
     };
   }, []);
 
-  // ---------------------------------------------------------------------
-  // STACK UI — replaces the per-toast popups. Collapsed view shows ONE card
-  // with peek-cards behind it and a count badge. Click to expand into the
-  // full list. One primary action per entry — the circular View button — with
-  // Dismiss as a quiet text action beside it. Snooze was removed on request.
-  // ---------------------------------------------------------------------
-  if (activeReminders.length === 0) return null;
-
-  // Top of the stack = newest reminder. Reps see the most recent push.
-  const topEntry = activeReminders[activeReminders.length - 1];
-  const total = activeReminders.length;
-
-  const cancelAutoCollapse = () => {
-    if (autoExpandTimerRef.current) {
-      clearTimeout(autoExpandTimerRef.current);
-      autoExpandTimerRef.current = null;
-    }
-  };
-
-  // Drop every active reminder at once. Same intent as Dismiss on a single
-  // card, applied to the whole stack. Cancels the auto-collapse timer first so
-  // nothing tries to re-fire against an empty stack.
-  const dismissAll = () => {
-    cancelAutoCollapse();
-    setActiveReminders([]);
-    setExpanded(false);
-  };
-
   /**
    * Self-dismiss after AUTO_DISMISS_MS.
    *
    * Keyed on the reminder ids, so the countdown restarts whenever the stack
    * changes — a reminder arriving at second 9 does not get one second on
    * screen before everything disappears.
+   *
+   * MUST STAY ABOVE the `activeReminders.length === 0` early return below.
+   * It was written after it, which meant the hook ran only while the stack had
+   * something in it: React counted one fewer hook on an empty render and one
+   * more the moment a reminder arrived, then threw "rendered more hooks than
+   * during the previous render" straight into the error boundary. That is why
+   * the dashboard looked fine and then died a few minutes later — the delay
+   * was just the reminder poll interval.
    *
    * Held while `hovering`: the cleanup clears the timer on every re-run, so
    * entering the card cancels it and leaving starts a fresh ten seconds. A
@@ -405,6 +385,34 @@ const FollowupReminderManager = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reminderIds, hovering]);
+
+  // ---------------------------------------------------------------------
+  // STACK UI — replaces the per-toast popups. Collapsed view shows ONE card
+  // with peek-cards behind it and a count badge. Click to expand into the
+  // full list. One primary action per entry — the circular View button — with
+  // Dismiss as a quiet text action beside it. Snooze was removed on request.
+  // ---------------------------------------------------------------------
+  if (activeReminders.length === 0) return null;
+
+  // Top of the stack = newest reminder. Reps see the most recent push.
+  const topEntry = activeReminders[activeReminders.length - 1];
+  const total = activeReminders.length;
+
+  const cancelAutoCollapse = () => {
+    if (autoExpandTimerRef.current) {
+      clearTimeout(autoExpandTimerRef.current);
+      autoExpandTimerRef.current = null;
+    }
+  };
+
+  // Drop every active reminder at once. Same intent as Dismiss on a single
+  // card, applied to the whole stack. Cancels the auto-collapse timer first so
+  // nothing tries to re-fire against an empty stack.
+  const dismissAll = () => {
+    cancelAutoCollapse();
+    setActiveReminders([]);
+    setExpanded(false);
+  };
 
   return (
     <div
