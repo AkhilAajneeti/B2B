@@ -4,6 +4,7 @@ import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import FollowupReminderManager from "components/FollowupReminderManager";
 import ProtectedRoute from "routes/ProtectedRoute";
+import { canSeeTeamPerformance } from "utils/permission";
 import AppLayout from "components/ui/AppLayout";
 
 // Eager: Login is the first screen for unauthenticated users — no point
@@ -142,13 +143,13 @@ const Routes = () => {
               path="/reports"
               element={<Reports />}
             />
-            {/* Admin-only while the Reports module rebuild is in progress.
-                The sidebar entry is gated too, but that is presentation —
-                this is what actually closes the URL. */}
+            {/* Owner role or admin-by-type. The sidebar entry is gated by the
+                SAME predicate, but that is presentation — this is what
+                actually closes the URL. */}
             <Route
               path="/team-performance"
               element={
-                <ProtectedRoute supAdminOnly>
+                <ProtectedRoute allow={canSeeTeamPerformance}>
                   <TeamPerformance />
                 </ProtectedRoute>
               }

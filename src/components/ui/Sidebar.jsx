@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
-import { getStoredUser, isSupAdmin, isMaskedUser } from "../../utils/permission";
+import {
+  getStoredUser,
+  isSupAdmin,
+  isMaskedUser,
+  canSeeTeamPerformance,
+} from "../../utils/permission";
 
 
 // Per-item icon colour. Keyed by route so the navigationItems array stays
@@ -241,12 +246,10 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       path: "/team-performance",
       icon: "Trophy",
       badge: null,
-      // type=admin ONLY — stricter than adminOnly, so Owner and Manager are
-      // hidden too. The Reports module rebuild lands here first, and nobody
-      // should be reading half-built numbers as if they were the real report.
-      // The route carries the same gate via ProtectedRoute's supAdminOnly;
-      // this flag only hides the button.
-      isSupAdmin: true,
+      // Owner role or admin-by-type. `canSee` holds the SAME predicate the
+      // route uses, so the button and the URL can never disagree about who may
+      // open this — the failure mode a separate boolean flag invites.
+      canSee: canSeeTeamPerformance,
     },
     {
       label: "Import",
@@ -397,6 +400,11 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                   //   wins.
                   if (item.adminOnly && !isAdmin) return false;
                   if (item.isSupAdmin && !isSupAdmin()) return false;
+                  // `canSee` — an arbitrary predicate from utils/permission,
+                  // shared with the matching route guard.
+                  if (typeof item.canSee === "function" && !item.canSee()) {
+                    return false;
+                  }
                   // `hideWhenMasked` — hidden from restricted accounts.
                   if (item.hideWhenMasked && isMaskedUser()) return false;
                   return true;

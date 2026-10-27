@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { isMaskedUser, isSupAdmin } from "utils/permission";
+import { isMaskedUser } from "utils/permission";
 
 // Token truthiness alone is too weak — a tampered `auth_token = "x"`
 // would let the route render, then every downstream service call 401s
@@ -22,18 +22,23 @@ const isSessionValid = () => {
 // `blockMasked` keeps restricted accounts off a route entirely. Hiding the
 // sidebar button is presentation only — without this, the page is still one
 // typed URL away.
-// `supAdminOnly` restricts a route to type=admin accounts — stricter than the
-// elevated set, so Owner and Manager are turned away too. Same reasoning as
-// blockMasked above: hiding the sidebar entry is presentation, and a section
-// still being built needs the URL closed as well, not just the button.
-const ProtectedRoute = ({ children, blockMasked = false, supAdminOnly = false }) => {
+// `allow` takes a predicate from utils/permission (canSeeTeamPerformance, etc.)
+// and turns the route away when it returns false. A predicate rather than a
+// boolean flag per role, so adding a restricted section does not mean adding
+// another prop here — and so the route and the sidebar entry can share ONE
+// definition of who may see a thing instead of drifting apart.
+//
+// Same reasoning as blockMasked above: hiding the sidebar entry is
+// presentation, and a restricted section needs the URL closed as well, not
+// just the button.
+const ProtectedRoute = ({ children, blockMasked = false, allow }) => {
   if (!isSessionValid()) {
     return <Navigate to="/login" replace />;
   }
   if (blockMasked && isMaskedUser()) {
     return <Navigate to="/" replace />;
   }
-  if (supAdminOnly && !isSupAdmin()) {
+  if (typeof allow === "function" && !allow()) {
     return <Navigate to="/" replace />;
   }
   return children;

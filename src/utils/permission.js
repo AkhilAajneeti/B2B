@@ -233,6 +233,21 @@ export const isElevated = () => {
 // qualifies is one edit and the badge and the filter can't drift apart.
 export const canSeeStatusHistory = () => isSupAdmin() || isOwner();
 
+// Who can open Team Performance.
+//
+// The Owner role plus admins by type. Managers are deliberately NOT included,
+// matching canSeeStatusHistory above — and for the same reason: the whole page
+// is derived from cStatusObj, i.e. how each lead was worked before it was
+// written off. That is review material, not day-to-day rep tooling.
+//
+// Admins keep access alongside Owners rather than being replaced by them; an
+// Owner-only gate would lock out the account that set the page up.
+//
+// Named separately from canSeeStatusHistory even though the rule is identical
+// today, so that changing who may read a lead's history does not silently
+// change who may read the team's ranking.
+export const canSeeTeamPerformance = () => isSupAdmin() || isOwner();
+
 // ---------------------------------------------------------------------------
 // Restricted (masked) users
 // ---------------------------------------------------------------------------

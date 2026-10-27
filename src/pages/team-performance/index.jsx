@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import Icon from "../../components/AppIcon";
-import QualificationCharts from "./components/QualificationCharts";
 import TeamPerformanceTable from "./components/TeamPerformanceTable";
 import { useTeams, useTeamUsers } from "hooks/useTeams";
 import { useTeamPerformance } from "./hooks/useTeamPerformance";
@@ -19,11 +18,16 @@ import {
  * status today. See utils/qualification.js for the rule and where the history
  * comes from.
  *
- * ADMIN ONLY, by `type`, not by role. Gated in two places, because either one
- * alone is not a gate:
+ * Visible to the Owner role and to admins by type — see canSeeTeamPerformance
+ * in utils/permission. Managers are excluded on purpose: this is a review of
+ * how leads were worked, not rep tooling.
+ *
+ * Gated in two places, because either one alone is not a gate:
  *   - the sidebar entry (presentation), and
- *   - the route itself via ProtectedRoute's `supAdminOnly` — without it the
- *     page is one typed URL away for anybody.
+ *   - the route itself, via ProtectedRoute's `allow` — without it the page is
+ *     one typed URL away for anybody.
+ *
+ * Both read the SAME predicate, so the button and the URL cannot disagree.
  */
 
 /**
@@ -266,10 +270,6 @@ const TeamPerformance = () => {
               value={`${rankedCount} / ${rows.length}`}
               hint={`Reps with at least ${MIN_SAMPLE} leads. Below that they are shown but not ranked.`}
             />
-          </div>
-
-          <div className="mb-6">
-            <QualificationCharts totals={totals} rows={rows} />
           </div>
 
           <TeamPerformanceTable
