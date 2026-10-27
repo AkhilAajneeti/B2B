@@ -28,6 +28,13 @@ const SETTIMEOUT_MAX = 2 ** 31 - 1; // ~24.8 days; today's max delay is < 24h
 // for the rep to register the new arrival without being intrusive.
 const AUTO_EXPAND_MS = 3 * 1000;
 
+// How long a reminder stays on screen before dismissing itself.
+//
+// PAUSED ON HOVER, and the countdown restarts from new when another reminder
+// lands — see the effect that owns it. Without the pause, a rep reading a long
+// list would have it vanish mid-sentence.
+const AUTO_DISMISS_MS = 10 * 1000;
+
 /* --- date helpers (kept local so this stays independent of the pipeline) --- */
 
 // EspoCRM datetimes ("YYYY-MM-DD HH:mm:ss") are UTC. Append Z so JS parses
@@ -125,6 +132,12 @@ const FollowupReminderManager = () => {
   // `autoExpandTimerRef` lets us briefly pop the stack open when a new
   // reminder lands so the rep notices, then collapse back automatically.
   const autoExpandTimerRef = useRef(null);
+
+  // Owns the 10s self-dismiss. Separate from autoExpandTimerRef because the
+  // two do different jobs: that one collapses the deck, this one clears it.
+  const autoDismissTimerRef = useRef(null);
+  // True while the pointer is over the stack, which holds the countdown.
+  const [hovering, setHovering] = useState(false);
   const [activeReminders, setActiveReminders] = useState([]);
   const [expanded, setExpanded] = useState(false);
 
@@ -358,12 +371,54 @@ const FollowupReminderManager = () => {
     setExpanded(false);
   };
 
+  /**
+   * Self-dismiss after AUTO_DISMISS_MS.
+   *
+   * Keyed on the reminder ids, so the countdown restarts whenever the stack
+   * changes — a reminder arriving at second 9 does not get one second on
+   * screen before everything disappears.
+   *
+   * Held while `hovering`: the cleanup clears the timer on every re-run, so
+   * entering the card cancels it and leaving starts a fresh ten seconds. A
+   * follow-up reminder is a prompt to call someone, and having it vanish while
+   * being read is worse than having it linger.
+   */
+  const reminderIds = activeReminders.map((e) => e.id).join("|");
+
+  useEffect(() => {
+    if (autoDismissTimerRef.current) {
+      clearTimeout(autoDismissTimerRef.current);
+      autoDismissTimerRef.current = null;
+    }
+    if (!activeReminders.length || hovering) return undefined;
+
+    autoDismissTimerRef.current = setTimeout(() => {
+      setActiveReminders([]);
+      setExpanded(false);
+    }, AUTO_DISMISS_MS);
+
+    return () => {
+      if (autoDismissTimerRef.current) {
+        clearTimeout(autoDismissTimerRef.current);
+        autoDismissTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reminderIds, hovering]);
+
   return (
     <div
       className="fixed top-4 right-4 z-[60] w-[92vw] max-w-sm pointer-events-auto"
       // Any deliberate interaction with the stack cancels auto-collapse so
       // a rep mid-read doesn't have it slam shut on them.
-      onMouseEnter={cancelAutoCollapse}
+      onMouseEnter={() => {
+        cancelAutoCollapse();
+        setHovering(true);
+      }}
+      onMouseLeave={() => setHovering(false)}
+      // Pointer-down only cancels the auto-COLLAPSE. It deliberately does not
+      // set `hovering`: touch devices fire no mouseleave, so a tap would have
+      // paused the self-dismiss forever and the stack would never clear.
       onPointerDown={cancelAutoCollapse}
     >
       {expanded ? (
@@ -546,14 +601,16 @@ const FollowupReminderManager = () => {
           </div>
         </button>
 
-        {/* Dismiss all — hidden until the deck is hovered, so the resting card
-            stays clean. Also revealed on keyboard focus, and shown
-            unconditionally where hover doesn't exist (touch), since otherwise
-            it would be unreachable on a phone. */}
+        {/* Dismiss all — ALWAYS visible.
+            It used to appear only on hover, which kept the resting card clean
+            but meant the way out of the notification was invisible until you
+            went looking for it, and invisible entirely to anyone who never
+            thought to hover. A dismiss control that has to be discovered is
+            not a dismiss control. */}
         <button
           type="button"
           onClick={dismissAll}
-          className="absolute -top-2 -right-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-orange-200 bg-white text-gray-400 shadow-md opacity-0 transition-opacity hover:text-red-600 hover:border-red-200 hover:bg-red-50 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 group-hover/deck:opacity-100 [@media(hover:none)]:opacity-100"
+          className="absolute -top-2 -right-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-orange-200 bg-white text-gray-400 shadow-md transition-colors hover:text-red-600 hover:border-red-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
           aria-label={`Dismiss ${total} pending follow-up reminder${total > 1 ? "s" : ""}`}
           title="Dismiss all"
         >
