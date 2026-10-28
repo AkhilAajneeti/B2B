@@ -22,7 +22,7 @@ import { fetchTeamUser } from "services/team.service";
 import { toEspoDateTime, fromEspoToLocalInput } from "../../pipeline/utils/dateHelpers";
 import { isMaskedUser } from "utils/permission";
 import { displayPhone, displayEmail, BLUR_CLASS } from "utils/privacy";
-import { useProjectOptions } from "hooks/useProjects";
+import { useProject, useProjectOptions } from "hooks/useProjects";
 
 // Gradient tint per field icon. Full static class strings (not built at
 // runtime) so Tailwind's JIT can see and generate them.
@@ -418,29 +418,52 @@ const DealDrawer = ({
     return { tone: "emerald", text: `${dayStr}, ${timeStr}` };
   };
 
-  // The project this lead belongs to, looked up in the cached project list
-  // the Leads page already loads for its filter — shared React Query key, so
-  // opening a lead adds no request. Matched on name because that is what the
-  // lead stores; cProjectName is the display copy, cProject the raw value.
-  // useProjectOptions, NOT useProjects — they are different hooks and only
-  // this one returns `options`. useProjects returns { data, isLoading }, so
-  // reading `options` off it gave undefined, the template was always blank,
-  // and the feature did nothing at all while still firing a request.
-  //
-  // This one is keyed ["project-options"] with no arguments, seeded from
-  // localStorage and shared with the Leads project filter — so opening a lead
-  // reads the cache rather than the network.
+  /**
+   * The WhatsApp template belonging to this lead's project.
+   *
+   * Two things made the first version silently return nothing:
+   *
+   * 1. IT MATCHED ON `name` ONLY. A lead stores whatever the project is
+   *    called in its forms — "LuminaLiving" — which is usually the project's
+   *    NOMEN, not its `name`. The campaigns page itself shows the nomen
+   *    whenever it is not "Default", so the two disagree constantly. Now the
+   *    lead's value is compared against name, projectNomen AND clientNomen.
+   *
+   * 2. THE LIST RESPONSE MAY NOT CARRY whatsappTemplate. EspoCRM list
+   *    endpoints return a default field set, and a custom field is not
+   *    guaranteed to be in it — so even a correct match could read undefined.
+   *    The cached option is used when it has a template, and otherwise the
+   *    matched project is fetched by id, which always returns the full record.
+   *
+   * The by-id fetch is keyed per project and cached, so a rep working a list
+   * of leads from one campaign pays for it once.
+   */
   const { options: projectOptions } = useProjectOptions({ enabled: isOpen });
-  const projectTemplate = useMemo(() => {
-    const leadProject = (deal?.cProject || deal?.cProjectName || "")
+
+  const matchedProject = useMemo(() => {
+    const leadProject = (deal?.cProject || deal?.cProjectName || deal?.cProjectNomen || "")
       .trim()
       .toLowerCase();
-    if (!leadProject) return "";
-    const match = (projectOptions || []).find(
-      (o) => (o?.project?.name || "").trim().toLowerCase() === leadProject,
+    if (!leadProject) return null;
+    const eq = (v) => (v || "").trim().toLowerCase() === leadProject;
+    return (
+      (projectOptions || [])
+        .map((o) => o?.project)
+        .find((p) => p && (eq(p.name) || eq(p.projectNomen) || eq(p.clientNomen))) ||
+      null
     );
-    return match?.project?.whatsappTemplate || "";
-  }, [deal?.cProject, deal?.cProjectName, projectOptions]);
+  }, [deal?.cProject, deal?.cProjectName, deal?.cProjectNomen, projectOptions]);
+
+  // Only fetch when the cached copy does not already carry the template.
+  const { data: matchedProjectDetail } = useProject(
+    matchedProject?.id,
+    isOpen && !!matchedProject?.id && !matchedProject?.whatsappTemplate,
+  );
+
+  const projectTemplate =
+    matchedProject?.whatsappTemplate ||
+    matchedProjectDetail?.whatsappTemplate ||
+    "";
 
   // --- Build the wa.me URL once so the header Quick Actions button and
   //     the Overview link share the exact same logic. Returns null when
