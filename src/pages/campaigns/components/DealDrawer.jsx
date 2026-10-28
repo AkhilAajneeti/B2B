@@ -180,11 +180,8 @@ const DealDrawer = ({
   };
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: "Eye" },
-    // Named for what people look for. "Where is lead distribution?" has to be
-    // answerable by reading the screen, not by knowing it hides behind an
-    // "Enable Configuration" checkbox.
     { id: "distribution", label: "Lead Distribution", icon: "Share2" },
+    { id: "overview", label: "Overview", icon: "Eye" },
     { id: "Teams", label: "Teams / Collaborators", icon: "Users" },
   ];
 
