@@ -353,7 +353,7 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
             ) : (
               <>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Add to this campaign
+                  Add to this project
                 </p>
                 <div className="max-h-48 space-y-1 overflow-y-auto">
                   {addable.map((u) => (
@@ -403,7 +403,7 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
 
         {members.length === 0 ? (
           <p className="mt-4 text-sm italic text-muted-foreground">
-            No collaborators on this campaign yet. Add them under Teams /
+            No collaborators on this project yet. Add them under Teams /
             Collaborators.
           </p>
         ) : (
@@ -489,7 +489,7 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
                 <button
                   type="button"
                   onClick={() => removeMember(m)}
-                  title="Remove from this campaign"
+                  title="Remove from this project"
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
                 >
                   <Icon name="Trash2" size={15} />
@@ -576,7 +576,7 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
           </>
         ) : (
           <p className="mt-4 text-sm italic text-muted-foreground">
-            Nobody is set to receive leads on this campaign.
+            Nobody is set to receive leads on this project.
           </p>
         )}
 

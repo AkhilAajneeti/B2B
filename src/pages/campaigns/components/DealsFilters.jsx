@@ -161,7 +161,7 @@ const DealsFilters = ({
       >
         <Input
           type="search"
-          placeholder="Search by campaign name or project…"
+          placeholder="Search by project name…"
           value={filters?.search || ""}
           onChange={(e) => handleFilterChange("search", e?.target?.value)}
           className="lg:col-span-2"

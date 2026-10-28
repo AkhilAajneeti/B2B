@@ -312,7 +312,7 @@ const DealDrawer = ({
       onClose();
     } catch (err) {
       console.error("Campaign creation failed", err);
-      toast.error("Campaign is not created");
+      toast.error("Project is not created");
     }
   };
   const handleBulkUpdate = async (e) => {
@@ -851,7 +851,7 @@ const DealDrawer = ({
 
                   {/* ================= Actions ================= */}
                   <div className="flex justify-end gap-3">
-                    <Button type="submit">Save Campaign</Button>
+                    <Button type="submit">Save Project</Button>
                   </div>
                 </form>
               </div>

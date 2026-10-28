@@ -421,7 +421,7 @@ const ProjectsPage = () => {
               ) : projects.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <Icon name="Layers" size={28} className="mb-2 text-muted-foreground" />
-                  <p className="text-sm font-medium text-foreground">No campaigns found</p>
+                  <p className="text-sm font-medium text-foreground">No projects found</p>
                 </div>
               ) : (
                 <div className="mt-4 grid grid-cols-1 gap-[26px] sm:grid-cols-2 xl:grid-cols-3">
