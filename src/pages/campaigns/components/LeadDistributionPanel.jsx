@@ -49,6 +49,24 @@ const initials = (name = "") =>
     .map((w) => w[0]?.toUpperCase() || "")
     .join("") || "?";
 
+/** Section heading with a tinted icon tile, matching the drawer's other cards. */
+const SectionTitle = ({ icon, title, subtitle, action }) => (
+  <div className="flex flex-wrap items-start gap-3">
+    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#AC2334]/10 text-[#AC2334]">
+      <Icon name={icon} size={17} />
+    </span>
+    <div className="min-w-0 flex-1">
+      <h3 className="text-base font-semibold text-foreground">{title}</h3>
+      {subtitle && (
+        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+          {subtitle}
+        </p>
+      )}
+    </div>
+    {action}
+  </div>
+);
+
 const ModeCard = ({ active, title, body, onClick }) => (
   <button
     type="button"
@@ -76,7 +94,8 @@ const ModeCard = ({ active, title, body, onClick }) => (
   </button>
 );
 
-const LeadDistributionPanel = ({ deal, onUpdate }) => {
+const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
+  const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   // Planning input only — never persisted. It answers "if N leads arrive
   // today, who gets them", which is a question about the future, not a
@@ -147,6 +166,38 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
 
   const handleDiscard = () => setLocal(serverState);
 
+  // Anyone active in the CRM who is not already on this campaign — the same
+  // pool the Teams tab's collaborator picker draws from.
+  const addable = useMemo(() => {
+    const known = new Set(members.map((m) => m.id));
+    return (users || [])
+      .filter((u) => u?.id && !known.has(u.id) && u?.isActive !== false)
+      .sort((a, b) =>
+        (a.name || a.userName || "").localeCompare(b.name || b.userName || ""),
+      );
+  }, [users, members]);
+
+  /**
+   * Add someone to the campaign.
+   *
+   * Exactly the existing operation: their id goes into collaboratorsIds. A
+   * configuration row is written alongside it so a later switch to Custom
+   * numbers has something to edit — the drawer's own picker does the same, via
+   * the effect that keeps configurationItems in step with collaborators.
+   */
+  const addMember = (user) => {
+    const name = user.name || user.userName || user.id;
+    const rows = [
+      ...members.map((m) => ({ id: m.id, name: m.name, count: m.count ?? 1 })),
+      { id: user.id, name, count: 1 },
+    ];
+    save({
+      collaboratorsIds: [...local.collaboratorsIds, user.id],
+      configuration: serializeConfiguration(rows),
+    });
+    setAdding(false);
+  };
+
   const setMode = (custom) => save({ enableConfiguration: custom });
 
   const togglePaused = (member) => {
@@ -207,9 +258,11 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
     <div className="space-y-6 pb-20">
       {/* ------------------------------------------------ mode */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-base font-semibold text-foreground">
-          How should leads be shared?
-        </h3>
+        <SectionTitle
+          icon="Share2"
+          title="How should leads be shared?"
+          subtitle="Choose a distribution method to decide how leads are assigned to team members."
+        />
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <ModeCard
@@ -227,6 +280,9 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border pt-4">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+            <Icon name="BarChart3" size={16} />
+          </span>
           <span className="text-sm font-medium text-foreground">
             Expected leads per day
           </span>
@@ -265,14 +321,81 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
 
       {/* ------------------------------------------------ members */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-base font-semibold text-foreground">
-          Team ({members.length})
-        </h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {equalMode
-            ? "Everyone active shares the day equally. Switch to Custom numbers to fix someone's share."
-            : "Type a number to fix someone's leads per day. Leave it blank for Auto: they share whatever is left, equally."}
-        </p>
+        <SectionTitle
+          icon="Users"
+          title={`Team (${members.length})`}
+          subtitle={
+            equalMode
+              ? "Everyone active shares the day equally. Switch to Custom numbers to fix someone's share."
+              : "Type a number to fix someone's leads per day. Leave it blank for Auto: they share whatever is left, equally."
+          }
+          action={
+            <button
+              type="button"
+              onClick={() => setAdding((v) => !v)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#AC2334] px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              <Icon name="Plus" size={15} />
+              Add Member
+            </button>
+          }
+        />
+
+        {/* Adding someone here is the SAME operation as the collaborator
+            picker on the Teams tab — their id goes into collaboratorsIds.
+            Only the UI is new; nothing about how membership works changed. */}
+        {adding && (
+          <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
+            {addable.length === 0 ? (
+              <p className="text-sm italic text-muted-foreground">
+                Everyone available is already on this campaign.
+              </p>
+            ) : (
+              <>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Add to this campaign
+                </p>
+                <div className="max-h-48 space-y-1 overflow-y-auto">
+                  {addable.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => addMember(u)}
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-card"
+                    >
+                      <span
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
+                        style={{ background: colorFor(u.id) }}
+                      >
+                        {initials(u.name || u.userName || "")}
+                      </span>
+                      <span className="truncate">{u.name || u.userName}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Column headings. Without them the number box and the toggle are two
+            unlabelled controls — a reader cannot tell what either one does, or
+            that the greyed box is greyed because Round robin is on. */}
+        {members.length > 0 && (
+          <div className="mt-4 flex items-center gap-3 border-b border-border pb-2">
+            <span className="w-9 shrink-0" />
+            <span className="min-w-0 flex-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Member
+            </span>
+            <span className="w-20 shrink-0 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Leads/day
+            </span>
+            <span className="w-[104px] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Status
+            </span>
+            <span className="w-9 shrink-0" />
+          </div>
+        )}
 
         {members.length === 0 ? (
           <p className="mt-4 text-sm italic text-muted-foreground">
@@ -280,7 +403,7 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
             Collaborators.
           </p>
         ) : (
-          <div className="mt-4 divide-y divide-border">
+          <div className="divide-y divide-border">
             {members.map((m) => (
               <div
                 key={m.id}
@@ -319,29 +442,45 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
                       ? "Switch to Custom numbers to set a fixed share"
                       : "Leads per day. Blank = Auto"
                   }
-                  className="h-9 w-20 rounded-lg border border-border bg-background px-2 text-center text-sm tabular-nums text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-9 w-20 shrink-0 rounded-lg border border-border bg-background px-2 text-center text-sm tabular-nums text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60"
                 />
 
-                <button
-                  type="button"
-                  onClick={() => togglePaused(m)}
-                  role="switch"
-                  aria-checked={m.paused}
-                  title={
-                    m.paused
-                      ? "Resume — start sending leads again"
-                      : "Pause — stop sending leads while they are away"
-                  }
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                    m.paused ? "bg-[#C2410C]" : "bg-muted-foreground/30"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                      m.paused ? "translate-x-[22px]" : "translate-x-0.5"
+                {/* Toggle plus the word for its state. The switch alone was
+                    almost invisible when off — a pale ring with no label — so
+                    nobody could tell it was a control, let alone which way it
+                    was set. */}
+                <span className="flex w-[104px] shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => togglePaused(m)}
+                    role="switch"
+                    aria-checked={m.paused}
+                    aria-label={`${m.paused ? "Resume" : "Pause"} ${m.name}`}
+                    title={
+                      m.paused
+                        ? "Resume — start sending leads again"
+                        : "Pause — stop sending leads while they are away"
+                    }
+                    className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${
+                      m.paused
+                        ? "border-[#C2410C] bg-[#C2410C]"
+                        : "border-emerald-600 bg-emerald-500"
                     }`}
-                  />
-                </button>
+                  >
+                    <span
+                      className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white shadow transition-transform ${
+                        m.paused ? "translate-x-[22px]" : "translate-x-[2px]"
+                      }`}
+                    />
+                  </button>
+                  <span
+                    className={`text-xs font-semibold ${
+                      m.paused ? "text-[#C2410C]" : "text-emerald-700"
+                    }`}
+                  >
+                    {m.paused ? "Paused" : "Active"}
+                  </span>
+                </span>
 
                 <button
                   type="button"
@@ -388,13 +527,11 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
 
       {/* ------------------------------------------------ plan */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="text-base font-semibold text-foreground">
-          Today&apos;s split
-        </h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Based on {expected} lead{expected === 1 ? "" : "s"} today. A plan, not
-          a record — the CRM does not store who received what on a given day.
-        </p>
+        <SectionTitle
+          icon="PieChart"
+          title="Today's split"
+          subtitle={`Based on ${expected} lead${expected === 1 ? "" : "s"} today. A plan, not a record — the CRM does not store who received what on a given day.`}
+        />
 
         {split.some((m) => m.share > 0) ? (
           <>

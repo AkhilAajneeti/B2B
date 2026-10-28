@@ -184,7 +184,11 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       icon: "UserX",
     },
     {
-      label: "My Campaigns",
+      // Two lines on purpose. "My Campaigns" alone never told anyone that
+      // lead distribution lives here, and a single-line label long enough to
+      // say both would just truncate at this rail width.
+      label: "My Campaigns / Lead Distribution",
+      labelLines: ["My Campaigns /", "Lead Distribution"],
       path: "/campaigns",
       // Was "Layers" — generic stacking, nothing to do with campaigns.
       icon: "Megaphone",
@@ -484,8 +488,22 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                           `}
                         />
                       </span>
-                      <span className={collapsed ? "lg:hidden" : "truncate"}>
-                        {item?.label}
+                      <span
+                        className={
+                          collapsed
+                            ? "lg:hidden"
+                            : item?.labelLines
+                              ? "min-w-0 leading-tight"
+                              : "truncate"
+                        }
+                      >
+                        {item?.labelLines
+                          ? item.labelLines.map((line) => (
+                              <span key={line} className="block truncate">
+                                {line}
+                              </span>
+                            ))
+                          : item?.label}
                       </span>
                     </div>
                     {item?.badge > 0 && (

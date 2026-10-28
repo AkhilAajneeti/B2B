@@ -1058,7 +1058,11 @@ const DealDrawer = ({
                   )}
 
                   {activeTab === "distribution" && (
-                    <LeadDistributionPanel deal={deal} onUpdate={onUpdate} />
+                    <LeadDistributionPanel
+                      deal={deal}
+                      onUpdate={onUpdate}
+                      users={users}
+                    />
                   )}
 
                   {activeTab === "Teams" && (
