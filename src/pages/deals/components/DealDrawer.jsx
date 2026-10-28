@@ -22,7 +22,7 @@ import { fetchTeamUser } from "services/team.service";
 import { toEspoDateTime, fromEspoToLocalInput } from "../../pipeline/utils/dateHelpers";
 import { isMaskedUser } from "utils/permission";
 import { displayPhone, displayEmail, BLUR_CLASS } from "utils/privacy";
-import { useProjects } from "hooks/useProjects";
+import { useProjectOptions } from "hooks/useProjects";
 
 // Gradient tint per field icon. Full static class strings (not built at
 // runtime) so Tailwind's JIT can see and generate them.
@@ -92,6 +92,9 @@ const FieldIcon = ({ name, tint = "slate" }) => (
     <Icon name={name} size={13} className="text-white drop-shadow-sm" />
   </span>
 );
+
+/** Blank line between the greeting and the pitch. */
+const SEPARATOR = "\n\n";
 
 const DealDrawer = ({
   deal,
@@ -419,7 +422,15 @@ const DealDrawer = ({
   // the Leads page already loads for its filter — shared React Query key, so
   // opening a lead adds no request. Matched on name because that is what the
   // lead stores; cProjectName is the display copy, cProject the raw value.
-  const { options: projectOptions } = useProjects({});
+  // useProjectOptions, NOT useProjects — they are different hooks and only
+  // this one returns `options`. useProjects returns { data, isLoading }, so
+  // reading `options` off it gave undefined, the template was always blank,
+  // and the feature did nothing at all while still firing a request.
+  //
+  // This one is keyed ["project-options"] with no arguments, seeded from
+  // localStorage and shared with the Leads project filter — so opening a lead
+  // reads the cache rather than the network.
+  const { options: projectOptions } = useProjectOptions({ enabled: isOpen });
   const projectTemplate = useMemo(() => {
     const leadProject = (deal?.cProject || deal?.cProjectName || "")
       .trim()
@@ -440,26 +451,47 @@ const DealDrawer = ({
     const base = d?.cWhatsapp
       ? `https://${d.cWhatsapp.replace(/^https?:\/\//, "")}`
       : `https://wa.me/${(d?.phoneNumber || "").replace(/\D/g, "")}`;
-    // Message, most specific first:
-    //   1. the lead's own cWhatsappTemplate, if someone set one;
-    //   2. the TEMPLATE ON ITS PROJECT — set once per campaign under
-    //      Projects, which is where people actually maintain it;
-    //   3. a generic intro, so the rep is never handed an empty chat.
-    //
-    // The project template is read from the cached project list the Leads
-    // page already loads for its filter, matched on the lead's project name.
-    // No extra request per lead.
-    const template = d?.cWhatsappTemplate || projectTemplate;
-    if (template) {
+    /**
+     * The prefilled message = the lead's greeting + the project's pitch.
+     *
+     * These two fields hold different halves of one message, not two rival
+     * versions of it:
+     *
+     *   cWhatsappTemplate  (Lead)    "Hello Mr. Arun Singh,"
+     *   whatsappTemplate   (Project) the full property pitch
+     *
+     * Letting either one simply win loses something real — project-only drops
+     * the buyer's name, lead-only drops everything you are actually selling.
+     * Joined with a blank line, they read as one message written by a person.
+     *
+     * Either half may be absent: a lead with no greeting gets the pitch alone,
+     * a project with no template gets the greeting alone, and with neither the
+     * generic intro below still fills the chat.
+     *
+     * The project template comes from the cached project list the Leads page
+     * already loads, so opening a lead costs no extra request.
+     */
+    const decodeTemplate = (value) => {
+      if (!value) return "";
       try {
-        const raw = decodeURIComponent(String(template).replace(/^\?text=/, ""));
-        return `${base}?text=${encodeURIComponent(raw)}`;
+        // Stored with a leading "?text=" and percent-encoded by the backend.
+        return decodeURIComponent(String(value).replace(/^\?text=/, "")).trim();
       } catch {
-        // Malformed %XX in the backend template — fall through to the
-        // generic intro below so the rep still gets a pre-filled
-        // message they can edit before sending.
+        // Malformed %XX — better a plain-text template than no message at all.
+        return String(value).replace(/^\?text=/, "").trim();
       }
+    };
+
+    const greeting = decodeTemplate(d?.cWhatsappTemplate);
+    const pitch = decodeTemplate(projectTemplate);
+    // A blank line between the greeting and the pitch, so the two halves
+    // read as one message rather than one run-on sentence.
+    const message = [greeting, pitch].filter(Boolean).join(SEPARATOR);
+
+    if (message) {
+      return `${base}?text=${encodeURIComponent(message)}`;
     }
+
     const fallback = `Hello *${d?.name || "Customer"}*,\n\nThank you for contacting us for your lead generation requirements.\nI'm *${formatUserDisplayName(currentUser?.username)}* Let me know when you're available so that we can discuss this in more detail.`;
     return `${base}?text=${encodeURIComponent(fallback)}`;
   };

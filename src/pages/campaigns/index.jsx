@@ -59,6 +59,22 @@ const ProjectsPage = () => {
     isDrawerOpen && !!selectedDeal?.id,
   );
 
+  // Open the drawer from the ROW WE ALREADY HAVE, then let the by-id fetch
+  // fill in what the list endpoint leaves out (collaboratorsNames, mainly).
+  //
+  // The drawer used to be handed `selectedDealData` alone, so clicking a
+  // project showed an empty panel until that request came back — even though
+  // the list response already held the name, nomen, dates, configuration and
+  // collaborator ids. Spreading detail over row means every field the list
+  // has is there instantly and the fetched copy wins as soon as it lands.
+  const drawerDeal = useMemo(
+    () =>
+      selectedDealData
+        ? { ...selectedDeal, ...selectedDealData }
+        : selectedDeal,
+    [selectedDeal, selectedDealData],
+  );
+
   const handleDealClick = async (deal) => {
     setSelectedDeal(deal); // only store basic info (id)
     setMode("view");
@@ -480,7 +496,7 @@ const ProjectsPage = () => {
 
         {/* Deal Drawer */}
         <DealDrawer
-          deal={selectedDealData}
+          deal={drawerDeal}
           mode={mode}
           isOpen={isDrawerOpen}
           onCreate={handleCreateLead}

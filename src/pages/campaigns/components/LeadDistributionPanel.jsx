@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Icon from "../../../components/AppIcon";
 import {
   buildMembers,
@@ -165,6 +165,23 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
   };
 
   const handleDiscard = () => setLocal(serverState);
+
+  /**
+   * Follow the server when the draft is clean.
+   *
+   * The drawer now opens from the list row and the full record arrives a
+   * moment later, so `deal` changes under this component after mount. The
+   * draft is seeded once in useState, which would have left it holding the
+   * partial row — and a Save would then have written those stale values back.
+   *
+   * Only while NOT dirty: if someone has started editing, their work outranks
+   * a background refresh.
+   */
+  useEffect(() => {
+    if (dirty) return;
+    setLocal(serverState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverState]);
 
   // Anyone active in the CRM who is not already on this campaign — the same
   // pool the Teams tab's collaborator picker draws from.
