@@ -348,10 +348,15 @@ const ProjectsPage = () => {
                 <h1 className="text-2xl lg:text-3xl font-bold heading-gradient">
                   My Campaigns
                 </h1>
+                {/* Names lead distribution in plain words. The sidebar label
+                    is "My Campaigns", so without this nothing on screen tells
+                    someone looking for distribution that they have arrived. */}
                 <p className="text-muted-foreground mt-1">
-                  Easily create, assign, and track tasks to ensure every
-                  campaigns is completed on time and nothing is missed in your
-                  workflow.
+                  Create and track campaigns, and manage{" "}
+                  <span className="font-medium text-foreground">
+                    lead distribution
+                  </span>{" "}
+                  — who receives leads from each campaign and how many.
                 </p>
               </div>
               <div className="flex items-center space-x-3">

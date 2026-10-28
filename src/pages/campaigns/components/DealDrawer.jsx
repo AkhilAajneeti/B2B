@@ -11,6 +11,11 @@ import { fetchContacts } from "services/contact.service";
 import makeAnimated from "react-select/animated";
 import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
 import { isAdminOrManager, isSupAdmin } from "../../../utils/permission.js";
+import LeadDistributionPanel from "./LeadDistributionPanel";
+import {
+  parseConfiguration,
+  serializeConfiguration,
+} from "../utils/distribution";
 
 /**
  * Read-only field in the overview grid: a small muted icon + label above the
@@ -176,6 +181,10 @@ const DealDrawer = ({
 
   const tabs = [
     { id: "overview", label: "Overview", icon: "Eye" },
+    // Named for what people look for. "Where is lead distribution?" has to be
+    // answerable by reading the screen, not by knowing it hides behind an
+    // "Enable Configuration" checkbox.
+    { id: "distribution", label: "Lead Distribution", icon: "Share2" },
     { id: "Teams", label: "Teams / Collaborators", icon: "Users" },
   ];
 
@@ -223,36 +232,11 @@ const DealDrawer = ({
     }));
   };
 
-  // Configuration is stored on the backend as a newline-separated string in
-  // the form "id:name:count\n" per row. We work with a structured array
-  // ({id, name, count}) locally so the row UI is straightforward, then
-  // serialize back to the string shape on save.
-  const parseConfiguration = (raw) => {
-    if (!raw || typeof raw !== "string") return [];
-    return raw
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        // Names can themselves contain a colon ("Dr: Foo"), so split on the
-        // FIRST and LAST colon only: id = head, count = tail, name = middle.
-        const firstColon = line.indexOf(":");
-        const lastColon = line.lastIndexOf(":");
-        if (firstColon === -1 || lastColon === firstColon) return null;
-        const id = line.slice(0, firstColon);
-        const name = line.slice(firstColon + 1, lastColon);
-        const count = parseInt(line.slice(lastColon + 1), 10);
-        if (!id || !name || Number.isNaN(count)) return null;
-        return { id, name, count };
-      })
-      .filter(Boolean);
-  };
-
-  const serializeConfiguration = (items = []) =>
-    items
-      .filter((i) => i?.id && i?.name)
-      .map((i) => `${i.id}:${i.name}:${i.count || 1}`)
-      .join("\n") + (items.length ? "\n" : "");
+  // parseConfiguration / serializeConfiguration now live in
+  // ../utils/distribution. The Lead Distribution panel writes the same
+  // "id:name:count" rows, and two hand-rolled parsers for one string format
+  // drift the moment either side changes — the first symptom would be a
+  // campaign silently losing somebody's count.
 
   // Quick-save ONLY the WhatsApp notification flag. EspoCRM PATCH updates just
   // the fields present in the payload, so sending `{ sendWhatsappNotification }`
@@ -1071,6 +1055,10 @@ const DealDrawer = ({
 
                       </div>
                     </div>
+                  )}
+
+                  {activeTab === "distribution" && (
+                    <LeadDistributionPanel deal={deal} onUpdate={onUpdate} />
                   )}
 
                   {activeTab === "Teams" && (

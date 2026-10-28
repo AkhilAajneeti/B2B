@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { isOwnRecord, getStoredUser, isSupAdmin } from "../../../utils/permission.js";
 import Icon from "../../../components/AppIcon";
+import { buildMembers } from "../utils/distribution";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
 
@@ -71,7 +72,59 @@ const DealsTable = ({
   // Sort key drives BOTH the click handler and the arrow indicator, so the
   // arrow lights up on the column you actually clicked (they were mismatched
   // before — e.g. onSort("createdAt") vs getSortIcon("closeDate")).
-  const SortHeader = ({ label, column }) => (
+  /**
+ * At-a-glance distribution for one campaign.
+ *
+ * Reads the campaign's own fields — no extra request — so the whole table can
+ * show it without costing anything. "Round robin" means enableConfiguration is
+ * off and leads split evenly; "Custom" means fixed per-person numbers.
+ */
+const DistributionCell = ({ deal }) => {
+  const members = buildMembers({
+    collaboratorsIds: deal?.collaboratorsIds,
+    collaboratorsNames: deal?.collaboratorsNames,
+    configuration: deal?.configuration,
+  });
+  const paused = members.filter((m) => m.paused).length;
+  const active = members.length - paused;
+  const custom = !!deal?.enableConfiguration;
+
+  if (!members.length) {
+    return (
+      <span className="text-sm text-muted-foreground whitespace-nowrap">
+        Not set up
+      </span>
+    );
+  }
+
+  return (
+    <div className="whitespace-nowrap">
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+          custom
+            ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+        }`}
+      >
+        {custom ? "Custom" : "Round robin"}
+      </span>
+      <span className="ml-2 text-xs text-muted-foreground">
+        {active} member{active === 1 ? "" : "s"}
+      </span>
+      {/* Paused is called out rather than folded into the count: with no
+          return date stored, nothing else reminds anyone to switch someone
+          back on, and a rep can sit paused for weeks on quietly falling
+          numbers. */}
+      {paused > 0 && (
+        <span className="ml-2 rounded-full bg-orange-50 px-1.5 py-0.5 text-[11px] font-semibold text-orange-700 border border-orange-200">
+          {paused} paused
+        </span>
+      )}
+    </div>
+  );
+};
+
+const SortHeader = ({ label, column }) => (
     <th className="text-left px-4 py-3">
       <button
         type="button"
@@ -173,6 +226,15 @@ const DealsTable = ({
                   Assigned User
                 </span>
               </th>
+              {/* Lead distribution, visible on every row. This column IS the
+                  discoverability answer: the feature used to live behind an
+                  "Enable Configuration" checkbox inside a tab, where nobody
+                  would ever find it unless told. */}
+              <th className="text-left px-4 py-3">
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                  Distribution
+                </span>
+              </th>
               <SortHeader label="Created At" column="createdAt" />
               <SortHeader label="Modified At" column="modifiedAt" />
               <th className="w-24 px-4 py-3">
@@ -187,7 +249,7 @@ const DealsTable = ({
               Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
             ) : !paginatedDeals?.length ? (
               <tr>
-                <td colSpan="6">
+                <td colSpan="7">
                   <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
                     No Campaigns available
                   </div>
@@ -240,6 +302,10 @@ const DealsTable = ({
                   ) : (
                     <span className="text-sm text-muted-foreground">—</span>
                   )}
+                </td>
+
+                <td className="px-4 py-4">
+                  <DistributionCell deal={deal} />
                 </td>
 
                 <td className="px-4 py-4">
