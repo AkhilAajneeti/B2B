@@ -361,7 +361,11 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
                       key={u.id}
                       type="button"
                       onClick={() => addMember(u)}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-card"
+                      // A clear hover surface: these rows sit on a tinted
+                      // panel, so hovering to white alone was almost
+                      // indistinguishable from not hovering, and you could not
+                      // tell which name you were about to add.
+                      className="flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-2 text-left text-sm text-foreground transition-colors hover:border-[#AC2334]/25 hover:bg-[#AC2334]/[0.07] hover:text-[#AC2334]"
                     >
                       <span
                         className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"

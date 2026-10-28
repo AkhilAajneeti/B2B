@@ -220,7 +220,7 @@ const SortHeader = ({ label, column }) => (
                   onChange={(e) => onSelectAll(e?.target?.checked)}
                 />
               </th>
-              <SortHeader label="Campaign Name" column="name" />
+              <SortHeader label="Project Name" column="name" />
               <th className="text-left px-4 py-3">
                 <span className="text-sm font-medium text-foreground whitespace-nowrap">
                   Assigned User
@@ -251,7 +251,7 @@ const SortHeader = ({ label, column }) => (
               <tr>
                 <td colSpan="7">
                   <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
-                    No Campaigns available
+                    No projects available
                   </div>
                 </td>
               </tr>
@@ -380,7 +380,7 @@ const SortHeader = ({ label, column }) => (
           </div>
         ) : !paginatedDeals?.length ? (
           <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
-            No Campaigns available
+            No projects available
           </div>
         ) : (
           paginatedDeals?.map((deal) => (

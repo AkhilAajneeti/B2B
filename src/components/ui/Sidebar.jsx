@@ -187,8 +187,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       // Two lines on purpose. "My Campaigns" alone never told anyone that
       // lead distribution lives here, and a single-line label long enough to
       // say both would just truncate at this rail width.
-      label: "My Campaigns / Lead Distribution",
-      labelLines: ["My Campaigns /", "Lead Distribution"],
+      label: "My Projects / Lead Distribution",
+      labelLines: ["My Projects /", "Lead Distribution"],
       path: "/campaigns",
       // Was "Layers" — generic stacking, nothing to do with campaigns.
       icon: "Megaphone",

@@ -480,16 +480,24 @@ const DealDrawer = ({
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
-            <div className="flex items-center space-x-3">
-              <h2 className="text-xl font-semibold text-foreground">
+            <div className="min-w-0">
+              <h2 className="truncate text-xl font-semibold text-foreground">
                 {isMassUpdate
-                  ? "Mass Update Campaign"
+                  ? "Mass Update Project"
                   : mode === "add"
-                    ? "Add Campaign"
+                    ? "Add Project"
                     : isEditing
-                      ? "Edit Campaign"
+                      ? "Edit Project"
                       : deal?.projectNomen}
               </h2>
+              {/* Says what the drawer is for. Without it the tabs are the only
+                  clue, and "Lead Distribution" reads as jargon until something
+                  on screen explains it in a sentence. */}
+              {!isMassUpdate && mode !== "add" && !isEditing && (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  Manage how leads are distributed among your team members.
+                </p>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               {/* Edit / Cancel toggle only makes sense for an existing record.
@@ -498,6 +506,10 @@ const DealDrawer = ({
                 <Button
                   variant="outline"
                   size="sm"
+                  // Tinted rather than plain outline: on a white header a
+                  // bordered ghost button reads as disabled, and this is the
+                  // only way into edit mode.
+                  className="border-[#AC2334]/30 bg-[#AC2334]/[0.06] text-[#AC2334] hover:bg-[#AC2334]/[0.12] hover:text-[#AC2334]"
                   onClick={() => {
                     if (isEditing && deal) {
 
@@ -847,16 +859,19 @@ const DealDrawer = ({
             {mode !== "add" && deal && !isEditing && (
               <>
                 {/* Tabs */}
-                <div className="flex items-center space-x-1 p-4 border-b border-border">
+                {/* Tabs sit on a tinted strip with a pill for the active one,
+                    so the bar reads as navigation rather than three loose
+                    buttons floating on white. */}
+                <div className="flex items-center gap-1 overflow-x-auto border-b border-border bg-muted/40 px-4 py-2.5">
                   {tabs?.map((tab) => (
                     <button
                       key={tab?.id}
                       onClick={() => setActiveTab(tab?.id)}
                       className={`
-                  flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-lg transition-smooth
+                  flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-semibold transition-smooth
                   ${activeTab === tab?.id
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          ? "bg-[#AC2334] text-white shadow-sm"
+                          : "text-muted-foreground hover:bg-card hover:text-foreground"
                         }
                 `}
                     >

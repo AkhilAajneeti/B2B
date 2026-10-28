@@ -71,7 +71,7 @@ const DealsFilters = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Campaigns ({dealCount?.toLocaleString()})
+            Projects ({dealCount?.toLocaleString()})
           </h2>
           {activeFiltersCount > 0 && (
             <div className="flex items-center space-x-2">

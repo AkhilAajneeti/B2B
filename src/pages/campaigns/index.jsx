@@ -329,7 +329,7 @@ const ProjectsPage = () => {
   return (
     <>
       <Helmet>
-        <title>My Campaigns - Aajneeti Connect ltd</title>
+        <title>My Projects - Aajneeti Connect ltd</title>
         <meta
           name="description"
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."
@@ -346,17 +346,17 @@ const ProjectsPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold heading-gradient">
-                  My Campaigns
+                  My Projects
                 </h1>
                 {/* Names lead distribution in plain words. The sidebar label
                     is "My Campaigns", so without this nothing on screen tells
                     someone looking for distribution that they have arrived. */}
                 <p className="text-muted-foreground mt-1">
-                  Create and track campaigns, and manage{" "}
+                  Create and track projects, and manage{" "}
                   <span className="font-medium text-foreground">
                     lead distribution
                   </span>{" "}
-                  — who receives leads from each campaign and how many.
+                  — who receives leads from each project and how many.
                 </p>
               </div>
               <div className="flex items-center space-x-3">
