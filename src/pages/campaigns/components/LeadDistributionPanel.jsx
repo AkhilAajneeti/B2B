@@ -14,10 +14,15 @@ import {
  * belong to the campaign record. A copy of this in Settings would mean two
  * screens writing the same three fields, which is how they end up disagreeing.
  *
- * SAVES PER ACTION, ONE FIELD AT A TIME. Toggling someone off sends only
- * `collaboratorsIds`; changing a number sends only `configuration`. EspoCRM
- * treats PUT as a partial update, so the rest of the campaign is untouched and
- * there is no Save button to forget.
+ * EVERY CHANGE IS A DRAFT UNTIL SAVE. Toggling someone off, retyping a count
+ * and switching mode all edit local state only; one PUT goes out when Save is
+ * pressed, carrying just the three distribution fields.
+ *
+ * Batched rather than saved per action on purpose: setting up a campaign means
+ * several changes in a row, and firing a request per keystroke-equivalent both
+ * hammers the gateway and leaves the campaign in half-applied states if one
+ * call fails. One save is also one thing to undo — Discard puts everything
+ * back to what the server holds.
  *
  * A paused member keeps their `configuration` line even though they are out of
  * `collaboratorsIds`. The backend ignores an orphan line — they are not a
@@ -104,16 +109,43 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
   const paused = members.filter((m) => m.paused);
   const activeCount = members.length - paused.length;
 
-  const save = async (patch) => {
-    setLocal((prev) => ({ ...prev, ...patch }));
-    if (!deal?.id || typeof onUpdate !== "function") return;
+  // Draft edit. Nothing leaves the browser until Save.
+  const save = (patch) => setLocal((prev) => ({ ...prev, ...patch }));
+
+  // What the server currently holds, for the dirty check and for Discard.
+  const serverState = useMemo(
+    () => ({
+      collaboratorsIds: Array.isArray(deal?.collaboratorsIds)
+        ? deal.collaboratorsIds
+        : [],
+      configuration: deal?.configuration || "",
+      enableConfiguration: !!deal?.enableConfiguration,
+    }),
+    [deal?.collaboratorsIds, deal?.configuration, deal?.enableConfiguration],
+  );
+
+  const dirty =
+    local.enableConfiguration !== serverState.enableConfiguration ||
+    local.configuration !== serverState.configuration ||
+    local.collaboratorsIds.join("|") !== serverState.collaboratorsIds.join("|");
+
+  const handleSave = async () => {
+    if (!dirty || !deal?.id || typeof onUpdate !== "function") return;
     try {
       setSaving(true);
-      await onUpdate(deal.id, patch);
+      // Only the three distribution fields. EspoCRM treats PUT as a partial
+      // update, so nothing else on the campaign is touched.
+      await onUpdate(deal.id, {
+        collaboratorsIds: local.collaboratorsIds,
+        configuration: local.configuration,
+        enableConfiguration: local.enableConfiguration,
+      });
     } finally {
       setSaving(false);
     }
   };
+
+  const handleDiscard = () => setLocal(serverState);
 
   const setMode = (custom) => save({ enableConfiguration: custom });
 
@@ -172,7 +204,7 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
   const nextUp = split.find((m) => m.share > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {/* ------------------------------------------------ mode */}
       <div className="rounded-xl border border-border bg-card p-5">
         <h3 className="text-base font-semibold text-foreground">
@@ -233,14 +265,9 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
 
       {/* ------------------------------------------------ members */}
       <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-base font-semibold text-foreground">
-            Team ({members.length})
-          </h3>
-          {saving && (
-            <span className="text-xs text-muted-foreground">Saving…</span>
-          )}
-        </div>
+        <h3 className="text-base font-semibold text-foreground">
+          Team ({members.length})
+        </h3>
         <p className="mt-0.5 text-xs text-muted-foreground">
           {equalMode
             ? "Everyone active shares the day equally. Switch to Custom numbers to fix someone's share."
@@ -329,6 +356,35 @@ const LeadDistributionPanel = ({ deal, onUpdate }) => {
           </div>
         )}
       </div>
+
+      {/* ------------------------------------------------ save bar
+          Sticky, and only present while there is something to save. A bar that
+          is always there gets ignored; one that appears the moment you change
+          something is the reminder that the change has not landed yet. */}
+      {dirty && (
+        <div className="sticky bottom-0 -mx-1 flex flex-wrap items-center gap-3 rounded-xl border border-[#AC2334]/30 bg-[#AC2334]/[0.04] px-4 py-3 backdrop-blur">
+          <Icon name="AlertCircle" size={16} className="shrink-0 text-[#AC2334]" />
+          <p className="min-w-0 flex-1 text-sm text-foreground">
+            You have unsaved distribution changes.
+          </p>
+          <button
+            type="button"
+            onClick={handleDiscard}
+            disabled={saving}
+            className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+          >
+            Discard
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-lg bg-[#AC2334] px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+        </div>
+      )}
 
       {/* ------------------------------------------------ plan */}
       <div className="rounded-xl border border-border bg-card p-5">

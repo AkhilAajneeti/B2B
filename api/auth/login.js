@@ -14,7 +14,8 @@ export default async function handler(req, res) {
   console.log(myToken);
   try {
     const response = await fetch(
-      "https://gateway.aajneetiadvertising.com/auth",
+      // "https://gateway.aajneetiadvertising.com/auth",
+      "test-gateway.aajneetiadvertising.com/auth",
       {
         method: "GET",
         headers: {
