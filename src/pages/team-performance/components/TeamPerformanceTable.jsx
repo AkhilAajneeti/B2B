@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Icon from "../../../components/AppIcon";
 import TablePagination from "../../reports/components/TablePagination";
+import Tooltip from "../../../components/ui/Tooltip";
 import { MIN_SAMPLE } from "../utils/qualification";
 
 /**
@@ -13,57 +14,203 @@ import { MIN_SAMPLE } from "../utils/qualification";
  * column reads as a broken report; a missing one reads as a later phase.
  */
 const COLUMNS = [
-  { key: "name", label: "Rep", align: "left", numeric: false },
+  { key: "name", label: "TEAM MEMBER", align: "left", numeric: false },
   {
     key: "leads",
-    label: "Leads",
-    hint: "Leads assigned to this rep that were created in the selected period. Every other column is measured against these.",
+    label: "Total Leads",
+    hint: "Total leads assigned to this team member that were created during the selected period."
   },
   {
     key: "connected",
-    label: "Reached",
-    hint: "How many of those leads the rep actually got through to at least once. Read from the lead's status — anything past New or Call Not Picked counts as reached — so with no call logs this is a floor, not an exact figure.",
+    label: "Contacted",
+    hint: "Leads where the team member appears to have made contact, based on the lead's current status. Actual calls are not tracked yet, so this count may be lower than the real number."
   },
   {
     key: "everQualified",
-    label: "Qualified",
-    hint: "Leads that EVER showed real interest — Follow up, Interested, Site Visit Scheduled, Invitation Sent, Site Visit Done or Purchased — even if the lead is written off today.",
+    label: "Interested Leads",
+    hint: "Leads that showed interest at any point, even if they were later marked as lost or not interested."
   },
   {
     key: "netQ",
-    label: "Qualified of reached",
-    hint: "Of the leads this rep actually spoke to, how many they qualified. Measured against Reached and not Leads on purpose: judging someone on numbers nobody could get through to punishes them for bad data, not bad selling.",
-    // Rendered as "22 of 37" rather than 59.5% — the two counts say the same
-    // thing, and a rep can check them against their own list in a way they
-    // cannot check a percentage.
+    label: "Interest Rate",
+    hint: "Shows how many contacted leads became interested. For example, 5 of 10 means 5 interested leads out of 10 contacted leads."
   },
   {
     key: "index",
-    label: "Index",
-    hint: "This rep compared with the rest of the team ON THE SAME PROJECTS. 1.00 is exactly team average, 1.20 is 20% better, 0.80 is 20% worse. Compared project by project so whoever works the harder campaign is not punished for it.",
+    label: "Team Comparison",
+    hint: "Compares this team member's results with the team average on the same projects. 1.00 means average, 1.20 means 20% above average, and 0.80 means 20% below average."
   },
   {
     key: "qualifiedThenDropped",
-    label: "Dropped",
-    hint: "Leads this rep qualified and later lost. They still count as qualified — this is the weekly coaching list, not a penalty.",
+    label: "Interested, Then Lost",
+    hint: "Leads that showed interest but were later marked as lost. Use this number to identify leads that may need follow-up."
   },
   {
     key: "closedWithoutReaching",
-    label: "Never reached",
-    hint: "Leads written off without a single conversation — straight from New or Call Not Picked to dead. Nobody ever got through, so this is a discipline and data-quality signal rather than a selling one.",
+    label: "No Contact Made",
+    hint: "Leads marked as lost without reaching a contact status. This helps identify leads that may have been closed before contact was established."
   },
   {
     key: "siteVisitsDone",
-    label: "Visits",
-    // Scope matters here and it is easy to misread. Every column on this table
-    // counts LEADS CREATED in the selected period — the dataset filters on
-    // createdAt — so this is "leads from this month that reached Visit Done",
-    // not "visits that happened this month". A visit done today on a lead
-    // created in September is not counted, which is why this number reads
-    // lower than a status filter on the Leads page.
-    hint: "Leads from this period that reached Site Visit Done. Counts the lead's creation month, not the visit date.",
+    label: "Site Visits Completed",
+    hint: "Leads created during the selected period that reached the Site Visit Done status. This is based on when the lead was created, not when the visit happened."
   },
 ];
+
+/**
+ * Card tint and badge, from the rep's team-comparison index.
+ *
+ * Same construction as the leads list's mobile cards — a soft gradient wash on
+ * the card and a matching pill — so the two screens read as one product. The
+ * hues carry the same meaning they do in the desktop table's Index column:
+ * green ahead of the team, red behind, neutral in the middle.
+ *
+ * Colour is never the only signal: the pill says the number, or "Not ranked".
+ */
+const perfTier = (row) => {
+  if (row.lowSample || row.index == null) {
+    return {
+      card: "bg-gradient-to-br from-muted/60 to-background border-border",
+      badge: "bg-muted text-muted-foreground",
+      label: "Not ranked",
+    };
+  }
+  if (row.index >= 1.15) {
+    return {
+      card: "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      badge: "bg-emerald-100 text-emerald-700",
+      label: `${row.index.toFixed(2)} ↑`,
+    };
+  }
+  if (row.index <= 0.85) {
+    return {
+      card: "bg-gradient-to-br from-rose-50/70 to-background border-rose-100",
+      badge: "bg-rose-100 text-rose-700",
+      label: `${row.index.toFixed(2)} ↓`,
+    };
+  }
+  return {
+    card: "bg-gradient-to-br from-blue-50/70 to-background border-blue-100",
+    badge: "bg-blue-100 text-blue-700",
+    label: row.index.toFixed(2),
+  };
+};
+
+/**
+ * One rep, as a card. Phones only — see the note on the breakpoint below.
+ *
+ * Collapsed it carries the three numbers worth scanning a list for (leads,
+ * interested, comparison); the remaining six are a tap away. The alternative
+ * was the table in a horizontal scroller, where the columns that matter are
+ * off-screen and the rep's name scrolls away with them.
+ *
+ * Only one card is open at a time, so the list never grows past a screen or
+ * two and the thing you just opened is always in view.
+ */
+const MobileRow = ({ row, open, onToggle }) => {
+  const details = [
+    { label: "Total leads", value: row.leads },
+    { label: "Contacted", value: row.connected },
+    {
+      label: "Interest rate",
+      value: (
+        <>
+          {row.everQualified}{" "}
+          <span className="text-muted-foreground/70">of</span> {row.connected}
+        </>
+      ),
+    },
+    { label: "Interested, then lost", value: row.qualifiedThenDropped },
+    { label: "No contact made", value: row.closedWithoutReaching },
+    { label: "Site visits completed", value: row.siteVisitsDone },
+  ];
+
+  const tier = perfTier(row);
+
+  return (
+    <div
+      className={`mx-3 my-2 rounded-2xl border p-4 transition-all duration-200 active:scale-[0.99] ${tier.card}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="min-w-0 truncate text-sm font-semibold capitalize text-foreground">
+          {row.name}
+        </h3>
+
+        {/* The comparison index as the badge — the one number that says how
+            this rep is doing, in the same place the lead card puts status. */}
+        <span
+          className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-medium ${tier.badge}`}
+        >
+          {tier.label}
+        </span>
+      </div>
+
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Icon name="Users" size={12} />
+            <span>{row.leads} leads</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Icon name="PhoneCall" size={12} />
+            <span>{row.connected} contacted</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Icon name="ShieldCheck" size={12} />
+            <span>
+              <span className="font-semibold text-foreground">
+                {row.everQualified}
+              </span>{" "}
+              interested
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className="flex shrink-0 items-center gap-1 rounded-full bg-background/70 px-3 py-2 text-xs font-medium text-primary transition-all duration-150 hover:bg-primary/10 active:scale-95"
+        >
+          {open ? "Less" : "More"}
+          <Icon
+            name="ChevronDown"
+            size={14}
+            className={`transition-transform duration-200 ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-3 border-t border-border/60 pt-3">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+            {details.map((d) => (
+              <div key={d.label}>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {d.label}
+                </dt>
+                <dd className="mt-0.5 text-[15px] font-semibold tabular-nums text-foreground">
+                  {d.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          {/* The "not ranked" badge needs explaining somewhere a phone can
+              read it: there is no hover to put it behind. */}
+          {row.lowSample && (
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              Fewer than {MIN_SAMPLE} leads this period — shown, but not ranked
+              against the team.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const indexTone = (index) => {
   if (index == null) return "text-muted-foreground";
@@ -76,6 +223,8 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
   const [sort, setSort] = useState({ key: "index", dir: "desc" });
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
+  // Mobile accordion. One id, not a set — opening a card closes the last one.
+  const [openId, setOpenId] = useState(null);
 
   const sorted = useMemo(() => {
     const copy = [...rows];
@@ -113,6 +262,12 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
     setPage(1);
   }, [sort.key, sort.dir, perPage, rows.length]);
 
+  // An open card on page 1 would otherwise stay open against whichever rep
+  // lands in that position on page 2.
+  useEffect(() => {
+    setOpenId(null);
+  }, [page, sort.key, sort.dir]);
+
   const toggle = (key) =>
     setSort((s) =>
       s.key === key
@@ -138,34 +293,60 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="overflow-x-auto">
+      {/* Phones and small tablets get the accordion; the table returns at lg,
+          where all nine columns fit without a horizontal scroller. */}
+      <div className="py-1 lg:hidden">
+        {paged.map((row) => (
+          <MobileRow
+            key={row.id}
+            row={row}
+            open={openId === row.id}
+            onToggle={() => setOpenId((id) => (id === row.id ? null : row.id))}
+          />
+        ))}
+
+        {totals && (
+          <div className="mx-3 my-2 flex items-center justify-between rounded-2xl border border-border bg-muted/50 px-4 py-3.5">
+            <span className="text-[15px] font-bold text-foreground">Team</span>
+            <span className="text-xs text-muted-foreground">
+              {totals.leads} leads ·{" "}
+              <span className="font-semibold text-foreground">
+                {totals.everQualified}
+              </span>{" "}
+              interested · {totals.siteVisitsDone} visits
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto lg:block">
         <table className="w-full border-collapse">
           <thead className="border-b border-border bg-muted/50">
             <tr>
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
-                  title={col.hint}
                   onClick={() => toggle(col.key)}
-                  className={`cursor-pointer select-none whitespace-nowrap px-6 py-4 text-xs font-bold uppercase tracking-[0.05em] text-muted-foreground transition-colors hover:text-foreground ${
-                    col.align === "left" ? "text-left" : "text-right"
-                  }`}
-                >
-                  <span
-                    className={`inline-flex items-center gap-1 ${
-                      col.hint
-                        ? "cursor-help decoration-dotted underline-offset-4 hover:underline"
-                        : ""
+                  className={`cursor-pointer select-none whitespace-nowrap px-6 py-4 text-xs font-bold uppercase tracking-[0.05em] text-muted-foreground transition-colors hover:text-foreground ${col.align === "left" ? "text-left" : "text-right"
                     }`}
-                  >
-                    {col.label}
+                >
+                  <Tooltip title={col.label} text={col.hint}>
+                    <span
+                      className={
+                        col.hint
+                          ? "cursor-pointer border-b border-dotted border-muted-foreground/50"
+                          : ""
+                      }
+                    >
+                      {col.label}
+                    </span>
                     {sort.key === col.key && (
                       <Icon
                         name={sort.dir === "asc" ? "ChevronUp" : "ChevronDown"}
                         size={12}
                       />
                     )}
-                  </span>
+                  </Tooltip>
                 </th>
               ))}
             </tr>
@@ -175,11 +356,10 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
             {paged.map((row) => (
               <tr
                 key={row.id}
-                className={`border-b border-border/60 transition-colors even:bg-muted/[0.18] last:border-b-0 hover:bg-sky-50 ${
-                  row.lowSample ? "opacity-60" : ""
-                }`}
+                className={`border-b border-border/60 transition-colors even:bg-muted/[0.18] last:border-b-0 hover:bg-sky-50 ${row.lowSample ? "opacity-60" : ""
+                  }`}
               >
-                <td className="whitespace-nowrap px-6 py-4 text-left text-[15px] font-semibold text-foreground">
+                <td className=" whitespace-nowrap px-6 py-4 text-left text-[15px] font-semibold text-foreground">
                   {/* The "LOW SAMPLE" badge is gone — it shouted on every row
                       it touched. The signal is kept more quietly: the row is
                       dimmed, it sorts last, and its Index reads "—" with the

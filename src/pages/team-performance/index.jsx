@@ -2,7 +2,9 @@ import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import Icon from "../../components/AppIcon";
 import TeamPerformanceTable from "./components/TeamPerformanceTable";
+import Tooltip from "../../components/ui/Tooltip";
 import { useTeams, useTeamUsers } from "hooks/useTeams";
+import { useProjectOptions } from "hooks/useProjects";
 import { useTeamPerformance } from "./hooks/useTeamPerformance";
 import { MIN_SAMPLE } from "./utils/qualification";
 
@@ -51,25 +53,98 @@ const monthRange = (offset = 0) => {
   return [fmt(start), fmt(end, true)];
 };
 
-// Month windows only, deliberately. A quarter or a year runs past the dataset
-// service's 5,000-lead cap at this volume, and over that cap the aggregates are
-// computed on a TRUNCATED set with nothing on screen saying so. Wider windows
-// come back when the backend can aggregate, not before.
+const dayRange = () => {
+  const now = new Date();
+  return [fmt(now), fmt(now, true)];
+};
+
+// Monday-to-today, not a rolling seven days: "this week" has to mean the same
+// window to everyone reading the report, and a rolling window makes two people
+// comparing screens on different days disagree about the same number.
+const weekRange = () => {
+  const now = new Date();
+  const start = new Date(now);
+  const dow = (now.getDay() + 6) % 7; // Monday = 0
+  start.setDate(now.getDate() - dow);
+  return [fmt(start), fmt(now, true)];
+};
+
+// A month is the WIDEST window offered, deliberately. A quarter or a year runs
+// past the dataset service's 5,000-lead cap at this volume, and over that cap
+// the aggregates are computed on a TRUNCATED set with nothing on screen saying
+// so. Today and This week are narrower than a month and so are always safe.
+// Wider windows come back when the backend can aggregate, not before.
 const PERIODS = [
+  { key: "today", label: "Today", range: dayRange },
+  { key: "thisWeek", label: "This week", range: weekRange },
   { key: "thisMonth", label: "This month", range: () => monthRange(0) },
   { key: "lastMonth", label: "Last month", range: () => monthRange(-1) },
 ];
 
-const Tile = ({ label, value, hint }) => (
-  <div className="rounded-xl border border-border bg-card p-4" title={hint}>
-    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-      {label}
-    </p>
-    <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
-      {value}
-    </p>
-  </div>
-);
+/**
+ * KPI card.
+ *
+ * The tinted icon tile is what carries the meaning at a glance — four grey
+ * cards read as one block of numbers and nobody can find the one they want
+ * without reading all four labels. Colour is decoration ONLY: every card still
+ * says what it is in words, so the tint is never the sole carrier of meaning.
+ */
+// One accent hex per card drives the icon tile, the wash behind the card, the
+// corner glow and the hover halo. Derived rather than hand-written so the four
+// can never drift out of step — the same approach as the dashboard's KPICard,
+// so both screens read as one system.
+const hexToRgba = (hex = "#3B82F6", a = 1) => {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  // eslint-disable-next-line no-bitwise
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+
+const Tile = ({ label, value, hint, icon, accent = "#3B82F6" }) => {
+  const tint = hexToRgba(accent, 0.12); // icon tile
+  const wash = hexToRgba(accent, 0.06); // the card's own gradient
+  const blob = hexToRgba(accent, 0.22); // corner glow
+  const glow = hexToRgba(accent, 0.35); // hover halo
+
+  return (
+    <div
+      style={{
+        "--tile-glow": glow,
+        backgroundImage: `linear-gradient(135deg, ${wash} 0%, transparent 60%)`,
+      }}
+      className="group relative h-full overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--tile-glow)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-70 blur-2xl transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
+        style={{ background: `radial-gradient(circle, ${blob}, transparent 70%)` }}
+      />
+
+      {/* Two per row on phones, so the icon stacks above the text rather than
+          stealing half the width from a label like "Qualified, then dropped". */}
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+        <span
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl sm:h-12 sm:w-12 transition-transform duration-300 ease-premium group-hover:scale-105 motion-reduce:transition-none"
+          style={{ backgroundColor: tint }}
+        >
+          <Icon name={icon} size={20} color={accent} className="sm:h-[22px] sm:w-[22px]" />
+        </span>
+
+        <div className="min-w-0">
+          <Tooltip title={label} text={hint}>
+            <span className="cursor-help border-b border-dotted border-muted-foreground/40 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              {label}
+            </span>
+          </Tooltip>
+          <p className="mt-1.5 text-2xl font-bold sm:text-3xl leading-none tabular-nums tracking-tight text-foreground">
+            {value}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const TeamPerformance = () => {
   const [periodKey, setPeriodKey] = useState("thisMonth");
@@ -94,6 +169,10 @@ const TeamPerformance = () => {
     if (!teamUsersLoaded) return null;
     return (teamUsersData?.list || []).map((u) => u.id);
   }, [team, teamUsersLoaded, teamUsersData]);
+
+  // Shared cache with the Leads page filter, so this is normally a cache read
+  // rather than a request.
+  const { options: projectOptions } = useProjectOptions();
 
   const teamOptions = (teamsData?.list || []).map((t) => ({
     value: t.id,
@@ -166,35 +245,82 @@ const TeamPerformance = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <input
-                value={project}
-                onChange={(e) => setProject(e.target.value)}
-                placeholder="Filter by project…"
-                className="h-9 w-48 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              <select
-                value={team}
-                onChange={(e) => setTeam(e.target.value)}
-                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">All teams</option>
-                {teamOptions.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={periodKey}
-                onChange={(e) => setPeriodKey(e.target.value)}
-                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
+              {/* Project. A select rather than a text box: a typo in free text
+                  comes back as "no leads in this period", which reads as a
+                  broken report rather than a mistyped filter. The option list
+                  is the same cached one the Leads page uses, so it is usually
+                  already in memory. */}
+              <div className="relative">
+                <Icon
+                  name="Search"
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <select
+                  value={project}
+                  onChange={(e) => setProject(e.target.value)}
+                  className="h-10 w-56 appearance-none rounded-xl border border-border bg-background pl-9 pr-9 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="">Filter by project…</option>
+                  {projectOptions.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+                <Icon
+                  name="ChevronDown"
+                  size={15}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+              </div>
+
+              <div className="relative">
+                <Icon
+                  name="Users"
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <select
+                  value={team}
+                  onChange={(e) => setTeam(e.target.value)}
+                  className="h-10 appearance-none rounded-xl border border-border bg-background pl-9 pr-9 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="">All teams</option>
+                  {teamOptions.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <Icon
+                  name="ChevronDown"
+                  size={15}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+              </div>
+
+              {/* Segmented, not a dropdown: four options that get switched
+                  between constantly are worth the width — a select hides which
+                  period you are looking at behind a click. */}
+              <div className="flex items-center gap-1 rounded-xl border border-border bg-background p-1">
                 {PERIODS.map((p) => (
-                  <option key={p.key} value={p.key}>
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => setPeriodKey(p.key)}
+                    aria-pressed={periodKey === p.key}
+                    className={`h-8 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition-colors ${
+                      periodKey === p.key
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
                     {p.label}
-                  </option>
+                  </button>
                 ))}
-              </select>
+              </div>
+
               {isFetching && (
                 <span className="text-xs text-muted-foreground">Updating…</span>
               )}
@@ -229,26 +355,34 @@ const TeamPerformance = () => {
             </div>
           )}
 
-          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <Tile
-              label="Leads"
+              icon="Users"
+              accent="#F43F5E"
+              label="Total leads"
               value={totals?.leads ?? 0}
-              hint={`Base for every ratio · ${period.label.toLowerCase()}`}
+              hint={`Every lead created ${period.label.toLowerCase()}. This is the base every other number on the page is measured against.`}
             />
             <Tile
-              label="Ever-Qualified"
+              icon="ShieldCheck"
+              accent="#10B981"
+              label="Ever-qualified"
               value={totals?.everQualified ?? 0}
-              hint="Held a qualifying status at any point, even if closed today"
+              hint="Leads that held a qualifying status at any point — counted even if the lead is closed or cold today."
             />
             <Tile
+              icon="Filter"
+              accent="#F59E0B"
               label="Qualified, then dropped"
               value={totals?.qualifiedThenDropped ?? 0}
-              hint="Still counted as qualified. This is the weekly coaching list."
+              hint="Leads that qualified and were later lost. They still count as qualified — this is the weekly coaching list, not a penalty."
             />
             <Tile
+              icon="Trophy"
+              accent="#8B5CF6"
               label="Reps ranked"
               value={`${rankedCount} / ${rows.length}`}
-              hint={`Reps with at least ${MIN_SAMPLE} leads. Below that they are shown but not ranked.`}
+              hint={`Reps with at least ${MIN_SAMPLE} leads in this period. Below that they still appear in the table but are not ranked, because the sample is too small to judge.`}
             />
           </div>
 
