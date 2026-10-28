@@ -92,7 +92,7 @@ const LoginForm = () => {
       // 🔐 Step 1: create login token (username + password)
       const loginToken = btoa(`${formData.username}:${formData.password}`);
 
-      const res = await fetch("https://test-gateway.aajneetiadvertising.com/auth", {
+      const res = await fetch("https://gateway.aajneetiadvertising.com/auth", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
