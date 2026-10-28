@@ -51,7 +51,10 @@ export const useProject = (id, enabled) => {
 //   - 30-min `staleTime`, so navigating around the app doesn't refetch.
 
 // v2 — the cached shape now carries projectNomen for the short display label.
-const PROJECT_OPTIONS_CACHE_KEY = "project_options_v2";
+// v3: the cached shape gained whatsappTemplate. The key MUST move with the
+// shape — a v2 entry deserialises fine and simply has no template, which
+// would silently send every WhatsApp message blank.
+const PROJECT_OPTIONS_CACHE_KEY = "project_options_v3";
 // Deliberately long. The cached copy is only ever used to PAINT instantly; it's
 // marked stale on read (initialDataUpdatedAt: 0 below), so React Query refreshes
 // it in the background every session regardless. A long TTL therefore can't
@@ -112,6 +115,11 @@ export const useProjectOptions = ({ enabled = true } = {}) => {
             name: p?.name,
             projectNomen: p?.projectNomen,
             clientNomen: p?.clientNomen,
+            // Carried so the lead drawer can prefill a WhatsApp message from
+            // the project's template. This list is already fetched and cached
+            // for the Leads project filter, so the lookup costs nothing — the
+            // alternative was fetching the project again per lead opened.
+            whatsappTemplate: p?.whatsappTemplate,
           })),
         );
         if (list.length < PROJECT_PAGE_SIZE) break;

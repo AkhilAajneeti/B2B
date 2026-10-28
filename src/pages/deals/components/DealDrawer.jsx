@@ -22,6 +22,7 @@ import { fetchTeamUser } from "services/team.service";
 import { toEspoDateTime, fromEspoToLocalInput } from "../../pipeline/utils/dateHelpers";
 import { isMaskedUser } from "utils/permission";
 import { displayPhone, displayEmail, BLUR_CLASS } from "utils/privacy";
+import { useProjects } from "hooks/useProjects";
 
 // Gradient tint per field icon. Full static class strings (not built at
 // runtime) so Tailwind's JIT can see and generate them.
@@ -414,6 +415,22 @@ const DealDrawer = ({
     return { tone: "emerald", text: `${dayStr}, ${timeStr}` };
   };
 
+  // The project this lead belongs to, looked up in the cached project list
+  // the Leads page already loads for its filter — shared React Query key, so
+  // opening a lead adds no request. Matched on name because that is what the
+  // lead stores; cProjectName is the display copy, cProject the raw value.
+  const { options: projectOptions } = useProjects({});
+  const projectTemplate = useMemo(() => {
+    const leadProject = (deal?.cProject || deal?.cProjectName || "")
+      .trim()
+      .toLowerCase();
+    if (!leadProject) return "";
+    const match = (projectOptions || []).find(
+      (o) => (o?.project?.name || "").trim().toLowerCase() === leadProject,
+    );
+    return match?.project?.whatsappTemplate || "";
+  }, [deal?.cProject, deal?.cProjectName, projectOptions]);
+
   // --- Build the wa.me URL once so the header Quick Actions button and
   //     the Overview link share the exact same logic. Returns null when
   //     no phone/whatsapp data is present, so the caller can decide
@@ -423,11 +440,19 @@ const DealDrawer = ({
     const base = d?.cWhatsapp
       ? `https://${d.cWhatsapp.replace(/^https?:\/\//, "")}`
       : `https://wa.me/${(d?.phoneNumber || "").replace(/\D/g, "")}`;
-    if (d?.cWhatsappTemplate) {
+    // Message, most specific first:
+    //   1. the lead's own cWhatsappTemplate, if someone set one;
+    //   2. the TEMPLATE ON ITS PROJECT — set once per campaign under
+    //      Projects, which is where people actually maintain it;
+    //   3. a generic intro, so the rep is never handed an empty chat.
+    //
+    // The project template is read from the cached project list the Leads
+    // page already loads for its filter, matched on the lead's project name.
+    // No extra request per lead.
+    const template = d?.cWhatsappTemplate || projectTemplate;
+    if (template) {
       try {
-        const raw = decodeURIComponent(
-          d.cWhatsappTemplate.replace(/^\?text=/, ""),
-        );
+        const raw = decodeURIComponent(String(template).replace(/^\?text=/, ""));
         return `${base}?text=${encodeURIComponent(raw)}`;
       } catch {
         // Malformed %XX in the backend template — fall through to the

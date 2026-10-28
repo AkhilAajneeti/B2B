@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import ReactSelect from "react-select";
 import { fetchUser } from "services/user.service";
 import { fetchTeam, fetchTeamUser } from "services/team.service";
-import { fetchContacts } from "services/contact.service";
 import makeAnimated from "react-select/animated";
 import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
 import { isAdminOrManager, isSupAdmin } from "../../../utils/permission.js";
@@ -67,7 +66,6 @@ const DealDrawer = ({
   const isAdmin = isAdminOrManager();
 
 
-  const [contact, setContact] = useState([]);
   const [mockStream, setmockStream] = useState([]);
   const [showActivityForm, setActivityForm] = useState(false);
   const [activityText, setActivityText] = useState("");
@@ -362,9 +360,10 @@ const DealDrawer = ({
       .then((res) => setTeam(res.list || []))
       .catch((err) => console.error("Failed to load teams", err));
 
-    fetchContacts()
-      .then((res) => setContact(res.list || []))
-      .catch((err) => console.error("Failed to load contacts", err));
+    // fetchContacts() was called here and its result thrown away — `contact`
+    // was assigned and never read anywhere in this component. On top of being
+    // a wasted request per drawer open, /Contact is currently returning 500,
+    // so every open logged two failures for data nothing displayed.
   }, [isOpen]);
 
   // For non-admin roles (Owner / rep), /User only returns users in their
