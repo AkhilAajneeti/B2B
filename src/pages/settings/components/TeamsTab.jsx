@@ -20,6 +20,52 @@ import { DATE_FILTER_OPTIONS, matchesDateFilter, todayLocal } from "../../../uti
 import { useQueryClient } from "@tanstack/react-query";
 import { useTeams } from "../../../hooks/useTeams";
 import { useRoles } from "../../../hooks/useRoles";
+/**
+ * Team membership cache.
+ *
+ * Module-level on purpose: component state would be thrown away every time
+ * the settings tab unmounts, which is exactly when someone is most likely to
+ * come back and open the same team again. Five minutes is long enough to make
+ * repeat opens instant and short enough that an edit elsewhere surfaces soon.
+ */
+const TEAM_USERS_TTL = 1000 * 60 * 5;
+const teamUsersCache = new Map();
+
+const readTeamUsers = (id) => {
+  const hit = teamUsersCache.get(id);
+  if (!hit) return null;
+  if (Date.now() - hit.at > TEAM_USERS_TTL) {
+    teamUsersCache.delete(id);
+    return null;
+  }
+  return hit.list;
+};
+
+const writeTeamUsers = (id, list) =>
+  teamUsersCache.set(id, { list, at: Date.now() });
+
+/** Drop a team's cached members after it is edited or deleted. */
+const invalidateTeamUsers = (id) => {
+  if (id) teamUsersCache.delete(id);
+  else teamUsersCache.clear();
+};
+
+/** Three dots that lift in sequence, left to right. */
+const DotsLoader = ({ label = "Loading" }) => (
+  <div
+    className="flex flex-col items-center justify-center gap-3 py-10"
+    role="status"
+    aria-live="polite"
+  >
+    <span className="dot-wave flex items-end gap-1.5">
+      <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+      <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+      <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+    </span>
+    <span className="text-xs text-muted-foreground">{label}</span>
+  </div>
+);
+
 const TeamsTab = () => {
   const queryClient = useQueryClient();
   const { data: teamsData, isLoading: teamsLoading } = useTeams();
@@ -89,6 +135,9 @@ const TeamsTab = () => {
       // await createUser(payload);
       if (isEdit) {
         await updateTeam(inviteData.id, payload);
+        // An edit can change who is in the team, so the cached member list
+        // for it is no longer trustworthy.
+        invalidateTeamUsers(inviteData.id);
         toast.success("Team updated successfully ✅");
       } else {
         await createTeam(payload);
@@ -105,17 +154,42 @@ const TeamsTab = () => {
     }
   };
 
+  /**
+   * Open a team's member list.
+   *
+   * OPEN FIRST, FETCH SECOND. This used to await fetchTeamUser and only then
+   * set isTeamModalOpen, so a tap did nothing visible for as long as the
+   * gateway took — which reads as a dead control, and people tap again.
+   *
+   * Cached because membership rarely changes: a repeat open paints instantly
+   * from the previous result and revalidates behind it, so a stale list is
+   * never what you are left looking at. The cache is module-level so it also
+   * survives switching tabs and coming back.
+   */
   const handleTeamClick = async (team) => {
+    setSelectedTeam(team);
+
+    const cached = readTeamUsers(team.id);
+    setTeamUsers(cached ?? []);
+    setIsTeamModalOpen(true);
+
+    // Only show the spinner when there is nothing to show meanwhile.
+    if (!cached) setTeamLoading(true);
+
     try {
-      setTeamLoading(true);
-      setSelectedTeam(team);
-
       const data = await fetchTeamUser(team.id);
-      setTeamUsers(data.list || []);
-
-      setIsTeamModalOpen(true);
+      const list = data.list || [];
+      writeTeamUsers(team.id, list);
+      // Guarded on the id: a slow response for one team must not overwrite a
+      // different team the user has since opened.
+      setSelectedTeam((current) => {
+        if (current?.id === team.id) setTeamUsers(list);
+        return current;
+      });
     } catch (err) {
-      toast.error("Failed to load teams ❌");
+      // With a cached list on screen this is a background refresh that failed,
+      // not a failure to open — so it does not deserve the same alarm.
+      if (!cached) toast.error("Failed to load team members ❌");
     } finally {
       setTeamLoading(false);
     }
@@ -180,6 +254,7 @@ const TeamsTab = () => {
       setIsLoading(true);
 
       await deleteTeam(selectedUserId);
+      invalidateTeamUsers(selectedUserId);
 
       toast.success("Team deleted successfully ✅");
 
@@ -268,7 +343,7 @@ const TeamsTab = () => {
   return (
     <div>
       {/* Team Overview */}
-      <div className="bg-card border border-border rounded-xl p-6">
+      <div className="lg:rounded-xl lg:border lg:border-border lg:bg-card lg:p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Icon name="Users" size={24} className="text-primary" />
@@ -296,7 +371,7 @@ const TeamsTab = () => {
         {/* Team Stats */}
 
         {/* Filters */}
-        <div className="bg-card border border-border rounded-lg p-4 mb-4">
+        <div className="mb-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <h4 className="text-sm font-medium text-card-foreground">
@@ -361,7 +436,113 @@ const TeamsTab = () => {
         </div>
 
         {/* Team Members Table */}
-        <div className="overflow-x-auto">
+        {/* Cards on phones, table from lg — same split as the Users tab, so
+            the two settings tabs behave the same way on a narrow screen. */}
+        <div className="space-y-3 lg:hidden">
+          {teamsLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-2xl border border-border bg-card p-4"
+              >
+                <div className="mb-2 h-4 w-32 rounded bg-muted" />
+                <div className="h-3 w-44 rounded bg-muted/70" />
+              </div>
+            ))
+          ) : !paginatedMembers?.length ? (
+            <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+              No teams available
+            </div>
+          ) : (
+            paginatedMembers.map((member) => (
+              <div
+                key={member?.id}
+                className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
+                    {member?.avatar ? (
+                      <Image
+                        src={member.avatar}
+                        alt={member?.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Avatar
+                        name={member?.name || "Team"}
+                        size="44"
+                        round
+                        textSizeRatio={2}
+                        className="font-medium"
+                      />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="cursor-pointer truncate font-semibold text-card-foreground transition-colors hover:text-primary"
+                      onClick={() => handleTeamClick(member)}
+                    >
+                      {member?.name}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-1">
+                    {canEntityRecord("Team", "edit", member) ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(member)}
+                        aria-label="Edit team"
+                      >
+                        <Icon name="Edit" size={16} />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleTeamClick(member)}
+                        aria-label="View team"
+                      >
+                        <Icon name="Eye" size={16} />
+                      </Button>
+                    )}
+                    {canEntityRecord("Team", "delete", member) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedUserId(member?.id);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        aria-label="Remove team"
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                  {member?.createdAt && (
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="Calendar" size={13} />
+                      Created {member.createdAt}
+                    </span>
+                  )}
+                  {member?.modifiedAt && (
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="History" size={13} />
+                      Modified {member.modifiedAt}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
@@ -395,7 +576,7 @@ const TeamsTab = () => {
                 paginatedMembers?.map((member) => (
                   <tr
                     key={member?.id}
-                    className="border-b border-border hover:bg-muted/50 transition-smooth"
+                    className="cursor-pointer border-b border-border transition-smooth hover:bg-muted/50"
                   >
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-4">
@@ -419,7 +600,7 @@ const TeamsTab = () => {
 
                         <div>
                           <p
-                            className="font-medium text-card-foreground"
+                            className="cursor-pointer font-medium text-card-foreground transition-colors hover:text-primary hover:underline"
                             onClick={() => handleTeamClick(member)}
                           >
                             {member?.name}
@@ -693,8 +874,12 @@ const TeamsTab = () => {
 
               {/* Body */}
               <div className="p-4 max-h-[400px] overflow-y-auto">
-                {isLoading ? (
-                  <p>Loading...</p>
+                {/* teamLoading, NOT isLoading — isLoading is the form-submit
+                    flag, so while members were being fetched this fell through
+                    to the empty state and showed "No users in this team"
+                    before the list appeared. */}
+                {teamLoading ? (
+                  <DotsLoader label="Loading team members" />
                 ) : !teamUsers.length ? (
                   <p className="text-center text-gray-400">
                     No users in this team

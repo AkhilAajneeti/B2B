@@ -21,6 +21,17 @@ import { useUsers } from "../../../hooks/useUsers";
 import { useTeams } from "../../../hooks/useTeams";
 import { useRoles } from "../../../hooks/useRoles";
 import { filter } from "d3";
+// One accent hex drives the icon tile, the card wash, the corner glow and the
+// hover halo — the same derivation as the dashboard KPIs, the project KPIs and
+// the Team Performance tiles, so every stat row in the app matches.
+const hexToRgba = (hex = "#3B82F6", a = 1) => {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  // eslint-disable-next-line no-bitwise
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+
 const UserTab = () => {
   const queryClient = useQueryClient();
   const { data: usersData, isLoading: usersLoading } = useUsers();
@@ -230,17 +241,33 @@ const UserTab = () => {
       setIsLoading(false);
     }
   };
+  /**
+   * Open the detail modal.
+   *
+   * OPEN FIRST, FETCH SECOND. This used to await the request and only then
+   * set isShowDetails, so a tap did nothing visible for as long as the gateway
+   * took — which reads as a dead button, and people tap again.
+   *
+   * The row we already hold carries name, email, username, role and status,
+   * which is most of what the modal shows. It paints from that immediately and
+   * the full record replaces it when it lands.
+   */
   const fetchuserById = async (member) => {
+    setSelectedUser(member); // paint from the row we already have
+    setIsShowDetails(true); // ...and open now, not in 800ms
+
     try {
       setDetailsLoadingId(member.id);
-
       const data = await fetchUserById(member.id);
 
-      setSelectedUser(data); // ✅ SET CORRECT STATE
-      setIsShowDetails(true); // ✅ open modal
+      // Merge rather than replace: if the detail response omits a field the
+      // list row had, the modal would blank it out mid-view.
+      setSelectedUser((prev) =>
+        prev?.id === member.id ? { ...member, ...data } : prev,
+      );
     } catch (err) {
       console.error("failed to fetch data", err);
-      toast.error("Failed to load user details");
+      toast.error("Failed to load full user details");
     } finally {
       setDetailsLoadingId(null);
     }
@@ -538,8 +565,12 @@ const UserTab = () => {
   );
   return (
     <div>
-      {/* Team Overview */}
-      <div className="bg-card border border-border rounded-xl p-6">
+      {/* Team Overview.
+          No border or padding on a phone: the stat cards and the user cards
+          below already draw their own, and a wrapper around them left two
+          nested frames squeezing the content into the middle. The frame comes
+          back from lg, where there is width to spare. */}
+      <div className="lg:rounded-xl lg:border lg:border-border lg:bg-card lg:p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Icon name="Users" size={24} className="text-primary" />
@@ -586,63 +617,81 @@ const UserTab = () => {
         </div>
 
         {/* Team Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-muted rounded-lg p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Icon name="Users" size={20} className="text-primary" />
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {[
+            {
+              label: "Total Members",
+              value: teamMembers?.length ?? 0,
+              icon: "Users",
+              accent: "#8A1B29",
+            },
+            {
+              label: "Active",
+              value: teamMembers?.filter((m) => m?.isActive)?.length ?? 0,
+              icon: "CheckCircle",
+              accent: "#10B981",
+            },
+            {
+              label: "Regular",
+              value:
+                teamMembers?.filter((m) => m?.type === "regular")?.length ?? 0,
+              icon: "Clock",
+              accent: "#F59E0B",
+            },
+            {
+              label: "Admins",
+              value:
+                teamMembers?.filter((m) => m?.type === "admin")?.length ?? 0,
+              icon: "Shield",
+              accent: "#6366F1",
+            },
+          ].map((c) => {
+            const tint = hexToRgba(c.accent, 0.12); // icon tile
+            const wash = hexToRgba(c.accent, 0.06); // the card's own gradient
+            const blob = hexToRgba(c.accent, 0.22); // corner glow
+            const glow = hexToRgba(c.accent, 0.35); // hover halo
+
+            return (
+              <div
+                key={c.label}
+                style={{
+                  "--kpi-glow": glow,
+                  backgroundImage: `linear-gradient(135deg, ${wash} 0%, transparent 60%)`,
+                }}
+                className="group relative h-full overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--kpi-glow)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-5"
+              >
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-70 blur-2xl transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none"
+                  style={{
+                    background: `radial-gradient(circle, ${blob}, transparent 70%)`,
+                  }}
+                />
+
+                <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+                  <span
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-transform duration-300 ease-premium group-hover:scale-105 motion-reduce:transition-none sm:h-12 sm:w-12"
+                    style={{ backgroundColor: tint }}
+                  >
+                    <Icon name={c.icon} size={20} color={c.accent} />
+                  </span>
+
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                      {c.label}
+                    </p>
+                    <p className="mt-1.5 text-2xl font-bold leading-none tabular-nums tracking-tight text-foreground sm:text-3xl">
+                      {c.value}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-semibold text-card-foreground">
-                  {teamMembers?.length}
-                </p>
-                <p className="text-sm text-muted-foreground">Total Members</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-muted rounded-lg p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
-                <Icon name="CheckCircle" size={20} className="text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-card-foreground">
-                  {teamMembers?.filter((m) => m?.isActive)?.length}
-                </p>
-                <p className="text-sm text-muted-foreground">Active</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-muted rounded-lg p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-                <Icon name="Clock" size={20} className="text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-card-foreground">
-                  {teamMembers?.filter((m) => m?.type === "regular")?.length}
-                </p>
-                <p className="text-sm text-muted-foreground">Regular</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-muted rounded-lg p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-error/10 rounded-lg flex items-center justify-center">
-                <Icon name="Shield" size={20} className="text-error" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-card-foreground">
-                  {teamMembers?.filter((m) => m?.type === "admin")?.length}
-                </p>
-                <p className="text-sm text-muted-foreground">Admins</p>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
         {/* Filters */}
-        <div className="bg-card border border-border rounded-lg p-4 mb-4">
+        <div className="mb-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <h4 className="text-sm font-medium text-card-foreground">
@@ -713,8 +762,130 @@ const UserTab = () => {
           </div>
         </div>
 
-        {/* Team Members Table */}
-        <div className="overflow-x-auto">
+        {/* Team Members — cards on phones, table from lg.
+            The table carries six columns; below lg it needed a horizontal
+            scroller, and the columns that matter (role, status, actions) were
+            the ones off-screen. */}
+        <div className="space-y-3 lg:hidden">
+          {usersLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-2xl border border-border bg-card p-4"
+              >
+                <div className="mb-2 h-4 w-32 rounded bg-muted" />
+                <div className="h-3 w-44 rounded bg-muted/70" />
+              </div>
+            ))
+          ) : !paginatedMembers?.length ? (
+            <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+              No User Available
+            </div>
+          ) : (
+            paginatedMembers.map((member) => (
+              <div
+                key={member?.id}
+                className="rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
+                    {member?.avatar ? (
+                      <Image
+                        src={member.avatar}
+                        alt={member?.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Avatar
+                        name={member?.name || member?.userName || "User"}
+                        size="44"
+                        round
+                        textSizeRatio={2}
+                        className="font-medium"
+                      />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="cursor-pointer truncate font-semibold text-card-foreground transition-colors hover:text-primary"
+                      onClick={() => fetchuserById(member)}
+                    >
+                      {member?.name}
+                    </p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {member?.emailAddress || "—"}
+                    </p>
+
+                    {member?.userName && (
+                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                        @{member.userName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Actions stay on the card rather than behind a menu: with
+                      two of them, a menu is an extra tap for nothing. */}
+                  <div className="flex shrink-0 items-center gap-1">
+                    {canEntityRecord("User", "edit", member) ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(member)}
+                        aria-label="Edit member"
+                      >
+                        <Icon name="Edit" size={16} />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => fetchuserById(member)}
+                        aria-label="View member"
+                        loading={detailsLoadingId === member.id}
+                      >
+                        <Icon name="Eye" size={16} />
+                      </Button>
+                    )}
+                    {canEntityRecord("User", "delete", member) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedUserId(member?.id);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        aria-label="Remove member"
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+                  {member?.type && (
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${getRolePillClass(
+                        member.type,
+                      )}`}
+                    >
+                      {member.type}
+                    </span>
+                  )}
+                  {getStatusBadge(member?.isActive ? "Active" : "InActive")}
+                  {member?.createdAt && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {member.createdAt}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
@@ -753,7 +924,7 @@ const UserTab = () => {
                 paginatedMembers?.map((member) => (
                   <tr
                     key={member?.id}
-                    className="border-b border-border hover:bg-muted/50 transition-smooth"
+                    className="cursor-pointer border-b border-border transition-smooth hover:bg-muted/50"
                   >
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-3">
@@ -777,7 +948,7 @@ const UserTab = () => {
 
                         <div>
                           <p
-                            className="font-medium text-card-foreground"
+                            className="cursor-pointer font-medium text-card-foreground transition-colors hover:text-primary hover:underline"
                             onClick={() => {
                               fetchuserById(member);
                             }}

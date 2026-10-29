@@ -187,3 +187,114 @@ select:focus {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Modal entrance.
+   Rises from below, unfolds upward and settles with a small overshoot.
+
+   TRANSFORM AND OPACITY ONLY. An earlier version also animated
+   `filter: blur(10px) -> 0`, which is not a compositor-only property: the
+   browser re-rasterises the whole panel every frame and the entrance visibly
+   stutters. The tilt and the overshoot carry the same impression at no cost.
+
+   `translateZ(0)` keeps the element on its own layer for the whole run, so it
+   is not promoted and demoted mid-animation. */
+@keyframes modal-rise {
+  0% {
+    opacity: 0;
+    transform: perspective(1200px) translate3d(0, 72px, 0) rotateX(10deg)
+      scaleY(0.86) scaleX(0.96);
+  }
+  60% {
+    opacity: 1;
+  }
+  /* The overshoot: slightly past its resting size, then back. This is the
+     beat that makes it feel sprung rather than merely timed. */
+  72% {
+    transform: perspective(1200px) translate3d(0, -8px, 0) rotateX(-1.5deg)
+      scaleY(1.028) scaleX(1.008);
+  }
+  88% {
+    transform: perspective(1200px) translate3d(0, 2px, 0) rotateX(0deg)
+      scaleY(0.994) scaleX(0.999);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1200px) translate3d(0, 0, 0) rotateX(0deg) scale(1);
+  }
+}
+
+.animate-modal-rise {
+  animation: modal-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: bottom center;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* The contents follow the panel in, a beat behind it, so the modal arrives
+   and THEN fills — one motion instead of a whole panel moving as a block.
+   Only the first three children are staggered; past that the delays stack up
+   into a slideshow and the modal feels slow rather than lively. */
+@keyframes modal-content-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-modal-content > * {
+  animation: modal-content-in 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 0.22s;
+}
+
+.animate-modal-content > *:nth-child(1) { animation-delay: 0.12s; }
+.animate-modal-content > *:nth-child(2) { animation-delay: 0.17s; }
+
+@keyframes modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-modal-fade {
+  animation: modal-fade 0.3s ease-out both;
+}
+
+/* Someone who has asked their OS to limit motion still gets the fade, so the
+   modal never simply appears with no transition at all. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-modal-rise,
+  .animate-modal-content > * {
+    animation: modal-fade 0.2s ease-out both;
+  }
+}
+
+/* Three-dot loader — the dots lift in sequence, left to right, so the motion
+   reads as travelling across rather than three things blinking. Transform and
+   opacity only, so it costs nothing while a request is in flight. */
+@keyframes dot-wave {
+  0%, 70%, 100% {
+    transform: translateY(0) scale(0.85);
+    opacity: 0.35;
+  }
+  35% {
+    transform: translateY(-6px) scale(1);
+    opacity: 1;
+  }
+}
+
+.dot-wave > span {
+  animation: dot-wave 1.05s ease-in-out infinite;
+}
+
+.dot-wave > span:nth-child(2) { animation-delay: 0.14s; }
+.dot-wave > span:nth-child(3) { animation-delay: 0.28s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dot-wave > span {
+    animation: none;
+    opacity: 0.6;
+  }
+}
