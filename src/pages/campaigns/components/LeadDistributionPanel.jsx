@@ -30,6 +30,16 @@ import {
  * they come back, instead of silently resetting to the default.
  */
 
+// Same derivation as the dashboard KPIs and the Team Performance tiles, so
+// every stat row in the app shares one visual language.
+const hexToRgba = (hex = "#3B82F6", a = 1) => {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  // eslint-disable-next-line no-bitwise
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+
 const COLORS = [
   "#2563EB", "#C2410C", "#0D9488", "#7C3AED",
   "#BE185D", "#0369A1", "#B45309", "#4338CA",
@@ -209,7 +219,11 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
       { id: user.id, name, count: 1 },
     ];
     save({
-      collaboratorsIds: [...local.collaboratorsIds, user.id],
+      // Deduped on the way in as well, so adding someone already in the list
+      // cannot create the duplicate that buildMembers now has to guard against.
+      collaboratorsIds: [
+        ...new Set([...local.collaboratorsIds, user.id].filter(Boolean)),
+      ],
       configuration: serializeConfiguration(rows),
     });
     setAdding(false);
@@ -271,8 +285,71 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
 
   const nextUp = split.find((m) => m.share > 0);
 
+  // Every number here is already derived above — nothing new is fetched. The
+  // row exists because the panel answers "who gets leads and how many", and
+  // that answer was only readable by counting rows in the list below it.
+  const stats = [
+    {
+      label: "Team members",
+      value: members.length,
+      icon: "Users",
+      accent: "#6366F1",
+    },
+    {
+      label: "Getting leads now",
+      value: activeCount,
+      icon: "UserCheck",
+      accent: "#10B981",
+    },
+    {
+      label: "On leave",
+      value: paused.length,
+      icon: "PauseCircle",
+      accent: "#F59E0B",
+    },
+    {
+      label: "Expected leads today",
+      value: expected,
+      icon: "TrendingUp",
+      accent: "#8A1B29",
+    },
+  ];
+
   return (
     <div className="space-y-6 pb-20">
+      {/* ------------------------------------------------ at a glance */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((c) => {
+          const tint = hexToRgba(c.accent, 0.12);
+          const wash = hexToRgba(c.accent, 0.06);
+          const glow = hexToRgba(c.accent, 0.35);
+
+          return (
+            <div
+              key={c.label}
+              style={{
+                "--kpi-glow": glow,
+                backgroundImage: `linear-gradient(135deg, ${wash} 0%, transparent 60%)`,
+              }}
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--kpi-glow)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            >
+              <span
+                className="mb-3 grid h-9 w-9 place-items-center rounded-xl transition-transform duration-300 ease-premium group-hover:scale-105 motion-reduce:transition-none"
+                style={{ backgroundColor: tint }}
+              >
+                <Icon name={c.icon} size={17} color={c.accent} />
+              </span>
+              <p className="text-2xl font-bold leading-none tabular-nums tracking-tight text-foreground">
+                {c.value}
+              </p>
+              <p className="mt-1.5 text-xs font-medium text-muted-foreground">
+                {c.label}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
       {/* ------------------------------------------------ mode */}
       <div className="rounded-xl border border-border bg-card p-5">
         <SectionTitle

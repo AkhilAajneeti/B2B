@@ -57,31 +57,67 @@ export const serializeConfiguration = (items = []) =>
 /**
  * Every row a campaign knows about, each marked paused or active.
  *
- * A row whose id is NOT in collaboratorsIds is someone who has been paused:
+ * Rows keep a STABLE order — see the note on the ordering below. A row whose
+ * id is NOT in collaboratorsIds is someone who has been paused:
  * their line is deliberately left in `configuration` so their number survives
  * the pause. Without that, pausing and resuming silently resets them to 1 and
  * nobody notices until their lead volume quietly drops.
  */
 export const buildMembers = ({ collaboratorsIds = [], collaboratorsNames = {}, configuration = "" }) => {
-  const ids = Array.isArray(collaboratorsIds) ? collaboratorsIds : [];
+  // DEDUPED. An id appearing twice renders two rows that share an id, and
+  // every per-member action keys off that id — so pausing one pauses both,
+  // and removing one removes both. They look like separate people because
+  // their names come from the configuration rows, which is what makes the bug
+  // read as a toggle glitch rather than duplicate data.
+  //
+  // A campaign can collect duplicates from any client that appended an id
+  // without checking, so this guards the display rather than trusting the
+  // stored value.
+  const ids = Array.isArray(collaboratorsIds)
+    ? [...new Set(collaboratorsIds.filter(Boolean))]
+    : [];
   const active = new Set(ids);
   const configured = parseConfiguration(configuration);
   const byId = new Map(configured.map((c) => [c.id, c]));
 
-  // Active collaborators first, in the campaign's own order, then anyone
-  // paused — so the people currently receiving leads are what you see first.
-  const rows = ids.map((id) => ({
-    id,
-    name: byId.get(id)?.name || collaboratorsNames?.[id] || id,
-    count: byId.get(id)?.count ?? null, // null = Auto (no fixed number)
-    paused: false,
-  }));
+  // NAME RESOLUTION ORDER MATTERS, and it used to be backwards.
+  //
+  // `collaboratorsNames` is the server's own id -> name map. `configuration`
+  // is a hand-built "id:name:count" string that any client can rewrite, so its
+  // id/name pairing goes stale the moment one is written from a list whose
+  // order shifted. The configuration name stays as the fallback, because a
+  // paused member is absent from collaboratorsNames by definition and it is
+  // the only name we have for them.
+  const nameFor = (id) => collaboratorsNames?.[id] || byId.get(id)?.name || id;
 
-  configured.forEach((c) => {
-    if (!active.has(c.id)) {
-      rows.push({ id: c.id, name: c.name, count: c.count, paused: true });
-    }
-  });
+  // ORDER IS STABLE, AND THAT IS THE POINT.
+  //
+  // This used to list active members first and paused ones after, which meant
+  // pausing the top row MOVED it to the bottom. The click was always applied
+  // to the right person, but the row jumped — so it read as "I clicked the top
+  // toggle and the bottom one changed", and clicking again moved it back. A
+  // control that relocates the moment you use it is unusable however correct
+  // it is underneath.
+  //
+  // So rows follow the configuration's own order, which is where everyone the
+  // campaign knows about is recorded, and anyone present only in
+  // collaboratorsIds is appended. Pausing now flips a switch in place.
+  const rows = [];
+  const emitted = new Set();
+
+  const push = (id) => {
+    if (!id || emitted.has(id)) return;
+    emitted.add(id);
+    rows.push({
+      id,
+      name: nameFor(id),
+      count: byId.get(id)?.count ?? null, // null = Auto (no fixed number)
+      paused: !active.has(id),
+    });
+  };
+
+  configured.forEach((c) => push(c.id));
+  ids.forEach(push);
 
   return rows;
 };

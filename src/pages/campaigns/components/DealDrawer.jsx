@@ -21,24 +21,71 @@ import {
  * value. Value markup varies per field (links, dates, plain text), so it comes
  * in as children rather than a prop.
  */
-const ViewField = ({ icon, label, className = "", children }) => (
-  <div className={className}>
-    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-      <Icon name={icon} size={13} className="shrink-0" />
-      {label}
-    </p>
-    {children}
-  </div>
-);
+/**
+ * Read-only field, as a tinted card.
+ *
+ * The accent is decoration: it makes a two-column grid of fields scannable by
+ * position and colour instead of by reading every label. Each card still names
+ * itself in words, so nothing depends on telling rose from violet.
+ */
+const FIELD_TONES = {
+  rose: "bg-rose-50/70 text-rose-600",
+  violet: "bg-violet-50/70 text-violet-600",
+  sky: "bg-sky-50/70 text-sky-600",
+  amber: "bg-amber-50/70 text-amber-600",
+  emerald: "bg-emerald-50/70 text-emerald-600",
+  slate: "bg-slate-100/70 text-slate-600",
+};
+
+const initialsOf = (name = "") =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0] || "")
+    .join("")
+    .toUpperCase() || "?";
+
+const ViewField = ({ icon, label, tone = "slate", className = "", children }) => {
+  const [tile] = [FIELD_TONES[tone] || FIELD_TONES.slate];
+  return (
+    <div
+      className={`group/field flex items-start gap-3 rounded-2xl border border-border/60 bg-card/80 p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] backdrop-blur transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-border hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${className}`}
+    >
+      <span
+        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-transform duration-200 ease-premium group-hover/field:scale-110 ${tile}`}
+      >
+        <Icon name={icon} size={18} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          {label}
+        </p>
+        {children}
+      </div>
+    </div>
+  );
+};
 
 /** Section header for the view cards — icon + title, with optional right slot. */
-const SectionHeader = ({ icon, title, children }) => (
-  <div className="flex items-center justify-between gap-3 mb-6">
-    <div className="flex items-center gap-2 min-w-0">
-      <Icon name={icon} size={16} className="text-primary shrink-0" />
-      <h3 className="text-base font-semibold text-foreground truncate">
-        {title}
-      </h3>
+const SectionHeader = ({ icon, title, subtitle, tone = "rose", children }) => (
+  <div className="mb-5 flex items-center justify-between gap-3">
+    <div className="flex min-w-0 items-center gap-3">
+      <span
+        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+          FIELD_TONES[tone] || FIELD_TONES.slate
+        }`}
+      >
+        <Icon name={icon} size={18} />
+      </span>
+      <div className="min-w-0">
+        <h3 className="truncate text-base font-bold text-foreground">
+          {title}
+        </h3>
+        {subtitle && (
+          <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+        )}
+      </div>
     </div>
     {children}
   </div>
@@ -555,7 +602,7 @@ const DealDrawer = ({
                 {/* Lead Form Here */}
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* ================= Overview ================= */}
-                  <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                  <div className="space-y-4 rounded-2xl border border-border bg-gradient-to-br from-rose-50/40 via-card to-card p-5 shadow-sm">
                     {/* Name */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Client Nomen now binds to clientNomen (was wired to
@@ -606,8 +653,29 @@ const DealDrawer = ({
 
                   {/* ================= Assigned User ================= */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-card border border-border rounded-lg p-4 space-y-4 col-span-2">
-                      <h2>Collaborator</h2>
+                    <div className="col-span-2 space-y-4 rounded-2xl border border-border bg-gradient-to-br from-violet-50/40 via-card to-card p-5 shadow-sm">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50/70 text-violet-600">
+                            <Icon name="Users" size={18} />
+                          </span>
+                          <div className="min-w-0">
+                            <h2 className="text-sm font-bold text-foreground">
+                              Collaborators
+                            </h2>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              Who receives leads from this project.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* The count, because the chips wrap and a long list
+                            gives no sense of how many people are actually in
+                            the rotation. */}
+                        <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
+                          {(formData.collaboratorsIds || []).length} selected
+                        </span>
+                      </div>
                       <ReactSelect
                         isMulti
                         closeMenuOnSelect={false}
@@ -622,53 +690,155 @@ const DealDrawer = ({
                             value.map((s) => s.value),
                           )
                         }
-                        placeholder="Select Collaborators."
+                        placeholder="Add a team member…"
                         classNamePrefix="react-select"
                         styles={{
+                          // react-select renders inline styles, so these have
+                          // to be set here rather than in a class — Tailwind
+                          // cannot reach inside the component.
                           control: (base, state) => ({
                             ...base,
-                            minHeight: "42px",
-                            borderColor: state.isFocused
-                              ? "#a3d9a5"
-                              : "#a3d9a5",
-                            boxShadow: "none",
-                            "&:hover": { borderColor: "#6366f1" },
+                            minHeight: "48px",
+                            borderRadius: "14px",
+                            backgroundColor: "#fff",
+                            borderColor: state.isFocused ? "#8b5cf6" : "#E2E8F0",
+                            boxShadow: state.isFocused
+                              ? "0 0 0 3px rgba(139,92,246,.15)"
+                              : "0 1px 2px rgba(16,24,40,.04)",
+                            paddingLeft: "4px",
+                            transition: "border-color .15s, box-shadow .15s",
+                            "&:hover": { borderColor: "#c4b5fd" },
+                          }),
+                          placeholder: (base) => ({
+                            ...base,
+                            color: "#94A3B8",
+                            fontSize: "14px",
+                          }),
+                          valueContainer: (base) => ({
+                            ...base,
+                            gap: "6px",
+                            padding: "6px 8px",
                           }),
                           multiValue: (base) => ({
                             ...base,
-                            backgroundColor: "#EEF2FF",
+                            backgroundColor: "#F5F3FF",
+                            border: "1px solid #DDD6FE",
+                            borderRadius: "9999px",
+                            margin: 0,
+                            paddingLeft: "4px",
+                            overflow: "hidden",
                           }),
                           multiValueLabel: (base) => ({
                             ...base,
-                            color: "#000",
-                            fontWeight: 500,
+                            color: "#5B21B6",
+                            fontWeight: 600,
+                            fontSize: "12.5px",
+                            padding: "3px 6px",
                           }),
                           multiValueRemove: (base) => ({
                             ...base,
-                            color: "#e8a8a0",
+                            color: "#8B5CF6",
+                            borderRadius: "9999px",
                             ":hover": {
-                              backgroundColor: "#e8a8a0",
+                              backgroundColor: "#8B5CF6",
                               color: "#fff",
                             },
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            borderRadius: "14px",
+                            overflow: "hidden",
+                            border: "1px solid #E2E8F0",
+                            boxShadow: "0 12px 32px -12px rgba(16,24,40,.25)",
+                            zIndex: 30,
+                          }),
+                          option: (base, state) => ({
+                            ...base,
+                            fontSize: "14px",
+                            backgroundColor: state.isFocused
+                              ? "#F5F3FF"
+                              : "#fff",
+                            color: state.isSelected ? "#5B21B6" : "#0F172A",
+                            fontWeight: state.isSelected ? 600 : 400,
+                            cursor: "pointer",
                           }),
                         }}
                       />
 
-                      {/* Enable Configuration toggle — gates the per-collaborator
-                          lead-count list below. When off, the list still renders
-                          but is dimmed and non-interactive so the user can see
-                          what's there without editing. */}
-                      <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                          checked={!!formData.enableConfiguration}
-                          onChange={(e) =>
-                            handleChange("enableConfiguration", e.target.checked)
-                          }
-                        />
-                        Enable Configuration
-                      </label>
+                      {/* Distribution mode — gates the per-collaborator lead
+                          count list below. In Equal split the list still
+                          renders but is dimmed and non-interactive, so the
+                          numbers survive the switch and come back untouched. */}
+                      {/* Two named modes rather than a bare checkbox.
+                          "Enable Configuration" never said what it did, and the
+                          OFF state is not "nothing" — it is an equal
+                          round-robin split, which is the single most
+                          misunderstood thing on this screen. Naming both sides
+                          makes the choice legible without reading the docs.
+
+                          Still one boolean underneath: enableConfiguration. */}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {[
+                          {
+                            on: false,
+                            icon: "Repeat",
+                            title: "Equal split",
+                            body: "Leads rotate evenly between everyone above.",
+                          },
+                          {
+                            on: true,
+                            icon: "SlidersHorizontal",
+                            title: "Custom counts",
+                            body: "Set how many leads each person gets per day.",
+                          },
+                        ].map((opt) => {
+                          const active = !!formData.enableConfiguration === opt.on;
+                          return (
+                            <button
+                              key={opt.title}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() =>
+                                handleChange("enableConfiguration", opt.on)
+                              }
+                              className={`group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all duration-200 ease-premium hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${active
+                                ? "border-violet-300 bg-violet-50/70 shadow-md shadow-violet-500/10"
+                                : "border-border bg-card hover:border-violet-200 hover:shadow-sm"
+                                }`}
+                            >
+                              <span
+                                className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${active
+                                  ? "bg-violet-600 text-white"
+                                  : "bg-muted text-muted-foreground"
+                                  }`}
+                              >
+                                <Icon name={opt.icon} size={18} />
+                              </span>
+
+                              <span className="min-w-0 flex-1">
+                                <span className="flex items-center gap-2">
+                                  <span
+                                    className={`text-sm font-bold ${active ? "text-violet-900" : "text-foreground"
+                                      }`}
+                                  >
+                                    {opt.title}
+                                  </span>
+                                  {active && (
+                                    <Icon
+                                      name="CheckCircle2"
+                                      size={15}
+                                      className="shrink-0 text-violet-600"
+                                    />
+                                  )}
+                                </span>
+                                <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                                  {opt.body}
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
 
                       {/* Configuration rows: one per selected collaborator with an
                           editable lead-count number input. Min 1. */}
@@ -678,7 +848,7 @@ const DealDrawer = ({
                           : "opacity-50 pointer-events-none"
                           }`}
                       >
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                           Configuration
                         </p>
                         {(formData.configurationItems || []).length === 0 ? (
@@ -689,11 +859,23 @@ const DealDrawer = ({
                           (formData.configurationItems || []).map((item) => (
                             <div
                               key={item.id}
-                              className="flex items-center justify-between gap-3 px-3 py-2 rounded-md bg-muted/30 border border-border"
+                              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3.5 py-2.5 shadow-[0_1px_2px_rgba(16,24,40,.04)] transition-colors hover:border-violet-200"
                             >
-                              <span className="text-sm text-foreground truncate">
-                                {item.name}
-                              </span>
+                              <div className="flex min-w-0 items-center gap-2.5">
+                                {/* Initials, so a row is recognisable at a
+                                    glance in a list of eight or ten. */}
+                                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">
+                                  {initialsOf(item.name)}
+                                </span>
+                                <span className="truncate text-sm font-medium text-foreground">
+                                  {item.name}
+                                </span>
+                              </div>
+
+                              <div className="flex shrink-0 items-center gap-2">
+                                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                                  leads/day
+                                </span>
                               <input
                                 type="number"
                                 min={1}
@@ -705,8 +887,9 @@ const DealDrawer = ({
                                   )
                                 }
                                 disabled={!formData.enableConfiguration}
-                                className="w-20 px-2 py-1 text-sm text-right border border-border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed"
-                              />
+                                  className="w-16 rounded-lg border border-border bg-background px-2 py-1.5 text-right text-sm font-semibold tabular-nums text-foreground focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 disabled:cursor-not-allowed"
+                                />
+                              </div>
                             </div>
                           ))
                         )}
@@ -735,7 +918,7 @@ const DealDrawer = ({
                         meaningless without a template, and vice versa. */}
                     {isSupAdmin() &&
                       <div className="col-span-2">
-                        <div className="bg-card border border-border rounded-lg p-4 space-y-4">
+                        <div className="space-y-4 rounded-2xl border border-border bg-gradient-to-br from-emerald-50/40 via-card to-card p-5 shadow-sm">
                           {/* Header: what this does + the on/off switch */}
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
@@ -864,14 +1047,21 @@ const DealDrawer = ({
                       key={tab?.id}
                       onClick={() => setActiveTab(tab?.id)}
                       className={`
-                  flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-semibold transition-smooth
+                  group flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-semibold transition-all duration-200 ease-premium
                   ${activeTab === tab?.id
-                          ? "bg-[#AC2334] text-white shadow-sm"
-                          : "text-muted-foreground hover:bg-card hover:text-foreground"
+                          ? "bg-[#AC2334] text-white shadow-md shadow-[#AC2334]/25"
+                          : "text-muted-foreground hover:-translate-y-0.5 hover:bg-card hover:text-foreground hover:shadow-sm"
                         }
                 `}
                     >
-                      <Icon name={tab?.icon} size={16} />
+                      {/* The icon leads the hover — it moves before the label
+                          does, which is what makes a tab feel responsive
+                          rather than merely coloured. */}
+                      <Icon
+                        name={tab?.icon}
+                        size={16}
+                        className="transition-transform duration-200 group-hover:scale-110"
+                      />
                       <span>{tab?.label}</span>
                     </button>
                   ))}
@@ -882,25 +1072,31 @@ const DealDrawer = ({
                   {activeTab === "overview" && (
                     <div className="space-y-6">
                       {/* ================= Overview ================= */}
-                      <div className="border border-border rounded-xl p-6">
-                        <SectionHeader icon="Info" title="Overview" />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="rounded-2xl border border-border bg-gradient-to-br from-rose-50/50 via-background to-background p-5 shadow-sm transition-shadow hover:shadow-md">
+                        <SectionHeader
+                          icon="Info"
+                          title="Project Overview"
+                          subtitle="Key details and current settings for this project."
+                          tone="rose"
+                        />
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 
                           {/* Client Nomen */}
                           {isSupAdmin() &&
                             <ViewField
                               icon="Building2"
+                              tone="slate"
                               label="Client Nomen"
                               className="col-span-2"
                             >
-                              <p className="text-foreground font-medium mt-1">
+                              <p className="mt-0.5 text-[15px] font-semibold text-foreground">
                                 {deal?.clientNomen || "none"}
                               </p>
                             </ViewField>}
 
                           {/* Project Nomen */}
-                          <ViewField icon="Layers" label="Project Nomen">
-                            <p className="text-foreground font-medium mt-1">
+                          <ViewField icon="Layers" tone="rose" label="Project Nomen">
+                            <p className="mt-0.5 text-[15px] font-semibold text-foreground">
                               {deal?.projectNomen || "Default"}
                             </p>
                           </ViewField>
@@ -918,41 +1114,41 @@ const DealDrawer = ({
                           )} */}
 
                           {/* Created By */}
-                          <ViewField icon="UserPlus" label="Created By">
+                          <ViewField icon="UserPlus" tone="rose" label="Created By">
                             {deal?.createdByName ? (
-                              <p className="text-primary hover:underline mt-1">
+                              <p className="mt-0.5 text-[15px] font-semibold text-primary">
                                 {deal.createdByName}
                               </p>
                             ) : (
-                              <p className="text-foreground mt-1">None</p>
+                              <p className="mt-0.5 text-[15px] text-muted-foreground">None</p>
                             )}
                           </ViewField>
 
                           {/* Assigned User */}
-                          <ViewField icon="UserCheck" label="Assigned User">
+                          <ViewField icon="UserCheck" tone="sky" label="Assigned User">
                             {deal?.assignedUserName ? (
-                              <p className="text-primary hover:underline break-all mt-1">
+                              <p className="mt-0.5 break-all text-[15px] font-semibold text-primary">
                                 {deal.assignedUserName}
                               </p>
                             ) : (
-                              <p className="text-foreground mt-1">None</p>
+                              <p className="mt-0.5 text-[15px] text-muted-foreground">None</p>
                             )}
                           </ViewField>
 
                           {/* Last Assigned User */}
-                          <ViewField icon="UserCog" label="Last Assigned User">
+                          <ViewField icon="UserCog" tone="violet" label="Last Assigned User">
                             {deal?.lastAssignedUser ? (
-                              <p className="text-primary hover:underline break-all mt-1">
+                              <p className="mt-0.5 break-all text-[15px] font-semibold text-primary">
                                 {deal.lastAssignedUser}
                               </p>
                             ) : (
-                              <p className="text-foreground mt-1">None</p>
+                              <p className="mt-0.5 text-[15px] text-muted-foreground">None</p>
                             )}
                           </ViewField>
 
                           {/* Created At */}
-                          <ViewField icon="Calendar" label="Created At">
-                            <p className="text-foreground font-medium mt-1">
+                          <ViewField icon="Calendar" tone="amber" label="Created At">
+                            <p className="mt-0.5 text-[15px] font-semibold text-foreground">
                               {deal?.createdAt
                                 ? formatDate(deal.createdAt)
                                 : "—"}
@@ -960,8 +1156,8 @@ const DealDrawer = ({
                           </ViewField>
 
                           {/* Modified At */}
-                          <ViewField icon="History" label="Modified At">
-                            <p className="text-foreground font-medium mt-1">
+                          <ViewField icon="History" tone="emerald" label="Modified At">
+                            <p className="mt-0.5 text-[15px] font-semibold text-foreground">
                               {deal?.modifiedAt
                                 ? formatDate(deal.modifiedAt)
                                 : "None"}
@@ -976,9 +1172,10 @@ const DealDrawer = ({
                           string on the fly so we don't depend on form state
                           here. When `enableConfiguration` is false, the rows
                           render dimmed to signal the values aren't active. */}
-                      <div className="border border-border rounded-xl p-6">
+                      <div className="rounded-2xl border border-border bg-gradient-to-br from-violet-50/50 via-background to-background p-5 shadow-sm transition-shadow hover:shadow-md">
                         <SectionHeader
                           icon="SlidersHorizontal"
+                          tone="violet"
                           title="Configuration"
                         >
                           <span
@@ -1026,12 +1223,13 @@ const DealDrawer = ({
                       </div>
 
                       {/* ================= Details ================= */}
-                      <div className="border border-border rounded-xl p-6">
+                      <div className="rounded-2xl border border-border bg-gradient-to-br from-emerald-50/50 via-background to-background p-5 shadow-sm transition-shadow hover:shadow-md">
                         {/* WhatsApp — mirrors the Configuration card's
                             Enabled/Disabled badge so both toggles read the same
                             way at a glance. */}
                         <SectionHeader
                           icon="MessageCircle"
+                          tone="emerald"
                           title="WhatsApp Notification"
                         >
                           <span
@@ -1053,13 +1251,14 @@ const DealDrawer = ({
                               just isn't in use. */}
                         <ViewField
                           icon="FileText"
+                          tone="emerald"
                           label="WhatsApp Template"
                           className={`md:col-span-2 ${deal?.sendWhatsappNotification
                             ? "opacity-100"
                             : "opacity-60"
                             }`}
                         >
-                          <p className="text-foreground leading-relaxed mt-1 whitespace-pre-wrap">
+                          <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                             {deal?.whatsappTemplate || "—"}
                           </p>
                         </ViewField>
@@ -1079,7 +1278,7 @@ const DealDrawer = ({
                   {activeTab === "Teams" && (
                     <div className="space-y-6">
                       {/* ================= Assigned User ================= */}
-                      <div className="border border-border rounded-xl p-6">
+                      <div className="rounded-2xl border border-border bg-gradient-to-br from-sky-50/50 via-background to-background p-5 shadow-sm transition-shadow hover:shadow-md">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {/* Assigned User */}
                           <div>
