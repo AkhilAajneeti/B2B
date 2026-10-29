@@ -102,7 +102,10 @@ const DealDrawer = ({
   onBulkUpdate,
   onDelete,
 }) => {
-  const [activeTab, setActiveTab] = useState("overview");
+  // Lead Distribution first: it is the reason this drawer gets opened — who
+  // receives leads and how many — while Overview is reference material people
+  // look up occasionally.
+  const [activeTab, setActiveTab] = useState("distribution");
   const [isEditing, setIsEditing] = useState(false);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
@@ -384,6 +387,13 @@ const DealDrawer = ({
       console.error("Bulk update failed", err);
     }
   };
+
+  // Back to Lead Distribution on every open. The drawer is never unmounted —
+  // it is hidden with a transform — so activeTab survives a close, and a user
+  // who last looked at Overview would reopen the NEXT project on Overview.
+  useEffect(() => {
+    if (isOpen) setActiveTab("distribution");
+  }, [isOpen, deal?.id]);
 
   useEffect(() => {
     // Guarded on isOpen. This drawer is mounted by its page unconditionally
