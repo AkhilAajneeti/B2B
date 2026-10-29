@@ -52,6 +52,28 @@ const DATE_FILTER_TYPES = new Set([
 const buildQuery = (whereGroup) =>
   whereGroup
     .map((f, i) => {
+      // Nested OR group — `{ type: "or", value: [ {type,attribute,value}, … ] }`
+      // serialised as whereGroup[i][value][j][…], the same shape
+      // services/leads.service.js uses and the gateway already accepts.
+      //
+      // Without this branch each sub-clause falls into the Array.isArray path
+      // below and is encodeURIComponent'd whole, producing
+      // `whereGroup[0][value][]=%5Bobject%20Object%5D` — which the gateway
+      // answers with a 500, not a validation message.
+      if (f.type === "or" && Array.isArray(f.value)) {
+        let q = `whereGroup[${i}][type]=or`;
+        f.value.forEach((sub, j) => {
+          q += `&whereGroup[${i}][value][${j}][type]=${encodeURIComponent(sub.type)}`;
+          if (sub.attribute) {
+            q += `&whereGroup[${i}][value][${j}][attribute]=${encodeURIComponent(sub.attribute)}`;
+          }
+          if (sub.value !== undefined && sub.value !== null && sub.value !== "") {
+            q += `&whereGroup[${i}][value][${j}][value]=${encodeURIComponent(sub.value)}`;
+          }
+        });
+        return q;
+      }
+
       let q = `whereGroup[${i}][type]=${encodeURIComponent(f.type)}`;
       if (f.attribute) {
         q += `&whereGroup[${i}][attribute]=${encodeURIComponent(f.attribute)}`;
@@ -109,7 +131,42 @@ const filtersToWhereGroup = (filters = {}) => {
       });
     }
   }
-  if (filters.cProject) {
+  /**
+   * Project filter.
+   *
+   * `_projectTokens` is what a project PICKER sends: the project's nomen and
+   * its full name, OR'd across every lead field that can hold the label.
+   *
+   * A single `like %name%` on cProject alone is not enough, and failed exactly
+   * this way: the picker's value is the project's full `name`
+   * ("ShubhamShakyaPropshopMigsunRohiniCentral") while leads carry the short
+   * NOMEN ("MigsunRohiniCentral"), so the search looked for the long string
+   * inside a field holding the short one and matched nothing. An empty result
+   * here is indistinguishable from "no leads in this period", which is why it
+   * read as a broken report rather than a broken filter.
+   *
+   * Leads also spread the label across cProject / cProjectName / cProjectNomen
+   * inconsistently — see campaigns/utils/leadScope, which solves the same
+   * problem for the campaign queries with the same shape of condition.
+   *
+   * `equals` rather than `like`: exact matching costs nothing in recall once
+   * both tokens are covered, and it stops "MigsunRohini" dragging in
+   * "MigsunRohiniCentral".
+   */
+  const projectTokens = (filters._projectTokens || []).filter(Boolean);
+  if (projectTokens.length) {
+    where.push({
+      type: "or",
+      value: projectTokens.flatMap((token) =>
+        ["cProject", "cProjectName", "cProjectNomen"].map((attribute) => ({
+          type: "equals",
+          attribute,
+          value: token,
+        })),
+      ),
+    });
+  } else if (filters.cProject) {
+    // Free-text fallback, for any caller still typing a partial name.
     where.push({
       type: "like",
       attribute: "cProject",

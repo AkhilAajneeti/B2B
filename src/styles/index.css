@@ -175,3 +175,15 @@ select:focus {
   /* Tricolor gradient removed — "CRM" wordmark uses a solid colour. */
   color: var(--color-foreground);
 }
+
+/* Horizontal strips that scroll but should not show a bar — the period tabs
+   on a phone, where four labels are wider than the screen. The strip still
+   scrolls by touch and by keyboard; only the bar is hidden. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

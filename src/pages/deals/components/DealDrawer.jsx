@@ -421,15 +421,20 @@ const DealDrawer = ({
   /**
    * The WhatsApp template belonging to this lead's project.
    *
-   * Two things made the first version silently return nothing:
+   * THE MATCH IS A PAIR, not a name:
    *
-   * 1. IT MATCHED ON `name` ONLY. A lead stores whatever the project is
-   *    called in its forms — "LuminaLiving" — which is usually the project's
-   *    NOMEN, not its `name`. The campaigns page itself shows the nomen
-   *    whenever it is not "Default", so the two disagree constantly. Now the
-   *    lead's value is compared against name, projectNomen AND clientNomen.
+   *     lead.cClientNomen  === project.clientNomen
+   *     lead.cProjectNomen === project.projectNomen
    *
-   * 2. THE LIST RESPONSE MAY NOT CARRY whatsappTemplate. EspoCRM list
+   * There is no project id on a lead, only these labels, and earlier versions
+   * of this matched a single token against `name` and then against any of the
+   * three name-ish fields. Both shipped looking correct — the drawer showed
+   * the right project — while the lookup found nothing and the rep got the
+   * bare greeting. The pair is what is actually unique.
+   *
+   * One more thing could make a correct match still return nothing:
+   *
+   *    THE LIST RESPONSE MAY NOT CARRY whatsappTemplate. EspoCRM list
    *    endpoints return a default field set, and a custom field is not
    *    guaranteed to be in it — so even a correct match could read undefined.
    *    The cached option is used when it has a template, and otherwise the
@@ -441,18 +446,34 @@ const DealDrawer = ({
   const { options: projectOptions } = useProjectOptions({ enabled: isOpen });
 
   const matchedProject = useMemo(() => {
-    const leadProject = (deal?.cProject || deal?.cProjectName || deal?.cProjectNomen || "")
-      .trim()
-      .toLowerCase();
+    const norm = (v) => (v || "").trim().toLowerCase();
+
+    const leadClient = norm(deal?.cClientNomen);
+    const leadProject = norm(deal?.cProjectNomen);
     if (!leadProject) return null;
-    const eq = (v) => (v || "").trim().toLowerCase() === leadProject;
-    return (
-      (projectOptions || [])
-        .map((o) => o?.project)
-        .find((p) => p && (eq(p.name) || eq(p.projectNomen) || eq(p.clientNomen))) ||
-      null
-    );
-  }, [deal?.cProject, deal?.cProjectName, deal?.cProjectNomen, projectOptions]);
+
+    const projects = (projectOptions || []).map((o) => o?.project).filter(Boolean);
+
+    // THE PAIR IS THE IDENTITY. Two campaigns can share a project nomen; the
+    // client + project pair is what is actually unique. Earlier versions
+    // matched a single token and so could not tell them apart — which is how
+    // this shipped looking right and prefilling nothing.
+    if (leadClient) {
+      const pairHit = projects.find(
+        (p) =>
+          norm(p.clientNomen) === leadClient &&
+          norm(p.projectNomen) === leadProject,
+      );
+      if (pairHit) return pairHit;
+    }
+
+    // No client nomen on the lead (or no pair hit): fall back to the project
+    // nomen alone, but ONLY when exactly one project carries it. One hit is an
+    // answer; two is a guess, and a guess here sends a rep out with another
+    // campaign's pitch under this buyer's name. Two means no template.
+    const nomenHits = projects.filter((p) => norm(p.projectNomen) === leadProject);
+    return nomenHits.length === 1 ? nomenHits[0] : null;
+  }, [deal?.cClientNomen, deal?.cProjectNomen, projectOptions]);
 
   // Only fetch when the cached copy does not already carry the template.
   const { data: matchedProjectDetail } = useProject(
@@ -460,10 +481,14 @@ const DealDrawer = ({
     isOpen && !!matchedProject?.id && !matchedProject?.whatsappTemplate,
   );
 
+  // Read the cached copy first, then the by-id record. `cWhatsappTemplate` is
+  // tolerated because custom fields in this backend are inconsistently
+  // prefixed — `clientNomen` has no prefix while every Lead custom field does
+  // — and a prefix mismatch would read as "no template saved" with nothing
+  // distinguishing it from an empty field.
+  const readTemplate = (p) => p?.whatsappTemplate || p?.cWhatsappTemplate || "";
   const projectTemplate =
-    matchedProject?.whatsappTemplate ||
-    matchedProjectDetail?.whatsappTemplate ||
-    "";
+    readTemplate(matchedProject) || readTemplate(matchedProjectDetail);
 
   // --- Build the wa.me URL once so the header Quick Actions button and
   //     the Overview link share the exact same logic. Returns null when
@@ -1126,10 +1151,36 @@ const DealDrawer = ({
                         }`}
                     >
                       <Icon name="MessageCircle" size={14} />
-                      WhatsApp
+                      Send Template
                     </a>
                   );
                 })()}
+
+                {/* Which project's pitch is loaded into that button.
+                    Deliberately visible: the match is on text labels, and when
+                    it fails there is nothing to see — the message just arrives
+                    short. Naming the project means a wrong or missing pitch is
+                    obvious at a glance instead of being discovered by whoever
+                    receives it. */}
+                {/* {!masked && (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-2.5 py-2 text-xs text-muted-foreground">
+                    <Icon name="FileText" size={12} />
+                    {projectTemplate ? (
+                      <>
+                        Pitch:{" "}
+                        <span className="font-medium text-foreground">
+                          {matchedProject?.projectNomen ||
+                            matchedProject?.name ||
+                            "project"}
+                        </span>
+                      </>
+                    ) : matchedProject ? (
+                      <>No pitch saved on {matchedProject.projectNomen}</>
+                    ) : (
+                      <>No project matched</>
+                    )}
+                  </span>
+                )} */}
                 <a
                   href={
                     deal?.emailAddress ? `mailto:${deal.emailAddress}` : undefined

@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import Icon from "../../components/AppIcon";
 import TeamPerformanceTable from "./components/TeamPerformanceTable";
+import Select from "../../components/ui/Select";
 import Tooltip from "../../components/ui/Tooltip";
 import { useTeams, useTeamUsers } from "hooks/useTeams";
 import { useProjectOptions } from "hooks/useProjects";
@@ -146,6 +147,94 @@ const Tile = ({ label, value, hint, icon, accent = "#3B82F6" }) => {
   );
 };
 
+/**
+ * Period switcher — one soft pill that slides between the options.
+ *
+ * The indicator is MEASURED from the active button rather than assumed to be
+ * 1/n of the track. Equal segments only work if every label fits in its share,
+ * and "This month" does not: the pill came out narrower than its own text and
+ * the words spilled over both edges. Measuring also means labels of any length
+ * can be added later without the control quietly breaking.
+ *
+ * Re-measured on resize through a ResizeObserver, because a font loading late
+ * or the sidebar collapsing changes the geometry after the first paint.
+ */
+const PeriodTabs = ({ periods, value, onChange }) => {
+  const trackRef = useRef(null);
+  const btnRefs = useRef({});
+  const [pill, setPill] = useState({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const track = trackRef.current;
+      const btn = btnRefs.current[value];
+      if (!track || !btn) return;
+      setPill({ left: btn.offsetLeft, width: btn.offsetWidth });
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (trackRef.current) ro.observe(trackRef.current);
+
+    // On a phone the strip scrolls, so the selected period can sit off-screen
+    // after a tap — bring it into view rather than leaving the user to guess
+    // which one is active.
+    btnRefs.current[value]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest",
+    });
+
+    return () => ro.disconnect();
+  }, [value, periods]);
+
+  return (
+    <div className="no-scrollbar w-full overflow-x-auto rounded-full border border-border bg-background p-1.5 shadow-sm md:w-auto md:overflow-visible">
+      {/* w-max, so the track is as wide as its labels and the strip scrolls
+          instead of the labels being squeezed. Four periods do not fit a
+          360px screen at a readable size, and shrinking them to fit was the
+          overflow. */}
+      <div ref={trackRef} className="relative flex w-max items-center md:w-full">
+        <span
+          aria-hidden="true"
+          style={{ left: pill.left, width: pill.width }}
+          className="pointer-events-none absolute inset-y-0 rounded-full border border-primary/30 bg-primary/10 transition-[left,width] duration-300 ease-premium motion-reduce:transition-none"
+        />
+
+        {periods.map((p) => {
+          const active = p.key === value;
+          return (
+            <button
+              key={p.key}
+              type="button"
+              ref={(el) => {
+                btnRefs.current[p.key] = el;
+              }}
+              onClick={() => onChange(p.key)}
+              aria-pressed={active}
+              className={`relative z-10 flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors duration-200 md:px-4 md:text-sm ${
+                active
+                  ? "font-semibold text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {/* The dot only renders on the active tab, and it holds its
+                  space when inactive so the label never shifts sideways as
+                  the pill arrives. */}
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-200 ${
+                  active ? "bg-primary" : "bg-transparent"
+                }`}
+              />
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const TeamPerformance = () => {
   const [periodKey, setPeriodKey] = useState("thisMonth");
   const [project, setProject] = useState("");
@@ -179,13 +268,27 @@ const TeamPerformance = () => {
     label: t.name,
   }));
 
+  // The picker's value is the project's `name`; leads may store either the
+  // name or the nomen, so send both and let the service OR them.
+  const projectTokens = useMemo(() => {
+    const selected = projectOptions.find((o) => o.value === project)?.project;
+    if (!selected) return [];
+    return [selected.projectNomen, selected.name]
+      .map((v) => (v || "").trim())
+      .filter((v) => v && v !== "Default")
+      .filter((v, i, arr) => arr.indexOf(v) === i);
+  }, [project, projectOptions]);
+
   // Debounce-free on purpose: the dataset service dedupes in-flight requests
   // and caches per filter set, so typing re-reads cache rather than re-fetching.
   const { filters, year } = useMemo(() => {
     const [startDate, endDate] = period.range();
     return {
       filters: {
-        cProject: project.trim(),
+        // Both tokens, because a lead may carry either. "Default" is a
+        // placeholder nomen shared by many projects, so it is never a filter
+        // token — including it would pull in every project that has it.
+        ...(projectTokens.length ? { _projectTokens: projectTokens } : {}),
         // Only present once the team's users are known — see teamUserIds above.
         ...(team && teamUserIds ? { _teamUserIds: teamUserIds } : {}),
         // `between` on createdAt — the service falls back to a whole-year
@@ -199,7 +302,7 @@ const TeamPerformance = () => {
       // query actually filters on.
       year: Number(startDate.slice(0, 4)),
     };
-  }, [period, project, team, teamUserIds]);
+  }, [period, projectTokens, team, teamUserIds]);
 
   // Hold the dataset request until the team resolves. Firing it early would
   // fetch the WHOLE team's leads unscoped, then immediately refetch scoped —
@@ -244,82 +347,46 @@ const TeamPerformance = () => {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Project. A select rather than a text box: a typo in free text
-                  comes back as "no leads in this period", which reads as a
-                  broken report rather than a mistyped filter. The option list
-                  is the same cached one the Leads page uses, so it is usually
-                  already in memory. */}
-              <div className="relative">
-                <Icon
-                  name="Search"
-                  size={15}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                />
-                <select
+            <div className="flex w-full flex-col gap-2.5 md:w-auto md:flex-row md:flex-wrap md:items-center">
+              {/* Project / team. The app's own Select, not a native one: a
+                  native <select> renders the OS list, which cannot be styled
+                  and looked nothing like the rest of the page. Searchable on
+                  the project because the list runs to hundreds. */}
+              <div className="w-full md:w-56">
+                <Select
+                  options={[
+                    { value: "", label: "All projects" },
+                    ...projectOptions.map((p) => ({
+                      value: p.value,
+                      label: p.label,
+                      description: p.subLabel,
+                    })),
+                  ]}
                   value={project}
-                  onChange={(e) => setProject(e.target.value)}
-                  className="h-10 w-56 appearance-none rounded-xl border border-border bg-background pl-9 pr-9 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  <option value="">Filter by project…</option>
-                  {projectOptions.map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-                <Icon
-                  name="ChevronDown"
-                  size={15}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  onChange={setProject}
+                  placeholder="Filter by project…"
+                  searchable
+                  clearable
                 />
               </div>
 
-              <div className="relative">
-                <Icon
-                  name="Users"
-                  size={15}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                />
-                <select
+              <div className="w-full md:w-48">
+                <Select
+                  options={[
+                    { value: "", label: "All teams" },
+                    ...teamOptions,
+                  ]}
                   value={team}
-                  onChange={(e) => setTeam(e.target.value)}
-                  className="h-10 appearance-none rounded-xl border border-border bg-background pl-9 pr-9 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                >
-                  <option value="">All teams</option>
-                  {teamOptions.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-                <Icon
-                  name="ChevronDown"
-                  size={15}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  onChange={setTeam}
+                  placeholder="All teams"
                 />
               </div>
 
-              {/* Segmented, not a dropdown: four options that get switched
-                  between constantly are worth the width — a select hides which
-                  period you are looking at behind a click. */}
-              <div className="flex items-center gap-1 rounded-xl border border-border bg-background p-1">
-                {PERIODS.map((p) => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    onClick={() => setPeriodKey(p.key)}
-                    aria-pressed={periodKey === p.key}
-                    className={`h-8 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition-colors ${
-                      periodKey === p.key
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
+              <PeriodTabs
+                periods={PERIODS}
+                value={periodKey}
+                onChange={setPeriodKey}
+              />
 
               {isFetching && (
                 <span className="text-xs text-muted-foreground">Updating…</span>
@@ -394,7 +461,13 @@ const TeamPerformance = () => {
 
           {/* Stated in the UI, not only in the code comments: a reader needs to
               know why the speed columns the spec asks for are not here. */}
-          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+          <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-border bg-muted/40 p-4 lg:border-0 lg:bg-transparent lg:p-0">
+          <Icon
+            name="Info"
+            size={16}
+            className="mt-0.5 shrink-0 text-muted-foreground lg:hidden"
+          />
+          <p className="text-xs leading-relaxed text-muted-foreground">
             Median first response, reached-within-5-minutes and overdue
             follow-ups are not shown. The CRM records which statuses a lead has
             passed through, but not when each change happened, so there is no
@@ -403,6 +476,7 @@ const TeamPerformance = () => {
             so is a floor: a rep who spoke to a buyer without moving the status
             reads as not connected.
           </p>
+          </div>
         </div>
       </main>
     </>

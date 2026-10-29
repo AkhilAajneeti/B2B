@@ -13,7 +13,11 @@ import ProjectCard from "./components/ProjectCard";
 import ProjectKpis from "./components/ProjectKpis";
 import Papa from "papaparse";
 import TablePagination from "./components/TablePagination";
-import { useProject, useProjects } from "hooks/useProjects";
+import {
+  invalidateProjectOptions,
+  useProject,
+  useProjects,
+} from "hooks/useProjects";
 import {
   bulkDeleteProject,
   createProject,
@@ -168,6 +172,9 @@ const ProjectsPage = () => {
     try {
       await createProject(payload); // API
       queryClient.invalidateQueries(["projects"]);
+      // The dropdowns and the lead drawer's WhatsApp pitch read a separate
+      // cached list — refresh it too, or an edited template keeps going out.
+      invalidateProjectOptions(queryClient);
       toast.success("Project created successfully");
     } catch (err) {
       console.error("Project creationd failed", err);
@@ -179,6 +186,9 @@ const ProjectsPage = () => {
     try {
       await updateProject(id, payload);
       queryClient.invalidateQueries(["projects"]);
+      // The dropdowns and the lead drawer's WhatsApp pitch read a separate
+      // cached list — refresh it too, or an edited template keeps going out.
+      invalidateProjectOptions(queryClient);
       toast.success("Project Update successfully");
     } catch (err) {
       console.error("Project updation failed", err);
@@ -192,6 +202,9 @@ const ProjectsPage = () => {
       await Promise.all(ids.map((id) => updateProject(id, payload)));
       // 🔥 MISSING LINE (IMPORTANT)
       queryClient.invalidateQueries(["projects"]);
+      // The dropdowns and the lead drawer's WhatsApp pitch read a separate
+      // cached list — refresh it too, or an edited template keeps going out.
+      invalidateProjectOptions(queryClient);
       toast.success(`${ids.length} Projects updated`, { id: "bulk-update" });
       setSelectedDeals([]);
     } catch (err) {
@@ -215,6 +228,9 @@ const ProjectsPage = () => {
       toast.loading("Deleting Project...", { id: "delete-project" });
       await deleteProject(id); // API call
       queryClient.invalidateQueries(["projects"]);
+      // The dropdowns and the lead drawer's WhatsApp pitch read a separate
+      // cached list — refresh it too, or an edited template keeps going out.
+      invalidateProjectOptions(queryClient);
       toast.success("Project deleted successfully", {
         id: "delete-project",
       });
@@ -241,6 +257,9 @@ const ProjectsPage = () => {
       await bulkDeleteProject(selectedDeals);
 
       queryClient.invalidateQueries(["projects"]);
+      // The dropdowns and the lead drawer's WhatsApp pitch read a separate
+      // cached list — refresh it too, or an edited template keeps going out.
+      invalidateProjectOptions(queryClient);
 
       setSelectedDeals([]);
       toast.success("Project deleted successfully", {

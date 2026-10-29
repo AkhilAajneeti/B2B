@@ -67,6 +67,23 @@ const PROJECT_OPTIONS_TTL = 1000 * 60 * 60 * 24 * 30; // 30 days
 const PROJECT_PAGE_SIZE = 200;
 const PROJECT_MAX = 2000;
 
+/**
+ * Drop the cached project list after a project is created or edited.
+ *
+ * Both halves matter. Invalidating the query alone leaves the localStorage
+ * blob behind, and that blob is what seeds the next page load — so an edited
+ * WhatsApp template would keep being sent by anyone who reloads, for up to the
+ * 30-day TTL, with nothing on screen saying the pitch is out of date.
+ */
+export const invalidateProjectOptions = (queryClient) => {
+  try {
+    localStorage.removeItem(PROJECT_OPTIONS_CACHE_KEY);
+  } catch {
+    // disabled storage — the query invalidation below still refreshes it.
+  }
+  queryClient?.invalidateQueries({ queryKey: ["project-options"] });
+};
+
 const readCachedProjectOptions = () => {
   try {
     const raw = localStorage.getItem(PROJECT_OPTIONS_CACHE_KEY);
