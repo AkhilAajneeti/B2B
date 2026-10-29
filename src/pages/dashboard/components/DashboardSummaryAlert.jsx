@@ -157,8 +157,19 @@ const NotificationRow = ({ deal, variant, onClick }) => {
   const urgencyClass = urgencyTextForRow(variant, deal.nextContactDate);
   const urgencyLabel = relativeUrgency(variant, deal.nextContactDate);
 
+  const initials =
+    fullTitle
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0] || "")
+      .join("")
+      .toUpperCase() || "?";
+
+  const waNumber = (phone || "").replace(/\D/g, "");
+
   // `div role="button"` instead of a real <button> so we can legally nest
-  // an <a href="tel:…"> inside for the click-to-call action on mobile.
+  // the <a href="tel:…"> / wa.me actions inside it.
   return (
     <div
       role="button"
@@ -170,92 +181,111 @@ const NotificationRow = ({ deal, variant, onClick }) => {
           onClick?.();
         }
       }}
-      // The colour now lives in a single 3px left stripe (severity); the rest
-      // of the row stays neutral so 24 overdue rows read as 24 distinct rows
-      // instead of a wall of red.
-      className="group relative cursor-pointer w-full text-left flex items-start gap-2 sm:gap-3 pl-3 pr-2 sm:pr-3 py-2 rounded-lg bg-card border border-border overflow-hidden hover:border-primary/40 hover:shadow-[0_6px_18px_-10px_rgba(15,23,42,0.18)] transition-all"
+      // The colour lives in a single left stripe (severity); the rest of the
+      // row stays neutral so 24 overdue rows read as 24 distinct rows instead
+      // of a wall of red.
+      className="group relative flex w-full cursor-pointer items-center gap-3 overflow-hidden rounded-xl border border-border bg-card py-2.5 pl-4 pr-2.5 text-left transition-all hover:-translate-y-px hover:border-primary/40 hover:shadow-[0_8px_22px_-12px_rgba(15,23,42,0.25)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
       title={fullTitle}
     >
       <span
         aria-hidden
-        className={`absolute left-0 top-0 bottom-0 w-1 ${stripeClass}`}
+        className={`absolute bottom-0 left-0 top-0 w-1 ${stripeClass}`}
       />
 
+      {/* Initials, so a list of ten rows is scannable by shape before it is
+          read. Hidden on the narrowest phones, where the width is better
+          spent on the name. */}
+      <span className="hidden h-9 w-9 shrink-0 place-items-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground sm:grid">
+        {initials}
+      </span>
+
       <div className="min-w-0 flex-1 space-y-0.5">
-        <div className="text-sm font-medium text-foreground break-words line-clamp-2 sm:line-clamp-none sm:truncate leading-snug">
+        <div className="break-words text-sm font-semibold leading-snug text-foreground line-clamp-2 sm:line-clamp-none sm:truncate">
           {fullTitle}
         </div>
 
-        {/* Meta line 1 — status pill (per-status colour) + project name. */}
-        {(deal.status || projectName) && (
-          <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
-            {deal.status && (
-              <span
-                className={`px-1.5 py-px rounded text-[10px] font-semibold uppercase tracking-wider ${statusStyle.bg} ${statusStyle.text}`}
-              >
-                {deal.status}
-              </span>
-            )}
-            {projectName && <span className="truncate">{projectName}</span>}
-          </div>
-        )}
-
-        {/* Meta line 2 — tap-to-call (mobile only) + due date/time in muted. */}
-        {(phone || dueDateTime) && (
-          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-            {phone && (
-              // Restricted users keep tap-to-call but get no href, aria-label
-              // or title carrying the number — all three are readable without
-              // ever placing the call.
-              masked ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.location.href = `tel:${phone}`;
-                  }}
-                  aria-label="Call lead"
-                  title="Call lead"
-                  className="sm:hidden inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-200 transition-colors"
-                >
-                  <Icon name="Phone" size={14} />
-                </button>
-              ) : (
-                <a
-                  href={`tel:${phone}`}
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Call ${phone}`}
-                  title={`Call ${phone}`}
-                  className="sm:hidden inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-200 transition-colors"
-                >
-                  <Icon name="Phone" size={14} />
-                </a>
-              )
-            )}
-            {dueDateTime && (
-              <span className="inline-flex items-center gap-1">
-                <Icon name="CalendarClock" size={10} />
-                {dueDateTime}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Status pill, project, and the due time — one line on desktop. */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+          {deal.status && (
+            <span
+              className={`rounded px-1.5 py-px text-[10px] font-semibold uppercase tracking-wider ${statusStyle.bg} ${statusStyle.text}`}
+            >
+              {deal.status}
+            </span>
+          )}
+          {projectName && <span className="truncate">{projectName}</span>}
+          {dueDateTime && (
+            <span className="inline-flex items-center gap-1">
+              <Icon name="CalendarClock" size={10} />
+              {dueDateTime}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Right rail — relative urgency ("3d late", "in 2h") tinted by severity
-          tier, plus chevron. Vertically centred so it aligns with multi-line
-          content rather than the title alone. */}
-      <div className="flex items-center gap-2 self-center shrink-0">
+      {/* Actions. Call and WhatsApp are the two things anyone does with an
+          overdue follow-up, and they were previously phone-only — on desktop
+          the row could only be opened, so reaching the lead meant opening the
+          drawer first. stopPropagation on both, or the row navigates away
+          underneath the tap. */}
+      <div className="flex shrink-0 items-center gap-1.5 self-center">
         <span
-          className={`text-[11px] font-semibold ${urgencyClass} hidden sm:inline-block whitespace-nowrap`}
+          className={`hidden whitespace-nowrap text-[11px] font-semibold sm:inline-block ${urgencyClass}`}
           title={dueDateTime}
         >
           {urgencyLabel}
         </span>
+
+        {phone && (
+          masked ? (
+            // Restricted users keep tap-to-call but get no href, aria-label or
+            // title carrying the number — all three are readable without ever
+            // placing the call.
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = `tel:${phone}`;
+              }}
+              aria-label="Call lead"
+              title="Call lead"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-50 text-sky-600 transition-all hover:scale-105 hover:bg-sky-100 active:scale-95"
+            >
+              <Icon name="Phone" size={14} />
+            </button>
+          ) : (
+            <a
+              href={`tel:${phone}`}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Call ${phone}`}
+              title={`Call ${phone}`}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-50 text-sky-600 transition-all hover:scale-105 hover:bg-sky-100 active:scale-95"
+            >
+              <Icon name="Phone" size={14} />
+            </a>
+          )
+        )}
+
+        {/* No WhatsApp for a restricted user: wa.me puts the number in the
+            URL, which is exactly what masking exists to prevent. */}
+        {waNumber && !masked && (
+          <a
+            href={`https://wa.me/${waNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Open WhatsApp chat"
+            title="WhatsApp"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 transition-all hover:scale-105 hover:bg-emerald-100 active:scale-95"
+          >
+            <Icon name="MessageCircle" size={14} />
+          </a>
+        )}
+
         <Icon
           name="ChevronRight"
           size={14}
-          className="text-muted-foreground"
+          className="text-muted-foreground transition-transform group-hover:translate-x-0.5"
         />
       </div>
     </div>
