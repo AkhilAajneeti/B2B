@@ -512,12 +512,51 @@ export const fetchNewLeads = async ({
   }
 
   // ✅ OTHER FILTERS
+  //
+  // SEARCH — name OR phone OR email, not name alone.
+  //
+  // Typing a number used to return nothing: the only clause was `like %q%` on
+  // `name`, so a rep holding a missed call had to know the caller's name
+  // before they could find them.
+  //
+  // The number is normalised to DIGITS and matched on the last ten of them,
+  // because the same lead is stored as "+919876543210", "+91 98765 43210" and
+  // "9876543210" depending on where it came from. Matching the typed string
+  // verbatim finds only whichever spelling happens to be stored.
+  //
+  // Restricted users keep name-only search, mirroring the rule already
+  // documented on the typeahead below: matching on phone or email would let
+  // someone confirm a full number by typing it and seeing a hit, which gives
+  // back exactly what the mask withholds.
   if (filters.search) {
-    where.push({
-      type: "like",
-      attribute: "name",
-      value: `%${filters.search}%`,
-    });
+    const raw = String(filters.search).trim();
+    const digits = raw.replace(/\D/g, "");
+    // A number, not a name that happens to contain one: at least 4 digits and
+    // nothing but digits and phone punctuation.
+    const looksLikePhone = digits.length >= 4 && /^[+\d\s()-]+$/.test(raw);
+    const phoneNeedle = digits.slice(-10);
+
+    if (isMaskedUser()) {
+      where.push({ type: "like", attribute: "name", value: `%${raw}%` });
+    } else {
+      const or = [{ type: "like", attribute: "name", value: `%${raw}%` }];
+
+      if (looksLikePhone) {
+        or.push({
+          type: "like",
+          attribute: "phoneNumber",
+          value: `%${phoneNeedle}%`,
+        });
+      } else {
+        or.push({
+          type: "like",
+          attribute: "emailAddress",
+          value: `%${raw}%`,
+        });
+      }
+
+      where.push({ type: "or", value: or });
+    }
   }
   // 🔹 PROJECT — a value PICKED from the dropdown carries `cProjectRef` (the
   // CProjects record), which matches EXACTLY so one project's leads can't drag
