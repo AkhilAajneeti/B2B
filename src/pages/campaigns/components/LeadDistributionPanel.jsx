@@ -106,6 +106,7 @@ const ModeCard = ({ active, title, body, onClick }) => (
 
 const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
   const [adding, setAdding] = useState(false);
+  const [memberQuery, setMemberQuery] = useState("");
   const [saving, setSaving] = useState(false);
   // Planning input only — never persisted. It answers "if N leads arrive
   // today, who gets them", which is a question about the future, not a
@@ -197,11 +198,31 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
   // pool the Teams tab's collaborator picker draws from.
   const addable = useMemo(() => {
     const known = new Set(members.map((m) => m.id));
+    // Matches the display name OR the login name: the list shows "Aarti" but
+    // people search for "aarti_2", and vice versa.
+    const q = memberQuery.trim().toLowerCase();
     return (users || [])
       .filter((u) => u?.id && !known.has(u.id) && u?.isActive !== false)
+      .filter((u) => {
+        if (!q) return true;
+        return (
+          (u.name || "").toLowerCase().includes(q) ||
+          (u.userName || "").toLowerCase().includes(q)
+        );
+      })
       .sort((a, b) =>
         (a.name || a.userName || "").localeCompare(b.name || b.userName || ""),
       );
+  }, [users, members, memberQuery]);
+
+  // How many are addable before the search narrows them — so an empty result
+  // can say "no match" rather than "everyone is already on this project",
+  // which are different problems with different fixes.
+  const addablePoolSize = useMemo(() => {
+    const known = new Set(members.map((m) => m.id));
+    return (users || []).filter(
+      (u) => u?.id && !known.has(u.id) && u?.isActive !== false,
+    ).length;
   }, [users, members]);
 
   /**
@@ -227,6 +248,7 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
       configuration: serializeConfiguration(rows),
     });
     setAdding(false);
+    setMemberQuery("");
   };
 
   const setMode = (custom) => save({ enableConfiguration: custom });
@@ -426,7 +448,12 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
           action={
             <button
               type="button"
-              onClick={() => setAdding((v) => !v)}
+              onClick={() => {
+                // Fresh search each time the picker opens, so a previous
+                // query cannot hide the person being looked for now.
+                setMemberQuery("");
+                setAdding((v) => !v);
+              }}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#AC2334] px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
               <Icon name="Plus" size={15} />
@@ -440,15 +467,50 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
             Only the UI is new; nothing about how membership works changed. */}
         {adding && (
           <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3">
-            {addable.length === 0 ? (
+            {addablePoolSize === 0 ? (
               <p className="text-sm italic text-muted-foreground">
-                Everyone available is already on this campaign.
+                Everyone available is already on this project.
               </p>
             ) : (
               <>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Add to this project
                 </p>
+
+                {/* Search. The pool is every active user in the CRM, which on
+                    this account runs to dozens — scrolling a list that long to
+                    find one name is the slowest part of adding someone. */}
+                <div className="relative mb-2">
+                  <Icon
+                    name="Search"
+                    size={15}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  />
+                  <input
+                    value={memberQuery}
+                    onChange={(e) => setMemberQuery(e.target.value)}
+                    placeholder="Search name or username…"
+                    autoFocus
+                    className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  {memberQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setMemberQuery("")}
+                      aria-label="Clear search"
+                      className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <Icon name="X" size={13} />
+                    </button>
+                  )}
+                </div>
+
+                {addable.length === 0 && (
+                  <p className="px-2 py-3 text-sm italic text-muted-foreground">
+                    No one matches “{memberQuery}”.
+                  </p>
+                )}
+
                 <div className="max-h-48 space-y-1 overflow-y-auto">
                   {addable.map((u) => (
                     <button
@@ -467,7 +529,14 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
                       >
                         {initials(u.name || u.userName || "")}
                       </span>
-                      <span className="truncate">{u.name || u.userName}</span>
+                      <span className="min-w-0 flex-1 truncate text-left">
+                        {u.name || u.userName}
+                      </span>
+                      {u.userName && u.name && u.userName !== u.name && (
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          @{u.userName}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
