@@ -38,6 +38,9 @@ const MetricsCard = ({
   selected = false,
   expandable = false,
   expanded = false,
+  // Seasonal skin, passed only by the dashboard. The Reports page renders the
+  // same four cards and must stay plain, so this defaults off.
+  festive = false,
 }) => {
   const display = typeof value === 'number' ? value.toLocaleString('en-IN') : value;
   const interactive = typeof onClick === 'function';
@@ -61,10 +64,22 @@ const MetricsCard = ({
       // what promises a click, and a card with no handler should not make the
       // promise. An earlier version tied the whole hover treatment to
       // interactivity, which left three cards looking dead next to the rest.
-      className={`group relative h-full w-full overflow-hidden rounded-2xl border border-[rgba(20,20,30,0.07)] bg-card p-4 sm:p-5 text-left shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:border-[rgba(20,20,30,0.12)] hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--card-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--card-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+      className={`group relative h-full w-full overflow-hidden rounded-2xl border p-4 sm:p-5 text-left ${
+        festive
+          ? 'border-[#EBD9B4] bg-[linear-gradient(135deg,#FFFDF8_0%,#FDF6EA_100%)] hover:border-[#DEC28A]'
+          : 'border-[rgba(20,20,30,0.07)] bg-card hover:border-[rgba(20,20,30,0.12)]'
+      } shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--card-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--card-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
         interactive ? 'cursor-pointer' : 'cursor-default'
       }`}
     >
+      {festive && (
+        <img
+          src="/festive/corner-mandala-clean.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-5 -top-7 w-24 select-none opacity-[0.14]"
+        />
+      )}
       {/* Soft accent glow, brightens on hover. */}
       <div
         aria-hidden="true"

@@ -24,6 +24,9 @@ const KPICard = ({
   // `featured` = the hero card (full-width on mobile). Bigger number + roomier
   // padding so it earns the extra space through type, not dead air.
   featured = false,
+  // Seasonal skin: gold border, cream wash, a mandala corner and a lit diya.
+  // Off by default, so every other KPI row in the app is untouched.
+  festive = false,
 }) => {
   const tint = hexToRgba(iconColor, 0.12); // icon tile background
   const glow = hexToRgba(iconColor, 0.35); // hover halo shadow
@@ -32,10 +35,24 @@ const KPICard = ({
   return (
     <div
       style={{ '--kpi-glow': glow }}
-      className={`group relative h-full overflow-hidden rounded-2xl border border-[rgba(20,20,30,0.07)] bg-card shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:border-[rgba(20,20,30,0.12)] hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--kpi-glow)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+      className={`group relative h-full overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--kpi-glow)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+        festive
+          ? 'border-[#EBD9B4] bg-[linear-gradient(135deg,#FFFDF8_0%,#FDF6EA_100%)] hover:border-[#DEC28A]'
+          : 'border-[rgba(20,20,30,0.07)] bg-card hover:border-[rgba(20,20,30,0.12)]'
+      } ${
         featured ? 'p-5 sm:p-6 md:p-6' : 'p-4 sm:p-5'
       } ${isLoading ? 'kpi-shimmer kpi-glow' : ''}`}
     >
+      {festive && (
+        /* Mandala corner, clipped by the card's own overflow-hidden. */
+        <img
+          src="/festive/corner-mandala-clean.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-7 -top-9 w-36 select-none opacity-[0.3]"
+        />
+      )}
+
       {/* Soft corner glow — brightens on hover for a subtle "alive" feel. */}
       <div
         aria-hidden="true"

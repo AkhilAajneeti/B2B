@@ -4,7 +4,14 @@ import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import { SESSION_EXPIRED_KEY } from "services/session";
 
-const LoginForm = () => {
+/**
+ * `variant="festive"` matches the Diwali sign-in mockup: no Forgot-password
+ * link beside the checkbox, and a gradient submit with a leading arrow disc.
+ * The default keeps the navy page exactly as it was, so the seasonal styling
+ * cannot leak into it when the festive flag is switched off.
+ */
+const LoginForm = ({ variant = "default" }) => {
+  const festive = variant === "festive";
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -386,12 +393,14 @@ const LoginForm = () => {
           </span>
           Keep me signed in
         </label>
-        <a
-          href="#"
-          className="text-sm font-medium text-[#AC2334] transition-opacity hover:opacity-70"
-        >
-          Forgot password?
-        </a>
+        {!festive && (
+          <a
+            href="#"
+            className="text-sm font-medium text-[#AC2334] transition-opacity hover:opacity-70"
+          >
+            Forgot password?
+          </a>
+        )}
       </motion.div>
 
       {/* Submit */}
@@ -403,12 +412,23 @@ const LoginForm = () => {
           whileHover={isLoading ? undefined : { scale: 1.005 }}
           whileTap={isLoading ? undefined : { scale: 0.99 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#AC2334] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#AC2334]/20 transition-colors hover:bg-[#961e2d] disabled:cursor-not-allowed disabled:opacity-70"
+          className={
+            festive
+              ? "flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#8E1B2B] via-[#A81F32] to-[#7E1626] py-4 text-base font-semibold text-white shadow-lg shadow-[#8E1B2B]/25 transition-shadow hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
+              : "flex w-full items-center justify-center gap-2 rounded-xl bg-[#AC2334] py-3.5 text-sm font-semibold text-white shadow-md shadow-[#AC2334]/20 transition-colors hover:bg-[#961e2d] disabled:cursor-not-allowed disabled:opacity-70"
+          }
         >
           {isLoading ? (
             <>
               <Icon name="Loader2" size={18} className="animate-spin" />
               Signing in…
+            </>
+          ) : festive ? (
+            <>
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-white/15">
+                <Icon name="ArrowRight" size={16} />
+              </span>
+              Sign In
             </>
           ) : (
             "Sign in"

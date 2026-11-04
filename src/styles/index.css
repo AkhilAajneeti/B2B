@@ -298,3 +298,34 @@ select:focus {
     opacity: 0.6;
   }
 }
+
+/* Diya flame — a slow, uneven breath. Scale and a hair of skew, never
+   opacity: a flame that dims reads as a failing bulb. */
+@keyframes diya-flame {
+  0%, 100% { transform: scale(1) skewX(0deg); }
+  28%      { transform: scale(1.06, 1.12) skewX(-2.5deg); }
+  55%      { transform: scale(0.97, 0.94) skewX(1.5deg); }
+  78%      { transform: scale(1.04, 1.08) skewX(-1deg); }
+}
+
+.diya-flame {
+  animation: diya-flame 2.6s ease-in-out infinite;
+}
+
+/* Bunting bulbs breathe on staggered delays rather than blinking in unison,
+   which would read as an alert rather than as decoration. */
+@keyframes bunting-bulb {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+.bunting-bulb {
+  animation: bunting-bulb 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diya-flame,
+  .bunting-bulb {
+    animation: none;
+  }
+}

@@ -14,6 +14,10 @@ import { fetchMeeting } from "services/meeting.service";
 import { useLeadsCount } from "hooks/useLeads";
 import { useQuery } from "@tanstack/react-query";
 import { getStoredUser, formatUserDisplayName } from "utils/permission";
+import Icon from "../../components/AppIcon";
+import FestiveDashboardDecor from "../../components/festive/FestiveDashboardDecor";
+import FestiveHeroBand from "../../components/festive/FestiveHeroBand";
+import RisingCrackers from "../../components/RisingCrackers";
 
 // Heavy chart components — lazy so the dashboard shell paints instantly.
 // Each chart pulls in recharts + framer-motion + its own per-bucket
@@ -46,6 +50,11 @@ const ChartSkeleton = ({ height = 320 }) => (
  * would end at the first inner close and break the build.
  */
 const FESTIVE_HERO = false;
+
+/* Seasonal skin: artwork over the page and a festive greeting banner. One
+   flag, because a seasonal theme has to come off again without unpicking the
+   dashboard — set it false in January and nothing else changes. */
+const FESTIVE_DASHBOARD = true;
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -392,6 +401,12 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <TricolorBurst />
+      {FESTIVE_DASHBOARD && <FestiveDashboardDecor />}
+      {/* A short show on arrival, not a permanent one: the login page runs
+          its crackers continuously because you are there for seconds, while
+          this is a working screen. Twelve seconds, then the loop stops
+          scheduling frames entirely. */}
+      {FESTIVE_DASHBOARD && <RisingCrackers showMs={12000} />}
       
       
       <main className="lg:ml-64 pt-16">
@@ -471,13 +486,23 @@ const Dashboard = () => {
             </section>
           </div>
         ) : (
-          <div className="m-6">
-            <h1 className="text-2xl lg:text-3xl font-bold heading-gradient mb-2">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground">
-              Welcome back! Here's what's happening with your sales today.
-            </p>
+          <div className="relative z-10 m-6">
+            {FESTIVE_DASHBOARD ? (
+              <FestiveHeroBand
+                title="Dashboard"
+                subtitle="Welcome back! Here's what's happening with your sales today."
+              />
+            ) : (
+              <>
+                <h1 className="text-2xl lg:text-3xl font-bold heading-gradient mb-2">
+                  Dashboard
+                </h1>
+                <p className="text-muted-foreground">
+                  Welcome back! Here&apos;s what&apos;s happening with your
+                  sales today.
+                </p>
+              </>
+            )}
           </div>
         )}
 
@@ -501,7 +526,7 @@ const Dashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <KPICard {...kpi} featured={index === 0} isLoading={
+              <KPICard {...kpi} festive={FESTIVE_DASHBOARD} featured={index === 0} isLoading={
                 thisMonthQuery.isLoading ||
                 todayQuery.isLoading ||
                 interestedQuery.isLoading
@@ -521,6 +546,7 @@ const Dashboard = () => {
                 return (
                   <MetricsCard
                     key={metric?.title}
+                    festive={FESTIVE_DASHBOARD}
                     title={metric?.title}
                     value={metric?.value}
                     icon={metric?.icon}

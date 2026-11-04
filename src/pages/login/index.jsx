@@ -10,6 +10,35 @@ import {
 } from "framer-motion";
 import LoginHeader from "./components/LoginHeader";
 import LoginForm from "./components/LoginForm";
+import FestiveBackdrop from "../../components/FestiveBackdrop";
+import RisingCrackers from "../../components/RisingCrackers";
+import Icon from "../../components/AppIcon";
+
+/* Seasonal switch. true = the festive sign-in, false = the navy hero. */
+const FESTIVE_LOGIN = true;
+
+/* The three promises on the artwork panel. Tinted tiles rather than plain
+   icons, so the list reads as three things rather than one block of text. */
+const FEATURES = [
+  {
+    icon: "TrendingUp",
+    title: "Real-time Performance",
+    body: "Track progress and make informed decisions",
+    tile: "bg-rose-100 text-rose-600",
+  },
+  {
+    icon: "Users",
+    title: "Seamless Team Collaboration",
+    body: "Keep teams aligned and work moving forward",
+    tile: "bg-violet-100 text-violet-600",
+  },
+  {
+    icon: "ShieldCheck",
+    title: "Secure & Reliable Access",
+    body: "Your workspace, protected at every step",
+    tile: "bg-amber-100 text-amber-600",
+  },
+];
 
 /* Pipeline stepper nodes shown at the bottom of the hero. `active` nodes
    render the glowing crimson dot; the rest are hollow. */
@@ -79,6 +108,138 @@ const LoginPage = () => {
     px.set(0);
     py.set(0);
   };
+
+  /* The festive sign-in. One flag, because a seasonal theme has to come off
+     again without unpicking the page — flip this to false in January and the
+     navy hero below returns untouched. */
+  if (FESTIVE_LOGIN) {
+    return (
+      <>
+        <Helmet>
+          <title>Sign In - CRM</title>
+          <meta
+            name="description"
+            content="Sign in to your Aajneeti CRM account to access your sales pipeline, customer data, and CRM tools."
+          />
+        </Helmet>
+
+        {/* A fixed overlay above both panels, so shells cross the whole page
+            rather than being clipped to the artwork column. showMs={0} keeps
+            it running for as long as the page is open — it stops when the
+            user signs in and this unmounts. */}
+        <RisingCrackers showMs={0} />
+
+        <FestiveBackdrop
+          left={
+            <>
+              <img
+                src="/assets/images/logo.webp"
+                alt="AAJneeti"
+                className="w-28 select-none"
+              />
+
+              <div className="max-w-[560px]">
+                {/* Eyebrow — the rule and the letterspacing do the work; it
+                    is a label, not a sentence. */}
+                <div className="flex items-center gap-4">
+                  <span className="h-px w-10 bg-[#c9a24a]" />
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#b08b3e]">
+                    Festival of lights and love
+                  </span>
+                  <span className="h-px w-10 bg-[#c9a24a]" />
+                </div>
+
+                <h1 className="mt-7 text-[44px] font-bold leading-[1.05] tracking-tight text-[#122244] xl:text-[52px]">
+                  One workspace.
+                </h1>
+                <p className="mt-1 text-[40px] font-bold italic leading-[1.05] tracking-tight text-[#8E1B2B] xl:text-[48px]">
+                  Every team, in sync.
+                </p>
+
+                <p className="mt-7 max-w-[460px] text-[15px] leading-relaxed text-[#5b5244]">
+                  Your work, your team, your goals — all in one place.{" "}
+                  <span className="font-semibold text-[#2b2419]">
+                    AAJneeti Connect Limited
+                  </span>{" "}
+                  brings people, processes, and performance together to help
+                  everyone work smarter and achieve more.
+                </p>
+
+                <ul className="mt-9 space-y-5">
+                  {FEATURES.map((f) => (
+                    <li key={f.title} className="flex items-start gap-4">
+                      <span
+                        className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${f.tile}`}
+                      >
+                        <Icon name={f.icon} size={19} />
+                      </span>
+                      <span>
+                        <span className="block text-[15px] font-bold text-[#122244]">
+                          {f.title}
+                        </span>
+                        <span className="mt-0.5 block text-sm text-[#6b6355]">
+                          {f.body}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Closing line, set off by a maroon rule rather than a card —
+                  it is a sign-off, not another feature. */}
+              <p className="border-l-[3px] border-[#8E1B2B] pl-4 text-[15px] font-semibold italic text-[#8E1B2B]">
+                One team. One platform. Better outcomes.
+              </p>
+            </>
+          }
+        >
+          {/* The real lockup. diwali.jpg ships as a JPEG on solid white,
+              which lands on ivory as a white rectangle — diwali-wordmark.png
+              is the keyed copy from scripts/clean-festive-assets.py. */}
+          <img
+            src="/festive/diwali-wordmark.png"
+            alt="Happy Diwali"
+            className="mx-auto mb-5 mt-6 w-[260px] select-none"
+          />
+
+          <div className="mx-auto w-full max-w-[470px] rounded-3xl bg-white/[0.97] px-8 pb-9 pt-8 shadow-[0_24px_60px_-30px_rgba(90,60,25,0.4)] sm:px-10 sm:pb-10">
+            <img
+              src="/assets/images/logo.webp"
+              alt="AAJneeti"
+              className="mx-auto w-[88px] select-none"
+            />
+
+            <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-[#1b2a44]">
+              Welcome Back 👋
+            </h2>
+            <p className="mx-auto mt-1.5 max-w-[330px] text-center text-sm leading-relaxed text-[#6b7589]">
+              Sign in to access your CRM dashboard and manage your leads
+              efficiently.
+            </p>
+
+            <div className="mt-6">
+              <LoginForm variant="festive" />
+            </div>
+
+            <div className="mt-6 flex items-center gap-3">
+              <span className="h-px flex-1 bg-[#e8dcc8]" />
+              <span className="flex items-center gap-1.5 text-xs font-medium text-[#8a8574]">
+                <Icon name="ShieldCheck" size={14} />
+                Secure CRM Access
+              </span>
+              <span className="h-px flex-1 bg-[#e8dcc8]" />
+            </div>
+
+            <p className="mt-4 text-center text-xs text-[#9a927f]">
+              © {new Date().getFullYear()} Aajneeti Connect Ltd. All rights
+              reserved.
+            </p>
+          </div>
+        </FestiveBackdrop>
+      </>
+    );
+  }
 
   return (
     <>

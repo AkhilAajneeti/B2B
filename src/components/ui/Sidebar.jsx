@@ -8,6 +8,10 @@ import {
   isMaskedUser,
   canSeeTeamPerformance,
 } from "../../utils/permission";
+import Diya from "../festive/Diya";
+
+/* Seasonal footer panel on the sidebar. One flag, off in January. */
+const FESTIVE_SIDEBAR = true;
 
 
 // Per-item icon colour. Keyed by route so the navigationItems array stays
@@ -532,10 +536,36 @@ const Sidebar = ({ isOpen = false, onClose }) => {
               collapsed ? "lg:hidden" : ""
             }`}
           >
-            <div className="border-t border-border px-4 py-4 text-xs text-muted-foreground text-center">
-              Developed by Aajneeti connect ltd.
-              <br />© 2026 All rights reserved.
-            </div>
+            {/* Seasonal footer panel.
+                The curve, the gold trim and the three diyas come from the
+                supplied artwork, keyed to transparency by
+                scripts/clean-festive-assets.py so it sits on the sidebar's
+                own gradient instead of carrying a cream block with it.
+                #8D022E is sampled from the artwork's bottom row, so the
+                block below continues it with no seam. */}
+            {FESTIVE_SIDEBAR ? (
+              <div className="relative mt-6">
+                <img
+                  src="/festive/sidebar-cap.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="block w-full select-none"
+                />
+
+                {/* The credit stays LIVE TEXT rather than being baked into
+                    the artwork: the year has to keep up, and a screen reader
+                    has to be able to read it. */}
+                <div className="-mt-px bg-[#8D022E] px-4 pb-4 pt-1 text-center text-[11px] leading-relaxed text-[#F7D9C4]">
+                  Developed by Aajneeti connect ltd.
+                  <br />© {new Date().getFullYear()} All rights reserved.
+                </div>
+              </div>
+            ) : (
+              <div className="border-t border-border px-4 py-4 text-xs text-muted-foreground text-center">
+                Developed by Aajneeti connect ltd.
+                <br />© 2026 All rights reserved.
+              </div>
+            )}
           </div>
         </div>
       </aside>
