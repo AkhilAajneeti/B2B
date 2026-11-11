@@ -5,10 +5,10 @@ import Icon from "../../../components/AppIcon";
 import { SESSION_EXPIRED_KEY } from "services/session";
 
 /**
- * `variant="festive"` matches the Diwali sign-in mockup: no Forgot-password
- * link beside the checkbox, and a gradient submit with a leading arrow disc.
- * The default keeps the navy page exactly as it was, so the seasonal styling
- * cannot leak into it when the festive flag is switched off.
+ * `variant="festive"` matches the Diwali sign-in mockup: a gradient submit
+ * with a leading arrow disc. The default keeps the navy page exactly as it
+ * was, so the seasonal styling cannot leak into it when the festive flag is
+ * switched off.
  */
 const LoginForm = ({ variant = "default" }) => {
   const festive = variant === "festive";
@@ -364,10 +364,7 @@ const LoginForm = ({ variant = "default" }) => {
       </motion.div>
 
       {/* Remember + forgot */}
-      <motion.div
-        variants={item}
-        className="flex items-center justify-between pt-1"
-      >
+      <motion.div variants={item} className="flex items-center pt-1">
         <label className="inline-flex cursor-pointer select-none items-center gap-2.5 text-sm text-slate-600">
           {/* Native checkbox is visually hidden (the forms plugin forces
               appearance:none, which ignores accent-color); we render a fully
@@ -393,14 +390,6 @@ const LoginForm = ({ variant = "default" }) => {
           </span>
           Keep me signed in
         </label>
-        {!festive && (
-          <a
-            href="#"
-            className="text-sm font-medium text-[#AC2334] transition-opacity hover:opacity-70"
-          >
-            Forgot password?
-          </a>
-        )}
       </motion.div>
 
       {/* Submit */}
