@@ -260,34 +260,21 @@ const PipelineChart = ({ leads = [] }) => {
 
   return (
     <motion.div
-      className="relative overflow-hidden rounded-2xl border border-[#EBD9B4] bg-[linear-gradient(135deg,#FFFDF8_0%,#FDF6EA_100%)] p-6 shadow-[0_10px_30px_-24px_rgba(140,90,30,0.5)]"
+      className=" bg-card border border-border rounded-xl p-6  shadow-elevation-1"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      {/* Mandala corner, clipped by the card's own overflow-hidden. */}
-      <img
-        src="/festive/corner-mandala-clean.png"
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-8 -top-10 w-36 select-none opacity-[0.13]"
-      />
-
-      <div className="relative flex items-center justify-between mb-6 flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#F7E3C3] text-[#B4600A]">
-            <Icon name="BarChart3" size={19} />
-          </span>
-          <div>
-            <h3 className="text-lg font-bold text-[#8E1B2B]">
-              Leads Performance
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {viewType === "monthly"
-                ? "Monthly leads closed and leads generated"
-                : dynamicTitle}
-            </p>
-          </div>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+        <div>
+          <h3 className="text-lg font-semibold text-card-foreground">
+            Leads Performance
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {viewType === "monthly"
+              ? "Monthly leads closed and leads generated"
+              : dynamicTitle}
+          </p>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -304,10 +291,7 @@ const PipelineChart = ({ leads = [] }) => {
           ))}
         </div>
       </div>
-      <div
-        className="relative h-[220px] sm:h-[300px] p-3 sm:p-5"
-        aria-label="Monthly Leads Performance Bar Chart"
-      >
+      <div className="h-[220px] sm:h-[300px] p-3 sm:p-5" aria-label="Monthly Leads Performance Bar Chart">
         {isLoading ? (
 
           // 🔥 Skeleton UI
@@ -355,21 +339,10 @@ const PipelineChart = ({ leads = [] }) => {
               />
               <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
               <Tooltip content={<CustomTooltip />} />
-              {/* Maroon falling to gold up the bar, so the row reads as lit
-                  from below like the rest of the festive page. Defined here
-                  rather than in CSS because Recharts renders the fill as an
-                  SVG attribute, which a class cannot reach. */}
-              <defs>
-                <linearGradient id="festive-bar" x1="0" y1="1" x2="0" y2="0">
-                  <stop offset="0%" stopColor="#6E1420" />
-                  <stop offset="55%" stopColor="#AC2334" />
-                  <stop offset="100%" stopColor="#E0893A" />
-                </linearGradient>
-              </defs>
               <Bar
                 dataKey="value"
-                fill="url(#festive-bar)"
-                radius={[6, 6, 0, 0]}
+                fill="var(--color-primary)"
+                radius={[4, 4, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>

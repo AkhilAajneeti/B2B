@@ -13,16 +13,13 @@ import Select from "../../../components/ui/Select";
 import Input from "../../../components/ui/Input";
 import { fetchLeadsCount } from "services/leads.service";
 import { todayLocal } from "../../../utils/dateFilter";
-/* Festive ring: maroon through amber to gold, the page's own run of colour,
-   rather than the generic blue/green/red set. Still six distinct hues, so a
-   legend entry is still identifiable by its swatch. */
 const COLORS = [
-  "#8E1B2B",
-  "#C13A2E",
-  "#E0893A",
-  "#F0B429",
-  "#B4600A",
-  "#7C3A12",
+  "#1877F2",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
 ];
 
 
@@ -221,33 +218,20 @@ const IndustryChart = () => {
   };
   return (
     <motion.div
-      className="relative overflow-hidden rounded-2xl border border-[#EBD9B4] bg-[linear-gradient(135deg,#FFFDF8_0%,#FDF6EA_100%)] p-6 shadow-[0_10px_30px_-24px_rgba(140,90,30,0.5)]"
+      className="bg-card border border-border rounded-xl p-6 shadow-elevation-1"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Mandala corner, clipped by the card's own overflow-hidden. */}
-      <img
-        src="/festive/corner-mandala-clean.png"
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-8 -top-10 w-36 select-none opacity-[0.13]"
-      />
-
       {/* Header */}
-      <div className="relative flex items-start justify-between mb-6 flex-col">
-        <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#EADAF7] text-[#6D33B8]">
-            <Icon name="Layers" size={19} />
-          </span>
-          <div>
-            <h3 className="text-lg font-bold text-[#8E1B2B]">
-              Leads by Sector
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Lead distribution across sectors
-            </p>
-          </div>
+      <div className="flex items-start justify-between mb-6 flex-col">
+        <div>
+          <h3 className="text-lg font-semibold text-card-foreground">
+            Leads by Sector
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Lead distribution across sectors
+          </p>
         </div>
 
         <div className="w-full  mt-5 scrollbar-hide">
