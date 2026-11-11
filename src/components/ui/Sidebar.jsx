@@ -11,7 +11,7 @@ import {
 import Diya from "../festive/Diya";
 
 /* Seasonal footer panel on the sidebar. One flag, off in January. */
-const FESTIVE_SIDEBAR = true;
+const FESTIVE_SIDEBAR = false;
 
 
 // Per-item icon colour. Keyed by route so the navigationItems array stays

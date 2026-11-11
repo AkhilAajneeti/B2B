@@ -54,7 +54,7 @@ const FESTIVE_HERO = false;
 /* Seasonal skin: artwork over the page and a festive greeting banner. One
    flag, because a seasonal theme has to come off again without unpicking the
    dashboard — set it false in January and nothing else changes. */
-const FESTIVE_DASHBOARD = true;
+const FESTIVE_DASHBOARD = false;
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

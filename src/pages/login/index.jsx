@@ -15,7 +15,7 @@ import RisingCrackers from "../../components/RisingCrackers";
 import Icon from "../../components/AppIcon";
 
 /* Seasonal switch. true = the festive sign-in, false = the navy hero. */
-const FESTIVE_LOGIN = true;
+const FESTIVE_LOGIN = false;
 
 /* The three promises on the artwork panel. Tinted tiles rather than plain
    icons, so the list reads as three things rather than one block of text. */
