@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "../../../components/AppIcon";
 import {
   buildMembers,
@@ -139,8 +139,30 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
   const paused = members.filter((m) => m.paused);
   const activeCount = members.length - paused.length;
 
+  /**
+   * Has the USER changed anything?
+   *
+   * This exists because `dirty` cannot answer that question. Dirty means
+   * "local differs from server", and that is also true for a moment when the
+   * drawer first opens: the list row carries no collaboratorsIds, so the
+   * draft seeds empty, and the full record arrives a beat later with the real
+   * ids. At that instant dirty flips true through no action of the user's —
+   * and the sync effect below, which skips while dirty, would then never run.
+   *
+   * That is the bug where every member read "Paused" on first open and was
+   * correct on the second: the second open reseeded from a deal that was by
+   * then complete.
+   *
+   * A ref rather than state: it must not trigger a render of its own, and the
+   * effect has to read the value at the moment it runs.
+   */
+  const touched = useRef(false);
+
   // Draft edit. Nothing leaves the browser until Save.
-  const save = (patch) => setLocal((prev) => ({ ...prev, ...patch }));
+  const save = (patch) => {
+    touched.current = true;
+    setLocal((prev) => ({ ...prev, ...patch }));
+  };
 
   // What the server currently holds, for the dirty check and for Discard.
   const serverState = useMemo(
@@ -170,12 +192,17 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
         configuration: local.configuration,
         enableConfiguration: local.enableConfiguration,
       });
+      // Saved: the draft is the server's now, so following it again is right.
+      touched.current = false;
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDiscard = () => setLocal(serverState);
+  const handleDiscard = () => {
+    touched.current = false;
+    setLocal(serverState);
+  };
 
   /**
    * Follow the server when the draft is clean.
@@ -189,10 +216,17 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
    * a background refresh.
    */
   useEffect(() => {
-    if (dirty) return;
+    if (touched.current) return;
     setLocal(serverState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverState]);
+
+  // A different project is a different draft. Without this the previous
+  // project's "the user edited something" verdict would suppress the sync
+  // for the next one.
+  useEffect(() => {
+    touched.current = false;
+  }, [deal?.id]);
 
   // Anyone active in the CRM who is not already on this campaign — the same
   // pool the Teams tab's collaborator picker draws from.
