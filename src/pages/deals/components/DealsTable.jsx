@@ -85,6 +85,8 @@ const DealsTable = ({
         "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
       "Invitation Sent":
         "bg-gradient-to-br from-emerald-50/70 to-background border-emerald-100",
+      "Event Attend":
+        "bg-gradient-to-br from-teal-50/70 to-background border-teal-100",
       "Site Visit Done":
         "bg-gradient-to-br from-emerald-100/70 to-background border-emerald-200",
       Purchased:
@@ -151,6 +153,7 @@ const DealsTable = ({
         "bg-emerald-200 text-emerald-800 border border-emerald-300",
       "Invitation Sent":
         "bg-emerald-200 text-emerald-800 border border-emerald-300",
+      "Event Attend": "bg-teal-100 text-teal-800 border border-teal-200",
       "Site Visit Done": "bg-emerald-300 text-emerald-900 border border-emerald-400",
       Purchased: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",
 

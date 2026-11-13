@@ -39,6 +39,7 @@ const DEFAULT_STATUS_OPTIONS = [
   { value: "Site Visit Done", label: "Site Visit Done" },
   { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
   { value: "Invitation Sent", label: "Invitation Sent" },
+  { value: "Event Attend", label: "Event Attend" },
   { value: "Switch Off", label: "Switch Off" },
 ];
 
