@@ -107,7 +107,12 @@ const LoginForm = ({ variant = "default" }) => {
         },
         //cross origin request  on crm 
         body: JSON.stringify({
-          username: formData.username,
+          // Trimmed because a mobile autocomplete suggestion inserts a
+          // trailing space, and the backend compares the username verbatim.
+          // The PASSWORD is deliberately sent as typed: a space can be a
+          // legitimate character in one, and silently stripping it would lock
+          // out anyone whose password ends in one.
+          username: formData.username.trim(),
           password: formData.password,
         }),
       });
@@ -304,6 +309,12 @@ const LoginForm = ({ variant = "default" }) => {
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
             <Icon name="User" size={18} />
           </span>
+          {/* MOBILE KEYBOARDS EDIT WHAT YOU TYPE unless told not to. iOS and
+              Android capitalise the first letter of a text field by default,
+              so "ravindragaur" is submitted as "Ravindragaur" and a
+              case-sensitive backend answers invalid credentials; autocorrect
+              can rewrite it outright. Pasting bypasses the keyboard, which is
+              why that always worked. */}
           <input
             id="username"
             name="username"
@@ -313,6 +324,9 @@ const LoginForm = ({ variant = "default" }) => {
             disabled={isLoading}
             placeholder="you@aajneeti.social"
             autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             aria-invalid={!!errors.username}
             aria-describedby={errors.username ? "username-error" : undefined}
             className={`${inputClass(!!errors.username)} pl-11`}
@@ -334,6 +348,9 @@ const LoginForm = ({ variant = "default" }) => {
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
             <Icon name="Lock" size={18} />
           </span>
+          {/* Same guard. A password field is normally exempt, but this one
+              flips to type="text" when the eye is tapped, and in text mode
+              the keyboard capitalises and autocorrects like any other. */}
           <input
             id="password"
             name="password"
@@ -343,6 +360,9 @@ const LoginForm = ({ variant = "default" }) => {
             disabled={isLoading}
             placeholder="Enter your password"
             autoComplete="current-password"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             aria-invalid={!!errors.password}
             aria-describedby={errors.password ? "password-error" : undefined}
             className={`${inputClass(!!errors.password)} pl-11 pr-12`}
