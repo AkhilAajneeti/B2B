@@ -20,13 +20,25 @@ const GC = 1000 * 60 * 30;
 
 // Funnel stages in pipeline order (top → bottom).
 export const FUNNEL_STAGES = [
+  // One hue per stage, in a FIXED order — never cycled, never reassigned by
+  // rank, so a stage keeps its colour whatever the filter shows.
+  //
+  // The order is chosen so no two CONSECUTIVE stages are confusable: bars sit
+  // next to each other, so adjacent pairs are the ones that have to be told
+  // apart. Validated with the dataviz palette checker — lightness band,
+  // chroma floor, colour-blind separation (deutan/tritan), normal-vision
+  // floor and 3:1 contrast against the chart surface all pass.
+  //
+  // The previous set failed two of those: Interested and Invitation Sent were
+  // both greens sitting three stages apart, and New/Follow up were a blue and
+  // a violet that deuteranopes see as the same colour (ΔE 0.4).
   { key: "New", label: "New", from: "#60A5FA", to: "#2563EB" },
-  { key: "Follow up", label: "Follow up", from: "#A78BFA", to: "#7C3AED" },
-  { key: "Interested", label: "Interested", from: "#34D399", to: "#10B981" },
-  { key: "Site Visit Scheduled", label: "Site Visit Scheduled", from: "#FBBF24", to: "#F59E0B" },
-  { key: "Invitation Sent", label: "Invitation Sent", from: "#10B981", to: "#059669" },
-  { key: "Site Visit Done", label: "Site Visit Done", from: "#FB923C", to: "#EA580C" },
-  { key: "Purchased", label: "Purchased", from: "#F472B6", to: "#DB2777" },
+  { key: "Follow up", label: "Follow up", from: "#FB923C", to: "#EA580C" },
+  { key: "Interested", label: "Interested", from: "#2DD4BF", to: "#0D9488" },
+  { key: "Site Visit Scheduled", label: "Site Visit Scheduled", from: "#A78BFA", to: "#7C3AED" },
+  { key: "Invitation Sent", label: "Invitation Sent", from: "#A3E635", to: "#65A30D" },
+  { key: "Site Visit Done", label: "Site Visit Done", from: "#F472B6", to: "#DB2777" },
+  { key: "Purchased", label: "Purchased", from: "#F59E0B", to: "#B45309" },
 ];
 
 const FUNNEL_SET = new Set(FUNNEL_STAGES.map((s) => s.key.toLowerCase()));

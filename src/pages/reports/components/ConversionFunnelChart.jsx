@@ -1,11 +1,13 @@
 import React, { memo, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
+  BarChart,
+  Bar,
+  Cell,
+  LabelList,
+  CartesianGrid,
+  XAxis,
+  YAxis,
   Tooltip,
   ResponsiveContainer,
   LineChart,
@@ -102,25 +104,8 @@ const FunnelTooltip = ({ active, payload }) => {
   );
 };
 
-// Radar vertex dot — colored per pipeline stage (uses the stage's `to` color
-// that each funnel row already carries from FUNNEL_STAGES).
-const renderRadarDot = (props) => {
-  const { cx, cy, payload } = props || {};
-  if (cx == null || cy == null) return null;
-  return (
-    <circle
-      cx={cx}
-      cy={cy}
-      r={4}
-      fill={payload?.to || "#8B5CF6"}
-      stroke="#ffffff"
-      strokeWidth={2}
-    />
-  );
-};
-
 // ---------------------------------------------------------------------------
-// KPI strip above the radar
+// KPI strip above the chart
 // ---------------------------------------------------------------------------
 
 const KpiTile = ({ icon, iconColor, label, value, accent }) => (
@@ -301,11 +286,16 @@ const EmptyState = ({ monthLabel }) => (
 
 const Skeleton = () => (
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    {/* Circular placeholder — mirrors the radar shape */}
-    <div className="flex items-center justify-center py-6 animate-pulse">
-      <div className="w-52 h-52 rounded-full bg-slate-200 flex items-center justify-center">
-        <div className="w-32 h-32 rounded-full bg-slate-100" />
-      </div>
+    {/* Bar placeholder — mirrors the chart's shape, so the layout does not
+        jump when the real data arrives. A circle here was left over from the
+        radar and would have shifted everything on load. */}
+    <div className="space-y-3 py-4 animate-pulse">
+      {[72, 96, 54, 84, 40, 62, 30].map((w, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <div className="h-3 w-24 rounded bg-slate-200" />
+          <div className="h-5 rounded-r bg-slate-200" style={{ width: `${w}%` }} />
+        </div>
+      ))}
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-pulse">
       {[1, 2, 3, 4].map((_, i) => (
@@ -371,9 +361,9 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
 
   const { highestDropOff, bestConversion, overallConversion, totalLeads } = funnelStats;
 
-  // Radar data — adds a shortened axis label so long stage names ("Site Visit
-  // Scheduled") don't overflow the polar axis. Full label stays for the tooltip.
-  const radarData = useMemo(
+  // Shortened labels so long stage names ("Site Visit Scheduled") fit the
+  // y-axis column. The full label stays on the row for the tooltip.
+  const chartData = useMemo(
     () =>
       (funnel || []).map((f) => ({
         ...f,
@@ -381,40 +371,6 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
       })),
     [funnel],
   );
-
-  // Polar axis tick — stage name with its lead count underneath, so the radar
-  // surfaces the same numbers the funnel used to print inside each block.
-  const renderAngleTick = ({ x, y, cx, cy, payload }) => {
-    const row = radarData.find((r) => r.shortLabel === payload.value);
-    const dx = x - cx;
-    const anchor = Math.abs(dx) < 12 ? "middle" : dx > 0 ? "start" : "end";
-    return (
-      <g>
-        <text
-          x={x}
-          y={y}
-          textAnchor={anchor}
-          dominantBaseline="middle"
-          fontSize={11}
-          fontWeight={600}
-          fill="#0F172A"
-        >
-          {payload.value}
-        </text>
-        <text
-          x={x}
-          y={y + 13}
-          textAnchor={anchor}
-          dominantBaseline="middle"
-          fontSize={10}
-          fontWeight={600}
-          fill="#8B5CF6"
-        >
-          {row ? `${row.count} leads` : ""}
-        </text>
-      </g>
-    );
-  };
 
   return (
     <motion.div
@@ -517,49 +473,64 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
 
             <div className="h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart
-                  data={radarData}
-                  outerRadius="68%"
-                  margin={{ top: 18, right: 28, bottom: 18, left: 28 }}
+                <BarChart
+                  data={chartData}
+                  layout="vertical"
+                  margin={{ top: 4, right: 52, bottom: 4, left: 4 }}
+                  barCategoryGap={10}
                 >
-                  <defs>
-                    <linearGradient
-                      id="fnl-radar-fill"
-                      x1="0"
-                      y1="0"
-                      x2="1"
-                      y2="1"
-                    >
-                      <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.55} />
-                      <stop offset="100%" stopColor="#EC4899" stopOpacity={0.3} />
-                    </linearGradient>
-                  </defs>
-                  <PolarGrid stroke="#E2E8F0" />
-                  <PolarAngleAxis
-                    dataKey="shortLabel"
-                    tick={renderAngleTick}
+                  {/* Recessive grid, and only along the measured axis — a
+                      horizontal bar is read against the x scale, so
+                      horizontal rules would cross every bar for nothing. */}
+                  <CartesianGrid
+                    horizontal={false}
+                    stroke="#E2E8F0"
+                    strokeDasharray="3 3"
                   />
-                  <PolarRadiusAxis
-                    angle={90}
+                  <XAxis
+                    type="number"
                     tick={{ fontSize: 10, fill: "#94A3B8" }}
                     tickLine={false}
                     axisLine={false}
                     allowDecimals={false}
                   />
-                  <Radar
-                    name="Leads"
-                    dataKey="count"
-                    stroke="#7C3AED"
-                    strokeWidth={2}
-                    fill="url(#fnl-radar-fill)"
-                    fillOpacity={1}
-                    dot={renderRadarDot}
-                    isAnimationActive
-                    animationDuration={800}
-                    animationEasing="ease-out"
+                  <YAxis
+                    type="category"
+                    dataKey="shortLabel"
+                    width={112}
+                    tick={{ fontSize: 11, fill: "#0F172A", fontWeight: 600 }}
+                    tickLine={false}
+                    axisLine={false}
                   />
-                  <Tooltip content={<FunnelTooltip />} />
-                </RadarChart>
+                  <Tooltip
+                    content={<FunnelTooltip />}
+                    cursor={{ fill: "rgba(15,23,42,0.04)" }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    name="Leads"
+                    radius={[0, 4, 4, 0]}
+                    isAnimationActive
+                    animationDuration={700}
+                    animationEasing="ease-out"
+                  >
+                    {/* One fixed hue per stage. Colour follows the STAGE,
+                        never its rank, so filtering to fewer stages never
+                        repaints the survivors. */}
+                    {chartData.map((row) => (
+                      <Cell key={row.key || row.label} fill={row.to} />
+                    ))}
+                    {/* The count sits at the end of each bar, so the number
+                        is readable without a tooltip and the lighter bars
+                        carry a label rather than relying on fill alone. */}
+                    <LabelList
+                      dataKey="count"
+                      position="right"
+                      offset={8}
+                      style={{ fontSize: 11, fontWeight: 700, fill: "#334155" }}
+                    />
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             </div>
 
