@@ -51,6 +51,7 @@ const QUICK_EDIT_STATUS_COLOR = {
   "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 border-emerald-300",
   "Invitation Sent": "bg-emerald-200 text-emerald-800 border-emerald-300",
   "Event Attend": "bg-teal-100 text-teal-800 border-teal-200",
+  "Future Prospect": "bg-indigo-50 text-indigo-700 border-indigo-200",
   "Site Visit Done": "bg-emerald-300 text-emerald-900 border-emerald-400",
   Purchased: "bg-emerald-600 text-white border-emerald-600",
   "Call Later": "bg-yellow-50 text-yellow-700 border-yellow-200",
@@ -71,6 +72,7 @@ const QUICK_EDIT_STATUS_ACCENT = {
   "Site Visit Scheduled": "#059669",
   "Invitation Sent": "#059669",
   "Event Attend": "#0D9488",
+  "Future Prospect": "#4F46E5",
   "Site Visit Done": "#047857",
   Purchased: "#059669",
   "Call Later": "#CA8A04",
@@ -560,6 +562,7 @@ const DealDrawer = ({
       "Invitation Sent":
         "bg-emerald-200 text-emerald-800 border border-emerald-300",
       "Event Attend": "bg-teal-100 text-teal-800 border border-teal-200",
+      "Future Prospect": "bg-indigo-50 text-indigo-700 border border-indigo-200",
       "Site Visit Done": "bg-emerald-300 text-emerald-900 border border-emerald-400",
       Purchased: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",
       Converted: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",
@@ -865,6 +868,7 @@ const DealDrawer = ({
     { value: "Site Visit Scheduled", label: "Site Visit Scheduled" },
     { value: "Invitation Sent", label: "Invitation Sent" },
     { value: "Event Attend", label: "Event Attend" },
+    { value: "Future Prospect", label: "Future Prospect" },
     { value: "Switch Off", label: "Switch Off" },
   ];
 
