@@ -429,14 +429,18 @@ const ProjectsPage = () => {
                   selectedCount={selectedDeals?.length}
                 />
               </div>
-              <div className="inline-flex shrink-0 rounded-lg border border-[#6E1420]/15 bg-card p-0.5 shadow-[0_1px_2px_rgba(16,24,40,.06),0_4px_12px_-4px_rgba(16,24,40,.12)]">
+              {/* Two equal pills, full width and centred on a phone — the
+                  pair sat hard against the left edge of an otherwise empty
+                  row. From lg it shrinks back to its own width beside the
+                  filters. */}
+              <div className="mx-auto flex w-full shrink-0 rounded-full border border-[#6E1420]/15 bg-card p-1 shadow-[0_1px_2px_rgba(16,24,40,.06),0_4px_12px_-4px_rgba(16,24,40,.12)] sm:w-auto sm:max-w-[260px] lg:mx-0">
                 {["cards", "table"].map((v) => (
                   <button
                     key={v}
                     onClick={() => setViewMode(v)}
-                    className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
+                    className={`flex-1 rounded-full px-5 py-2 text-sm font-semibold capitalize transition-colors sm:flex-none ${
                       viewMode === v
-                        ? "bg-[#6E1420] text-white"
+                        ? "bg-[#6E1420] text-white shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >

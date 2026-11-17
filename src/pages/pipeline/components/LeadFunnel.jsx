@@ -109,30 +109,54 @@ const LeadFunnel = () => {
       count,
       conv,
       biggest: i === biggestIdx,
-      widthPct: Math.max((count / max) * 100, 5),
+      // A floor of 2% only, so a stage never vanishes entirely. The old 5%
+      // meant small stages all bottomed out at the same size.
+      widthPct: Math.max((count / max) * 100, 2),
     };
   });
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold text-foreground">
           How your leads are moving
         </h3>
-        <span className="text-sm text-muted-foreground">All open leads · by stage</span>
+        <span className="text-xs text-muted-foreground sm:text-sm">
+          All open leads · by stage
+        </span>
       </div>
 
       <div className={`space-y-2.5 transition-opacity ${isLoading ? "opacity-50" : ""}`}>
         {rows.map((r) => (
-          <div key={r.key} className="flex items-center gap-3 sm:gap-4">
+          /* THE ROW REFLOWS ON A PHONE instead of shrinking.
+             Three fixed columns — label, bar, conversion — do not fit 360px:
+             the labels wrapped to three lines and the bar track collapsed to
+             a stub. Below sm the label and the conversion badge share the
+             first line and the bar takes the full width underneath, which is
+             the same information with room to read it.
+
+             One markup, two layouts: `flex-wrap` plus an order swap, rather
+             than a second copy of the row that could drift out of step. */
+          <div
+            key={r.key}
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-4"
+          >
             {/* Stage label */}
-            <div className="w-20 shrink-0 text-right sm:w-28">
+            <div className="min-w-0 flex-1 text-left sm:w-28 sm:flex-none sm:text-right">
               <p className="text-sm font-semibold leading-tight text-foreground">{r.label}</p>
               <p className="text-xs text-muted-foreground">{r.sub}</p>
             </div>
 
             {/* Bar — centered within its track to form a true funnel shape */}
-            <div className="flex min-w-0 flex-1 justify-center">
+            {/* Centred at every size. Left-aligning the bars on a phone was
+                the earlier fix for the squeeze, but it loses the funnel: the
+                shape only reads as one when each bar narrows around a shared
+                centre line. */}
+            {/* The bar is centred, so every stage grows from one centre
+                line and the column reads as a funnel. The count lives inside
+                it, which sets the 2.75rem floor: narrow stages bottom out at
+                the width their own number needs. */}
+            <div className="order-last flex w-full min-w-0 justify-center sm:order-none sm:w-auto sm:flex-1">
               <div
                 className={`flex h-10 items-center justify-center rounded-xl border px-3 text-sm font-semibold shadow-sm transition-[width] duration-700 ease-out ${r.grad} ${r.text}`}
                 style={{ width: `${r.widthPct}%`, minWidth: "2.75rem" }}
@@ -142,9 +166,9 @@ const LeadFunnel = () => {
             </div>
 
             {/* Conversion + biggest-drop badge */}
-            <div className="w-20 shrink-0 sm:w-28">
+            <div className="shrink-0 sm:w-28">
               {r.conv !== null && (
-                <div className="flex flex-col items-start gap-1.5">
+                <div className="flex flex-row items-center gap-1.5 sm:flex-col sm:items-start">
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${dropSeverity(
                       r.conv,
@@ -155,8 +179,8 @@ const LeadFunnel = () => {
                   </span>
                   {r.biggest && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-[#AC2334]/[0.08] px-2 py-0.5 text-[11px] font-medium text-[#AC2334]">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#AC2334]" />
-                      biggest drop
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#AC2334]" />
+                      <span className="whitespace-nowrap">biggest drop</span>
                     </span>
                   )}
                 </div>

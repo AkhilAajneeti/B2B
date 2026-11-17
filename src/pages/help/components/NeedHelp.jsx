@@ -24,7 +24,7 @@ const NeedHelp = () => (
       </div>
     </div>
     <a
-      href="mailto:support@aajneetiadvertising.com"
+      href="mailto:contact@aajneeti.com"
       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-shadow"
       style={brandBg}
       onMouseEnter={(e) => {

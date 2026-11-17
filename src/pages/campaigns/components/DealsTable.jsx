@@ -383,73 +383,106 @@ const SortHeader = ({ label, column }) => (
             No projects available
           </div>
         ) : (
-          paginatedDeals?.map((deal) => (
-          <div
-            key={deal?.id}
-            onClick={() => onDealClick(deal)}
-            className="p-4 border-b border-border bg-background hover:bg-sky-50 transition"
-          >
-            <div className="flex items-start gap-3">
-              {/* Checkbox */}
-              <Checkbox
-                checked={selectedDeals?.includes(deal?.id)}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  onSelectDeal(deal?.id, e.target.checked);
-                }}
-                className="mt-1"
-              />
+          <div className="space-y-4 px-3 pb-4 pt-5">
+            {paginatedDeals.map((deal) => {
+              const selected = selectedDeals?.includes(deal?.id);
+              return (
+                <div
+                  key={deal?.id}
+                  onClick={() => onDealClick(deal)}
+                  className={`group relative cursor-pointer overflow-hidden rounded-2xl border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] ${
+                    selected
+                      ? "border-[#6E1420]/40 ring-1 ring-[#6E1420]/20"
+                      : "border-border"
+                  }`}
+                >
+                  {/* A maroon rail marks the row as a project, and thickens
+                      when it is selected — the checkbox alone was the only
+                      selection cue and it is easy to miss at arm's length. */}
+                  <span
+                    aria-hidden="true"
+                    className={`absolute inset-y-0 left-0 ${
+                      selected ? "w-1.5 bg-[#6E1420]" : "w-1 bg-[#6E1420]/25"
+                    }`}
+                  />
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                {/* Top Row */}
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-foreground truncate">
-                    {deal?.name}
-                  </h3>
+                  <div className="flex items-start gap-3 pl-1.5">
+                    <Checkbox
+                      checked={selected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        onSelectDeal(deal?.id, e.target.checked);
+                      }}
+                      className="mt-0.5"
+                    />
 
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="truncate text-[15px] font-semibold text-foreground">
+                          {deal?.name}
+                        </h3>
+                        <Icon
+                          name="ChevronRight"
+                          size={16}
+                          className="mt-0.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                        />
+                      </div>
 
-                </div>
+                      {/* The project's short name, not the address — the
+                          address is blank on most records, so that line was
+                          usually missing entirely. Same rule the project
+                          cards use: projectNomen unless it is the "Default"
+                          placeholder, in which case the full name. Hidden
+                          when it would just repeat the title above. */}
+                      {(() => {
+                        const projectName =
+                          deal?.projectNomen &&
+                          deal.projectNomen !== "Default"
+                            ? deal.projectNomen
+                            : deal?.name;
+                        if (!projectName || projectName === deal?.name)
+                          return null;
+                        return (
+                          <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                            <Icon name="Layers" size={12} className="shrink-0" />
+                            <span className="truncate">{projectName}</span>
+                          </p>
+                        );
+                      })()}
 
-                {/* Project Name */}
-                {deal?.name && (
-                  <div className="text-sm text-muted-foreground mt-1 truncate">
-                    {deal?.address}
-                  </div>
-                )}
+                      {/* Assigned rep and the created date share one footer
+                          row behind a divider, so the card has a head and a
+                          foot rather than four stacked lines. */}
+                      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border/60 pt-3">
+                        {deal?.assignedUserName && (
+                          <div className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-0.5 pl-0.5 pr-2.5">
+                            <span
+                              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                              style={{
+                                backgroundColor: getNameColor(
+                                  deal.assignedUserName,
+                                ),
+                              }}
+                            >
+                              {getInitials(deal.assignedUserName)}
+                            </span>
+                            <span className="truncate text-xs font-medium text-slate-700">
+                              {deal.assignedUserName}
+                            </span>
+                          </div>
+                        )}
 
-                {/* Assigned User — same avatar pill style as desktop so the
-                    rep's color stays consistent when the layout switches. */}
-                {deal?.assignedUserName && (
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="text-[10px] text-muted-foreground shrink-0">
-                      Assigned to
-                    </span>
-                    <div className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full bg-slate-50 border border-slate-200 min-w-0">
-                      <span
-                        className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0"
-                        style={{
-                          backgroundColor: getNameColor(deal.assignedUserName),
-                        }}
-                      >
-                        {getInitials(deal.assignedUserName)}
-                      </span>
-                      <span className="text-xs font-medium text-slate-700 truncate">
-                        {deal.assignedUserName}
-                      </span>
+                        <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                          <Icon name="Calendar" size={12} />
+                          {formatDate(deal?.createdAt)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                )}
-
-                {/* Created At */}
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                  <Icon name="Calendar" size={12} />
-                  Created: {formatDate(deal?.createdAt)}
                 </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
-          ))
         )}
       </div>
     </div>

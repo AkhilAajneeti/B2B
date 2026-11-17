@@ -67,9 +67,12 @@ const DealsFilters = ({
   }));
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
-      {/* Header Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-        <div className="flex items-center space-x-4">
+      {/* Header Row.
+          Centred on a phone, left-aligned from lg: the count and the filter
+          toggle are the only things in the card there, and left-aligning a
+          lone short heading in a full-width card leaves it adrift. */}
+      <div className="mb-4 flex flex-col items-center justify-between gap-4 text-center lg:flex-row lg:items-center lg:text-left">
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:space-x-4 lg:items-center">
           <h2 className="text-lg font-semibold text-foreground">
             Projects ({dealCount?.toLocaleString()})
           </h2>
@@ -91,7 +94,7 @@ const DealsFilters = ({
           )}
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex w-full items-center justify-center gap-2 lg:w-auto lg:justify-end">
           {selectedCount > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">
@@ -143,9 +146,9 @@ const DealsFilters = ({
             variant="outline"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="lg:hidden"
+            className="w-full justify-center rounded-full border-border px-5 sm:w-auto lg:hidden"
           >
-            <Icon name="Filter" size={16} className="mr-1" />
+            <Icon name="Filter" size={16} className="mr-1.5" />
             Filters
             <Icon
               name="ChevronDown"

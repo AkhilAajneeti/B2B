@@ -59,21 +59,32 @@ const initials = (name = "") =>
     .map((w) => w[0]?.toUpperCase() || "")
     .join("") || "?";
 
-/** Section heading with a tinted icon tile, matching the drawer's other cards. */
+/**
+ * Section heading with a tinted icon tile, matching the drawer's other cards.
+ *
+ * The SUBTITLE IS A SIBLING of the title, not nested under it, so it wraps to
+ * its own full-width line. Nested, it shared the row with the action button
+ * and was squeezed into whatever width that left — on a phone "Everyone
+ * active shares the day equally…" came out four words tall beside the Add
+ * Member button.
+ *
+ * `w-full` plus the parent's flex-wrap is what moves it down; the icon,
+ * title and action keep the first line to themselves.
+ */
 const SectionTitle = ({ icon, title, subtitle, action }) => (
-  <div className="flex flex-wrap items-start gap-3">
+  <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#AC2334]/10 text-[#AC2334]">
       <Icon name={icon} size={17} />
     </span>
-    <div className="min-w-0 flex-1">
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      {subtitle && (
-        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-          {subtitle}
-        </p>
-      )}
-    </div>
+    <h3 className="min-w-0 flex-1 self-center text-base font-semibold text-foreground">
+      {title}
+    </h3>
     {action}
+    {subtitle && (
+      <p className="w-full text-xs leading-relaxed text-muted-foreground">
+        {subtitle}
+      </p>
+    )}
   </div>
 );
 
@@ -582,8 +593,11 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
         {/* Column headings. Without them the number box and the toggle are two
             unlabelled controls — a reader cannot tell what either one does, or
             that the greyed box is greyed because Round robin is on. */}
+        {/* Column headings belong to the TABLE layout, so they are hidden
+            below sm. On a phone the row stacks and the headings had nothing to
+            sit over — "MEMBER" and "LEADS/DAY" collided into one word. */}
         {members.length > 0 && (
-          <div className="mt-4 flex items-center gap-3 border-b border-border pb-2">
+          <div className="mt-4 hidden items-center gap-3 border-b border-border pb-2 sm:flex">
             <span className="w-9 shrink-0" />
             <span className="min-w-0 flex-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Member
@@ -606,12 +620,19 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
         ) : (
           <div className="divide-y divide-border">
             {members.map((m) => (
+              /* TWO LINES ON A PHONE, one row from sm.
+                 Five fixed-width controls do not fit 360px: the name was
+                 truncated to "A..", its sub-line wrapped to two, and the
+                 numbers crowded the toggle. Below sm the avatar and name take
+                 the first line and the controls the second, where they have
+                 room to be tapped. */
               <div
                 key={m.id}
-                className={`flex flex-wrap items-center gap-3 py-3 ${
+                className={`flex flex-col gap-3 py-3.5 sm:flex-row sm:flex-wrap sm:items-center ${
                   m.paused ? "opacity-60" : ""
                 }`}
               >
+                <div className="flex min-w-0 items-center gap-3 sm:contents">
                 <span
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
                   style={{ background: colorFor(m.id) }}
@@ -631,7 +652,11 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
                         : "Auto"}
                   </p>
                 </div>
+                </div>
 
+                {/* The controls share the second line, pushed apart so the
+                    delete button is not next to the toggle by accident. */}
+                <div className="flex items-center gap-3 sm:contents">
                 <input
                   defaultValue={m.count ?? ""}
                   onBlur={(e) => setCount(m, e.target.value)}
@@ -650,7 +675,7 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
                     almost invisible when off — a pale ring with no label — so
                     nobody could tell it was a control, let alone which way it
                     was set. */}
-                <span className="flex w-[104px] shrink-0 items-center gap-2">
+                <span className="flex flex-1 items-center gap-2 sm:w-[104px] sm:flex-none sm:shrink-0">
                   <button
                     type="button"
                     onClick={() => togglePaused(m)}
@@ -691,6 +716,7 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
                 >
                   <Icon name="Trash2" size={15} />
                 </button>
+                </div>
               </div>
             ))}
           </div>
