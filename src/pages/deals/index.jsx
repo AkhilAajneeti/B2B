@@ -280,6 +280,12 @@ const DealsPage = () => {
   const status = metaData?.status || [];
   const industry = metaData?.industries || [];
   const total = leadsData?.total || 0;
+  // ───────────────────────────────────────────────────────────────────────
+  // LEAD EXPORT DISABLED — 2026-11-18, by request. Nobody may export lead
+  // data, at any role. See the banner on the Export All button in the JSX
+  // below for the full restore checklist.
+  // ───────────────────────────────────────────────────────────────────────
+  /*
   const exportLeadsToCSV = (rows, fileName = "leads_export") => {
     // Contact details are most of what this export is FOR, so a restricted
     // user doesn't get one at all — masking the table while letting them
@@ -323,6 +329,7 @@ const DealsPage = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+  */
 
   const totalPages = Math.ceil(total / limit);
 
@@ -548,12 +555,14 @@ const DealsPage = () => {
   // "you don't have permission", sending people to hunt through roles for a
   // problem that didn't exist.
   //
-  // Export is unaffected — it sends ids to the CRM and never needs the records
-  // locally, which is why it handles the full selection.
+  // Export WAS unaffected — it sent ids to the CRM and never needed the
+  // records locally, which is why it handled the full selection. Export is
+  // disabled as of 2026-11-18, so the message below no longer points at it;
+  // restore that sentence along with the export feature.
   const bulkBlockReason = (allowedIds, actionLabel, permissionVerb) => {
     const offPage = selectedDeals.length - selectedLeadRecords.length;
     if (offPage > 0) {
-      return `${selectedDeals.length} leads selected across pages — ${actionLabel} works one page at a time (${selectedLeadRecords.length} on this page). Use Export Selected for the whole selection.`;
+      return `${selectedDeals.length} leads selected across pages — ${actionLabel} works one page at a time (${selectedLeadRecords.length} on this page).`;
     }
     if (!allowedIds.length || allowedIds.length !== selectedDeals.length) {
       return `Select only leads you have permission to ${permissionVerb}`;
@@ -593,6 +602,16 @@ const DealsPage = () => {
       return;
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // LEAD EXPORT DISABLED — 2026-11-18, by request. See the banner on the
+    // Export All button in the JSX below for the full restore checklist.
+    //
+    // This branch is unreachable with the menu entry removed, but it is
+    // commented out as well rather than left live: the handler is reachable
+    // from anything that can dispatch a bulk action, which is exactly the
+    // reasoning the guard inside it was written for.
+    // ─────────────────────────────────────────────────────────────────────
+    /*
     if (action === "export") {
       if (!selectedDeals.length) {
         toast.error("Select at least one lead");
@@ -644,6 +663,7 @@ const DealsPage = () => {
         });
       return;
     }
+    */
 
     if (action === "delete") {
       if (!selectedDeals.length) {
@@ -827,17 +847,36 @@ const DealsPage = () => {
                 </p>
               </div>
               <div className="flex items-center space-x-3">
-                {/* Export All — exports the CURRENT PAGE of the table.
-                    Visible to elevated users: admin (by type) or the Owner /
-                    Manager roles. Narrowing this to admin-only locked Owners
-                    out, which was a regression rather than an intent.
+                {/* ───────────────────────────────────────────────────────────
+                    LEAD EXPORT DISABLED — 2026-11-18, by request.
+                    Nobody may export lead data, at any role.
 
-                    Note the label overstates what it does: it sits beside a
-                    total in the tens of thousands but hands back one page.
-                    Kept deliberately — the range-export version that replaced
-                    it (First 100/250/500 from the current filter) is still in
+                    Commented rather than deleted so it can be restored. To
+                    bring it back, uncomment this block AND the two other
+                    halves of the feature, which are useless on their own:
+                      1. `exportLeadsToCSV` in this file (search for the same
+                         DISABLED banner)
+                      2. the `action === "export"` branch in handleBulkAction
+                         in this file
+                      3. the "Export Selected" bulk menu entry in
+                         components/DealsFilters.jsx
+                    Restore the role guards exactly as written — they are what
+                    kept this away from restricted accounts.
+
+                    ORIGINAL NOTES, preserved:
+                    Export All exports the CURRENT PAGE of the table. Visible
+                    to elevated users: admin (by type) or the Owner / Manager
+                    roles. Narrowing this to admin-only locked Owners out,
+                    which was a regression rather than an intent.
+
+                    The label overstates what it does: it sits beside a total
+                    in the tens of thousands but hands back one page. Kept
+                    deliberately — the range-export version that replaced it
+                    (First 100/250/500 from the current filter) is still in
                     the codebase, see ExportDialog.jsx and fetchLeadsForExport,
-                    ready to be wired back up. */}
+                    ready to be wired back up.
+                    ───────────────────────────────────────────────────────── */}
+                {/*
                 {isElevated() && !isMaskedUser() && (
                   <Button
                     className="linearbg-1 text-white hover:text-white"
@@ -848,6 +887,7 @@ const DealsPage = () => {
                     Export All
                   </Button>
                 )}
+                */}
 
                 <Button
                   onClick={handleAddLeads}

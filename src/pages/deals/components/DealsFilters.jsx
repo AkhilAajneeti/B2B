@@ -123,15 +123,27 @@ const DealsFilters = ({
   // non-admins never see the Delete button at all.
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
+    // ───────────────────────────────────────────────────────────────────────
+    // LEAD EXPORT DISABLED — 2026-11-18, by request. Nobody may export lead
+    // data, at any role. Commented rather than deleted so it can be restored;
+    // the matching halves are in pages/deals/index.jsx (the `exportLeadsToCSV`
+    // helper, the `action === "export"` branch, and the Export All button),
+    // each carrying the same banner. Restore the guards below exactly as
+    // written.
+    //
+    // ORIGINAL NOTES, preserved:
     // Export Selected — admin only, the same `type === "admin"` gate Delete
     // uses below (owners and managers don't qualify). Bulk-exporting customer
     // contact details off the CRM is the same class of action as deleting
     // them. The isMaskedUser check is kept as well: a restricted account that
     // is also an admin is still restricted, since naming an account in
     // MASKED_USERNAMES deliberately outranks the elevated escape hatch.
+    // ───────────────────────────────────────────────────────────────────────
+    /*
     ...(isSupAdmin() && !isMaskedUser()
       ? [{ value: "export", label: "Export Selected", icon: "Download" }]
       : []),
+    */
     ...(isSupAdmin()
       ? [{ value: "delete", label: "Delete Selected", icon: "Trash2", destructive: true }]
       : []),
