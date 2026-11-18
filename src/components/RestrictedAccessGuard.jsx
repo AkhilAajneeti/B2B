@@ -1,9 +1,19 @@
 import { useEffect } from "react";
-import { isMaskedUser } from "utils/permission";
 
 /**
  * Suppresses the DevTools keyboard shortcuts and the right-click menu for
- * restricted accounts (see `isMaskedUser`). Renders nothing.
+ * EVERYONE. Renders nothing.
+ *
+ * Mounted in App.jsx above the router, so it covers the login screen as well
+ * as every page behind it — there is no role check left to wait for.
+ *
+ * Applied to all roles as of 2026-11-18, by request. It was previously gated
+ * on `isMaskedUser()` and so only ever ran for restricted accounts.
+ *
+ * Skipped while running the Vite dev server (`import.meta.env.DEV`), because
+ * otherwise it blocks DevTools for whoever is building the app. A production
+ * build — including `vite preview` of one — has it active. Delete that check
+ * if it should apply in dev as well.
  *
  * ⚠️  THIS IS A SPEED BUMP, NOT A LOCK — do not treat it as protection, and do
  * not let its presence stand in for the real fix.
@@ -31,7 +41,8 @@ const DEVTOOLS_CODES = new Set(["KeyI", "KeyJ", "KeyC"]);
 
 const RestrictedAccessGuard = () => {
   useEffect(() => {
-    if (!isMaskedUser()) return undefined;
+    // Dev server only — see the note in the block comment above.
+    if (import.meta.env.DEV) return undefined;
 
     const onKeyDown = (event) => {
       const code = event.code;
@@ -66,8 +77,8 @@ const RestrictedAccessGuard = () => {
       window.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("contextmenu", onContextMenu, true);
     };
-    // isMaskedUser() reads localStorage, which only changes across a login —
-    // and a login remounts the tree — so this never needs to re-run.
+    // Nothing role-dependent is read any more, so this runs once per mount and
+    // never needs to re-run.
   }, []);
 
   return null;
