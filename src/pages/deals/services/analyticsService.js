@@ -1,8 +1,9 @@
 import { projectExactLeadCondition } from "pages/campaigns/utils/leadScope";
 import { handleUnauthorized } from "services/session";
+import { API_BASE_URL } from "services/apiBase";
 
 
-const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
+const ESPO_BASE = `${API_BASE_URL}/Lead`;
 
 export const BUSINESS_STATUSES = [
   "New",

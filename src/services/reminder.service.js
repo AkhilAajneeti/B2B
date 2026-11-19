@@ -1,4 +1,5 @@
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 /**
  * reminder.service.js
  *
@@ -10,7 +11,7 @@ import { handleUnauthorized } from "./session";
  * Backend filtering (ESPO `today` whereGroup) keeps it light; the manager
  * re-filters client-side against the local clock for timezone safety.
  */
-const API_BASE = "https://gateway.aajneetiadvertising.com";
+const API_BASE = API_BASE_URL;
 
 export const fetchTodayFollowups = async ({ signal } = {}) => {
   const token = localStorage.getItem("auth_token");

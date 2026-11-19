@@ -1,11 +1,11 @@
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 // fetch
 export const fetchIntegrationAcc = async () => {
   const token = localStorage.getItem("auth_token");
 
-  console.log("AUTH TOKEN:", token); // 🔍 debug
 
-  const res = await fetch("https://gateway.aajneetiadvertising.com/LeadCapture", {
+  const res = await fetch(`${API_BASE_URL}/LeadCapture`, {
     method: "GET",
     headers: {
       "Content-Type": "text/plain",
@@ -30,9 +30,8 @@ export const fetchIntegrationAcc = async () => {
 export const fetchIntegrationAccById = async (id) => {
   const token = localStorage.getItem("auth_token");
 
-  console.log("AUTH TOKEN:", token); // 🔍 debug
 
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/LeadCapture/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/LeadCapture/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "text/plain",
@@ -57,9 +56,8 @@ export const fetchIntegrationAccById = async (id) => {
 export const integrateAcc = async (payload) => {
   const token = localStorage.getItem("auth_token");
 
-  console.log("AUTH TOKEN:", token); // 🔍 debug
 
-  const res = await fetch("https://gateway.aajneetiadvertising.com/LeadCapture", {
+  const res = await fetch(`${API_BASE_URL}/LeadCapture`, {
     method: "POST",
     headers: {
       "Content-Type": "text/plain",
@@ -88,7 +86,7 @@ export const integrateAcc = async (payload) => {
 export const updateIntergrateAcc = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/LeadCapture/${id}`,
+    `${API_BASE_URL}/LeadCapture/${id}`,
     {
       method: "PUT",
       headers: {
@@ -120,7 +118,7 @@ export const updateIntergrateAcc = async (id, payload) => {
 export const deleteIntegration = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/LeadCapture/${id}`,
+    `${API_BASE_URL}/LeadCapture/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "text/plain", token: token },

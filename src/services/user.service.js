@@ -1,4 +1,5 @@
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 // ── Users reference cache ────────────────────────────────────────────────
 // The user list is org reference data pulled on nearly every page/drawer
 // (assignee & collaborator pickers, filters), and fetchUser PAGINATES through
@@ -66,7 +67,7 @@ export const fetchUser = async () => {
 
   for (let page = 0; page < MAX_PAGES && offset < total; page++) {
     const res = await fetch(
-      `https://gateway.aajneetiadvertising.com/User?maxSize=${PAGE_SIZE}&offset=${offset}&orderBy=userName&order=asc`,
+      `${API_BASE_URL}/User?maxSize=${PAGE_SIZE}&offset=${offset}&orderBy=userName&order=asc`,
       {
         method: "GET",
         headers: {
@@ -102,7 +103,7 @@ export const fetchUser = async () => {
 export const fetchUserById = async (id) => {
   const token = localStorage.getItem("auth_token");
 
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/User/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/User/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -124,7 +125,7 @@ export const updateUser = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/User/${id}`,
+    `${API_BASE_URL}/User/${id}`,
     {
       method: "PUT",
       headers: {
@@ -161,7 +162,7 @@ export const updateUser = async (id, payload) => {
 export const deleteUser = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/User/${id}`,
+    `${API_BASE_URL}/User/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
@@ -185,7 +186,7 @@ export const attachment = async (payload) => {
   const token = localStorage.getItem("auth_token");
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/User/Attachment`,
+    `${API_BASE_URL}/User/Attachment`,
     {
       method: "POST",
       headers: {

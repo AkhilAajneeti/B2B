@@ -25,8 +25,9 @@ import {
   PIPELINE_PAGE_SIZE,
 } from "../utils/pipelineConstants";
 import { handleUnauthorized } from "services/session";
+import { API_BASE_URL } from "services/apiBase";
 
-const API_BASE = "https://gateway.aajneetiadvertising.com/Lead";
+const API_BASE = `${API_BASE_URL}/Lead`;
 
 // Date filter types that don't carry a value. The backend understands them
 // directly (currentMonth, lastSevenDays, etc.). "on" / "before" / "after"

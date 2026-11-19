@@ -1,4 +1,5 @@
 import { handleUnauthorized } from "services/session";
+import { API_BASE_URL } from "services/apiBase";
 /**
  * Win Rate analytics data layer.
  *
@@ -11,7 +12,7 @@ import { handleUnauthorized } from "services/session";
  *   - 10-min TTL on cached entries; React Query handles 5-min background refresh.
  */
 
-const ESPO_BASE = "https://gateway.aajneetiadvertising.com/Lead";
+const ESPO_BASE = `${API_BASE_URL}/Lead`;
 
 // v3: the select gained modifiedAt (v2 added cStatusObj + cProject). The key
 // MUST move with the select — see the note beside it.

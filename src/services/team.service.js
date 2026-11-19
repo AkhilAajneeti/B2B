@@ -1,4 +1,5 @@
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 // ── Teams reference cache ────────────────────────────────────────────────
 // Team list is org reference data pulled on many pages/drawers. Same approach
 // as the users cache in user.service.js: store the whole result in localStorage
@@ -68,7 +69,7 @@ export const fetchTeam = async () => {
 
   for (let offset = 0; offset < MAX_TEAMS; offset += PAGE_SIZE) {
     const res = await fetch(
-      `https://gateway.aajneetiadvertising.com/Team?maxSize=${PAGE_SIZE}&offset=${offset}`,
+      `${API_BASE_URL}/Team?maxSize=${PAGE_SIZE}&offset=${offset}`,
       {
         method: "GET",
         headers: {
@@ -101,8 +102,7 @@ export const fetchTeam = async () => {
 
 export const fetchTeamById = async (id) => {
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/team/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/team/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -120,7 +120,7 @@ export const fetchTeamById = async (id) => {
 }
 export const fetchTeamUser = async (id) => {
   const token = localStorage.getItem("auth_token");
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/team/${id}/users`, {
+  const res = await fetch(`${API_BASE_URL}/team/${id}/users`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -139,7 +139,7 @@ export const fetchTeamUser = async (id) => {
 
 export const createTeam = async (payload) => {
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/team", {
+  const res = await fetch(`${API_BASE_URL}/team`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -167,7 +167,7 @@ export const updateTeam = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
   
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/team/${id}`,
+    `${API_BASE_URL}/team/${id}`,
     {
       method: "PUT",
       headers: {
@@ -199,7 +199,7 @@ export const updateTeam = async (id, payload) => {
 export const deleteTeam = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/team/${id}`,
+    `${API_BASE_URL}/team/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },

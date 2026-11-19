@@ -1,4 +1,5 @@
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 export const fetchProjects = async ({
   limit = 10,
   page = 1,
@@ -188,7 +189,7 @@ export const fetchProjects = async ({
     })
     .join("&");
 
-  const url = `https://gateway.aajneetiadvertising.com/CProjects?maxSize=${limit}&offset=${offset}&orderBy=${orderBy}&order=${order}${query ? `&${query}` : ""
+  const url = `${API_BASE_URL}/CProjects?maxSize=${limit}&offset=${offset}&orderBy=${orderBy}&order=${order}${query ? `&${query}` : ""
     }`;
 
   const res = await fetch(url, {
@@ -214,8 +215,7 @@ export const fetchProjects = async ({
 
 export const fetchProjectsById = async (id) => {
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/CProjects/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/CProjects/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -235,7 +235,7 @@ export const fetchProjectsById = async (id) => {
 export const createProject = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/CProjects", {
+  const res = await fetch(`${API_BASE_URL}/CProjects`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -260,7 +260,7 @@ export const updateProject = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
   console.log(id, payload);
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/CProjects/${id}`,
+    `${API_BASE_URL}/CProjects/${id}`,
     {
       method: "PUT",
       headers: {
@@ -290,7 +290,7 @@ export const updateProject = async (id, payload) => {
 export const deleteProject = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/CProjects/${id}`,
+    `${API_BASE_URL}/CProjects/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },

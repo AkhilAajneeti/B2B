@@ -3,6 +3,23 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import { SESSION_EXPIRED_KEY } from "services/session";
+import {
+  LOGIN_RESULT,
+  buildLoginObject,
+  enrichUser,
+  initiateLogin,
+  loadSessionUser,
+  persistSession,
+  resendOtp,
+  verifyOtp,
+} from "services/auth.service";
+import OtpStep from "./OtpStep";
+
+/** Where a pending OTP challenge is parked so a refresh does not lose it. */
+const PENDING_CHALLENGE_KEY = "pendingChallenge";
+
+/** Matches the gateway's 15-minute OTP lifetime. */
+const CHALLENGE_TTL_MS = 15 * 60 * 1000;
 
 /**
  * `variant="festive"` matches the Diwali sign-in mockup: a gradient submit
@@ -22,6 +39,14 @@ const LoginForm = ({ variant = "default" }) => {
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // A pending OTP challenge, or null while on the credentials step. Holding
+  // the whole challenge in one piece of state keeps the token, the masked
+  // address and the issue time from ever drifting out of sync — a stale
+  // challengeToken paired with a fresh countdown would show a live timer over
+  // a code the gateway has already invalidated.
+  const [challenge, setChallenge] = useState(null);
+  const [otpError, setOtpError] = useState("");
 
   // Where to return after signing in. Set only when we arrived here because a
   // session expired mid-work; otherwise sign-in goes to the dashboard.
@@ -48,6 +73,36 @@ const LoginForm = ({ variant = "default" }) => {
       /* sessionStorage unavailable — fall back to a plain login screen */
     }
   }, []);
+
+  // Restore a pending OTP challenge after an accidental refresh. Without
+  // this, F5 on the OTP screen drops the challenge token, and the code
+  // already sitting in the person's inbox becomes unusable — they have to
+  // sign in again and wait for a second email.
+  //
+  // Anything past the gateway's 15-minute window is discarded rather than
+  // restored: showing an expired code's screen would only produce a failed
+  // verify.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING_CHALLENGE_KEY);
+      if (!raw) return;
+
+      const saved = JSON.parse(raw) || {};
+      const fresh =
+        saved.challengeToken &&
+        saved.issuedAt &&
+        Date.now() - saved.issuedAt < CHALLENGE_TTL_MS;
+
+      if (fresh) {
+        setChallenge(saved);
+      } else {
+        sessionStorage.removeItem(PENDING_CHALLENGE_KEY);
+      }
+    } catch {
+      /* unreadable or storage disabled — start from the credentials step */
+    }
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     const isAuthenticated = localStorage.getItem("isAuthenticated");
@@ -87,6 +142,78 @@ const LoginForm = ({ variant = "default" }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Commits a session and leaves the login screen.
+   *
+   * Shared end point for BOTH flows so that localStorage ends up identical
+   * either way — same `login_object` shape, same `acl`, same quota handling.
+   * A difference here would mean role gating or the `aajneeti` contact masking
+   * behaving differently depending on which gateway signed you in.
+   */
+  const commitSession = ({ headerToken, loginObject, acl }) => {
+    const stored = persistSession({ token: headerToken, loginObject, acl });
+    if (!stored) {
+      setErrors({
+        general:
+          "Your browser storage is full, so the session could not be saved. Clear this site's data and try again.",
+      });
+      return false;
+    }
+
+    try {
+      sessionStorage.removeItem("dashboardSummaryAlertDismissed");
+      sessionStorage.removeItem("dashboardSummaryAlertSoundPlayed");
+      sessionStorage.removeItem(PENDING_CHALLENGE_KEY);
+    } catch {
+      // sessionStorage unavailable — alert will just behave as if first-visit
+    }
+
+    // Back to whatever they were doing when the session died, else the
+    // dashboard. `returnTo` is always a validated same-origin path.
+    navigate(returnTo || "/dashboard");
+    return true;
+  };
+
+  /**
+   * Legacy gateway: `/auth` already returned the Espo token and user.
+   *
+   * KEPT EXACTLY AS IT WAS, including the detail that what lands in
+   * `auth_token` is `btoa(JSON.stringify(loginObject))` — the base64 wrapper
+   * carrying the token AND secret — not the raw Espo token. Every service
+   * forwards that wrapper as the `token` header. Storing the bare token here
+   * instead would log everyone out of the production gateway.
+   */
+  const finishLegacyLogin = async ({ token, secret, user, acl }) => {
+    const provisional = buildLoginObject({ user, acl, token, secret });
+    const provisionalHeader = btoa(JSON.stringify(provisional));
+
+    // Roles come from a second call; see enrichUser.
+    const enriched = await enrichUser(user, provisionalHeader);
+
+    const loginObject = buildLoginObject({ user: enriched, acl, token, secret });
+    return commitSession({
+      headerToken: btoa(JSON.stringify(loginObject)),
+      loginObject,
+      acl,
+    });
+  };
+
+  /**
+   * 2FA gateway: we hold a verified session token and nothing else, so the
+   * user and ACL have to be fetched before we can let anyone in.
+   */
+  const finishTwoFactorLogin = async (sessionToken) => {
+    const { user, acl } = await loadSessionUser(sessionToken);
+    const enriched = await enrichUser(user, sessionToken);
+
+    const loginObject = buildLoginObject({
+      user: enriched,
+      acl,
+      token: sessionToken,
+    });
+    return commitSession({ headerToken: sessionToken, loginObject, acl });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -94,162 +221,90 @@ const LoginForm = ({ variant = "default" }) => {
 
     setIsLoading(true);
     setErrors({});
-//  https://test-gateway.aajneetiadvertising.com/auth   https://gateway.aajneetiadvertising.com/auth
+    // Gateway host comes from VITE_API_BASE_URL via services/apiBase —
+    // set it to the test gateway to exercise the 2FA flow. See that module.
     try {
-      // 🔐 Step 1: create login token (username + password)
-      const loginToken = btoa(`${formData.username}:${formData.password}`);
+      const outcome = await initiateLogin(formData.username, formData.password);
 
-      const res = await fetch("https://gateway.aajneetiadvertising.com/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "create-token": loginToken,
-        },
-        //cross origin request  on crm 
-        body: JSON.stringify({
-          // Trimmed because a mobile autocomplete suggestion inserts a
-          // trailing space, and the backend compares the username verbatim.
-          // The PASSWORD is deliberately sent as typed: a space can be a
-          // legitimate character in one, and silently stripping it would lock
-          // out anyone whose password ends in one.
-          username: formData.username.trim(),
-          password: formData.password,
-        }),
-      });
-
-      const data = await res.json();
-      console.log("LOGIN RESPONSE:", data);
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Invalid credentials");
-      }
-      //
-
-      /* STEP 2: get logged in user */
-      const user = data.user;
-
-     
-      const buildLoginObj = (u, rolesNamesMap) => ({
-        id: u.id,
-        username: u.userName,
-        token: data.token,
-        secret: data.secret,
-        type: u.type,
-        acl: data.acl || null,
-        rolesIds: u.rolesIds || [],
-        rolesNames: rolesNamesMap || {},
-        roles: Object.values(rolesNamesMap || {}),
-        role: Object.values(rolesNamesMap || {})?.[0] || "",
-        teamsIds: u.teamsIds?.length
-          ? u.teamsIds
-          : u.teamIds?.length
-            ? u.teamIds
-            : u.defaultTeamId
-              ? [u.defaultTeamId]
-              : [],
-        teamId: u.teamId || u.defaultTeamId || null,
-        assignedUserId: u.id,
-      });
-
-      const wrappedToken = btoa(
-        JSON.stringify(buildLoginObj(user, user.rolesNames)),
-      );
-
-
-      let enrichedUser = user;
-      try {
-        const userRes = await fetch(
-          `https://gateway.aajneetiadvertising.com/User/${user.id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              token: wrappedToken,
-            },
-          },
-        );
-        if (userRes.ok) {
-          const full = await userRes.json();
-          enrichedUser = { ...user, ...full };
-        }
-      } catch (err) {
-        console.warn("Could not enrich user with role info:", err);
-      }
-
-      // 🔐 Step 2: create login object from response (with enriched roles)
-      const loginObj = buildLoginObj(
-        enrichedUser,
-        enrichedUser.rolesNames || {},
-      );
-
-      // 🔐 Step 3: stringify + base64 encode
-      const jsonString = JSON.stringify(loginObj);
-      const myToken = btoa(jsonString);
-
-      // ✅ Store everything.
-      //
-      // Guarded, because these four writes share one storage quota with every
-      // cache the app keeps — and they were previously bare setItem calls.
-      // When storage was full the writes threw PART WAY THROUGH, which is the
-      // worst possible outcome: auth_token and login_object land, `acl` (the
-      // largest of the four) does not, and the user is "logged in" with no
-      // permissions at all. Every ACL-gated read then comes back empty and it
-      // looks exactly like "my data is not loading".
-      //
-      // So: clear the app's own caches and retry once — they are all
-      // re-derivable from the server — and only give up if that still fails,
-      // with a message that names the real problem instead of a login error.
-      const writeSession = () => {
-        localStorage.setItem("auth_token", myToken);
-        localStorage.setItem("login_object", jsonString);
-        localStorage.setItem("isAuthenticated", "true");
-        if (data.acl) {
-          localStorage.setItem("acl", JSON.stringify(data.acl));
-        }
-      };
-
-      try {
-        writeSession();
-      } catch {
+      // 2FA gateway — credentials were accepted and a code is in the post.
+      if (outcome.result === LOGIN_RESULT.OTP_REQUIRED) {
+        const challenge = {
+          challengeToken: outcome.challengeToken,
+          emailMasked: outcome.emailMasked,
+          message: outcome.message,
+          issuedAt: Date.now(),
+        };
+        setChallenge(challenge);
+        setOtpError("");
+        // Survives an accidental refresh on the OTP screen, which would
+        // otherwise throw the code away and force a fresh login.
         try {
-          // Drop every cache we own, keeping nothing but what we are about to
-          // write. Counts, teams, users and datasets all rebuild on demand.
-          Object.keys(localStorage)
-            .filter(
-              (k) =>
-                k.startsWith("leads_count_cache_") ||
-                k.startsWith("users_cache_") ||
-                k.startsWith("teams_cache_") ||
-                k.startsWith("win_rate_dataset_") ||
-                k.startsWith("project_options_"),
-            )
-            .forEach((k) => localStorage.removeItem(k));
-          writeSession();
+          sessionStorage.setItem(PENDING_CHALLENGE_KEY, JSON.stringify(challenge));
         } catch {
-          setErrors({
-            general:
-              "Your browser storage is full, so the session could not be saved. Clear this site's data and try again.",
-          });
-          setIsLoading(false);
-          return;
+          /* storage disabled — the flow still works, just not across a refresh */
         }
+        setIsLoading(false);
+        return;
       }
 
-      try {
-        sessionStorage.removeItem("dashboardSummaryAlertDismissed");
-        sessionStorage.removeItem("dashboardSummaryAlertSoundPlayed");
-      } catch {
-        // sessionStorage unavailable — alert will just behave as if first-visit
-      }
-
-      // Back to whatever they were doing when the session died, else the
-      // dashboard. `returnTo` is always a validated same-origin path.
-      navigate(returnTo || "/dashboard");
+      // Legacy gateway — already authenticated.
+      await finishLegacyLogin(outcome);
     } catch (err) {
       console.error("Login error:", err);
       setErrors({ general: err.message });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (code) => {
+    setIsLoading(true);
+    setOtpError("");
+    try {
+      const sessionToken = await verifyOtp(code, challenge.challengeToken);
+      await finishTwoFactorLogin(sessionToken);
+    } catch (err) {
+      console.error("OTP verification error:", err);
+      setOtpError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      const next = await resendOtp(challenge.challengeToken);
+      // The previous challenge token stops working the moment a new code is
+      // issued, so this replacement is mandatory, not an optimisation.
+      const challenge2 = {
+        challengeToken: next.challengeToken,
+        emailMasked: next.emailMasked || challenge.emailMasked,
+        message: next.message,
+        issuedAt: Date.now(),
+      };
+      setChallenge(challenge2);
+      setOtpError("");
+      try {
+        sessionStorage.setItem(PENDING_CHALLENGE_KEY, JSON.stringify(challenge2));
+      } catch {
+        /* storage disabled */
+      }
+    } catch (err) {
+      console.error("OTP resend error:", err);
+      setOtpError(err.message);
+    }
+  };
+
+  /** Abandons the pending code and returns to the username/password step. */
+  const handleBackToCredentials = () => {
+    setChallenge(null);
+    setOtpError("");
+    setErrors({});
+    setFormData((prev) => ({ ...prev, password: "" }));
+    try {
+      sessionStorage.removeItem(PENDING_CHALLENGE_KEY);
+    } catch {
+      /* storage disabled */
     }
   };
 
@@ -275,6 +330,26 @@ const LoginForm = ({ variant = "default" }) => {
     hidden: { opacity: 0, y: 12 },
     show: { opacity: 1, y: 0 },
   };
+
+  // Step 2. Rendered in place of the credentials form rather than over it as
+  // a modal: a dialog floating above a still-filled password field invites
+  // the person to dismiss it and retry, which would silently invalidate the
+  // code they were just sent.
+  if (challenge) {
+    return (
+      <OtpStep
+        emailMasked={challenge.emailMasked}
+        message={challenge.message}
+        issuedAt={challenge.issuedAt}
+        onVerify={handleVerifyOtp}
+        onResend={handleResendOtp}
+        onBack={handleBackToCredentials}
+        isLoading={isLoading}
+        error={otpError}
+        festive={festive}
+      />
+    );
+  }
 
   return (
     <motion.form

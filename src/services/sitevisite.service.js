@@ -10,8 +10,9 @@ import {
   bulkDeleteleads,
 } from "./leads.service";
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 
-const LEAD_URL = "https://gateway.aajneetiadvertising.com/Lead";
+const LEAD_URL = `${API_BASE_URL}/Lead`;
 
 // The lead statuses that define a "site visit". Kept here so the filter,
 // the hook, and any default-on-create all reference the same source of truth.

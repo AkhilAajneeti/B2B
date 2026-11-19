@@ -1,10 +1,10 @@
 import { clearUsersCache } from "./user.service";
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 
 export const fetchRoles=async()=>{
     const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch("https://gateway.aajneetiadvertising.com/role", {
+  const res = await fetch(`${API_BASE_URL}/role`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -24,7 +24,7 @@ export const fetchRoles=async()=>{
 
 export const createUser = async (payload) => {
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/User", {
+  const res = await fetch(`${API_BASE_URL}/User`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 

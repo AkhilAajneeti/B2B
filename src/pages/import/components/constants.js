@@ -5,8 +5,10 @@
  * object. Components import from here so adding a new entity / status / lead
  * field only needs one file edit instead of grepping the page.
  */
+import { API_BASE_URL } from "services/apiBase";
 
-export const API_BASE = "https://gateway.aajneetiadvertising.com";
+
+export const API_BASE = API_BASE_URL;
 
 // ---------------------------------------------------------------------------
 // Filter options (used by ImportFilters)

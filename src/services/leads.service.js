@@ -1,6 +1,7 @@
 import { projectExactLeadCondition } from "pages/campaigns/utils/leadScope";
 import { isMaskedUser } from "utils/permission";
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 
 // Fields the leads LIST actually needs, for the request made on behalf of a
 // restricted user. Espo's `select` is a whitelist with no "exclude" form, so
@@ -267,7 +268,7 @@ export const fetchLeadsCount = async (filters = []) => {
     })
     .join("&");
 
-  const url = `https://gateway.aajneetiadvertising.com/Lead?${query}&maxSize=1`;
+  const url = `${API_BASE_URL}/Lead?${query}&maxSize=1`;
 
   const res = await fetch(url, {
     method: "GET",
@@ -309,7 +310,7 @@ export const fetchLeads = async ({ limit = 100, page = 1 }) => {
   const offset = (page - 1) * limit; // ✅ FIX
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc`,
+    `${API_BASE_URL}/Lead?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc`,
     {
       method: "GET",
       headers: {
@@ -756,7 +757,7 @@ export const fetchNewLeads = async ({
       ? `&select=${encodeURIComponent(select)}`
       : "";
 
-  const baseUrl = `https://gateway.aajneetiadvertising.com/Lead?maxSize=${limit}&offset=${offset}&orderBy=${safeOrderBy}&order=${safeOrder}${selectParam}`;
+  const baseUrl = `${API_BASE_URL}/Lead?maxSize=${limit}&offset=${offset}&orderBy=${safeOrderBy}&order=${safeOrder}${selectParam}`;
 
   const url = query ? `${baseUrl}&${query}` : baseUrl;
 
@@ -817,7 +818,7 @@ export const searchLeads = async ({ query = "", limit = 15, offset = 0 } = {}) =
   );
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead?${params.toString()}`,
+    `${API_BASE_URL}/Lead?${params.toString()}`,
     { method: "GET", headers: { "Content-Type": "application/json", token } },
   );
 
@@ -964,7 +965,7 @@ export const fetchLeadsByIds = async (ids = []) => {
     chunk.forEach((id) => params.append("whereGroup[0][value][]", id));
 
     const res = await fetch(
-      `https://gateway.aajneetiadvertising.com/Lead?${params.toString()}`,
+      `${API_BASE_URL}/Lead?${params.toString()}`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json", token },
@@ -988,7 +989,7 @@ export const fetchLeadsByIds = async (ids = []) => {
 export const fetchLeadsById = async (id) => {
   const token = localStorage.getItem("auth_token");
 
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/Lead/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/Lead/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -1008,7 +1009,7 @@ export const fetchLeadsById = async (id) => {
 export const createLead = async (payload) => {
 
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Lead", {
+  const res = await fetch(`${API_BASE_URL}/Lead`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -1033,7 +1034,7 @@ export const updateLead = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}`,
+    `${API_BASE_URL}/Lead/${id}`,
     {
       method: "PUT",
       headers: {
@@ -1063,7 +1064,7 @@ export const updateLead = async (id, payload) => {
 export const deleteLead = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}`,
+    `${API_BASE_URL}/Lead/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
@@ -1091,7 +1092,7 @@ export const leadStreamById = async (id) => {
   const token = localStorage.getItem("auth_token");
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}/stream`,
+    `${API_BASE_URL}/Lead/${id}/stream`,
     {
       method: "GET",
       headers: {
@@ -1116,7 +1117,7 @@ export const updateStream = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}/stream`,
+    `${API_BASE_URL}/Lead/${id}/stream`,
     {
       method: "POST",
       headers: {
@@ -1142,7 +1143,7 @@ export const updateStream = async (id, payload) => {
 export const deleteActivity = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Note/${id}`,
+    `${API_BASE_URL}/Note/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
@@ -1164,7 +1165,7 @@ export const deleteActivity = async (id) => {
 export const createLeadActivity = async (payload) => {
 
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Note", {
+  const res = await fetch(`${API_BASE_URL}/Note`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -1192,7 +1193,7 @@ export const leadActivitesById = async (id) => {
   const token = localStorage.getItem("auth_token");
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Activities/Lead/${id}/activities`,
+    `${API_BASE_URL}/Activities/Lead/${id}/activities`,
     {
       method: "GET",
       headers: {
@@ -1221,7 +1222,7 @@ export const fetchLeadTask = async (id) => {
   const token = localStorage.getItem("auth_token");
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}/tasks`,
+    `${API_BASE_URL}/Lead/${id}/tasks`,
     {
       method: "GET",
       headers: {
@@ -1247,7 +1248,7 @@ export const createLeadTask = async (id) => {
   const token = localStorage.getItem("auth_token");
 
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Lead/${id}/tasks`,
+    `${API_BASE_URL}/Lead/${id}/tasks`,
     {
       method: "GET",
       headers: {

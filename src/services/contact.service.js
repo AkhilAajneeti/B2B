@@ -1,8 +1,8 @@
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 export const fetchContacts = async () => {
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Contact", {
+  const res = await fetch(`${API_BASE_URL}/Contact`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -21,8 +21,7 @@ export const fetchContacts = async () => {
 
 export const fetchContactById = async (id) => {
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/Contact/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/Contact/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -42,7 +41,7 @@ export const fetchContactById = async (id) => {
 
 export const createContact = async (payload) => {
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Contact", {
+  const res = await fetch(`${API_BASE_URL}/Contact`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -65,7 +64,7 @@ export const createContact = async (payload) => {
 export const deleteContact = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Contact/${id}`,
+    `${API_BASE_URL}/Contact/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
@@ -90,7 +89,7 @@ export const updateContact = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
   console.log(id, payload);
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Contact/${id}`,
+    `${API_BASE_URL}/Contact/${id}`,
     {
       method: "PUT",
       headers: {
@@ -122,9 +121,8 @@ export const updateContact = async (id, payload) => {
 export const fetchContactStreamById = async (id) => {
   console.log(id);
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Contact/${id}/stream`,
+    `${API_BASE_URL}/Contact/${id}/stream`,
     {
       method: "GET",
       headers: {
@@ -150,7 +148,7 @@ export const fetchContactStreamById = async (id) => {
 export const deleteContactStream = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Note/${id}`,
+    `${API_BASE_URL}/Note/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
@@ -172,7 +170,7 @@ export const deleteContactStream = async (id) => {
 export const createContactStream = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Note", {
+  const res = await fetch(`${API_BASE_URL}/Note`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -198,9 +196,8 @@ export const createContactStream = async (payload) => {
 export const contactActivitesById = async (id) => {
   console.log(id);
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Activities/Contact/${id}/activities`,
+    `${API_BASE_URL}/Activities/Contact/${id}/activities`,
     {
       method: "GET",
       headers: {

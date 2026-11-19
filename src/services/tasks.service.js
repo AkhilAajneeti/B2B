@@ -1,4 +1,5 @@
 import { handleUnauthorized } from "./session";
+import { API_BASE_URL } from "services/apiBase";
 // fetch all
 const toLocalISOString = (date) => {
   const tzOffset = date.getTimezoneOffset() * 60000;
@@ -167,7 +168,7 @@ export const fetchAllTasks = async ({ limit, page, filters = {} }) => {
     })
     .join("&");
 
-  const url = `https://gateway.aajneetiadvertising.com/Task?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc${query ? `&${query}` : ""
+  const url = `${API_BASE_URL}/Task?maxSize=${limit}&offset=${offset}&orderBy=createdAt&order=desc${query ? `&${query}` : ""
     }`;
 
   console.log("🔥 TASK API:", url);
@@ -197,8 +198,7 @@ export const fetchAllTasks = async ({ limit, page, filters = {} }) => {
 
 export const fetchTasks = async () => {
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Task", {
+  const res = await fetch(`${API_BASE_URL}/Task`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -216,8 +216,7 @@ export const fetchTasks = async () => {
 };
 export const fetchTasksById = async (id) => {
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
-  const res = await fetch(`https://gateway.aajneetiadvertising.com/Task/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/Task/${id}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -237,7 +236,7 @@ export const fetchTasksById = async (id) => {
 export const createTasks = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/task", {
+  const res = await fetch(`${API_BASE_URL}/task`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -262,7 +261,7 @@ export const updateTasks = async (id, payload) => {
   const token = localStorage.getItem("auth_token");
   console.log(id, payload);
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/task/${id}`,
+    `${API_BASE_URL}/task/${id}`,
     {
       method: "PUT",
       headers: {
@@ -292,7 +291,7 @@ export const updateTasks = async (id, payload) => {
 export const deleteTasks = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/task/${id}`,
+    `${API_BASE_URL}/task/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
@@ -318,9 +317,8 @@ export const bulkDeleteTasks = async (ids = []) => {
 export const taskStreamById = async (id) => {
   console.log(id);
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Task/${id}/stream`,
+    `${API_BASE_URL}/Task/${id}/stream`,
     {
       method: "GET",
       headers: {
@@ -346,7 +344,7 @@ export const taskStreamById = async (id) => {
 export const deleteActivity = async (id) => {
   const token = localStorage.getItem("auth_token");
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Note/${id}`,
+    `${API_BASE_URL}/Note/${id}`,
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json", token: token },
@@ -368,7 +366,7 @@ export const deleteActivity = async (id) => {
 export const createLeadActivity = async (payload) => {
   console.log(payload);
   const token = localStorage.getItem("auth_token");
-  const res = await fetch("https://gateway.aajneetiadvertising.com/Note", {
+  const res = await fetch(`${API_BASE_URL}/Note`, {
     method: "POST",
     headers: { "Content-Type": "application/json", token: token },
 
@@ -393,9 +391,8 @@ export const createLeadActivity = async (payload) => {
 export const TaskActivitesById = async (id) => {
   console.log(id);
   const token = localStorage.getItem("auth_token");
-  console.log("AUTH TOKEN:", token); // 🔍 debug
   const res = await fetch(
-    `https://gateway.aajneetiadvertising.com/Activities/Task/${id}/activities`,
+    `${API_BASE_URL}/Activities/Task/${id}/activities`,
     {
       method: "GET",
       headers: {
