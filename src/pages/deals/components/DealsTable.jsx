@@ -500,11 +500,13 @@ const DealsTable = ({
                         <Icon name="Edit" size={14} />
                       </Button>
 
-                      {/* Call — opens the device dialer. Hidden for a
-                          restricted user when the row carries no number: their
-                          leads request omits phoneNumber, so it would be
-                          inert. */}
-                      {(!masked || deal?.phoneNumber) && (
+                      {/* Call — opens the device dialer. Hidden outright for a
+                          restricted user: they may not see the number, so they
+                          may not ring it either. This used to show whenever the
+                          row happened to carry a number, which meant the
+                          restriction stopped at the display and the call still
+                          went through. Matches the drawer's quick-action strip. */}
+                      {!masked && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -678,11 +680,10 @@ const DealsTable = ({
                         </Button>
                       )}
 
-                      {/* Call — opens the device dialer via tel:. Hidden for a
-                          restricted user when the row carries no number: their
-                          leads request omits phoneNumber entirely, so the
-                          button would be inert. */}
-                      {(!masked || deal?.phoneNumber) && (
+                      {/* Call — opens the device dialer via tel:. Hidden
+                          outright for a restricted user, same rule as the
+                          desktop row above: no visible number, no call. */}
+                      {!masked && (
                       <Button
                         variant="ghost"
                         size="icon"

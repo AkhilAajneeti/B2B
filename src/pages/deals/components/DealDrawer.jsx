@@ -1111,30 +1111,15 @@ const DealDrawer = ({
           {mode === "view" && deal && !isEditing && (
             <div className="border-b border-border">
               <div className="px-6 py-3 flex flex-wrap gap-2  sm:flex">
-                {/* Calling still works for a restricted user — they just never
-                    see the number. The masked branch dials from an onClick
-                    rather than an href, so the digits aren't in the markup for
-                    a right-click "copy link address" to lift straight out. */}
-                {masked ? (
-                  // Same reason as the table: with phoneNumber absent from the
-                  // list response there is nothing to dial, so don't offer it.
-                  !deal?.phoneNumber ? null : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!deal?.phoneNumber) return;
-                        window.location.href = `tel:${deal.phoneNumber}`;
-                      }}
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
-                        ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
-                        : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
-                        }`}
-                    >
-                      <Icon name="Phone" size={14} />
-                      {displayPhone(deal?.phoneNumber, true)}
-                    </button>
-                  )
-                ) : (
+                {/* A restricted user gets NO call button at all.
+                    This used to render a masked pill that still dialled on
+                    click — the number was hidden but the call went through, so
+                    the restriction stopped at the display and not at the
+                    action. Hiding the control is the whole point: if they may
+                    not see the number, they may not ring it either.
+                    The masked number is still readable on the Contact card in
+                    the Overview tab, as plain text with no tel: behind it. */}
+                {!masked && (
                   <a
                     href={deal?.phoneNumber ? `tel:${deal.phoneNumber}` : undefined}
                     className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
