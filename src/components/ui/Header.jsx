@@ -9,6 +9,7 @@ import { useNotification } from "NotificationContext";
 import { useNotificationCount } from "hooks/useNotificationCount";
 import Avatar from "react-avatar";
 import { useQueryClient } from "@tanstack/react-query";
+import { isMaskedUser } from "utils/permission";
 const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   // `login_object` may be missing (fresh tab, mid-logout race) or
   // malformed (manual clear). Default to an empty object so the
@@ -23,6 +24,13 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   } catch {
     LogInuser = {};
   }
+
+  // Restricted accounts get no notification bell. The feed carries
+  // assignment and follow-up notices — internal-team workflow they have no
+  // surface to act on, since Tasks, Activities and Next Contact are all
+  // hidden from them. Gating the COUNT QUERY as well as the button stops the
+  // poll outright rather than fetching a number nobody will see.
+  const masked = isMaskedUser();
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
@@ -145,7 +153,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
       setNotifications(data.list || []);
     }
   };
-  const { data } = useNotificationCount(!open);
+  const { data } = useNotificationCount(!open && !masked);
   const count = data || 0;
 
   // Short two-tone chime generated with the Web Audio API so we don't ship an
@@ -291,6 +299,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
           {/* Right Section - Actions & User */}
           <div className="flex items-center space-x-2">
+            {!masked && (
             <div className="relative" ref={notificationRef}>
               {/* Notifications */}
               {/* Notification button — matched to the reference icon by
@@ -389,6 +398,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
               )}
               {open && <NotificationDropdown />}
             </div>
+            )}
             {/* User Dropdown */}
             <div className="relative">
               <button

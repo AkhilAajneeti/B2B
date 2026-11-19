@@ -302,12 +302,24 @@ const DealsTable = ({
   const isIndeterminate =
     selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
 
+  // Data columns between the checkbox and the Actions cell: Name, Project,
+  // Source, Status, Next Contact, Create At, Assigned User. Restricted
+  // accounts lose Source, Next Contact and Assigned User (see the <thead>
+  // below), leaving Name, Project, Status and Create At.
+  //
+  // KEEP THIS IN STEP with the conditional <th>/<td> pairs below. The skeleton
+  // rows and the empty-state colSpan both derive from it, and a mismatch
+  // silently shears the table: loading rows wider than the header, and the
+  // "No leads available" cell spanning past the end of the row.
+  const DATA_COLUMNS = masked ? 4 : 7; // masked loses Source, Next Contact, Assigned User
+  const COLUMN_COUNT = DATA_COLUMNS + 2; // + checkbox + actions
+
   const SkeletonRow = () => (
     <tr className="animate-pulse border-t border-border">
       <td className="p-4">
         <div className="h-4 w-4 bg-gray-300/60 rounded"></div>
       </td>
-      {Array.from({ length: 7 }).map((_, i) => (
+      {Array.from({ length: DATA_COLUMNS }).map((_, i) => (
         <td key={i} className="p-4">
           <div className={`h-4 bg-gray-300/60 rounded ${i === 0 ? "w-24" : "w-20"}`}></div>
         </td>
@@ -339,15 +351,25 @@ const DealsTable = ({
               <SortHeader label="Project Name" column="cProjectName" />
               {/* Sorts cSubSource — the field this column renders. It sorted
                   the unrelated `source` field before. */}
-              <SortHeader label="Source" column="cSubSource" />
+              {!masked && <SortHeader label="Source" column="cSubSource" />}
               <SortHeader label="Status" column="status" />
-              <SortHeader label="Next Contact" column="cNextContactAt" />
+              {/* Next Contact and Assigned User are hidden from restricted
+                  accounts — internal-team views of the pipeline, matching the
+                  filters of the same names. Each <th> here has a matching <td>
+                  below under the same condition, and COLUMN_COUNT tracks both
+                  so the skeleton rows and the empty-state colSpan stay in
+                  step; a mismatch silently shears the table layout. */}
+              {!masked && (
+                <SortHeader label="Next Contact" column="cNextContactAt" />
+              )}
               <SortHeader label="Create At" column="createdAt" />
-              <th className="text-left px-4 py-3">
-                <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                  Assigned User
-                </span>
-              </th>
+              {!masked && (
+                <th className="text-left px-4 py-3">
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                    Assigned User
+                  </span>
+                </th>
+              )}
               <th className="w-24 px-4 py-3">
                 <span className="text-sm font-medium text-foreground">
                   Actions
@@ -360,7 +382,7 @@ const DealsTable = ({
               Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
             ) : !paginatedDeals?.length ? (
               <tr>
-                <td colSpan="9">
+                <td colSpan={COLUMN_COUNT}>
                   <div className="flex items-center justify-center h-[200px] text-gray-400 text-sm">
                     No leads available
                   </div>
@@ -410,19 +432,21 @@ const DealsTable = ({
                     </div>
                   </td>
 
-                  <td className="px-4 py-4">
-                    <div
-                      className={`font-medium flex justify-center items-center space-x-2 py-1 px-2 rounded-full ${getSourceColor(
-                        deal?.cSubSource,
-                      )}`}
-                    >
-                      {deal?.cSubSource
-                        ? deal?.cSubSource
-                        : deal?.source?.toLowerCase() === "acl"
-                          ? "Aajneeti"
-                          : deal?.source}
-                    </div>
-                  </td>
+                  {!masked && (
+                    <td className="px-4 py-4">
+                      <div
+                        className={`font-medium flex justify-center items-center space-x-2 py-1 px-2 rounded-full ${getSourceColor(
+                          deal?.cSubSource,
+                        )}`}
+                      >
+                        {deal?.cSubSource
+                          ? deal?.cSubSource
+                          : deal?.source?.toLowerCase() === "acl"
+                            ? "Aajneeti"
+                            : deal?.source}
+                      </div>
+                    </td>
+                  )}
 
                   <td className="px-4 py-4">
                     <div
@@ -434,19 +458,21 @@ const DealsTable = ({
                     </div>
                   </td>
 
-                  <td className="px-4 py-4">
-                    <div className="whitespace-nowrap leading-tight">
-                      <div className="text-sm font-medium text-foreground">
-                        {formatDate(deal?.cNextContactAt)}
-                      </div>
-                      {formatTime(deal?.cNextContactAt) && (
-                        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                          <Icon name="Clock" size={11} className="shrink-0" />
-                          {formatTime(deal?.cNextContactAt)}
+                  {!masked && (
+                    <td className="px-4 py-4">
+                      <div className="whitespace-nowrap leading-tight">
+                        <div className="text-sm font-medium text-foreground">
+                          {formatDate(deal?.cNextContactAt)}
                         </div>
-                      )}
-                    </div>
-                  </td>
+                        {formatTime(deal?.cNextContactAt) && (
+                          <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                            <Icon name="Clock" size={11} className="shrink-0" />
+                            {formatTime(deal?.cNextContactAt)}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  )}
 
                   <td className="px-4 py-4">
                     <div className="whitespace-nowrap leading-tight">
@@ -462,25 +488,27 @@ const DealsTable = ({
                     </div>
                   </td>
 
-                  <td className="px-4 py-4">
-                    {deal?.assignedUserName ? (
-                      <div className="inline-flex items-center gap-2 pl-1 pr-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors max-w-full">
-                        <span
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                          style={{
-                            backgroundColor: getNameColor(deal.assignedUserName),
-                          }}
-                        >
-                          {getInitials(deal.assignedUserName)}
-                        </span>
-                        <span className="text-sm font-medium text-slate-700 truncate capitalize">
-                          {deal.assignedUserName}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">—</span>
-                    )}
-                  </td>
+                  {!masked && (
+                    <td className="px-4 py-4">
+                      {deal?.assignedUserName ? (
+                        <div className="inline-flex items-center gap-2 pl-1 pr-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors max-w-full">
+                          <span
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                            style={{
+                              backgroundColor: getNameColor(deal.assignedUserName),
+                            }}
+                          >
+                            {getInitials(deal.assignedUserName)}
+                          </span>
+                          <span className="text-sm font-medium text-slate-700 truncate capitalize">
+                            {deal.assignedUserName}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  )}
 
                   <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                     <div
@@ -632,8 +660,12 @@ const DealsTable = ({
                   {/* Bottom */}
                   <div className="flex items-end justify-between mt-3 gap-3">
                     <div className="space-y-1 min-w-0">
-                      {/* Assigned */}
-                      {deal?.assignedUserName && (
+                      {/* Assigned — hidden for restricted accounts, same rule
+                          as the desktop column. The mobile card is a separate
+                          render of the same row, so gating only the table
+                          would leave the rep's name on screen for anyone on a
+                          phone. */}
+                      {!masked && deal?.assignedUserName && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Icon name="User2" size={12} />
                           <span className="truncate capitalize">

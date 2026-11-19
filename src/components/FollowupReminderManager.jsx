@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTodayFollowups } from "services/reminder.service";
+import { isMaskedUser } from "utils/permission";
 import Icon from "components/AppIcon";
 
 /**
@@ -125,6 +126,16 @@ const FollowupReminderManager = () => {
   const onLoginPage = location.pathname === "/login";
   const token = localStorage.getItem("auth_token");
 
+  // Restricted accounts get no follow-up reminders. Follow-up scheduling is
+  // internal-team workflow — the same reason the Next Contact column and
+  // filter are hidden from them — so popping a reminder would announce a
+  // follow-up they cannot see, act on, or reschedule.
+  //
+  // Gating the QUERY as well as the render matters: it stops the five-minute
+  // poll outright, so the account makes no request for data it is not meant
+  // to have, and no timers are ever armed.
+  const masked = isMaskedUser();
+
   const timerRef = useRef(null);
   const firedRef = useRef(loadFired());
   // Stack rendering — `activeReminders` holds every entry currently on-screen
@@ -144,7 +155,7 @@ const FollowupReminderManager = () => {
   const { data } = useQuery({
     queryKey: ["today-followups"],
     queryFn: fetchTodayFollowups,
-    enabled: !!token && !onLoginPage,
+    enabled: !!token && !onLoginPage && !masked,
     staleTime: 60 * 1000,
     refetchInterval: 5 * 60 * 1000, // re-sync reschedules / new follow-ups
     refetchOnWindowFocus: true,
@@ -392,7 +403,9 @@ const FollowupReminderManager = () => {
   // full list. One primary action per entry — the circular View button — with
   // Dismiss as a quiet text action beside it. Snooze was removed on request.
   // ---------------------------------------------------------------------
-  if (activeReminders.length === 0) return null;
+  // `masked` as well as the empty check: belt and braces, so a reminder can
+  // never reach the screen even if the query were somehow re-enabled.
+  if (masked || activeReminders.length === 0) return null;
 
   // Top of the stack = newest reminder. Reps see the most recent push.
   const topEntry = activeReminders[activeReminders.length - 1];

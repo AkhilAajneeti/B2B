@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { isAdminOrManager } from "../../../utils/permission.js";
+import { isAdminOrManager, isMaskedUser } from "../../../utils/permission.js";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
@@ -170,13 +170,18 @@ const DealsFilters = ({
           className="lg:col-span-2"
         />
 
-        <Select
-          placeholder="Assign User"
-          options={assignUserOptions}
-          value={filters?.assignUser || ""}
-          onChange={(value) => handleFilterChange("assignUser", value)}
-          searchable
-        />
+        {/* Assign User — withheld from restricted accounts, matching the
+            leads page filter of the same name and the hidden Lead
+            Distribution / Teams tabs in this page's own drawer. */}
+        {!isMaskedUser() && (
+          <Select
+            placeholder="Assign User"
+            options={assignUserOptions}
+            value={filters?.assignUser || ""}
+            onChange={(value) => handleFilterChange("assignUser", value)}
+            searchable
+          />
+        )}
 
 
         <Select

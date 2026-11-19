@@ -319,6 +319,12 @@ const NotificationRow = ({ deal, variant, onClick }) => {
 const DashboardSummaryAlert = () => {
   const navigate = useNavigate();
 
+  // Restricted accounts: used below to withhold the "View pipeline" buttons,
+  // since /pipeline is closed to them in Routes.jsx. NotificationRow computes
+  // its own copy of this — they are separate components and neither is nested
+  // inside the other, so the value does not carry across.
+  const masked = isMaskedUser();
+
   // Local dismiss + chime-played state — reset on every mount, so each
   // dashboard visit starts fresh (alert visible, chime ready to play once).
   const [dismissed, setDismissed] = useState(false);
@@ -346,7 +352,16 @@ const DashboardSummaryAlert = () => {
 
   const handleDismiss = () => setDismissed(true);
 
-  if (dismissed || urgent.total === 0) return null;
+  // Restricted accounts get no follow-up summary. This card is built entirely
+  // from next-contact dates — the due-today and overdue lists — and it plays a
+  // chime when they land. Next Contact is hidden from these accounts in the
+  // table and the filters, so announcing it here, with a sound, would be the
+  // same information arriving through a louder door.
+  //
+  // Placed after the hooks above, not before them: an early return ahead of
+  // useUrgentLeads / useEffect would change the hook order between renders and
+  // React would throw.
+  if (masked || dismissed || urgent.total === 0) return null;
 
   const openLead = (leadId) => {
     if (!leadId) return;
@@ -447,7 +462,12 @@ const DashboardSummaryAlert = () => {
             </div>
 
             {/* Mobile-only View pipeline button. On sm+ this lives in the
-                top-right action cluster instead. */}
+                top-right action cluster instead.
+                Hidden for restricted accounts: /pipeline is closed to them in
+                Routes.jsx, so leaving the button would send them to a guard
+                that bounces them back to the dashboard — a dead end that reads
+                as a broken button rather than as a withheld section. */}
+            {!masked && (
             <button
               type="button"
               onClick={() => navigate("/pipeline")}
@@ -458,6 +478,7 @@ const DashboardSummaryAlert = () => {
               <span>View overdue leads</span>
               <Icon name="ArrowRight" size={12} />
             </button>
+            )}
           </div>
         </div>
 
@@ -465,6 +486,9 @@ const DashboardSummaryAlert = () => {
             On mobile the pill moves to a full-width button below the list so
             the title and lead names get the full card width to themselves. */}
         <div className="absolute top-3 right-3 flex items-center gap-2">
+          {/* Desktop View pipeline pill — hidden for restricted accounts for
+              the same reason as the mobile button above. */}
+          {!masked && (
           <button
             type="button"
             onClick={() => navigate("/pipeline")}
@@ -475,6 +499,7 @@ const DashboardSummaryAlert = () => {
             <span>View overdue leads</span>
             <Icon name="ArrowRight" size={12} className="ml-0.5" />
           </button>
+          )}
           <button
             type="button"
             onClick={handleDismiss}

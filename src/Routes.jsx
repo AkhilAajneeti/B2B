@@ -129,15 +129,28 @@ const Routes = () => {
               path="/dashboard"
               element={<Dashboard />}
             />
+            {/* Internal-team surfaces — Tasks, Activities and Pipeline are
+                hidden from restricted accounts in the sidebar, and closed here
+                so the URL can't be typed or a shared deep link followed. */}
             <Route
               path="/tasks"
-              element={<TaskPage />}
+              element={
+                <ProtectedRoute blockMasked>
+                  <TaskPage />
+                </ProtectedRoute>
+              }
             />
             {/* Deep-linkable task — same page, opens the given task's drawer
-                directly so a particular task can be shared via URL. */}
+                directly so a particular task can be shared via URL. Guarded
+                as well: without it, a pasted /tasks/<id> would walk straight
+                past the gate on /tasks above. */}
             <Route
               path="/tasks/:taskId"
-              element={<TaskPage />}
+              element={
+                <ProtectedRoute blockMasked>
+                  <TaskPage />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/reports"
@@ -156,7 +169,11 @@ const Routes = () => {
             />
             <Route
               path="/activities"
-              element={<Activities />}
+              element={
+                <ProtectedRoute blockMasked>
+                  <Activities />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/profile"
@@ -180,7 +197,11 @@ const Routes = () => {
             />
             <Route
               path="/pipeline"
-              element={<Pipeline />}
+              element={
+                <ProtectedRoute blockMasked>
+                  <Pipeline />
+                </ProtectedRoute>
+              }
             />
             {/* Help Center — three patterns, same component, dispatches via useParams */}
             <Route

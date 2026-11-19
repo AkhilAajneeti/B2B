@@ -6,6 +6,7 @@ import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
 import { useTeams } from "hooks/useTeams";
 import RoleGuard from "components/RoleGuard";
+import { isMaskedUser } from "utils/permission";
 import { todayLocal } from "../../../utils/dateFilter";
 
 const FilterControls = ({
@@ -125,7 +126,7 @@ const FilterControls = ({
         onRemove: () => handleFilterChange("status", ""),
       });
     }
-    if (filters?.source) {
+    if (filters?.source && !isMaskedUser()) {
       const m = sourceOptions.find((o) => o.value === filters.source);
       pills.push({
         key: "source",
@@ -294,12 +295,16 @@ const FilterControls = ({
           onChange={(value) => handleFilterChange("dateType", value)}
         />
 
-        <Select
-          placeholder="Source"
-          options={sourceOptions}
-          value={filters?.source || ""}
-          onChange={(value) => handleFilterChange("source", value)}
-        />
+        {/* Source — withheld from restricted accounts, matching the leads
+            page filter and column of the same name. */}
+        {!isMaskedUser() && (
+          <Select
+            placeholder="Source"
+            options={sourceOptions}
+            value={filters?.source || ""}
+            onChange={(value) => handleFilterChange("source", value)}
+          />
+        )}
         <Select
           placeholder="Assign User"
           options={assignUserOptions}
@@ -350,9 +355,17 @@ const FilterControls = ({
             </div>
           )}
         </div>
-        <RoleGuard allowedRoles={["admin", "regular"]}>
-          <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">Report Analytics</Button>
-        </RoleGuard>
+        {/* Report Analytics — withheld from restricted accounts, matching the
+            Lead Analytics button on the leads page. The panel it opens is the
+            conversion funnel and win-rate charts: aggregate performance across
+            the team, which is the line this account sits behind elsewhere.
+            Gating the button is sufficient — `showAnalytics` starts false and
+            this is the only thing that flips it. */}
+        {!isMaskedUser() && (
+          <RoleGuard allowedRoles={["admin", "regular"]}>
+            <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">Report Analytics</Button>
+          </RoleGuard>
+        )}
       </div>
     </div>
   );

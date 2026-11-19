@@ -231,7 +231,29 @@ export const isElevated = () => {
 //
 // Named rather than repeated inline in both files, so the next change to who
 // qualifies is one edit and the badge and the filter can't drift apart.
-export const canSeeStatusHistory = () => isSupAdmin() || isOwner();
+//
+// Accounts granted it BY NAME, on top of the role rule. Lowercase entries
+// only — the comparison lowercases the stored username before checking.
+//
+// ⚠️  TEMPORARY, and the same class of exception as OTP_EXEMPT_USERNAMES in
+// services/auth.service: "aajneeti" is a restricted account that nonetheless
+// needs the "Previously in status" filter. The durable fix is to give the
+// account the Owner role in EspoCRM and empty this list — a username here
+// stops working silently the moment the account is renamed in Espo, with no
+// error to notice.
+//
+// Note this does NOT open Team Performance. canSeeTeamPerformance below is a
+// deliberately separate helper with an identical role rule, precisely so that
+// widening who may read a lead's history cannot quietly widen who may read the
+// team's ranking.
+const STATUS_HISTORY_USERNAMES = ["aajneeti"];
+
+export const canSeeStatusHistory = () => {
+  const username = getStoredUser()?.username?.trim?.().toLowerCase();
+  if (username && STATUS_HISTORY_USERNAMES.includes(username)) return true;
+
+  return isSupAdmin() || isOwner();
+};
 
 // Who can open Team Performance.
 //

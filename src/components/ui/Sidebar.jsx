@@ -208,6 +208,11 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       path: "/pipeline",
       icon: "Filter",
       badge: null,
+      // Internal-team surface — restricted accounts don't work leads through
+      // the pipeline, so the section is hidden from them. The /pipeline route
+      // is guarded too (see Routes.jsx); hiding the button alone would leave
+      // the page one typed URL away.
+      hideWhenMasked: true,
     },
     {
       label: "Site Visits",
@@ -227,7 +232,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       label: "Task",
       path: "/tasks",
       icon: "ListChecks",
-
+      // Internal-team surface — see Pipeline above. Route guarded to match.
+      hideWhenMasked: true,
     },
     // {
     //   label: "Training",
@@ -242,6 +248,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       // above — two calendar glyphs in one list are hard to tell apart at 18px.
       icon: "Activity",
       badge: null,
+      // Internal-team surface — see Pipeline above. Route guarded to match.
+      hideWhenMasked: true,
     },
     {
       label: "Reports",

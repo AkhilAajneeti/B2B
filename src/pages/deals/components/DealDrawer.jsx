@@ -600,13 +600,34 @@ const DealDrawer = ({
     return labels?.[status] || status;
   };
 
+  // Tabs hidden from restricted accounts.
+  //
+  // Task, Meeting and Assigned User. The Task tab's cards navigate to /tasks,
+  // which is closed to these accounts (see Routes.jsx), so leaving it would
+  // hand them a list whose every row bounces back to the dashboard. Meeting is
+  // an internal-team surface in the same vein — scheduling is not theirs to
+  // see. Assigned User matches the leads table, where the Assigned User column
+  // and its filter are hidden from the same accounts; it also carries the
+  // rep's own phone and email as live tel:/mailto: links.
+  //
+  // Activity is deliberately NOT here, even though the sidebar's "Activities"
+  // section is hidden from the same accounts. They are not the same thing:
+  // the sidebar section is the org-wide activity feed, while this tab is the
+  // stream for the ONE lead already open in front of them — the notes and
+  // status changes they need in order to work it. Hiding this tab was an
+  // over-reach on my part; gating the org-wide view does not imply gating the
+  // record's own history.
+  //
+  // Filtered rather than written as two arrays so a tab added later can't be
+  // added to one list and forgotten in the other.
+  const HIDDEN_WHEN_MASKED_TABS = ["Task", "Meeting", "AssignedUsers"];
   const tabs = [
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "AssignedUsers", label: "Assigned User", icon: "Users" },
     { id: "Activity", label: "Activity", icon: "Calendar" },
     { id: "Task", label: "Task", icon: "ListChecks" },
     { id: "Meeting", label: "Meeting", icon: "Projector" },
-  ];
+  ].filter((tab) => !(masked && HIDDEN_WHEN_MASKED_TABS.includes(tab.id)));
 
   const getActivityIcon = (type) => {
     switch (type) {
@@ -1039,7 +1060,9 @@ const DealDrawer = ({
                           {getStatusLabel(deal.status)}
                         </span>
                       )}
-                      {deal?.source && (
+                      {/* Source pill — withheld from restricted accounts,
+                          matching the hidden Source column and filter. */}
+                      {deal?.source && !masked && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-slate-600 bg-slate-100 rounded-full">
                           <Icon name="Tag" size={10} />
                           {deal.source}
@@ -1190,8 +1213,11 @@ const DealDrawer = ({
 
               {/* Tone strip — color follows the descriptor's tone so
                   overdue is rose, today amber, future emerald, none
-                  muted. Most actionable date on the screen. */}
-              {(() => {
+                  muted. Most actionable date on the screen.
+                  Hidden from restricted accounts along with every other
+                  next-contact surface (column, filter, reminders, dashboard
+                  alert) — follow-up scheduling is internal-team workflow. */}
+              {!masked && (() => {
                 const ncs = getNextContactStatus(deal?.cNextContactAt);
                 const toneMap = {
                   rose:
@@ -1863,7 +1889,7 @@ const DealDrawer = ({
                                     Latest Activity
                                   </p>
 
-                                  {!showActivityForm && canEditDeal(deal) && (
+                                  {!showActivityForm && !masked && canEditDeal(deal) && (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -1888,7 +1914,7 @@ const DealDrawer = ({
                                     Latest Activity
                                   </p>
 
-                                  {!showActivityForm && canEditDeal(deal) && (
+                                  {!showActivityForm && !masked && canEditDeal(deal) && (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -1985,6 +2011,19 @@ const DealDrawer = ({
                                             </span>
                                           </div>
                                         </div>
+                                      </div>
+                                    ) : masked ? (
+                                      /* Read-only accounts get the same empty
+                                         state as a statement rather than as an
+                                         invitation — this was the third and
+                                         last way into the compose form. */
+                                      <div className="flex w-full items-center justify-center rounded-xl border-2 border-dashed border-border py-8 text-sm text-muted-foreground">
+                                        <Icon
+                                          name="MessageSquareOff"
+                                          size={18}
+                                          className="mr-2"
+                                        />
+                                        No activity recorded on this lead yet.
                                       </div>
                                     ) : (
                                       <button
@@ -2091,17 +2130,19 @@ const DealDrawer = ({
                               for non-admin reps so the source/sub-source
                               split stays internal. Source itself appears
                               as a pill in the hero (admin only). */}
-                          <div className="flex items-start gap-3">
-                            <FieldIcon name="Tag" tint="amber" />
-                            <div className="min-w-0">
-                              <p className="text-xs text-muted-foreground mb-0.5">
-                                {isAdmin ? "Sub Source" : "Source"}
-                              </p>
-                              <p className="text-sm text-foreground font-medium">
-                                {deal?.cSubSource || "None"}
-                              </p>
+                          {!masked && (
+                            <div className="flex items-start gap-3">
+                              <FieldIcon name="Tag" tint="amber" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  {isAdmin ? "Sub Source" : "Source"}
+                                </p>
+                                <p className="text-sm text-foreground font-medium">
+                                  {deal?.cSubSource || "None"}
+                                </p>
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* Lead Source — distinct from the top-level
                               `source` (channel) and `cSubSource` (sub-
@@ -2484,20 +2525,24 @@ const DealDrawer = ({
                           </div>
 
                           {/* Next Contact — exact datetime as a reference
-                              (the smart banner above is human-readable). */}
-                          <div className="flex items-start gap-3">
-                            <FieldIcon name="Clock" tint="amber" />
-                            <div className="min-w-0">
-                              <p className="text-xs text-muted-foreground mb-0.5">
-                                Next Contact
-                              </p>
-                              <p className="text-sm text-foreground font-medium">
-                                {deal?.cNextContactAt
-                                  ? formatDateTime(deal.cNextContactAt)
-                                  : "None"}
-                              </p>
+                              (the smart banner above is human-readable).
+                              Hidden from restricted accounts, same rule as
+                              the banner. */}
+                          {!masked && (
+                            <div className="flex items-start gap-3">
+                              <FieldIcon name="Clock" tint="amber" />
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Next Contact
+                                </p>
+                                <p className="text-sm text-foreground font-medium">
+                                  {deal?.cNextContactAt
+                                    ? formatDateTime(deal.cNextContactAt)
+                                    : "None"}
+                                </p>
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* Site Visit */}
                           <div className="flex items-start gap-3">
@@ -2524,15 +2569,27 @@ const DealDrawer = ({
                         <h3 className="text-lg font-medium text-foreground">
                           Recent Activity
                         </h3>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={"bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white hover:text-white border-0"}
-                          onClick={createActivity}
-                        >
-                          <Icon name="Plus" size={16} className="mr-1" />
-                          Write the first Activity
-                        </Button>
+                        {/* Restricted accounts get the stream READ-ONLY: they
+                            can follow how the lead has been worked, but can't
+                            add to it.
+                            NOTE this is not the only way in. The Overview
+                            tab's "Latest Activity" card has its own pencil
+                            buttons (one mobile, one desktop) that open the
+                            same form, and they carry the same `!masked` gate.
+                            All three set `showActivityForm`, so missing any
+                            one of them would leave the compose box reachable
+                            with no visible button to blame. */}
+                        {!masked && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={"bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white hover:text-white border-0"}
+                            onClick={createActivity}
+                          >
+                            <Icon name="Plus" size={16} className="mr-1" />
+                            Write the first Activity
+                          </Button>
+                        )}
                       </div>
                       <div className="space-y-4">
                         {/* add activity form */}
@@ -2669,14 +2726,22 @@ const DealDrawer = ({
                                     <Icon name="Edit" size={14} />
                                   </Button>
 
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => handleDelete(e, activity)}
-                                    className="h-8 w-8 text-destructive hover:text-destructive"
-                                  >
-                                    <Icon name="Trash2" size={14} />
-                                  </Button>
+                                  {/* Delete is withheld from restricted
+                                      accounts. These entries are the lead's
+                                      audit trail — the automatic "Status
+                                      updated to…" and "Assigned to…" records
+                                      included — and deleting one is permanent
+                                      and leaves no trace that it happened. */}
+                                  {!masked && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => handleDelete(e, activity)}
+                                      className="h-8 w-8 text-destructive hover:text-destructive"
+                                    >
+                                      <Icon name="Trash2" size={14} />
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
 

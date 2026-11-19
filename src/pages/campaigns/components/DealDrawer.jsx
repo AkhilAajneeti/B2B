@@ -9,7 +9,7 @@ import { fetchUser } from "services/user.service";
 import { fetchTeam, fetchTeamUser } from "services/team.service";
 import makeAnimated from "react-select/animated";
 import { toEspoDateTime as toEspoDateTimeUtc } from "../../pipeline/utils/dateHelpers";
-import { isAdminOrManager, isSupAdmin } from "../../../utils/permission.js";
+import { isAdminOrManager, isSupAdmin, isMaskedUser } from "../../../utils/permission.js";
 import LeadDistributionPanel from "./LeadDistributionPanel";
 import {
   parseConfiguration,
@@ -105,7 +105,17 @@ const DealDrawer = ({
   // Lead Distribution first: it is the reason this drawer gets opened — who
   // receives leads and how many — while Overview is reference material people
   // look up occasionally.
-  const [activeTab, setActiveTab] = useState("distribution");
+  // Restricted accounts see this drawer as a read-only project summary:
+  // no Lead Distribution, no Teams / Collaborators, no Edit. All three are
+  // about how work is parcelled out across the internal team, which is the
+  // line this account is held behind everywhere else in the CRM.
+  const masked = isMaskedUser();
+
+  // Overview for restricted accounts, since Lead Distribution — the normal
+  // landing tab — is not among the tabs they are given. Starting on a tab
+  // that no longer exists renders a drawer with a highlighted-nothing tab bar
+  // and an empty body.
+  const [activeTab, setActiveTab] = useState(masked ? "overview" : "distribution");
   const [isEditing, setIsEditing] = useState(false);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState([]);
@@ -231,7 +241,7 @@ const DealDrawer = ({
     { id: "distribution", label: "Lead Distribution", icon: "Share2" },
     { id: "overview", label: "Overview", icon: "Eye" },
     { id: "Teams", label: "Teams / Collaborators", icon: "Users" },
-  ];
+  ].filter((tab) => !(masked && ["distribution", "Teams"].includes(tab.id)));
 
   const handleChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -392,8 +402,11 @@ const DealDrawer = ({
   // it is hidden with a transform — so activeTab survives a close, and a user
   // who last looked at Overview would reopen the NEXT project on Overview.
   useEffect(() => {
-    if (isOpen) setActiveTab("distribution");
-  }, [isOpen, deal?.id]);
+    // Restricted accounts have no distribution tab — send them to the only
+    // one they do have, or this would undo the initial state above on every
+    // open.
+    if (isOpen) setActiveTab(masked ? "overview" : "distribution");
+  }, [isOpen, deal?.id, masked]);
 
   useEffect(() => {
     // Guarded on isOpen. This drawer is mounted by its page unconditionally
@@ -548,14 +561,19 @@ const DealDrawer = ({
                   on screen explains it in a sentence. */}
               {!isMassUpdate && mode !== "add" && !isEditing && (
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  Manage how leads are distributed among your team members.
+                  {/* The default line describes the Lead Distribution tab,
+                      which restricted accounts don't get — leaving it would
+                      promise them a screen that isn't there. */}
+                  {masked
+                    ? "Project details."
+                    : "Manage how leads are distributed among your team members."}
                 </p>
               )}
             </div>
             <div className="flex items-center space-x-2">
               {/* Edit / Cancel toggle only makes sense for an existing record.
                   In "add" mode the create form is already shown, so hide it. */}
-              {!isMassUpdate && mode !== "add" && (
+              {!isMassUpdate && mode !== "add" && !masked && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1181,7 +1199,13 @@ const DealDrawer = ({
                           configuration. Parses the backend `configuration`
                           string on the fly so we don't depend on form state
                           here. When `enableConfiguration` is false, the rows
-                          render dimmed to signal the values aren't active. */}
+                          render dimmed to signal the values aren't active.
+
+                          Hidden from restricted accounts: these are the
+                          per-collaborator lead quotas — the Lead Distribution
+                          tab's settings shown read-only, so leaving the card
+                          would hand back the tab's contents by another route. */}
+                      {!masked && (
                       <div className="rounded-2xl border border-border bg-gradient-to-br from-violet-50/50 via-background to-background p-5 shadow-sm transition-shadow hover:shadow-md">
                         <SectionHeader
                           icon="SlidersHorizontal"
@@ -1231,8 +1255,14 @@ const DealDrawer = ({
                           );
                         })()}
                       </div>
+                      )}
 
                       {/* ================= Details ================= */}
+                      {/* WhatsApp card — hidden from restricted accounts. It
+                          exposes the outbound messaging setup and the full
+                          template text sent to customers, which is internal
+                          campaign configuration, not project reference. */}
+                      {!masked && (
                       <div className="rounded-2xl border border-border bg-gradient-to-br from-emerald-50/50 via-background to-background p-5 shadow-sm transition-shadow hover:shadow-md">
                         {/* WhatsApp — mirrors the Configuration card's
                             Enabled/Disabled badge so both toggles read the same
@@ -1274,6 +1304,7 @@ const DealDrawer = ({
                         </ViewField>
 
                       </div>
+                      )}
                     </div>
                   )}
 

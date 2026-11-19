@@ -117,6 +117,18 @@ const DealsFilters = ({
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
 
+  // Restricted accounts: hides the Assign User and Next Contact filters, and
+  // the active-filter pills that go with them. Both are internal-team views of
+  // the pipeline — who owns a lead and when it's due to be worked — and the
+  // Assigned pill in particular would print the rep's name back out, which is
+  // the very thing the column is being hidden to stop.
+  //
+  // The stored filter values are cleared for these accounts in
+  // pages/deals/index.jsx. Without that, a value persisted in sessionStorage
+  // before this gate existed would keep narrowing the list with no visible
+  // control to clear it — which looks like missing leads, not like a filter.
+  const masked = isMaskedUser();
+
   // Delete action is destructive and irreversible — admin-only. The
   // `isSupAdmin()` check returns true only when user.type === "admin"
   // (owners/managers don't qualify). Builds the list conditionally so
@@ -203,9 +215,14 @@ const DealsFilters = ({
   // grid doesn't render when no extra inputs apply).
   const showDateConditional =
     showDateInputs || ["lastXDays", "afterXDays"].includes(filters?.dateType);
+  // `!masked` as well as the type check: the Next Contact select is hidden for
+  // restricted accounts, so its From / To / X-days inputs must never appear
+  // either — otherwise a stale persisted type would render orphaned date boxes
+  // with no filter above them to explain what they belong to.
   const showNextContactConditional =
-    ["on", "before", "after", "between"].includes(filters?.nextContactType) ||
-    ["lastXDays", "afterXDays"].includes(filters?.nextContactType);
+    !masked &&
+    (["on", "before", "after", "between"].includes(filters?.nextContactType) ||
+      ["lastXDays", "afterXDays"].includes(filters?.nextContactType));
   const handleFilterChange = (key, value) => {
     let updated = {
       ...filters,
@@ -445,7 +462,7 @@ const DealsFilters = ({
       });
     }
 
-    if (filters?.source) {
+    if (filters?.source && !masked) {
       const labelMatch = sourceOptions.find(
         (o) => o.value === filters.source,
       );
@@ -457,7 +474,7 @@ const DealsFilters = ({
       });
     }
 
-    if (filters?.assignUser) {
+    if (filters?.assignUser && !masked) {
       const userMatch = assignUserOptions.find(
         (o) => o.value === filters.assignUser,
       );
@@ -473,7 +490,12 @@ const DealsFilters = ({
       const teamMatch = teamOptions.find((o) => o.value === filters.team);
       pills.push({
         key: "team",
-        label: "Team",
+        // Label only — the filter key, the state field and the EspoCRM
+        // attribute behind it are all still `team`. Renaming those would mean
+        // a migration of every persisted filter in sessionStorage and a
+        // matching change in the service layer, for no gain: this is a
+        // vocabulary change, not a data change.
+        label: "Client",
         value: teamMatch?.label || filters.team,
         onRemove: () => handleFilterChange("team", ""),
       });
@@ -526,7 +548,7 @@ const DealsFilters = ({
       });
     }
 
-    if (filters?.nextContactType) {
+    if (filters?.nextContactType && !masked) {
       pills.push({
         key: "nextContactType",
         label: "Next Contact",
@@ -793,21 +815,27 @@ const DealsFilters = ({
           loading={projectsLoading}
         />
 
+        {!masked && (
+          <Select
+            placeholder="Source"
+            options={sourceOptions}
+            value={filters?.source || ""}
+            onChange={(value) => handleFilterChange("source", value)}
+          />
+        )}
+        {!masked && (
+          <Select
+            placeholder="Assign User"
+            options={assignUserOptions}
+            value={filters?.assignUser || ""}
+            onChange={(value) => handleFilterChange("assignUser", value)}
+            searchable
+          />
+        )}
         <Select
-          placeholder="Source"
-          options={sourceOptions}
-          value={filters?.source || ""}
-          onChange={(value) => handleFilterChange("source", value)}
-        />
-        <Select
-          placeholder="Assign User"
-          options={assignUserOptions}
-          value={filters?.assignUser || ""}
-          onChange={(value) => handleFilterChange("assignUser", value)}
-          searchable
-        />
-        <Select
-          placeholder="Team"
+          // Displayed as "Client"; the underlying filter is still `team`.
+          // See the matching note on the pill label above.
+          placeholder="Client"
           options={teamOptions}
           value={filters?.team || ""}
           onChange={(value) => handleFilterChange("team", value)}
@@ -833,13 +861,15 @@ const DealsFilters = ({
             applied to `cNextContact` on the backend instead of `createdAt`.
             Independent filter keys (nextContactType / nextContactFrom /
             nextContactTo / nextContactXDays) let both filters coexist. */}
-        <Select
-          className="min-w-0"
-          placeholder="Next Contact"
-          options={ACTIVITY_DATE_FILTERS}
-          value={filters?.nextContactType || ""}
-          onChange={(value) => handleFilterChange("nextContactType", value)}
-        />
+        {!masked && (
+          <Select
+            className="min-w-0"
+            placeholder="Next Contact"
+            options={ACTIVITY_DATE_FILTERS}
+            value={filters?.nextContactType || ""}
+            onChange={(value) => handleFilterChange("nextContactType", value)}
+          />
+        )}
 
         {/* Lead Analytics — pinned to the rightmost grid column in single-input
             date modes (Specific Day / Before / After) so it sits at the far
@@ -878,7 +908,11 @@ const DealsFilters = ({
             maxToday: false,
           })}
 
-        {toggleAnalytics && (
+        {/* Lead Analytics — withheld from restricted accounts. The panel it
+            opens renders a per-rep breakdown (AssignedUserChart), which is the
+            same team-workload view the Assigned User column and filter were
+            hidden to stop. */}
+        {toggleAnalytics && !masked && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end lg:col-span-full">
             <Button onClick={toggleAnalytics} className="linearbg-1 text-white hover:text-white">
               <Icon name="Plus" size={16} className="mr-2" />

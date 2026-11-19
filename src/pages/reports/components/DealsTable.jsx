@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import Icon from "../../../components/AppIcon";
+import { isMaskedUser } from "utils/permission";
 
 /**
  * Read-only leads table for the Reports page. Acting on a lead (open/edit/
@@ -105,9 +106,15 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
 
   const rows = useMemo(() => deals || [], [deals]);
 
+  // Restricted accounts lose the Source column, so the skeleton row and the
+  // empty-state colSpan have to follow the header — a mismatch leaves the
+  // loading rows wider than the table and the empty cell spilling past it.
+  const masked = isMaskedUser();
+  const COLUMN_COUNT = masked ? 5 : 6;
+
   const SkeletonRow = () => (
     <tr className="animate-pulse">
-      {Array.from({ length: 6 }).map((_, i) => (
+      {Array.from({ length: COLUMN_COUNT }).map((_, i) => (
         <td key={i} className="px-6 py-5">
           <div className={`h-4 rounded bg-muted ${i === 0 ? "w-36" : "w-24"}`} />
         </td>
@@ -170,7 +177,7 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
                   Project
                 </span>
               </th>
-              <SortHeader label="Source" column="source" />
+              {!masked && <SortHeader label="Source" column="source" />}
               <SortHeader label="Status" column="status" />
               <SortHeader label="Assigned" column="assignedUserName" />
               <SortHeader label="Created" column="createdAt" align="right" />
@@ -181,7 +188,7 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
               Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
             ) : !rows.length ? (
               <tr>
-                <td colSpan="6">
+                <td colSpan={COLUMN_COUNT}>
                   <EmptyState />
                 </td>
               </tr>
@@ -201,9 +208,11 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
                       {deal?.cProjectName || deal?.cProject || "—"}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <SourceTag source={deal?.source} />
-                  </td>
+                  {!masked && (
+                    <td className="px-6 py-4">
+                      <SourceTag source={deal?.source} />
+                    </td>
+                  )}
                   <td className="px-6 py-4">
                     <StatusTag status={deal?.status} />
                   </td>
@@ -248,7 +257,7 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
               )}
 
               <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <SourceTag source={deal?.source} />
+                {!masked && <SourceTag source={deal?.source} />}
                 <Assignee name={deal?.assignedUserName} />
               </div>
 
