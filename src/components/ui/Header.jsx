@@ -61,6 +61,9 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
       "login_object",
       "acl",
       "isAuthenticated",
+      // Gateway pinned at sign-in (services/apiBase). Must go with the
+      // session, or the next user inherits the previous one's gateway.
+      "api_gateway",
     ].forEach((k) => localStorage.removeItem(k));
 
     // Also flush any per-user count caches set by leads.service.js

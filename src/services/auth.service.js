@@ -27,9 +27,41 @@
  * suggests would mean touching all of them to achieve nothing.
  */
 
-import { API_BASE_URL } from "services/apiBase";
+import { API_BASE_URL, DEFAULT_GATEWAY, GATEWAYS } from "services/apiBase";
 
-const AUTH_URL = `${API_BASE_URL}/auth`;
+/**
+ * TEMPORARY — accounts that sign in WITHOUT the email OTP.
+ *
+ * 2FA is served only by the test gateway. This account has no mailbox anyone
+ * can reach, so it is sent to the production gateway, which still accepts
+ * username + password in one step. Its session is then pinned to that gateway
+ * (see apiBase) because the token it issues is only valid there.
+ *
+ * THIS IS A STOPGAP, AGREED AS SUCH. The account becomes password-only, with
+ * no second factor. REMOVE IT once the gateway exempts the account itself, or
+ * once production serves 2FA: empty this set and the normal OTP flow applies
+ * to everyone, with no other change needed.
+ *
+ * Compared case-insensitively and trimmed, because the username field accepts
+ * either and the login screen lower-cases on create but not on sign-in.
+ */
+const OTP_EXEMPT_USERNAMES = new Set(["aajneeti"]);
+
+/** Gateway used for exempt accounts: the one that does not ask for an OTP. */
+const NO_OTP_GATEWAY = GATEWAYS.PRODUCTION;
+
+export const isOtpExempt = (username) =>
+  OTP_EXEMPT_USERNAMES.has(String(username || "").trim().toLowerCase());
+
+/**
+ * Which gateway should authenticate this username.
+ *
+ * Exempt accounts go to the no-OTP gateway ONLY when that is not already the
+ * configured one — otherwise this is a no-op and everyone shares one gateway,
+ * which is the state we want to get back to.
+ */
+export const gatewayForUsername = (username) =>
+  isOtpExempt(username) ? NO_OTP_GATEWAY : DEFAULT_GATEWAY;
 
 /**
  * Statuses that mean "this gateway does not serve GET here" and nothing about
@@ -37,6 +69,9 @@ const AUTH_URL = `${API_BASE_URL}/auth`;
  * POST is both safe and useful. See initiateLogin.
  */
 const RETRY_AS_POST_STATUSES = new Set([404, 405, 501]);
+
+/** The /auth endpoint on a given gateway. */
+const authUrl = (base) => `${base}/auth`;
 
 /** Shape returned by initiateLogin so callers can branch without string checks. */
 export const LOGIN_RESULT = {
@@ -90,13 +125,18 @@ const jsonOrThrow = async (res, fallback) => {
  * production one.
  */
 export const initiateLogin = async (username, password) => {
+  // Exempt accounts authenticate against the no-OTP gateway; everyone else
+  // against the configured one. Returned to the caller so the session can be
+  // pinned to it — the token is only valid on the gateway that issued it.
+  const gateway = gatewayForUsername(username);
+  const url = authUrl(gateway);
   // Username is trimmed because a mobile autocomplete suggestion inserts a
   // trailing space and the backend compares it verbatim. The PASSWORD is sent
   // exactly as typed: a space can be a legitimate character in one, and
   // silently stripping it would lock out anyone whose password ends in one.
   const createToken = btoa(`${username.trim()}:${password}`);
 
-  let res = await fetch(AUTH_URL, {
+  let res = await fetch(url, {
     method: "GET",
     headers: { Accept: "application/json", "create-token": createToken },
   });
@@ -107,7 +147,7 @@ export const initiateLogin = async (username, password) => {
   // replaying it would send the credentials a second time, burn an attempt
   // against any rate limit, and still produce the same reply.
   if (!res.ok && RETRY_AS_POST_STATUSES.has(res.status)) {
-    res = await fetch(AUTH_URL, {
+    res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -123,6 +163,7 @@ export const initiateLogin = async (username, password) => {
   if (data?.status === "otp_required") {
     return {
       result: LOGIN_RESULT.OTP_REQUIRED,
+      gateway,
       challengeToken: data.challengeToken,
       emailMasked: data.emailMasked || "",
       message: data.message || "",
@@ -139,6 +180,7 @@ export const initiateLogin = async (username, password) => {
   if (data?.token) {
     return {
       result: LOGIN_RESULT.AUTHENTICATED,
+      gateway,
       token: data.token,
       secret: data.secret,
       user: data.user,
@@ -157,7 +199,7 @@ export const initiateLogin = async (username, password) => {
  * an incorrect code rather than as malformed input.
  */
 export const verifyOtp = async (otp, challengeToken) => {
-  const res = await fetch(`${AUTH_URL}/verify`, {
+  const res = await fetch(`${authUrl(DEFAULT_GATEWAY)}/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
@@ -182,7 +224,7 @@ export const verifyOtp = async (otp, challengeToken) => {
  * verify — the integration guide calls this out specifically.
  */
 export const resendOtp = async (challengeToken) => {
-  const res = await fetch(`${AUTH_URL}/resend`, {
+  const res = await fetch(`${authUrl(DEFAULT_GATEWAY)}/resend`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ challengeToken }),
@@ -215,8 +257,8 @@ export const resendOtp = async (challengeToken) => {
  * `/App/user` is named twice in the integration guide as a standard endpoint
  * that works unchanged with the session token, which is what makes this safe.
  */
-export const loadSessionUser = async (sessionToken) => {
-  const res = await fetch(`${API_BASE_URL}/App/user`, {
+export const loadSessionUser = async (sessionToken, base = API_BASE_URL) => {
+  const res = await fetch(`${base}/App/user`, {
     method: "GET",
     headers: { "Content-Type": "application/json", token: sessionToken },
   });
@@ -272,9 +314,9 @@ export const buildLoginObject = ({ user, acl, token, secret }) => {
  * non-fatal: a session with no role names is still a usable session, just one
  * where role-gated sections stay hidden, which is the safe direction to fail.
  */
-export const enrichUser = async (user, token) => {
+export const enrichUser = async (user, token, base = API_BASE_URL) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/User/${user.id}`, {
+    const res = await fetch(`${base}/User/${user.id}`, {
       method: "GET",
       headers: { "Content-Type": "application/json", token },
     });

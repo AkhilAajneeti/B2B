@@ -13,6 +13,7 @@ import {
   resendOtp,
   verifyOtp,
 } from "services/auth.service";
+import { setSessionGateway } from "services/apiBase";
 import OtpStep from "./OtpStep";
 
 /** Where a pending OTP challenge is parked so a refresh does not lose it. */
@@ -150,7 +151,12 @@ const LoginForm = ({ variant = "default" }) => {
    * A difference here would mean role gating or the `aajneeti` contact masking
    * behaving differently depending on which gateway signed you in.
    */
-  const commitSession = ({ headerToken, loginObject, acl }) => {
+  const commitSession = ({ headerToken, loginObject, acl, gateway }) => {
+    // Pin the session to the gateway that issued it BEFORE the token is
+    // stored: its token is valid nowhere else, so a request to any other
+    // gateway would 401 and bounce straight back to this screen.
+    const gatewayChanged = gateway ? setSessionGateway(gateway) : false;
+
     const stored = persistSession({ token: headerToken, loginObject, acl });
     if (!stored) {
       setErrors({
@@ -168,9 +174,21 @@ const LoginForm = ({ variant = "default" }) => {
       // sessionStorage unavailable — alert will just behave as if first-visit
     }
 
+    const destination = returnTo || "/dashboard";
+
+    // A changed gateway needs a FULL page load, not a react-router navigate.
+    // `API_BASE_URL` is resolved once when the module is imported, so after a
+    // soft navigate every service would keep calling the gateway this tab
+    // opened with — the one that did NOT issue this token — and 401 on the
+    // first request.
+    if (gatewayChanged) {
+      window.location.assign(destination);
+      return true;
+    }
+
     // Back to whatever they were doing when the session died, else the
     // dashboard. `returnTo` is always a validated same-origin path.
-    navigate(returnTo || "/dashboard");
+    navigate(destination);
     return true;
   };
 
@@ -183,18 +201,19 @@ const LoginForm = ({ variant = "default" }) => {
    * forwards that wrapper as the `token` header. Storing the bare token here
    * instead would log everyone out of the production gateway.
    */
-  const finishLegacyLogin = async ({ token, secret, user, acl }) => {
+  const finishLegacyLogin = async ({ token, secret, user, acl, gateway }) => {
     const provisional = buildLoginObject({ user, acl, token, secret });
     const provisionalHeader = btoa(JSON.stringify(provisional));
 
     // Roles come from a second call; see enrichUser.
-    const enriched = await enrichUser(user, provisionalHeader);
+    const enriched = await enrichUser(user, provisionalHeader, gateway);
 
     const loginObject = buildLoginObject({ user: enriched, acl, token, secret });
     return commitSession({
       headerToken: btoa(JSON.stringify(loginObject)),
       loginObject,
       acl,
+      gateway,
     });
   };
 
@@ -202,16 +221,16 @@ const LoginForm = ({ variant = "default" }) => {
    * 2FA gateway: we hold a verified session token and nothing else, so the
    * user and ACL have to be fetched before we can let anyone in.
    */
-  const finishTwoFactorLogin = async (sessionToken) => {
-    const { user, acl } = await loadSessionUser(sessionToken);
-    const enriched = await enrichUser(user, sessionToken);
+  const finishTwoFactorLogin = async (sessionToken, gateway) => {
+    const { user, acl } = await loadSessionUser(sessionToken, gateway);
+    const enriched = await enrichUser(user, sessionToken, gateway);
 
     const loginObject = buildLoginObject({
       user: enriched,
       acl,
       token: sessionToken,
     });
-    return commitSession({ headerToken: sessionToken, loginObject, acl });
+    return commitSession({ headerToken: sessionToken, loginObject, acl, gateway });
   };
 
   const handleSubmit = async (e) => {
@@ -232,6 +251,7 @@ const LoginForm = ({ variant = "default" }) => {
           challengeToken: outcome.challengeToken,
           emailMasked: outcome.emailMasked,
           message: outcome.message,
+          gateway: outcome.gateway,
           issuedAt: Date.now(),
         };
         setChallenge(challenge);
@@ -262,7 +282,7 @@ const LoginForm = ({ variant = "default" }) => {
     setOtpError("");
     try {
       const sessionToken = await verifyOtp(code, challenge.challengeToken);
-      await finishTwoFactorLogin(sessionToken);
+      await finishTwoFactorLogin(sessionToken, challenge.gateway);
     } catch (err) {
       console.error("OTP verification error:", err);
       setOtpError(err.message);
@@ -280,6 +300,7 @@ const LoginForm = ({ variant = "default" }) => {
         challengeToken: next.challengeToken,
         emailMasked: next.emailMasked || challenge.emailMasked,
         message: next.message,
+        gateway: challenge.gateway,
         issuedAt: Date.now(),
       };
       setChallenge(challenge2);

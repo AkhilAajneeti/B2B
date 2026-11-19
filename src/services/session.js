@@ -30,6 +30,11 @@
 // The session itself.
 const AUTH_KEYS = ["auth_token", "login_object", "acl", "isAuthenticated"];
 
+// The gateway this session was pinned to (see services/apiBase). Cleared with
+// the session so the next person to sign in on this machine starts from
+// configuration instead of inheriting the previous user's gateway.
+const SESSION_GATEWAY_KEY = "api_gateway";
+
 // Per-user caches, namespaced by user id. Cleared alongside the session so the
 // next person to log in on this machine can't be served the previous user's
 // cached rows. Mirrors the prefixes the Header's logout sweeps.
@@ -42,7 +47,7 @@ const USER_CACHE_PREFIXES = [
 /** Removes the session and per-user caches, leaving unrelated keys alone. */
 export const clearSession = () => {
   try {
-    AUTH_KEYS.forEach((k) => localStorage.removeItem(k));
+    [...AUTH_KEYS, SESSION_GATEWAY_KEY].forEach((k) => localStorage.removeItem(k));
     Object.keys(localStorage).forEach((k) => {
       if (USER_CACHE_PREFIXES.some((prefix) => k.startsWith(prefix))) {
         localStorage.removeItem(k);
