@@ -111,7 +111,43 @@ const writeCachedProjectOptions = (list) => {
   }
 };
 
-export const useProjectOptions = ({ enabled = true } = {}) => {
+/**
+ * Distinct CLIENTS, shaped for a <Select>.
+ *
+ * Reuses the `project-options` query above rather than fetching anything of
+ * its own — that query already pulls every project and already keeps
+ * `clientNomen`, so this costs one `useMemo` and no network.
+ *
+ * Deriving the list from the projects themselves (rather than from Teams) is
+ * the whole point: `clientNomen` is the field the cards display and the field
+ * the filter matches on, so every option is guaranteed to return at least one
+ * project. A list built from Teams offered names that simply weren't present
+ * on any project, so most picks looked like a broken filter.
+ */
+export const useClientOptions = ({ enabled = true } = {}) => {
+  const { raw, isLoading } = useProjectOptions({ enabled, withRaw: true });
+
+  const options = useMemo(() => {
+    const seen = new Set();
+    return (raw || [])
+      .map((p) => (p?.clientNomen || "").trim())
+      .filter((c) => {
+        if (!c) return false;
+        const key = c.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      // Value is the raw stored string — it is what the backend matches on.
+      // Label is spaced for reading, the same transform ProjectCard applies.
+      .map((c) => ({ value: c, label: c.replace(/([a-z0-9])([A-Z])/g, "$1 $2") }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [raw]);
+
+  return { options, isLoading };
+};
+
+export const useProjectOptions = ({ enabled = true, withRaw = false } = {}) => {
   const query = useQuery({
     queryKey: ["project-options"],
     queryFn: async () => {
@@ -198,5 +234,11 @@ export const useProjectOptions = ({ enabled = true } = {}) => {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [query.data]);
 
-  return { options, isLoading: query.isLoading && !query.data };
+  return {
+    options,
+    // The untouched records, for callers deriving their own lists (see
+    // useClientOptions). Off by default so existing callers are unaffected.
+    raw: withRaw ? query.data || [] : undefined,
+    isLoading: query.isLoading && !query.data,
+  };
 };

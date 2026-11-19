@@ -68,6 +68,51 @@ export const fetchProjects = async ({
     });
   }
 
+  // 🔹 CLIENT — matches the project's own `clientNomen`, the field the cards
+  // display under the project title.
+  //
+  // This replaced a team-based attempt that routed through
+  // `assignedUserId IN [team members]`. That returned nothing: projects are
+  // not assigned to the members of the team whose name was picked, so the
+  // clause was valid SQL for a question nobody was asking. Matching the field
+  // the value actually came from is both correct and far simpler.
+  if (filters.clientNomen) {
+    where.push({
+      type: "equals",
+      attribute: "clientNomen",
+      value: filters.clientNomen,
+    });
+  }
+
+  // 🔹 TEAM — retained but no longer driven by the UI (see above) — `_teamUserIds` is an internal, derived
+  // field set by the campaigns page from the selected team's members, and
+  // translates to `assignedUserId IN [...]`.
+  //
+  // Deliberately the SAME mechanism leads.service.js uses rather than a
+  // `linkedWith` on the `teams` link: picking "Client X" then means exactly
+  // what it means on the Leads page — records assigned to someone in that
+  // team — instead of two pages quietly answering different questions under
+  // one label.
+  //
+  // An empty array means the team has no users, which must match NOTHING. An
+  // empty `in` is dropped by the query builder, so without this branch the
+  // filter would silently return every project instead of none.
+  if (Array.isArray(filters._teamUserIds)) {
+    if (filters._teamUserIds.length === 0) {
+      where.push({
+        type: "equals",
+        attribute: "id",
+        value: "__no_team_users__",
+      });
+    } else {
+      where.push({
+        type: "in",
+        attribute: "assignedUserId",
+        value: filters._teamUserIds,
+      });
+    }
+  }
+
   // 📅 DATE FILTER (FULL SUPPORT)
   if (filters.dateType) {
     const type = filters.dateType;

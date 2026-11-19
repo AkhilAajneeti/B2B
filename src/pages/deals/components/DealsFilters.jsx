@@ -747,6 +747,22 @@ const DealsFilters = ({
         />
 
         <Select
+          // Displayed as "Client"; the underlying filter is still `team`.
+          // See the matching note on the pill label above.
+          placeholder="Client"
+          options={teamOptions}
+          value={filters?.team || ""}
+          onChange={(value) => handleFilterChange("team", value)}
+          searchable
+          clearable
+          // Allow long team names to wrap in the dropdown list, give the
+          // panel a touch more breathing room, and surface the full name on
+          // hover (the trigger stays clean via the existing truncate).
+          wrapOptions
+          dropdownClassName="min-w-[260px]"
+        />
+
+        <Select
           placeholder="Status"
           options={statusOptions}
           // Multi-select — rep can pick more than one status (e.g.
@@ -832,21 +848,6 @@ const DealsFilters = ({
             searchable
           />
         )}
-        <Select
-          // Displayed as "Client"; the underlying filter is still `team`.
-          // See the matching note on the pill label above.
-          placeholder="Client"
-          options={teamOptions}
-          value={filters?.team || ""}
-          onChange={(value) => handleFilterChange("team", value)}
-          searchable
-          clearable
-          // Allow long team names to wrap in the dropdown list, give the
-          // panel a touch more breathing room, and surface the full name on
-          // hover (the trigger stays clean via the existing truncate).
-          wrapOptions
-          dropdownClassName="min-w-[260px]"
-        />
         {/* Date Type Select */}
         <Select
           className="min-w-0"

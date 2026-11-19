@@ -44,12 +44,16 @@ const ProjectsPage = () => {
 
   const [filters, setFilters] = useState({
     search: "",
+    // "Client" — matches the project's own clientNomen. See DealsFilters.
+    clientNomen: "",
     assignUser: "",
     dateType: "",
     closeDateFrom: "",
     closeDateTo: "",
   });
   const queryClient = useQueryClient();
+
+
   const { data, isLoading } = useProjects({
     page: currentPage,
     limit: itemsPerPage,
@@ -310,6 +314,10 @@ const ProjectsPage = () => {
   const handleClearFilters = () => {
     setFilters({
       search: "",
+      // Must be listed here as well as in the initial state — "Clear filters"
+      // REPLACES the object, so a key omitted from this literal would survive
+      // the clear and keep narrowing the list with every control reset.
+      clientNomen: "",
       assignUser: "",
       dateType: "",
       closeDateFrom: "",

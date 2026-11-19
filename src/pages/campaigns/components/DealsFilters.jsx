@@ -5,6 +5,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { fetchUser } from "services/user.service";
+import { useClientOptions } from "hooks/useProjects";
 import { todayLocal } from "../../../utils/dateFilter";
 
 const DealsFilters = ({
@@ -61,6 +62,11 @@ const DealsFilters = ({
     if (Array.isArray(value) && value.length === 0) return false;
     return true;
   })?.length;
+  // Distinct clients taken from the projects themselves, so every option in
+  // the list is guaranteed to match at least one project.
+  const { options: clientOptions, isLoading: clientsLoading } =
+    useClientOptions();
+
   const assignUserOptions = assignUser.map((acc) => ({
     value: acc.id, // 👈 important (ID use karo)
     label: acc.name,
@@ -168,6 +174,21 @@ const DealsFilters = ({
           value={filters?.search || ""}
           onChange={(e) => handleFilterChange("search", e?.target?.value)}
           className="lg:col-span-2"
+        />
+
+        {/* Client — sits second, matching the Leads page's filter order.
+            Matches the project's own `clientNomen`, which is the name shown
+            under each project title on the cards. Ungated: everyone gets it. */}
+        <Select
+          placeholder="Client"
+          options={clientOptions}
+          value={filters?.clientNomen || ""}
+          onChange={(value) => handleFilterChange("clientNomen", value)}
+          searchable
+          clearable
+          wrapOptions
+          dropdownClassName="min-w-[260px]"
+          loading={clientsLoading}
         />
 
         {/* Assign User — withheld from restricted accounts, matching the
