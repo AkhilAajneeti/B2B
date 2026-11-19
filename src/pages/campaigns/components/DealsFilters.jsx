@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { isAdminOrManager, isMaskedUser } from "../../../utils/permission.js";
+import { isAdminOrManager } from "../../../utils/permission.js";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
-import { fetchUser } from "services/user.service";
 import { useClientOptions } from "hooks/useProjects";
 import { todayLocal } from "../../../utils/dateFilter";
 
@@ -18,7 +17,6 @@ const DealsFilters = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
-  const [assignUser, setAssignUser] = useState([]);
 
   const isAdminManager = isAdminOrManager();
   const bulkActions = [
@@ -48,11 +46,16 @@ const DealsFilters = ({
     onBulkAction(action);
     setShowBulkActions(false);
   };
-  useEffect(() => {
-    fetchUser()
-      .then((res) => setAssignUser(res.list || []))
-      .catch((err) => console.error("User fetch failed", err));
-  }, []);
+  // The user list was only ever loaded for the Assign User filter above,
+  // which is gone — so this request is gone with it rather than fetching
+  // every user on each visit for a dropdown nobody renders. Restore it
+  // alongside that Select if the filter comes back:
+  //
+  //   useEffect(() => {
+  //     fetchUser()
+  //       .then((res) => setAssignUser(res.list || []))
+  //       .catch((err) => console.error("User fetch failed", err));
+  //   }, []);
 
   const activeFiltersCount = Object.values(filters)?.filter((value) => {
     if (value === "" || value === null || value === undefined) return false;
@@ -67,10 +70,6 @@ const DealsFilters = ({
   const { options: clientOptions, isLoading: clientsLoading } =
     useClientOptions();
 
-  const assignUserOptions = assignUser.map((acc) => ({
-    value: acc.id, // 👈 important (ID use karo)
-    label: acc.name,
-  }));
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
       {/* Header Row.
@@ -191,18 +190,20 @@ const DealsFilters = ({
           loading={clientsLoading}
         />
 
-        {/* Assign User — withheld from restricted accounts, matching the
-            leads page filter of the same name and the hidden Lead
-            Distribution / Teams tabs in this page's own drawer. */}
-        {!isMaskedUser() && (
-          <Select
-            placeholder="Assign User"
-            options={assignUserOptions}
-            value={filters?.assignUser || ""}
-            onChange={(value) => handleFilterChange("assignUser", value)}
-            searchable
-          />
-        )}
+        {/* Assign User filter REMOVED (for everyone, not just restricted
+            accounts) — projects are filtered by Client and by date here.
+            `filters.assignUser` and the service clause behind it are left in
+            place and simply never set, so nothing downstream had to change
+            and restoring the control is a matter of putting this Select back:
+
+            <Select
+              placeholder="Assign User"
+              options={assignUserOptions}
+              value={filters?.assignUser || ""}
+              onChange={(value) => handleFilterChange("assignUser", value)}
+              searchable
+            />
+        */}
 
 
         <Select
