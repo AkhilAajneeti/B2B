@@ -959,7 +959,24 @@ const DealDrawer = ({
     { value: "Wholesale", label: "Wholesale" },
   ];
 
-  const leadData = leadsDetails || deal;
+  // MERGED, not either/or.
+  //
+  // `deal` is the row from the leads LIST; `leadsDetails` is GET /Lead/:id.
+  // They don't carry the same fields: a restricted account's list request is
+  // narrowed by MASKED_LEAD_SELECT (see leads.service), which deliberately
+  // omits the contact fields — and, as a side effect, everything else not
+  // named in it: addressCity, cPreference, cProjectLocation and the rest.
+  // Those fields were reading from `deal` and so rendered "None" for that
+  // account while the detail response beside them held the real values.
+  //
+  // The merge also covers the gap before the detail fetch resolves: `deal`
+  // paints immediately, `leadsDetails` overwrites it on arrival. A plain
+  // `leadsDetails || deal` would instead drop every list-only field the
+  // moment the details landed.
+  //
+  // Not a hook dependency anywhere, so rebuilding the object each render
+  // costs nothing.
+  const leadData = { ...deal, ...leadsDetails };
   const canEditDeal = (deal) =>
     canEditRecord("Lead", getPermissionRecord({ ...deal, ...leadsDetails }));
 
@@ -2075,14 +2092,14 @@ const DealDrawer = ({
                                     Project Name
                                   </p>
                                   <p className="text-sm text-foreground font-medium break-words">
-                                    {deal.cProjectName}
+                                    {leadData.cProjectName}
                                   </p>
                                 </div>
                               </div>
                             )}
 
                           {/* Project Type */}
-                          {deal?.cProjectType && (
+                          {leadData?.cProjectType && (
                             <div className="flex items-start gap-3">
                               <FieldIcon name="LayoutGrid" tint="cyan" />
                               <div className="min-w-0">
@@ -2090,13 +2107,13 @@ const DealDrawer = ({
                                   Project Type
                                 </p>
                                 <p className="text-sm text-foreground font-medium">
-                                  {deal.cProjectType}
+                                  {leadData.cProjectType}
                                 </p>
                               </div>
                             </div>
                           )}
 
-                          {deal?.cProjectBudget && (
+                          {leadData?.cProjectBudget && (
                             <div className="flex items-start gap-3">
                               <FieldIcon name="IndianRupee" tint="emerald" />
                               <div className="min-w-0">
@@ -2104,7 +2121,7 @@ const DealDrawer = ({
                                   Project Budget
                                 </p>
                                 <p className="text-sm text-foreground font-medium">
-                                  {deal.cProjectBudget}
+                                  {leadData.cProjectBudget}
                                 </p>
                               </div>
                             </div>
@@ -2112,7 +2129,7 @@ const DealDrawer = ({
 
                           {/* Project Location — separate from City: the
                               project's location, not the lead's. */}
-                          {deal?.cProjectLocation && (
+                          {leadData?.cProjectLocation && (
                             <div className="flex items-start gap-3">
                               <FieldIcon name="Compass" tint="teal" />
                               <div className="min-w-0">
@@ -2120,7 +2137,7 @@ const DealDrawer = ({
                                   Project Location
                                 </p>
                                 <p className="text-sm text-foreground font-medium">
-                                  {deal.cProjectLocation}
+                                  {leadData.cProjectLocation}
                                 </p>
                               </div>
                             </div>
@@ -2138,7 +2155,7 @@ const DealDrawer = ({
                                   {isAdmin ? "Sub Source" : "Source"}
                                 </p>
                                 <p className="text-sm text-foreground font-medium">
-                                  {deal?.cSubSource || "None"}
+                                  {leadData?.cSubSource || "None"}
                                 </p>
                               </div>
                             </div>
@@ -2148,7 +2165,7 @@ const DealDrawer = ({
                               `source` (channel) and `cSubSource` (sub-
                               channel). Some imports carry their own
                               labeled source separately. */}
-                          {deal?.cLeadSource && (
+                          {leadData?.cLeadSource && (
                             <div className="flex items-start gap-3">
                               <FieldIcon name="Megaphone" tint="orange" />
                               <div className="min-w-0">
@@ -2156,7 +2173,7 @@ const DealDrawer = ({
                                   Lead Source
                                 </p>
                                 <p className="text-sm text-foreground font-medium">
-                                  {deal.cLeadSource}
+                                  {leadData.cLeadSource}
                                 </p>
                               </div>
                             </div>
@@ -2164,7 +2181,7 @@ const DealDrawer = ({
 
                           {/* Platform — where they were reached (FB, IG,
                               WhatsApp, Web, etc.). */}
-                          {deal?.cPlatform && (
+                          {leadData?.cPlatform && (
                             <div className="flex items-start gap-3">
                               <FieldIcon name="Smartphone" tint="blue" />
                               <div className="min-w-0">
@@ -2172,7 +2189,7 @@ const DealDrawer = ({
                                   Platform
                                 </p>
                                 <p className="text-sm text-foreground font-medium">
-                                  {deal.cPlatform}
+                                  {leadData.cPlatform}
                                 </p>
                               </div>
                             </div>
@@ -2186,7 +2203,7 @@ const DealDrawer = ({
                                 City
                               </p>
                               <p className="text-sm text-foreground font-medium capitalize">
-                                {deal?.addressCity || "None"}
+                                {leadData?.addressCity || "None"}
                               </p>
                             </div>
                           </div>
@@ -2198,14 +2215,14 @@ const DealDrawer = ({
                                 Lead Source
                               </p>
                               <p className="text-sm text-foreground font-medium capitalize">
-                                {deal?.cLeadSource || "ACL"}
+                                {leadData?.cLeadSource || "ACL"}
                               </p>
                             </div>
                           </div> */}
 
                           {/* Client Nomen — internal client-code; admin
                               only since reps don't deal with it. */}
-                          {isAdmin && deal?.cClientNomen && (
+                          {isAdmin && leadData?.cClientNomen && (
                             <div className="flex items-start gap-3">
                               <FieldIcon name="Hash" tint="slate" />
                               <div className="min-w-0">
@@ -2213,7 +2230,7 @@ const DealDrawer = ({
                                   Client Nomen
                                 </p>
                                 <p className="text-sm text-foreground font-medium break-words">
-                                  {deal.cClientNomen}
+                                  {leadData.cClientNomen}
                                 </p>
                               </div>
                             </div>
@@ -2221,7 +2238,7 @@ const DealDrawer = ({
 
                           {/* Project Nomen — internal project-code; same
                               admin-only treatment as Client Nomen. */}
-                          {isAdmin && deal?.cProjectNomen && (
+                          {isAdmin && leadData?.cProjectNomen && (
                             <div className="flex items-start gap-3">
                               <FieldIcon name="Hash" tint="slate" />
                               <div className="min-w-0">
@@ -2229,7 +2246,7 @@ const DealDrawer = ({
                                   Project Nomen
                                 </p>
                                 <p className="text-sm text-foreground font-medium break-words">
-                                  {deal.cProjectNomen}
+                                  {leadData.cProjectNomen}
                                 </p>
                               </div>
                             </div>
@@ -2246,14 +2263,14 @@ const DealDrawer = ({
                               </p>
                               <div className="text-sm text-foreground">
                                 {(() => {
-                                  if (!deal?.cPreference) {
+                                  if (!leadData?.cPreference) {
                                     return (
                                       <span className="text-muted-foreground">
                                         None
                                       </span>
                                     );
                                   }
-                                  const parts = deal.cPreference.split(
+                                  const parts = leadData.cPreference.split(
                                     /(<b>.*?<\/b>)/g,
                                   );
                                   const items = [];

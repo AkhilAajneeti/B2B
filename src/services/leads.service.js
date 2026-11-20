@@ -26,6 +26,11 @@ const MASKED_LEAD_SELECT = [
   "cNextContactAt",
   "cNextContact",
   "createdAt",
+  // Backs the City column, which the leads table shows ONLY to restricted
+  // accounts. Costs nothing for anyone else: this whitelist is attached to
+  // the request solely when isMaskedUser() is true — every other account
+  // sends no `select` at all and so already receives this field.
+  "addressCity",
   // Ownership + team scoping — read by isOwnRecord / isTeamRecord to decide
   // whether this user may edit or delete a row.
   "assignedUserId",

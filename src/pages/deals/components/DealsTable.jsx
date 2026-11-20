@@ -311,7 +311,8 @@ const DealsTable = ({
   // rows and the empty-state colSpan both derive from it, and a mismatch
   // silently shears the table: loading rows wider than the header, and the
   // "No leads available" cell spanning past the end of the row.
-  const DATA_COLUMNS = masked ? 4 : 7; // masked loses Source, Next Contact, Assigned User
+  // masked: loses Source / Next Contact / Assigned User, GAINS City.
+  const DATA_COLUMNS = masked ? 5 : 7;
   const COLUMN_COUNT = DATA_COLUMNS + 2; // + checkbox + actions
 
   const SkeletonRow = () => (
@@ -349,6 +350,19 @@ const DealsTable = ({
               </th>
               <SortHeader label="Name" column="name" />
               <SortHeader label="Project Name" column="cProjectName" />
+              {/* City — shown ONLY to restricted accounts, who have no Source
+                  / Next Contact / Assigned User columns and so have the room.
+                  A plain <th>, not a SortHeader: `addressCity` is not in the
+                  service's SORTABLE allowlist, so a sortable header here
+                  would silently fall back to sorting by createdAt and lie
+                  about what the arrow is doing. */}
+              {masked && (
+                <th className="text-left px-4 py-3">
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                    City
+                  </span>
+                </th>
+              )}
               {/* Sorts cSubSource — the field this column renders. It sorted
                   the unrelated `source` field before. */}
               {!masked && <SortHeader label="Source" column="cSubSource" />}
@@ -431,6 +445,14 @@ const DealsTable = ({
                         "None"}
                     </div>
                   </td>
+
+                  {masked && (
+                    <td className="px-4 py-4">
+                      <div className="text-foreground capitalize whitespace-nowrap">
+                        {deal?.addressCity || "—"}
+                      </div>
+                    </td>
+                  )}
 
                   {!masked && (
                     <td className="px-4 py-4">
@@ -673,6 +695,19 @@ const DealsTable = ({
                           </span>
                         </div>
                       )}
+                      {/* City — restricted accounts only, matching the
+                          desktop column. The mobile card is a separate render
+                          of the same row, so the column alone would leave
+                          phone users without it. */}
+                      {masked && deal?.addressCity && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Icon name="MapPin" size={12} />
+                          <span className="truncate capitalize">
+                            {deal.addressCity}
+                          </span>
+                        </div>
+                      )}
+
                       {/* project */}
                       {deal?.cProject && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
