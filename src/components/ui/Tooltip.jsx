@@ -19,7 +19,20 @@ import Icon from "../AppIcon";
 const WIDTH = 288; // w-72
 const MARGIN = 12; // keep this clear of the viewport edge
 
-const Tooltip = ({ title, text, children, className = "" }) => {
+/**
+ * `icon` names the glyph beside the title. Defaults to Sparkles, which is what
+ * every existing caller renders — the metric explanations on Team Performance,
+ * where it reads as "derived/inferred". Overridable because that meaning does
+ * not travel: on a status trail a sparkle would imply the history was guessed
+ * at, when it is recorded fact.
+ *
+ * `text` accepts a node, not just a string, so a caller can lay content out
+ * (a trail, a list) instead of being limited to one paragraph. That is why the
+ * body is a <div> rather than a <p>: block content inside a <p> is invalid
+ * HTML and the browser silently closes the paragraph early, which drops the
+ * styling on everything after it.
+ */
+const Tooltip = ({ title, text, children, className = "", icon = "Sparkles" }) => {
   const triggerRef = useRef(null);
   const [pos, setPos] = useState(null);
 
@@ -89,16 +102,16 @@ const Tooltip = ({ title, text, children, className = "" }) => {
 
               {title && (
                 <div className="mb-1.5 flex items-center gap-1.5">
-                  <Icon name="Sparkles" size={14} className="text-emerald-400" />
+                  <Icon name={icon} size={14} className="text-emerald-400" />
                   <span className="text-[13px] font-semibold normal-case tracking-normal text-emerald-400">
                     {title}
                   </span>
                 </div>
               )}
 
-              <p className="text-[13px] font-normal normal-case leading-relaxed tracking-normal text-neutral-300">
+              <div className="text-[13px] font-normal normal-case leading-relaxed tracking-normal text-neutral-300">
                 {text}
-              </p>
+              </div>
             </div>
           </div>,
           document.body,

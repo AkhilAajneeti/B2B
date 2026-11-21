@@ -229,8 +229,13 @@ export const isElevated = () => {
 // before it was written off, which is review material rather than day-to-day
 // rep tooling. Widen to isElevated() if that changes.
 //
-// Named rather than repeated inline in both files, so the next change to who
-// qualifies is one edit and the badge and the filter can't drift apart.
+// Two things read this: the "Previously in status" FILTER in the leads filter
+// bar, and the per-row status TRAIL (the hover panel on the leads table that
+// shows New → Follow up → Interested). Named rather than repeated inline in
+// both files, so the next change to who qualifies is one edit and the trail
+// and the filter can't drift apart — they describe the same cStatusObj data,
+// and it would be incoherent to let someone filter on a history they are not
+// allowed to read.
 //
 // Accounts granted it BY NAME, on top of the role rule. Lowercase entries
 // only — the comparison lowercases the stored username before checking.

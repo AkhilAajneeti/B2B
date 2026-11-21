@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import { Checkbox } from "../../../components/ui/Checkbox";
+import Tooltip from "../../../components/ui/Tooltip";
 import QuickEditSheet from "./QuickEditSheet";
-import { isMaskedUser } from "utils/permission";
+import { isMaskedUser, canSeeStatusHistory } from "utils/permission";
 import { toDialNumber, toWhatsappNumber } from "utils/phone";
 
 const DealsTable = ({
@@ -28,6 +29,12 @@ const DealsTable = ({
   // phone number in the address bar, which would hand back exactly what the
   // masking withholds.
   const masked = isMaskedUser();
+
+  // The per-row status trail. SupAdmin, Owner, plus any account named in
+  // STATUS_HISTORY_USERNAMES — the SAME helper that gates the "Previously in
+  // status" filter, deliberately, because both read cStatusObj and it would be
+  // incoherent to let someone filter on a history they cannot read.
+  const showStatusTrail = canSeeStatusHistory();
 
   const [hoveredRow, setHoveredRow] = useState(null);
   // The lead whose Quick Edit bottom sheet is open (mobile only). null = closed.
@@ -226,6 +233,83 @@ const DealsTable = ({
     for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i)) >>> 0;
     return ASSIGNEE_PALETTE[hash % ASSIGNEE_PALETTE.length];
   };
+  // The ordered journey a lead has taken, e.g. "New → Follow up → Interested".
+  //
+  // `cStatusObj` is the list of statuses the record has passed through. Two
+  // things it is NOT: timestamped, and guaranteed to include the CURRENT
+  // status. So the current status is appended when the history doesn't already
+  // end on it — otherwise a lead that moved to Interested a moment ago would
+  // show a trail stopping at the status before it, which reads as stale data.
+  //
+  // Returns null rather than a string when there is nothing worth showing, so
+  // the caller renders no affordance at all. Three cases collapse to null:
+  // the field is missing (leads last touched before EspoCRM began populating
+  // it have no history and never will), it is empty, or the whole journey is
+  // just the status already printed next to it — a one-item trail is not a
+  // journey, and an icon that reveals what you can already see is noise.
+  const getStatusTrail = (deal) => {
+    const history = Array.isArray(deal?.cStatusObj) ? deal.cStatusObj : [];
+    const steps = history.filter(Boolean).map(String);
+
+    const current = deal?.status;
+    if (current && steps[steps.length - 1] !== current) steps.push(current);
+
+    return steps.length > 1 ? steps : null;
+  };
+
+  /**
+   * The trail drawn as a vertical timeline for the hover panel.
+   *
+   * Vertical rather than a one-line "New → Follow up → Interested" because the
+   * panel is a fixed 288px: a horizontal chain of four or five statuses wraps
+   * mid-arrow and stops reading as a sequence. Down the page it stays legible
+   * at any length.
+   *
+   * The LAST step is drawn differently — brighter text, filled dot, and
+   * labelled "now". Without that the panel is a list of equal-looking states
+   * and the one fact the reader actually wants, where the lead stands today,
+   * takes a moment to work out.
+   */
+  const renderStatusTrail = (steps) => (
+    <ol className="space-y-0">
+      {steps.map((step, i) => {
+        const isCurrent = i === steps.length - 1;
+        return (
+          <li key={`${step}-${i}`} className="flex gap-2.5">
+            {/* Rail: dot plus the connector down to the next step. The
+                connector is omitted on the last item so the line does not
+                dangle past the end of the journey. */}
+            <div className="flex flex-col items-center pt-[7px]">
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                  isCurrent ? "bg-emerald-400" : "bg-neutral-600"
+                }`}
+              />
+              {!isCurrent && (
+                <span className="mt-0.5 w-px flex-1 bg-neutral-700" />
+              )}
+            </div>
+
+            <div className={`pb-1.5 ${isCurrent ? "pb-0" : ""}`}>
+              <span
+                className={
+                  isCurrent
+                    ? "text-[13px] font-medium text-white"
+                    : "text-[13px] text-neutral-400"
+                }
+              >
+                {step}
+              </span>
+              {isCurrent && (
+                <span className="ml-1.5 text-[11px] text-neutral-500">now</span>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+
   const getInitials = (name = "") => {
     const parts = name.trim().split(/\s+/);
     if (!parts[0]) return "?";
@@ -471,12 +555,49 @@ const DealsTable = ({
                   )}
 
                   <td className="px-4 py-4">
-                    <div
-                      className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
-                        deal?.status,
-                      )}`}
-                    >
-                      <span className="text-sm">{deal?.status}</span>
+                    <div className="flex justify-center items-center gap-1.5">
+                      <div
+                        className={`flex justify-center items-center space-x-2 px-2 py-1 font-medium rounded-full ${getStageColor(
+                          deal?.status,
+                        )}`}
+                      >
+                        <span className="text-sm">{deal?.status}</span>
+                      </div>
+
+                      {/* Status trail.
+                          Uses the shared Tooltip rather than a native `title`:
+                          it renders through a PORTAL, which is what lets it
+                          escape the `overflow-x-auto` wrapper around this
+                          table — an absolutely positioned panel would be
+                          clipped by that scroll container on the first and
+                          last rows, exactly where it matters.
+
+                          `icon="History"` overrides the component's Sparkles
+                          default, which elsewhere signals an inferred metric.
+                          A status trail is recorded fact, not an estimate, and
+                          a sparkle here would quietly claim otherwise.
+
+                          The aria-label carries the flat version of the same
+                          journey: the panel is hover-only and never reaches a
+                          screen reader, so without it the icon is announced as
+                          nothing at all. */}
+                      {showStatusTrail &&
+                        (() => {
+                          const steps = getStatusTrail(deal);
+                          if (!steps) return null;
+                          return (
+                            <Tooltip
+                              title="Status history"
+                              icon="History"
+                              text={renderStatusTrail(steps)}
+                              className="shrink-0 text-muted-foreground/70 hover:text-foreground transition-colors"
+                            >
+                              <span aria-label={`Status history: ${steps.join(" to ")}`}>
+                                <Icon name="History" size={14} />
+                              </span>
+                            </Tooltip>
+                          );
+                        })()}
                     </div>
                   </td>
 
@@ -667,16 +788,35 @@ const DealsTable = ({
                     </div>
 
                     {/* Status */}
-                    <span
-                      className={`
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span
+                        className={`
             px-2.5 py-1 rounded-full
             text-[10px] font-medium
             whitespace-nowrap
             ${getStageColor(deal?.status)}
           `}
-                    >
-                      {deal?.status}
-                    </span>
+                      >
+                        {deal?.status}
+                      </span>
+
+                      {/* Printed inline, not behind a hover: there is no hover
+                          on a phone, so the desktop `title` tooltip would be
+                          dead weight here. Wrapped and right-aligned rather
+                          than truncated — a trail cut off mid-journey is worse
+                          than no trail, because it silently implies the lead
+                          stopped where the text ran out. */}
+                      {showStatusTrail &&
+                        (() => {
+                          const steps = getStatusTrail(deal);
+                          if (!steps) return null;
+                          return (
+                            <span className="text-[10px] leading-snug text-muted-foreground text-right max-w-[11rem]">
+                              {steps.join(" → ")}
+                            </span>
+                          );
+                        })()}
+                    </div>
                   </div>
 
                   {/* Bottom */}

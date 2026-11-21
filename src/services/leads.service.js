@@ -31,6 +31,13 @@ const MASKED_LEAD_SELECT = [
   // the request solely when isMaskedUser() is true — every other account
   // sends no `select` at all and so already receives this field.
   "addressCity",
+  // Backs the status trail on each row — the ordered list of statuses the lead
+  // has passed through. Without it here the trail silently never renders for
+  // restricted accounts: canSeeStatusHistory() returns true, the component asks
+  // for deal.cStatusObj, and the field simply isn't in the response. That is a
+  // feature that looks switched off rather than broken, so it would go
+  // unreported. Everyone else already receives it — they send no `select`.
+  "cStatusObj",
   // Ownership + team scoping — read by isOwnRecord / isTeamRecord to decide
   // whether this user may edit or delete a row.
   "assignedUserId",

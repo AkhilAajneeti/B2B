@@ -788,8 +788,9 @@ const DealsFilters = ({
             any was-X-now-Y question: Status=Dead + Previously=Follow up finds
             leads that were nurtured and then written off.
 
-            Admin or Owner, matching the "was Follow up" badge in the table —
-            both read the same canSeeStatusHistory() helper.
+            Admin or Owner, matching the status trail on each row of the leads
+            table — both read the same canSeeStatusHistory() helper, so nobody
+            can filter on a history they are not allowed to read.
 
             Always offers the FULL status list (see PREVIOUS_STATUS_OPTIONS),
             not the page's narrowed `statusOptions` — history can hold any
