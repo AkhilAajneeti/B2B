@@ -21,9 +21,16 @@
       mode feel cheap no matter how good the colours are.
 
       It duplicates three things from src/utils/theme.js: the "theme" storage
-      key, the "dark" class, and the rule that a missing value means "follow
-      the OS". That duplication is the price of running before the bundle; both
-      files carry a comment pointing at the other. Nothing else belongs here.
+      key, the "dark" class, and the rule for what a MISSING value means. That
+      duplication is the price of running before the bundle; both files carry a
+      comment pointing at the other. Nothing else belongs here.
+
+      LIGHT IS THE DEFAULT: dark applies only when it was explicitly chosen.
+      The OS preference is deliberately not read, so nobody is handed a
+      redesign because their laptop is in dark mode. To follow the OS instead,
+      this condition and `resolveTheme` in src/utils/theme.js change together —
+      changing one alone gives a page that paints one theme and then flips to
+      the other, which is the exact flash this script exists to prevent.
 
       Wrapped in try/catch because localStorage throws outright in Safari
       private mode, and an exception here would block the page, not just the
@@ -32,18 +39,13 @@
     <script>
       (function () {
         try {
-          var stored = localStorage.getItem("theme");
-          var dark =
-            stored === "dark" ||
-            (stored !== "light" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches);
-          if (dark) {
+          if (localStorage.getItem("theme") === "dark") {
             document.documentElement.classList.add("dark");
             var meta = document.querySelector('meta[name="theme-color"]');
             if (meta) meta.setAttribute("content", "#0E1116");
           }
         } catch (e) {
-          /* storage or matchMedia unavailable — stay light */
+          /* storage unavailable — stay light, which is also the default */
         }
       })();
     </script>

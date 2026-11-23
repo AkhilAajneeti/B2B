@@ -1,11 +1,21 @@
 /**
  * Light / dark theme: storage, resolution, and the `dark` class on <html>.
  *
- * THREE STATES, NOT TWO. Stored preference is "light", "dark", or ABSENT —
- * and absent is not the same as light. Absent means "follow the OS", so a user
- * who has never touched the toggle tracks their laptop switching to dark at
- * sunset. Once they pick a side, that choice wins over the OS forever, because
- * someone who deliberately chose light in a dark-mode OS meant it.
+ * LIGHT IS THE DEFAULT, and the OS preference is deliberately NOT consulted.
+ * An earlier version seeded the first visit from prefers-color-scheme, which
+ * meant a sales rep whose laptop happened to be in dark mode opened the CRM to
+ * a redesign they never asked for. Dark mode here is opt-in: until the toggle
+ * is pressed, the app looks exactly as it did before dark mode existed.
+ *
+ * TO GO BACK TO FOLLOWING THE OS, two things change together — `resolveTheme`
+ * below, and the inline script in index.html. Both would read
+ * `window.matchMedia("(prefers-color-scheme: dark)")` when no value is stored.
+ * Changing only one is the bug this file is arranged to make obvious.
+ *
+ * STORED STATE IS STILL THREE-VALUED: "light", "dark", or absent. Absent and
+ * "light" now render the same, but they are not the same thing — absent means
+ * "never chose", which is what a future System option would hang off, and what
+ * setTheme(null) resets to.
  *
  * THE STORAGE KEY IS DUPLICATED IN index.html, deliberately. The inline script
  * there applies the class before first paint; without it the app renders light
@@ -47,19 +57,15 @@ export const readStoredTheme = () => {
   }
 };
 
-/** What the OS is asking for right now. */
-export const systemTheme = () => {
-  try {
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-      ? THEMES.DARK
-      : THEMES.LIGHT;
-  } catch {
-    return THEMES.LIGHT;
-  }
-};
-
-/** The theme that should actually be on screen: explicit choice, else the OS. */
-export const resolveTheme = () => readStoredTheme() ?? systemTheme();
+/**
+ * The theme that should actually be on screen: the explicit choice, else
+ * light.
+ *
+ * No media query. See the note at the top of this file — dark mode is opt-in,
+ * and this is the one line that decides it (together with its twin in
+ * index.html).
+ */
+export const resolveTheme = () => readStoredTheme() ?? THEMES.LIGHT;
 
 /**
  * Puts the theme on <html>.
@@ -99,9 +105,10 @@ const notify = (theme) => {
 /**
  * Records an explicit choice and applies it.
  *
- * Passing null clears the choice and goes back to following the OS. Nothing in
- * the UI does that today — the toggle is two-state — but the storage model
- * supports it, so a later "System" option needs no change here.
+ * Passing null clears the choice, which returns to the light default. Nothing
+ * in the UI does that today — the toggle is two-state — but the storage model
+ * keeps "never chose" distinct, so a later "System" option is a change to
+ * resolveTheme rather than to every caller.
  */
 export const setTheme = (theme) => {
   try {
@@ -111,7 +118,7 @@ export const setTheme = (theme) => {
     /* storage disabled — the choice applies for this page load only */
   }
 
-  const resolved = isTheme(theme) ? theme : systemTheme();
+  const resolved = isTheme(theme) ? theme : THEMES.LIGHT;
   applyTheme(resolved);
   notify(resolved);
   return resolved;
@@ -122,24 +129,16 @@ export const toggleTheme = () =>
   setTheme(resolveTheme() === THEMES.DARK ? THEMES.LIGHT : THEMES.DARK);
 
 /**
- * Subscribes to theme changes, from any of the three things that cause one.
+ * Subscribes to theme changes.
+ *
+ * There is no prefers-color-scheme listener: the OS does not drive the theme,
+ * so there is nothing to react to. Add one back alongside the resolveTheme
+ * change if the default ever becomes "follow the OS".
  *
  * @returns {() => void} unsubscribe
  */
 export const subscribeTheme = (fn) => {
   listeners.add(fn);
-
-  // The OS switching over — but only while the user has made no explicit
-  // choice. Checked at event time rather than at subscribe time, so choosing a
-  // theme stops OS changes from overriding it without re-subscribing.
-  let media;
-  const onMedia = () => {
-    if (readStoredTheme() === null) {
-      const resolved = systemTheme();
-      applyTheme(resolved);
-      fn(resolved);
-    }
-  };
 
   // Another tab toggling. `storage` fires only in OTHER tabs, which is exactly
   // what is wanted: this tab already applied its own change above.
@@ -151,17 +150,14 @@ export const subscribeTheme = (fn) => {
   };
 
   try {
-    media = window.matchMedia("(prefers-color-scheme: dark)");
-    media.addEventListener("change", onMedia);
     window.addEventListener("storage", onStorage);
   } catch {
-    /* no matchMedia — in-tab toggling still works */
+    /* no window — in-tab toggling still works */
   }
 
   return () => {
     listeners.delete(fn);
     try {
-      media?.removeEventListener("change", onMedia);
       window.removeEventListener("storage", onStorage);
     } catch {
       /* nothing to detach */
