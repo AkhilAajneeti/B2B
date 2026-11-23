@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { Helmet } from "react-helmet";
 
 import Icon from "../../components/AppIcon";
 
@@ -199,9 +198,6 @@ const ProjectPage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Projects — Aajneeti Connect ltd</title>
-      </Helmet>
       <div className="min-h-screen bg-background">
         
         

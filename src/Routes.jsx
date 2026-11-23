@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "components/ScrollToTop";
+import DocumentTitle from "components/DocumentTitle";
 import ErrorBoundary from "components/ErrorBoundary";
 import FollowupReminderManager from "components/FollowupReminderManager";
 import ProtectedRoute from "routes/ProtectedRoute";
@@ -54,6 +55,9 @@ const Routes = () => {
     <BrowserRouter>
       <ErrorBoundary>
         <ScrollToTop />
+        {/* Browser tab title, route-keyed. See components/DocumentTitle for
+            why this is central rather than one <Helmet> per page. */}
+        <DocumentTitle />
         {/* Global follow-up reminder timer - lives above the routes so it keeps
             running on every page (mounted once, survives navigation). */}
         <FollowupReminderManager />

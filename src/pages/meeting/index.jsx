@@ -292,7 +292,6 @@ const MeetingPage = () => {
   return (
     <>
       <Helmet>
-        <title>Meetings - CRM</title>
         <meta
           name="description"
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."

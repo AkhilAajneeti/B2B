@@ -116,7 +116,6 @@ const LoginPage = () => {
     return (
       <>
         <Helmet>
-          <title>Sign In - CRM</title>
           <meta
             name="description"
             content="Sign in to your Aajneeti CRM account to access your sales pipeline, customer data, and CRM tools."
@@ -244,7 +243,6 @@ const LoginPage = () => {
   return (
     <>
       <Helmet>
-        <title>Sign In - CRM</title>
         <meta
           name="description"
           content="Sign in to your Aajneeti CRM account to access your sales pipeline, customer data, and CRM tools."

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Helmet } from "react-helmet";
 import { useParams } from "react-router-dom";
+import { useDocumentTitle } from "../../components/DocumentTitle";
 
 import TricolorBurst from "../../components/TricolorBurst";
 import HelpSidebar from "./components/HelpSidebar";
@@ -61,10 +62,14 @@ const HelpPage = () => {
     content = <HelpHome />;
   }
 
+  // Overrides the route's mapped "Help" with the article or category actually
+  // open, which is what makes several Help tabs tellable apart. Safe to forget
+  // on any other page — see useDocumentTitle.
+  useDocumentTitle(pageTitle);
+
   return (
     <>
       <Helmet>
-        <title>{pageTitle}</title>
         <meta
           name="description"
           content="CRM Help Center — short, beginner-friendly guides for leads, meetings, tasks, reports and more."

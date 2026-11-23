@@ -104,7 +104,6 @@ const Pipeline = () => {
     <div className="min-h-screen bg-background relative">
       <TricolorBurst />
       <Helmet>
-        <title>Pipeline - Aajneeti Connect ltd</title>
         <meta
           name="description"
           content="Action-based sales pipeline for follow-up tracking, urgency management and daily sales operations."

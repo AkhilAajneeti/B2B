@@ -1,5 +1,4 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Helmet } from "react-helmet";
 import Icon from "../../components/AppIcon";
 import TeamPerformanceTable from "./components/TeamPerformanceTable";
 import Select from "../../components/ui/Select";
@@ -326,9 +325,6 @@ const TeamPerformance = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Team Performance · AAJneeti CRM</title>
-      </Helmet>
 
       <main className="lg:ml-64 pt-16">
         <div className="p-4 sm:p-6">

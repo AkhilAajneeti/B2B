@@ -279,7 +279,6 @@ const CallPage = () => {
   return (
     <>
       <Helmet>
-        <title>Training - Aajneeti Connect ltd</title>
         <meta
           name="description"
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."

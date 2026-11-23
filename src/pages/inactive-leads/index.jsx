@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 import Papa from "papaparse";
 
@@ -382,9 +381,6 @@ const InactiveLeadsPage = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Inactive Leads</title>
-      </Helmet>
       <div className="min-h-screen bg-background">
         
         

@@ -372,7 +372,6 @@ const ProjectsPage = () => {
   return (
     <>
       <Helmet>
-        <title>My Projects - Aajneeti Connect ltd</title>
         <meta
           name="description"
           content="Manage and track your sales deals with comprehensive filtering and pipeline management tools."

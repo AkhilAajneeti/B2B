@@ -275,7 +275,6 @@ const Reports = () => {
   return (
     <>
       <Helmet>
-        <title>CRM Reports</title>
         <meta
           name="description"
           content="Comprehensive sales analytics with interactive visualizations and export capabilities for data-driven decision making"
