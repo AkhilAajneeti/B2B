@@ -18,7 +18,7 @@ import UserDetailsModal from "./models/UserDetailsModal";
 import { DATE_FILTER_OPTIONS, matchesDateFilter, STATUS_FILTER_OPTIONS, todayLocal } from "../../../utils/dateFilter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "../../../hooks/useUsers";
-import { useTeams } from "../../../hooks/useTeams";
+import { useTeams, useTeamUsers } from "../../../hooks/useTeams";
 import { useRoles } from "../../../hooks/useRoles";
 import { filter } from "d3";
 // One accent hex drives the icon tile, the card wash, the corner glow and the
@@ -47,6 +47,9 @@ const UserTab = () => {
     search: "",
     dateType: "",
     statusType: "",
+    // Team id, not a name. Resolved to a membership list via the API — see
+    // teamMemberIds below for why this can't be matched against the user rows.
+    teamId: "",
     dateFrom: "",
     dateTo: "",
     xDays: "",
@@ -281,9 +284,43 @@ const UserTab = () => {
     value: t.id,
     label: t.name,
   }));
+  /**
+   * Members of the selected team, as a Set of user ids.
+   *
+   * WHY THIS IS A SEPARATE REQUEST rather than reading `m.teamsIds` off each
+   * row: the users list endpoint does not return link-multiple fields. That is
+   * the same fact documented on the edit handler above, which has to re-fetch
+   * the full record to populate the Teams box. Filtering on `m.teamsIds` here
+   * would therefore match nothing at all — and, being a filter, it would show
+   * an empty table rather than an error, so it would look like "this team has
+   * no users" instead of "this code is broken".
+   *
+   * `/team/{id}/users` is used instead. Not a new endpoint: it already backs
+   * the Team filter on the Leads page, so it is proven against this backend.
+   *
+   * Costs nothing until a team is picked (`enabled: !!teamId` in the hook),
+   * and the result is cached for 10 minutes, so flipping between teams is
+   * mostly free.
+   */
+  const { data: teamUsersData, isPending: teamUsersPending } = useTeamUsers(
+    filters.teamId,
+  );
+
+  const teamMemberIds = React.useMemo(() => {
+    if (!filters.teamId) return null; // null = "no team filter", not "empty team"
+    return new Set((teamUsersData?.list || []).map((u) => u.id));
+  }, [filters.teamId, teamUsersData]);
+
+  // True while a team is selected but its membership hasn't arrived yet. Every
+  // other filter on this page is synchronous; without this the table would
+  // flash "Users (0)" for the duration of the request, which reads as an empty
+  // team. The table shows its loading state instead.
+  const teamFilterPending = !!filters.teamId && teamUsersPending;
+
   const filteredMembers = React.useMemo(() => {
     const q = (filters.search || "").trim().toLowerCase();
     return (teamMembers || []).filter((m) => {
+      if (teamMemberIds && !teamMemberIds.has(m?.id)) return false;
       if (q) {
         const name = (m?.name || "").toLowerCase();
         const userName = (m?.userName || "").toLowerCase();
@@ -297,7 +334,10 @@ const UserTab = () => {
       if (filters.statusType === "InActive" && m?.isActive) return false;
       return true;
     });
-  }, [teamMembers, filters]);
+    // teamMemberIds is its own dependency: it arrives from the network AFTER
+    // `filters` has already changed, so depending on `filters` alone would
+    // leave the memo holding a stale, unfiltered list once the request landed.
+  }, [teamMembers, filters, teamMemberIds]);
 
   const paginatedMembers = React.useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -319,13 +359,13 @@ const UserTab = () => {
   };
 
   const clearFilters = () => {
-    setFilters({ search: "", dateType: "",statusType: "", dateFrom: "", dateTo: "", xDays: "" });
+    setFilters({ search: "", dateType: "", statusType: "", teamId: "", dateFrom: "", dateTo: "", xDays: "" });
     setCurrentPage(1);
   };
 
   const showDateInputs = ["on", "before", "after", "between"].includes(filters.dateType);
   const showXDaysInput = filters.dateType === "lastXDays";
-  const activeFiltersCount = [filters.search, filters.dateType,filters.statusType].filter(Boolean).length;
+  const activeFiltersCount = [filters.search, filters.dateType, filters.statusType, filters.teamId].filter(Boolean).length;
 
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
@@ -695,7 +735,10 @@ const UserTab = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <h4 className="text-sm font-medium text-card-foreground">
-                Users ({filteredMembers.length})
+                {/* The count is suppressed while the team membership request
+                    is in flight. Showing "Users (0)" for that moment would
+                    state, as fact, that the team is empty. */}
+                Users ({teamFilterPending ? "…" : filteredMembers.length})
               </h4>
               {activeFiltersCount > 0 && (
                 <>
@@ -717,6 +760,21 @@ const UserTab = () => {
               value={filters.search}
               onChange={(e) => handleFilterChange("search", e?.target?.value)}
               className="lg:col-span-2"
+            />
+            {/* Teams — placed directly after Search, matching the Search →
+                Client order agreed for the Leads filter bar.
+
+                `searchable` because an org can run to dozens of teams and
+                scrolling a bare list to find one is slower than typing three
+                letters of it. Value is the team ID, which is what
+                /team/{id}/users needs. */}
+            <Select
+              placeholder="Filter by Team"
+              options={teamOptions}
+              value={filters.teamId}
+              onChange={(value) => handleFilterChange("teamId", value || "")}
+              searchable
+              clearable
             />
             <Select
               placeholder="Filter by date"
@@ -767,7 +825,7 @@ const UserTab = () => {
             scroller, and the columns that matter (role, status, actions) were
             the ones off-screen. */}
         <div className="space-y-3 lg:hidden">
-          {usersLoading ? (
+          {usersLoading || teamFilterPending ? (
             Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
@@ -910,7 +968,7 @@ const UserTab = () => {
               </tr>
             </thead>
             <tbody>
-              {usersLoading ? (
+              {usersLoading || teamFilterPending ? (
                 Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
               ) : !paginatedMembers?.length ? (
                 <tr>
