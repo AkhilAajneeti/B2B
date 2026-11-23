@@ -45,21 +45,21 @@ const ICON_TILE = {
 // that only appear in the full drawer intentionally use the same neutral
 // fallback treatment as an unmapped QuickEditSheet status.
 const QUICK_EDIT_STATUS_COLOR = {
-  New: "bg-blue-50 text-blue-700 border-blue-200",
-  "Follow up": "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Interested: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 border-emerald-300",
-  "Invitation Sent": "bg-emerald-200 text-emerald-800 border-emerald-300",
-  "Event Attend": "bg-teal-100 text-teal-800 border-teal-200",
-  "Future Prospect": "bg-indigo-50 text-indigo-700 border-indigo-200",
-  "Site Visit Done": "bg-emerald-300 text-emerald-900 border-emerald-400",
+  New: "bg-blue-50 text-blue-700 dark:text-blue-300 border-blue-200",
+  "Follow up": "bg-emerald-50 text-emerald-700 dark:text-emerald-300 border-emerald-200",
+  Interested: "bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200",
+  "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 dark:text-emerald-300 border-emerald-300",
+  "Invitation Sent": "bg-emerald-200 text-emerald-800 dark:text-emerald-300 border-emerald-300",
+  "Event Attend": "bg-teal-100 text-teal-800 dark:text-teal-300 border-teal-200",
+  "Future Prospect": "bg-indigo-50 text-indigo-700 dark:text-indigo-300 border-indigo-200",
+  "Site Visit Done": "bg-emerald-300 text-emerald-900 dark:text-emerald-300 border-emerald-400",
   Purchased: "bg-emerald-600 text-white border-emerald-600",
-  "Call Later": "bg-yellow-50 text-yellow-700 border-yellow-200",
-  "Call Not Connecting": "bg-yellow-100 text-yellow-800 border-yellow-200",
-  "Call Not Picked": "bg-yellow-200 text-yellow-800 border-yellow-300",
-  "Switch Off": "bg-yellow-300 text-yellow-900 border-yellow-400",
-  "Not Interested": "bg-red-100 text-red-700 border-red-200",
-  "Low Budget": "bg-red-50 text-red-700 border-red-200",
+  "Call Later": "bg-yellow-50 text-yellow-700 dark:text-yellow-300 border-yellow-200",
+  "Call Not Connecting": "bg-yellow-100 text-yellow-800 dark:text-yellow-300 border-yellow-200",
+  "Call Not Picked": "bg-yellow-200 text-yellow-800 dark:text-yellow-300 border-yellow-300",
+  "Switch Off": "bg-yellow-300 text-yellow-900 dark:text-yellow-300 border-yellow-400",
+  "Not Interested": "bg-red-100 text-red-700 dark:text-red-300 border-red-200",
+  "Low Budget": "bg-red-50 text-red-700 dark:text-red-300 border-red-200",
 };
 
 const getQuickEditStatusChip = (status) =>
@@ -84,7 +84,7 @@ const QUICK_EDIT_STATUS_ACCENT = {
 };
 
 const getQuickEditStatusAccent = (status) =>
-  QUICK_EDIT_STATUS_ACCENT[status] || "var(--color-primary)";
+  QUICK_EDIT_STATUS_ACCENT[status] || "rgb(var(--color-primary))";
 
 // A field icon rendered as a small "3D" gradient tile: white icon on a colored
 // gradient, with a soft drop shadow + inset highlight ring for depth.
@@ -553,38 +553,38 @@ const DealDrawer = ({
     // category, depth = progress/intensity. Opaque light shades so a chip stays
     // readable on both light and dark rows (the app has no `dark:` variants).
     const colors = {
-      New: "bg-blue-50 text-blue-700 border border-blue-200",
+      New: "bg-blue-50 text-blue-700 dark:text-blue-300 border border-blue-200",
 
-      "Follow up": "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      Interested: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+      "Follow up": "bg-emerald-50 text-emerald-700 dark:text-emerald-300 border border-emerald-200",
+      Interested: "bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200",
       "Site Visit Scheduled":
-        "bg-emerald-200 text-emerald-800 border border-emerald-300",
+        "bg-emerald-200 text-emerald-800 dark:text-emerald-300 border border-emerald-300",
       "Invitation Sent":
-        "bg-emerald-200 text-emerald-800 border border-emerald-300",
-      "Event Attend": "bg-teal-100 text-teal-800 border border-teal-200",
-      "Future Prospect": "bg-indigo-50 text-indigo-700 border border-indigo-200",
-      "Site Visit Done": "bg-emerald-300 text-emerald-900 border border-emerald-400",
+        "bg-emerald-200 text-emerald-800 dark:text-emerald-300 border border-emerald-300",
+      "Event Attend": "bg-teal-100 text-teal-800 dark:text-teal-300 border border-teal-200",
+      "Future Prospect": "bg-indigo-50 text-indigo-700 dark:text-indigo-300 border border-indigo-200",
+      "Site Visit Done": "bg-emerald-300 text-emerald-900 dark:text-emerald-300 border border-emerald-400",
       Purchased: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",
       Converted: "bg-emerald-600 text-white border border-emerald-600 shadow-sm",
 
-      "Call Later": "bg-yellow-50 text-yellow-700 border border-yellow-200",
-      "Call Not Connecting": "bg-yellow-100 text-yellow-800 border border-yellow-200",
-      "Call Not Picked": "bg-yellow-200 text-yellow-800 border border-yellow-300",
-      "Switch Off": "bg-yellow-300 text-yellow-900 border border-yellow-400",
+      "Call Later": "bg-yellow-50 text-yellow-700 dark:text-yellow-300 border border-yellow-200",
+      "Call Not Connecting": "bg-yellow-100 text-yellow-800 dark:text-yellow-300 border border-yellow-200",
+      "Call Not Picked": "bg-yellow-200 text-yellow-800 dark:text-yellow-300 border border-yellow-300",
+      "Switch Off": "bg-yellow-300 text-yellow-900 dark:text-yellow-300 border border-yellow-400",
 
-      QDTD: "bg-violet-100 text-violet-800 border border-violet-300",
+      QDTD: "bg-violet-100 text-violet-800 dark:text-violet-300 border border-violet-300",
 
       Duplicate: "bg-slate-100 text-slate-600 border border-slate-200",
 
-      "Low Budget": "bg-red-50 text-red-700 border border-red-200",
-      "Low Interest": "bg-red-50 text-red-700 border border-red-200",
-      "Other Location": "bg-red-50 text-red-700 border border-red-200",
-      "Irrelevant Lead": "bg-red-50 text-red-700 border border-red-200",
-      "Not Interested": "bg-red-100 text-red-700 border border-red-200",
-      "Not interested": "bg-red-100 text-red-700 border border-red-200",
-      Broker: "bg-red-100 text-red-700 border border-red-200",
-      Dead: "bg-red-200 text-red-800 border border-red-300",
-      "Fake Lead": "bg-red-300 text-red-900 border border-red-400",
+      "Low Budget": "bg-red-50 text-red-700 dark:text-red-300 border border-red-200",
+      "Low Interest": "bg-red-50 text-red-700 dark:text-red-300 border border-red-200",
+      "Other Location": "bg-red-50 text-red-700 dark:text-red-300 border border-red-200",
+      "Irrelevant Lead": "bg-red-50 text-red-700 dark:text-red-300 border border-red-200",
+      "Not Interested": "bg-red-100 text-red-700 dark:text-red-300 border border-red-200",
+      "Not interested": "bg-red-100 text-red-700 dark:text-red-300 border border-red-200",
+      Broker: "bg-red-100 text-red-700 dark:text-red-300 border border-red-200",
+      Dead: "bg-red-200 text-red-800 dark:text-red-300 border border-red-300",
+      "Fake Lead": "bg-red-300 text-red-900 dark:text-red-300 border border-red-400",
       "Invalid Number": "bg-red-600 text-white border border-red-600 shadow-sm",
       Invalid: "bg-red-600 text-white border border-red-600 shadow-sm",
     };
@@ -647,13 +647,13 @@ const DealDrawer = ({
   const getActivityIconColor = (type) => {
     switch (type) {
       case "Post":
-        return "text-indigo-600";
+        return "text-indigo-600 dark:text-indigo-300";
       case "Update":
-        return "text-blue-600";
+        return "text-blue-600 dark:text-blue-300";
       case "Assign":
-        return "text-purple-600";
+        return "text-purple-600 dark:text-purple-300";
       case "Create":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-300";
       default:
         return "text-gray-500";
     }
@@ -1086,7 +1086,7 @@ const DealDrawer = ({
                         </span>
                       )}
                       {deal?.assignedUserName && (
-                        <span className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full bg-white border border-slate-200 text-xs text-slate-700">
+                        <span className="inline-flex items-center gap-1.5 pl-0.5 pr-2 py-0.5 rounded-full bg-card border border-slate-200 text-xs text-slate-700">
                           <span
                             className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
                             style={{
@@ -1163,7 +1163,7 @@ const DealDrawer = ({
                   <a
                     href={deal?.phoneNumber ? `tel:${deal.phoneNumber}` : undefined}
                     className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.phoneNumber
-                      ? "bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200"
+                      ? "bg-sky-50 text-sky-700 dark:text-sky-300 hover:bg-sky-100 border border-sky-200"
                       : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
                       }`}
                   >
@@ -1179,7 +1179,7 @@ const DealDrawer = ({
                       target={waUrl ? "_blank" : undefined}
                       rel="noopener noreferrer"
                       className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${waUrl
-                        ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                        ? "bg-emerald-50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200"
                         : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
                         }`}
                     >
@@ -1219,7 +1219,7 @@ const DealDrawer = ({
                     deal?.emailAddress ? `mailto:${deal.emailAddress}` : undefined
                   }
                   className={` hidden inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${deal?.emailAddress
-                    ? "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                    ? "bg-indigo-50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200"
                     : "bg-slate-50 text-slate-400 border border-slate-200 pointer-events-none"
                     }`}
                 >
@@ -1238,11 +1238,11 @@ const DealDrawer = ({
                 const ncs = getNextContactStatus(deal?.cNextContactAt);
                 const toneMap = {
                   rose:
-                    "bg-rose-50 border-rose-200 text-rose-700",
+                    "bg-rose-50 border-rose-200 text-rose-700 dark:text-rose-300",
                   amber:
-                    "bg-amber-50 border-amber-200 text-amber-800",
+                    "bg-amber-50 border-amber-200 text-amber-800 dark:text-amber-300",
                   emerald:
-                    "bg-emerald-50 border-emerald-200 text-emerald-700",
+                    "bg-emerald-50 border-emerald-200 text-emerald-700 dark:text-emerald-300",
                   muted:
                     "bg-slate-50 border-slate-200 text-slate-500",
                 };
@@ -1561,7 +1561,7 @@ const DealDrawer = ({
                     banner in meeting and tasks Mass Update forms. */}
                 <div className="px-6 pt-4 pb-3">
                   <div className="rounded-xl bg-gradient-to-r from-rose-100/80 via-pink-100/70 to-rose-100/80 border border-rose-200/60 p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/80 ring-1 ring-rose-200 flex items-center justify-center text-[#AC2334] shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-card/80 ring-1 ring-rose-200 flex items-center justify-center text-[#AC2334] shrink-0">
                       <Icon name="Wand2" size={18} />
                     </div>
                     <div>
@@ -1569,7 +1569,7 @@ const DealDrawer = ({
                         Updating {selectedIds.length} selected lead
                         {selectedIds.length !== 1 ? "s" : ""}
                       </p>
-                      <p className="text-xs text-rose-700/80 mt-0.5 leading-relaxed">
+                      <p className="text-xs text-rose-700/80 dark:text-rose-300/80 mt-0.5 leading-relaxed">
                         Toggle the fields you want to change — unchecked fields stay as they are on each record.
                       </p>
                     </div>
@@ -1586,7 +1586,7 @@ const DealDrawer = ({
                     {/* Assigned User */}
                     <div
                       className={`rounded-xl border p-3 transition-colors ${massFields.assignedUserId
-                        ? "bg-white border-rose-300 shadow-sm"
+                        ? "bg-card border-rose-300 shadow-sm"
                         : "bg-slate-50/60 border-slate-200"
                         }`}
                     >
@@ -1600,7 +1600,7 @@ const DealDrawer = ({
                             }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${massFields.assignedUserId ? "translate-x-5" : "translate-x-1"
+                            className={`inline-block h-4 w-4 rounded-full bg-card shadow ring-1 ring-black/5 transition-transform ${massFields.assignedUserId ? "translate-x-5" : "translate-x-1"
                               }`}
                           />
                         </button>
@@ -1626,7 +1626,7 @@ const DealDrawer = ({
                     {/* Team */}
                     <div
                       className={`rounded-xl border p-3 transition-colors ${massFields.teamId
-                        ? "bg-white border-rose-300 shadow-sm"
+                        ? "bg-card border-rose-300 shadow-sm"
                         : "bg-slate-50/60 border-slate-200"
                         }`}
                     >
@@ -1640,7 +1640,7 @@ const DealDrawer = ({
                             }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${massFields.teamId ? "translate-x-5" : "translate-x-1"
+                            className={`inline-block h-4 w-4 rounded-full bg-card shadow ring-1 ring-black/5 transition-transform ${massFields.teamId ? "translate-x-5" : "translate-x-1"
                               }`}
                           />
                         </button>
@@ -1668,7 +1668,7 @@ const DealDrawer = ({
                     {/* Status */}
                     <div
                       className={`rounded-xl border p-3 transition-colors ${massFields.status
-                        ? "bg-white border-rose-300 shadow-sm"
+                        ? "bg-card border-rose-300 shadow-sm"
                         : "bg-slate-50/60 border-slate-200"
                         }`}
                     >
@@ -1682,7 +1682,7 @@ const DealDrawer = ({
                             }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${massFields.status ? "translate-x-5" : "translate-x-1"
+                            className={`inline-block h-4 w-4 rounded-full bg-card shadow ring-1 ring-black/5 transition-transform ${massFields.status ? "translate-x-5" : "translate-x-1"
                               }`}
                           />
                         </button>
@@ -1707,7 +1707,7 @@ const DealDrawer = ({
                     {/* Next Contact Date */}
                     <div
                       className={`rounded-xl border p-3 transition-colors ${massFields.cNextContactAt
-                        ? "bg-white border-rose-300 shadow-sm"
+                        ? "bg-card border-rose-300 shadow-sm"
                         : "bg-slate-50/60 border-slate-200"
                         }`}
                     >
@@ -1721,7 +1721,7 @@ const DealDrawer = ({
                             }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${massFields.cNextContactAt ? "translate-x-5" : "translate-x-1"
+                            className={`inline-block h-4 w-4 rounded-full bg-card shadow ring-1 ring-black/5 transition-transform ${massFields.cNextContactAt ? "translate-x-5" : "translate-x-1"
                               }`}
                           />
                         </button>
@@ -1915,7 +1915,7 @@ const DealDrawer = ({
                                         setActivityForm(true);
                                       }}
                                       aria-label="Add Activity"
-                                      className="grid h-7 w-7 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
+                                      className="grid h-7 w-7 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 dark:text-emerald-300 transition hover:bg-emerald-100"
                                     >
                                       <Icon name="Pencil" size={14} />
                                     </button>
@@ -1940,7 +1940,7 @@ const DealDrawer = ({
                                         setActivityForm(true);
                                       }}
                                       aria-label="Add Activity"
-                                      className="grid h-7 w-7 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
+                                      className="grid h-7 w-7 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 dark:text-emerald-300 transition hover:bg-emerald-100"
                                     >
                                       <Icon name="Pencil" size={14} />
                                     </button>
@@ -2018,7 +2018,7 @@ const DealDrawer = ({
                                           </div>
 
                                           <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
                                               <Icon name="Sparkles" size={11} />
                                               Latest
                                             </span>
@@ -2490,7 +2490,7 @@ const DealDrawer = ({
                                     href={url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 hover:underline font-medium break-all"
+                                    className="inline-flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-300 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline font-medium break-all"
                                   >
                                     {deal?.phoneNumber || deal?.cWhatsapp}
                                   </a>
@@ -2655,7 +2655,7 @@ const DealDrawer = ({
                         )}
 
                         {!showActivityForm && streams.length === 0 && (
-                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/40 via-white to-indigo-50/30 p-8 text-center">
+                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/40 via-white to-indigo-50/30 dark:from-card dark:via-card dark:to-card p-8 text-center">
                             <div className="absolute -top-12 -right-12 w-40 h-40 bg-violet-200/40 rounded-full blur-3xl pointer-events-none" />
                             <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-indigo-200/40 rounded-full blur-3xl pointer-events-none" />
                             <div className="relative">
@@ -2672,11 +2672,11 @@ const DealDrawer = ({
                                 Notes, updates, and team mentions about this lead live here as a timeline.
                               </p>
                               <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-violet-700 bg-violet-100/70 rounded-full">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-violet-700 dark:text-violet-300 bg-violet-100/70 rounded-full">
                                   <Icon name="Sparkles" size={10} />
                                   Quick notes
                                 </span>
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-indigo-700 bg-indigo-100/70 rounded-full">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-100/70 rounded-full">
                                   <Icon name="AtSign" size={10} />
                                   Mention teammates
                                 </span>
@@ -2870,7 +2870,7 @@ const DealDrawer = ({
                                unfilled state requiring action. */
                             <div className="text-center py-8">
                               <div className="inline-flex w-14 h-14 rounded-full bg-amber-50 items-center justify-center border border-amber-100">
-                                <Icon name="UserX" size={22} className="text-amber-500" />
+                                <Icon name="UserX" size={22} className="text-amber-500 dark:text-amber-400" />
                               </div>
                               <h4 className="mt-3 text-sm font-semibold text-slate-900">
                                 No rep assigned
@@ -2950,7 +2950,7 @@ const DealDrawer = ({
                               <div className="absolute -left-9 -top-0.5 w-6 h-6 rounded-full bg-sky-500 ring-4 ring-sky-100 flex items-center justify-center shadow-sm">
                                 <Icon name="PencilLine" size={12} className="text-white" />
                               </div>
-                              <p className="text-[10px] uppercase tracking-wider text-sky-600 font-medium">
+                              <p className="text-[10px] uppercase tracking-wider text-sky-600 dark:text-sky-300 font-medium">
                                 Last modified
                               </p>
                               <p className="text-sm font-medium text-slate-900 mt-0.5">
@@ -2980,7 +2980,7 @@ const DealDrawer = ({
                               <div className="absolute -left-9 -top-0.5 w-6 h-6 rounded-full bg-emerald-500 ring-4 ring-emerald-100 flex items-center justify-center shadow-sm">
                                 <Icon name="Sparkles" size={12} className="text-white" />
                               </div>
-                              <p className="text-[10px] uppercase tracking-wider text-emerald-600 font-medium">
+                              <p className="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-300 font-medium">
                                 Created
                               </p>
                               <p className="text-sm font-medium text-slate-900 mt-0.5">
@@ -3029,7 +3029,7 @@ const DealDrawer = ({
                       <div className="space-y-4">
 
                         {task.length === 0 && (
-                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-orange-200 bg-gradient-to-br from-orange-50/40 via-white to-orange-50/30 p-8 text-center">
+                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-orange-200 bg-gradient-to-br from-orange-50/40 via-white to-orange-50/30 dark:from-card dark:via-card dark:to-card p-8 text-center">
                             <div className="absolute -top-12 -left-12 w-40 h-40 bg-orange-200/40 rounded-full blur-3xl pointer-events-none" />
                             <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-orange-200/40 rounded-full blur-3xl pointer-events-none" />
                             <div className="relative">
@@ -3046,19 +3046,19 @@ const DealDrawer = ({
                                 Plan your next move — follow up, schedule a callback.
                               </p>
                               <div className="mt-5 flex flex-wrap justify-center gap-2">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-rose-50 text-rose-700 border-rose-200">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-rose-50 text-rose-700 dark:text-rose-300 border-rose-200">
                                   <Icon name="Phone" size={12} />
                                   Call back
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-amber-50 text-amber-700 dark:text-amber-300 border-amber-200">
                                   <Icon name="FileText" size={12} />
                                   Send proposal
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-teal-50 text-teal-700 border-teal-200">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-teal-50 text-teal-700 dark:text-teal-300 border-teal-200">
                                   <Icon name="MapPin" size={12} />
                                   Schedule visit
                                 </span>
-                                {/* <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-sky-50 text-sky-700 border-sky-200">
+                                {/* <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border bg-sky-50 text-sky-700 dark:text-sky-300 border-sky-200">
                                   <Icon name="Mail" size={12} />
                                   Email follow-up
                                 </span> */}
@@ -3070,7 +3070,7 @@ const DealDrawer = ({
                         {task?.map((activity) => (
                           <div
                             key={activity.id}
-                            className="group relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white/90 backdrop-blur-xl p-4 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
+                            className="group relative overflow-hidden rounded-3xl border border-slate-200/70 bg-card/90 backdrop-blur-xl p-4 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
                             onClick={() =>
                               navigate("/tasks", {
                                 state: {
@@ -3089,7 +3089,7 @@ const DealDrawer = ({
                               <div className="shrink-0">
                                 <div className="relative">
                                   <div className="rounded-full p-[2px] bg-gradient-to-br from-violet-400 via-fuchsia-400 to-pink-400 shadow-lg">
-                                    <div className="bg-white rounded-full overflow-hidden">
+                                    <div className="bg-card rounded-full overflow-hidden">
                                       <Avatar
                                         name={activity.name}
                                         size="46"
@@ -3121,7 +3121,7 @@ const DealDrawer = ({
                                         {activity.name}
                                       </h4>
 
-                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-600">
+                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-600 dark:text-violet-300">
                                         <Icon
                                           name={getActivityIcon(activity.type)}
                                           size={11}
@@ -3177,11 +3177,11 @@ const DealDrawer = ({
                                       <span
                                         className={`px-2.5 py-1 text-[11px] font-semibold rounded-xl border shadow-sm ${(activity.priority ||
                                           activity?.data?.priority) === "High"
-                                          ? "bg-red-50 text-red-600 border-red-200"
+                                          ? "bg-red-50 text-red-600 dark:text-red-300 border-red-200"
                                           : (activity.priority ||
                                             activity?.data?.priority) === "Medium"
-                                            ? "bg-amber-50 text-amber-600 border-amber-200"
-                                            : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                            ? "bg-amber-50 text-amber-600 dark:text-amber-300 border-amber-200"
+                                            : "bg-emerald-50 text-emerald-600 dark:text-emerald-300 border-emerald-200"
                                           }`}
                                       >
                                         {(activity.priority ||
@@ -3226,7 +3226,7 @@ const DealDrawer = ({
                       <div className="space-y-4">
 
                         {meeting.length === 0 && (
-                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-cyan-200 bg-gradient-to-br from-cyan-50/40 via-white to-sky-50/30 p-8 text-center">
+                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-cyan-200 bg-gradient-to-br from-cyan-50/40 via-white to-sky-50/30 dark:from-card dark:via-card dark:to-card p-8 text-center">
                             <div className="absolute -top-12 -right-12 w-40 h-40 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none" />
                             <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-sky-200/40 rounded-full blur-3xl pointer-events-none" />
                             <div className="relative">
@@ -3253,9 +3253,9 @@ const DealDrawer = ({
                                 ].map(({ day, width }) => (
                                   <div
                                     key={day}
-                                    className="flex items-center gap-3 px-4 py-1.5 bg-white/70 rounded-xl border border-slate-200 min-w-[220px]"
+                                    className="flex items-center gap-3 px-4 py-1.5 bg-card/70 rounded-xl border border-slate-200 min-w-[220px]"
                                   >
-                                    <span className="text-[10px] font-bold text-cyan-600 uppercase tracking-wider w-7">
+                                    <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-300 uppercase tracking-wider w-7">
                                       {day}
                                     </span>
                                     <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -3280,7 +3280,7 @@ const DealDrawer = ({
                                 state: { meetingId: meet.id },
                               })
                             }
-                            className="group relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white/90 backdrop-blur-xl p-4 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
+                            className="group relative overflow-hidden rounded-3xl border border-slate-200/70 bg-card/90 backdrop-blur-xl p-4 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
                           >
 
                             {/* glow effect */}
@@ -3292,7 +3292,7 @@ const DealDrawer = ({
                               <div className="shrink-0">
                                 <div className="relative">
                                   <div className="rounded-xl p-[2px] bg-gradient-to-br from-cyan-400 via-sky-400 to-blue-500 shadow-lg">
-                                    <div className="bg-white rounded-xl overflow-hidden">
+                                    <div className="bg-card rounded-xl overflow-hidden">
                                       <Avatar
                                         name={meet.name}
                                         size="46"
@@ -3320,7 +3320,7 @@ const DealDrawer = ({
                                         {meet.name}
                                       </h4>
 
-                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-600">
+                                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-600 dark:text-violet-300">
                                         <Icon
                                           name="CalendarDays"
                                           size={11}
@@ -3355,11 +3355,11 @@ const DealDrawer = ({
                                   {meet.status && (
                                     <span
                                       className={`px-2.5 py-1 text-[11px] font-semibold rounded-xl shadow-sm ${meet.status === "Held"
-                                        ? "bg-emerald-50 text-emerald-600"
+                                        ? "bg-emerald-50 text-emerald-600 dark:text-emerald-300"
                                         : meet.status === "Planned"
-                                          ? "bg-blue-50 text-blue-600"
+                                          ? "bg-blue-50 text-blue-600 dark:text-blue-300"
                                           : meet.status === "Not Held"
-                                            ? "bg-red-50 text-red-600"
+                                            ? "bg-red-50 text-red-600 dark:text-red-300"
                                             : "bg-slate-100 text-slate-600"
                                         }`}
                                     >
@@ -3369,7 +3369,7 @@ const DealDrawer = ({
 
                                   {/* Meeting Time */}
                                   {meet.dateStart && (
-                                    <span className="px-2.5 py-1 text-[11px] font-medium rounded-xl bg-violet-50 text-violet-700 border border-violet-100">
+                                    <span className="px-2.5 py-1 text-[11px] font-medium rounded-xl bg-violet-50 text-violet-700 dark:text-violet-300 border border-violet-100">
                                       {new Date(meet.dateStart).toLocaleTimeString([], {
                                         hour: "2-digit",
                                         minute: "2-digit",

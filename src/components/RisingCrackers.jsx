@@ -341,7 +341,7 @@ const RisingCrackers = ({ showMs = DEFAULT_SHOW_MS, sound = false }) => {
           onClick={() => setMutedState((m) => !m)}
           aria-label={muted ? "Unmute fireworks" : "Mute fireworks"}
           title={muted ? "Unmute fireworks" : "Mute fireworks"}
-          className="fixed bottom-5 right-5 z-[56] grid h-10 w-10 place-items-center rounded-full border border-[#EBD9B4] bg-white/90 text-[#8E1B2B] shadow-lg backdrop-blur transition-all hover:scale-105 hover:bg-white active:scale-95"
+          className="fixed bottom-5 right-5 z-[56] grid h-10 w-10 place-items-center rounded-full border border-[#EBD9B4] bg-card/90 text-[#8E1B2B] shadow-lg backdrop-blur transition-all hover:scale-105 hover:bg-card active:scale-95"
         >
           <Icon name={muted ? "VolumeX" : "Volume2"} size={17} />
         </button>

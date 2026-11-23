@@ -337,7 +337,7 @@ const LoginForm = ({ variant = "default" }) => {
   // !important }`, so the login border colors need the `!` important prefix
   // to win on specificity.
   const inputClass = (hasError) =>
-    `login-input w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition-all duration-200 focus:ring-4 disabled:opacity-60 ${
+    `login-input w-full rounded-xl border bg-card px-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition-all duration-200 focus:ring-4 disabled:opacity-60 ${
       hasError
         ? "!border-red-300 focus:!border-red-400 focus:ring-red-500/10"
         : "!border-[#D5CFC8] focus:!border-[#AC2334] focus:ring-[#AC2334]/10"
@@ -388,8 +388,8 @@ const LoginForm = ({ variant = "default" }) => {
           role="alert"
           className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3.5"
         >
-          <Icon name="AlertCircle" size={16} className="text-red-500" />
-          <p className="text-sm text-red-700">{errors.general}</p>
+          <Icon name="AlertCircle" size={16} className="text-red-500 dark:text-red-400" />
+          <p className="text-sm text-red-700 dark:text-red-300">{errors.general}</p>
         </motion.div>
       )}
 
@@ -429,7 +429,7 @@ const LoginForm = ({ variant = "default" }) => {
           />
         </div>
         {errors.username && (
-          <p id="username-error" className="mt-1.5 text-xs text-red-600">
+          <p id="username-error" className="mt-1.5 text-xs text-red-600 dark:text-red-300">
             {errors.username}
           </p>
         )}
@@ -473,7 +473,7 @@ const LoginForm = ({ variant = "default" }) => {
           </button>
         </div>
         {errors.password && (
-          <p id="password-error" className="mt-1.5 text-xs text-red-600">
+          <p id="password-error" className="mt-1.5 text-xs text-red-600 dark:text-red-300">
             {errors.password}
           </p>
         )}
@@ -497,7 +497,7 @@ const LoginForm = ({ variant = "default" }) => {
             className={`flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#AC2334]/40 peer-focus-visible:ring-offset-1 ${
               formData.rememberMe
                 ? "border-[#AC2334] bg-[#AC2334]"
-                : "border-[#C9BFB4] bg-white"
+                : "border-[#C9BFB4] bg-card"
             }`}
           >
             {formData.rememberMe && (

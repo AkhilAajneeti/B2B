@@ -78,60 +78,60 @@ const COLUMNS = [
 const TIERS = {
   emerald: {
     card: "bg-gradient-to-br from-emerald-100/80 via-emerald-50/40 to-background border-emerald-200/70",
-    badge: "bg-emerald-100 text-emerald-700",
+    badge: "bg-emerald-100 text-emerald-700 dark:text-emerald-300",
     avatar: "bg-gradient-to-br from-emerald-500 to-emerald-700",
     ring: "ring-emerald-200/60",
     dot: "bg-emerald-500",
-    chip: "bg-emerald-100 text-emerald-700",
-    text: "text-emerald-700",
+    chip: "bg-emerald-100 text-emerald-700 dark:text-emerald-300",
+    text: "text-emerald-700 dark:text-emerald-300",
     // Desktop row hover — the rep's own colour, so the tint that
     // identifies them on mobile is the one that follows the cursor.
     rowHover: "hover:bg-emerald-50/70",
   },
   sky: {
     card: "bg-gradient-to-br from-sky-100/80 via-sky-50/40 to-background border-sky-200/70",
-    badge: "bg-sky-100 text-sky-700",
+    badge: "bg-sky-100 text-sky-700 dark:text-sky-300",
     avatar: "bg-gradient-to-br from-sky-500 to-sky-700",
     ring: "ring-sky-200/60",
     dot: "bg-sky-500",
-    chip: "bg-sky-100 text-sky-700",
-    text: "text-sky-700",
+    chip: "bg-sky-100 text-sky-700 dark:text-sky-300",
+    text: "text-sky-700 dark:text-sky-300",
     // Desktop row hover — the rep's own colour, so the tint that
     // identifies them on mobile is the one that follows the cursor.
     rowHover: "hover:bg-sky-50/70",
   },
   amber: {
     card: "bg-gradient-to-br from-amber-100/80 via-amber-50/40 to-background border-amber-200/70",
-    badge: "bg-amber-100 text-amber-800",
+    badge: "bg-amber-100 text-amber-800 dark:text-amber-300",
     avatar: "bg-gradient-to-br from-amber-500 to-amber-600",
     ring: "ring-amber-200/60",
     dot: "bg-amber-500",
-    chip: "bg-amber-100 text-amber-800",
-    text: "text-amber-800",
+    chip: "bg-amber-100 text-amber-800 dark:text-amber-300",
+    text: "text-amber-800 dark:text-amber-300",
     // Desktop row hover — the rep's own colour, so the tint that
     // identifies them on mobile is the one that follows the cursor.
     rowHover: "hover:bg-amber-50/70",
   },
   rose: {
     card: "bg-gradient-to-br from-rose-100/80 via-rose-50/40 to-background border-rose-200/70",
-    badge: "bg-rose-100 text-rose-700",
+    badge: "bg-rose-100 text-rose-700 dark:text-rose-300",
     avatar: "bg-gradient-to-br from-rose-500 to-rose-700",
     ring: "ring-rose-200/60",
     dot: "bg-rose-500",
-    chip: "bg-rose-100 text-rose-700",
-    text: "text-rose-700",
+    chip: "bg-rose-100 text-rose-700 dark:text-rose-300",
+    text: "text-rose-700 dark:text-rose-300",
     // Desktop row hover — the rep's own colour, so the tint that
     // identifies them on mobile is the one that follows the cursor.
     rowHover: "hover:bg-rose-50/70",
   },
   violet: {
     card: "bg-gradient-to-br from-violet-100/80 via-violet-50/40 to-background border-violet-200/70",
-    badge: "bg-violet-100 text-violet-700",
+    badge: "bg-violet-100 text-violet-700 dark:text-violet-300",
     avatar: "bg-gradient-to-br from-violet-500 to-violet-700",
     ring: "ring-violet-200/60",
     dot: "bg-violet-400",
-    chip: "bg-violet-100 text-violet-700",
-    text: "text-violet-700",
+    chip: "bg-violet-100 text-violet-700 dark:text-violet-300",
+    text: "text-violet-700 dark:text-violet-300",
     // Desktop row hover — the rep's own colour, so the tint that
     // identifies them on mobile is the one that follows the cursor.
     rowHover: "hover:bg-violet-50/70",
@@ -427,7 +427,7 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
 
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full border-collapse">
-          <thead className="border-b border-border bg-[#F8FAFC]">
+          <thead className="border-b border-border bg-slate-50">
             <tr>
               {COLUMNS.map((col) => (
                 <th
@@ -441,7 +441,7 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
                     // needs its own OPAQUE background: a sticky cell sits on top
                     // of the scrolling ones and would show them through.
                     col.key === "name"
-                      ? "sticky left-0 z-20 bg-[#F8FAFC] shadow-[1px_0_0_0_var(--color-border)]"
+                      ? "sticky left-0 z-20 bg-slate-50 shadow-[1px_0_0_0_rgb(var(--color-border))]"
                       : ""
                     }`}
                 >
@@ -480,7 +480,7 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
                     The row itself is left plain: nine tinted cells per row,
                     twenty rows deep, turns the table into a colour field
                     nobody can read a number out of. */}
-                <td className="sticky left-0 z-10 whitespace-nowrap bg-card px-6 py-3 text-left shadow-[1px_0_0_0_var(--color-border)]">
+                <td className="sticky left-0 z-10 whitespace-nowrap bg-card px-6 py-3 text-left shadow-[1px_0_0_0_rgb(var(--color-border))]">
                   <div className="flex items-center gap-3">
                     <span
                       className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white ring-2 ${tier.avatar} ${tier.ring}`}
@@ -531,8 +531,8 @@ const TeamPerformanceTable = ({ rows = [], totals, isLoading }) => {
               silently meaning "these 20 reps", which is worse than no footer. */}
           {totals && (
             <tfoot>
-              <tr className="border-t-2 border-border bg-[#F8FAFC] text-[15px] font-bold">
-                <td className="sticky left-0 z-10 bg-[#F8FAFC] px-6 py-4 text-left shadow-[1px_0_0_0_var(--color-border)]">
+              <tr className="border-t-2 border-border bg-slate-50 text-[15px] font-bold">
+                <td className="sticky left-0 z-10 bg-slate-50 px-6 py-4 text-left shadow-[1px_0_0_0_rgb(var(--color-border))]">
                   Team
                 </td>
                 <td className="px-6 py-4 text-right text-[14px] tabular-nums text-muted-foreground">{totals.leads}</td>

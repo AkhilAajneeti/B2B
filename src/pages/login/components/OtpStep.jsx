@@ -181,7 +181,7 @@ const OtpStep = ({
   );
 
   const boxClass = (filled, hasError) =>
-    `login-input h-13 w-full rounded-xl border bg-white text-center text-xl font-semibold text-slate-900 shadow-sm outline-none transition-all duration-200 focus:ring-4 disabled:opacity-60 ${
+    `login-input h-13 w-full rounded-xl border bg-card text-center text-xl font-semibold text-slate-900 shadow-sm outline-none transition-all duration-200 focus:ring-4 disabled:opacity-60 ${
       hasError
         ? "!border-red-300 focus:!border-red-400 focus:ring-red-500/10"
         : filled
@@ -229,8 +229,8 @@ const OtpStep = ({
           role="alert"
           className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3.5"
         >
-          <Icon name="AlertCircle" size={16} className="shrink-0 text-red-500" />
-          <p className="text-sm text-red-700">{error}</p>
+          <Icon name="AlertCircle" size={16} className="shrink-0 text-red-500 dark:text-red-400" />
+          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
         </motion.div>
       )}
 
@@ -264,7 +264,7 @@ const OtpStep = ({
 
         <div className="mt-2.5 flex items-center justify-between gap-3 text-xs">
           {expired ? (
-            <span className="font-medium text-red-600">
+            <span className="font-medium text-red-600 dark:text-red-300">
               This code has expired — request a new one.
             </span>
           ) : (

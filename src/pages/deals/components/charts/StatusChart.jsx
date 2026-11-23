@@ -126,7 +126,7 @@ const StatusChartComponent = ({ filters = {}, enabled = true }) => {
               <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.25} vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 11, fill: "#64748B" }}
+                tick={{ fontSize: 11, fill: "rgb(var(--color-muted-foreground))" }}
                 tickLine={false}
                 axisLine={{ stroke: "#E2E8F0" }}
               />
@@ -134,7 +134,7 @@ const StatusChartComponent = ({ filters = {}, enabled = true }) => {
                 width={32}
                 allowDecimals={false}
                 domain={[0, "dataMax + 1"]}
-                tick={{ fontSize: 11, fill: "#64748B" }}
+                tick={{ fontSize: 11, fill: "rgb(var(--color-muted-foreground))" }}
                 tickLine={false}
                 axisLine={false}
               />

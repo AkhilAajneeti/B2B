@@ -102,7 +102,7 @@ const ExportDialog = ({
           transition={{ duration: 0.18 }}
         >
           <div
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-[6px]"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[6px]"
             onClick={() => !busy && onClose?.()}
           />
 
@@ -142,7 +142,7 @@ const ExportDialog = ({
                 role="dialog"
                 aria-modal="true"
                 aria-label="Export leads"
-                className="relative overflow-hidden rounded-[15px] bg-white/90 p-6 shadow-[0_24px_70px_-18px_rgba(15,23,42,0.5)] backdrop-blur-2xl"
+                className="relative overflow-hidden rounded-[15px] bg-card/90 p-6 shadow-[0_24px_70px_-18px_rgba(15,23,42,0.5)] backdrop-blur-2xl"
               >
                 {/* Diagonal sheen so the surface reads as glass. */}
                 <div className="pointer-events-none absolute -top-1/2 left-0 h-[200%] w-full bg-gradient-to-br from-white/70 via-white/0 to-transparent" />
@@ -162,7 +162,7 @@ const ExportDialog = ({
                         type="button"
                         onClick={onClose}
                         aria-label="Close"
-                        className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-white/80 text-slate-500 transition hover:bg-white hover:text-slate-800"
+                        className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-card/80 text-slate-500 transition hover:bg-card hover:text-slate-800"
                       >
                         <Icon name="X" size={15} />
                       </button>
@@ -180,7 +180,7 @@ const ExportDialog = ({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.05 + i * 0.05, duration: 0.2 }}
                           whileHover={{ x: 2 }}
-                          className="group flex w-full items-center justify-between rounded-xl border border-slate-200/80 bg-white/70 px-4 py-3 text-left transition hover:border-primary/40 hover:bg-white hover:shadow-lg active:scale-[0.99]"
+                          className="group flex w-full items-center justify-between rounded-xl border border-slate-200/80 bg-card/70 px-4 py-3 text-left transition hover:border-primary/40 hover:bg-card hover:shadow-lg active:scale-[0.99]"
                         >
                           <span className="flex items-center gap-3">
                             <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-primary to-rose-500 text-white shadow-sm">
@@ -239,7 +239,7 @@ const ExportDialog = ({
                       animate={{ opacity: 1, scale: 1 }}
                     >
                       <motion.div
-                        className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-600"
+                        className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-600 dark:text-emerald-300"
                         initial={{ scale: 0.6 }}
                         animate={{ scale: 1 }}
                         transition={{

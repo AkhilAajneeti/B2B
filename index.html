@@ -11,6 +11,42 @@
     />
     <link rel="icon" href="/assets/images/aajneeti-favicon.png" />
     <link rel="manifest" href="/manifest.json" />
+
+    <!--
+      Theme, applied BEFORE first paint.
+
+      This has to be inline and blocking. The React bundle loads after the
+      first paint, so deciding the theme there means every dark-mode user sees
+      a white page flash to dark — the one bug that makes a retrofitted dark
+      mode feel cheap no matter how good the colours are.
+
+      It duplicates three things from src/utils/theme.js: the "theme" storage
+      key, the "dark" class, and the rule that a missing value means "follow
+      the OS". That duplication is the price of running before the bundle; both
+      files carry a comment pointing at the other. Nothing else belongs here.
+
+      Wrapped in try/catch because localStorage throws outright in Safari
+      private mode, and an exception here would block the page, not just the
+      theme.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var dark =
+            stored === "dark" ||
+            (stored !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) {
+            document.documentElement.classList.add("dark");
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute("content", "#0E1116");
+          }
+        } catch (e) {
+          /* storage or matchMedia unavailable — stay light */
+        }
+      })();
+    </script>
   </head>
 
   <body>

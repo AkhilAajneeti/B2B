@@ -250,11 +250,11 @@ const NotificationDropdown = () => {
           {/* Caret only shows on sm+ where the dropdown is anchored to the
               bell. On mobile the dropdown spans the viewport, so a caret
               pointing at the bell would be misleading. */}
-          <div className="hidden sm:block absolute -top-1.5 right-5 w-3 h-3 rotate-45 bg-white border-l border-t border-border z-[51]" />
+          <div className="hidden sm:block absolute -top-1.5 right-5 w-3 h-3 rotate-45 bg-card border-l border-t border-border z-[51]" />
 
           {/* Inner panel — rounded + overflow-hidden so the inner sections
               (header, body, pagination footer) clip cleanly to the corners. */}
-          <div className="bg-white shadow-2xl rounded-2xl border border-border overflow-hidden">
+          <div className="bg-card shadow-2xl rounded-2xl border border-border overflow-hidden">
             <audio ref={audioRef} src="/notification.mp3" preload="auto" />
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-3 sm:px-4 py-3 border-b">
@@ -276,7 +276,7 @@ const NotificationDropdown = () => {
               {notifications.some((n) => !n.read) && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="px-2 py-1 rounded-full font-medium text-blue-600 hover:bg-blue-50"
+                  className="px-2 py-1 rounded-full font-medium text-blue-600 dark:text-blue-300 hover:bg-blue-50"
                 >
                   Mark all read
                 </button>
@@ -354,7 +354,7 @@ const NotificationDropdown = () => {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={safePage <= 1}
                 aria-label="Previous page"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-200 bg-card text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
                 Prev
@@ -375,7 +375,7 @@ const NotificationDropdown = () => {
                 onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
                 disabled={safePage >= pageCount}
                 aria-label="Next page"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-gray-200 bg-card text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Next
                 <ChevronRight className="w-3.5 h-3.5" />

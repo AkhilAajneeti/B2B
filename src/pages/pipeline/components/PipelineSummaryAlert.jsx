@@ -22,19 +22,19 @@ const PipelineSummaryAlert = ({ stats = {} }) => {
     {
       count: overdue,
       label: overdue === 1 ? "overdue lead" : "overdue leads",
-      className: "text-red-600",
+      className: "text-red-600 dark:text-red-300",
       icon: "AlertCircle",
     },
     {
       count: dueToday,
       label: dueToday === 1 ? "follow-up today" : "follow-ups today",
-      className: "text-orange-600",
+      className: "text-orange-600 dark:text-orange-300",
       icon: "CalendarClock",
     },
     {
       count: upcoming,
       label: upcoming === 1 ? "upcoming follow-up" : "upcoming follow-ups",
-      className: "text-blue-600",
+      className: "text-blue-600 dark:text-blue-300",
       icon: "CalendarDays",
     },
   ];

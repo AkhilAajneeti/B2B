@@ -29,7 +29,7 @@ const ProjectTooltip = ({ active, payload }) => {
   if (!data) return null;
 
   return (
-    <div className="rounded-xl border border-white/40 bg-white/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-2.5 text-xs min-w-[180px]">
+    <div className="rounded-xl border border-white/40 bg-card/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-2.5 text-xs min-w-[180px]">
       <div className="flex items-center gap-2 mb-1.5">
         <span
           className="w-2.5 h-2.5 rounded-sm shadow-sm"
@@ -46,7 +46,7 @@ const ProjectTooltip = ({ active, payload }) => {
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="text-slate-500">Share</span>
-          <span className="font-semibold text-violet-600 tabular-nums">
+          <span className="font-semibold text-violet-600 dark:text-violet-300 tabular-nums">
             {data.percent}%
           </span>
         </div>
@@ -62,7 +62,7 @@ const ProjectTooltip = ({ active, payload }) => {
 const EmptyState = () => (
   <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-4">
     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center">
-      <Icon name="PieChart" size={22} className="text-violet-500" />
+      <Icon name="PieChart" size={22} className="text-violet-500 dark:text-violet-400" />
     </div>
     <p className="text-sm font-semibold text-slate-700">No project data</p>
     <p className="text-xs text-slate-500 max-w-xs">
@@ -78,7 +78,7 @@ const Skeleton = () => (
       style={{ animation: "prj-shimmer 1.6s infinite" }}
     />
     <div className="w-48 h-48 rounded-full bg-slate-200 flex items-center justify-center">
-      <div className="w-24 h-24 rounded-full bg-white" />
+      <div className="w-24 h-24 rounded-full bg-card" />
     </div>
     <style>{`
       @keyframes prj-shimmer {
@@ -198,7 +198,7 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
               most recent slice — a project that was busy last year and quiet
               lately looks far smaller than it is. */}
           {isCapped && (
-            <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
+            <p className="text-[11px] text-amber-600 dark:text-amber-300 mt-1 flex items-center gap-1">
               <Icon name="Info" size={12} className="shrink-0" />
               <span>
                 Based on the {total.toLocaleString()} most recent leads — older
@@ -316,7 +316,7 @@ const ProjectChartComponent = ({ filters = {}, enabled = true }) => {
             </div>
           </div>
           <div className="rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 px-3 py-2 text-right">
-            <div className="text-[10px] uppercase tracking-wider text-indigo-700 font-medium truncate">
+            <div className="text-[10px] uppercase tracking-wider text-indigo-700 dark:text-indigo-300 font-medium truncate">
               {topLabel}
             </div>
             <div className="text-sm font-bold text-slate-900 truncate">

@@ -157,7 +157,7 @@ const LeadCombobox = ({ value, onChange }) => {
         }}
         onKeyDown={onKeyDown}
         placeholder="Search by name, phone, email or project…"
-        className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#AC2334] focus:ring-2 focus:ring-[#AC2334]/10"
+        className="h-10 w-full rounded-lg border border-slate-200 bg-card pl-9 pr-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#AC2334] focus:ring-2 focus:ring-[#AC2334]/10"
       />
 
       {open && (
@@ -166,7 +166,7 @@ const LeadCombobox = ({ value, onChange }) => {
           role="listbox"
           ref={listRef}
           onScroll={onListScroll}
-          className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg"
+          className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-slate-200 bg-card shadow-lg"
         >
           {/* Loading (initial) */}
           {status === "loading" && (
@@ -179,7 +179,7 @@ const LeadCombobox = ({ value, onChange }) => {
           {/* Error */}
           {status === "error" && (
             <div className="flex items-center justify-between px-3 py-3 text-sm">
-              <span className="text-red-600">Couldn't load leads.</span>
+              <span className="text-red-600 dark:text-red-300">Couldn't load leads.</span>
               <button onClick={() => load(true)} className="font-medium text-[#AC2334] hover:underline">
                 Retry
               </button>

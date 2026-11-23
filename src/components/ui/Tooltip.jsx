@@ -90,10 +90,10 @@ const Tooltip = ({ title, text, children, className = "", icon = "Sparkles" }) =
             }}
             className="pointer-events-none z-[9999] animate-in fade-in-0 zoom-in-95 duration-150"
           >
-            <div className="relative rounded-2xl border border-white/10 bg-neutral-900 p-4 shadow-2xl shadow-black/40">
+            <div className="relative rounded-2xl border border-white/10 bg-[#171A20] p-4 shadow-2xl shadow-black/40">
               <span
                 style={{ left: pos.arrow }}
-                className={`absolute h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-white/10 bg-neutral-900 ${
+                className={`absolute h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-white/10 bg-[#171A20] ${
                   pos.above
                     ? "-bottom-[5px] border-b border-r"
                     : "-top-[5px] border-l border-t"
@@ -109,7 +109,7 @@ const Tooltip = ({ title, text, children, className = "", icon = "Sparkles" }) =
                 </div>
               )}
 
-              <div className="text-[13px] font-normal normal-case leading-relaxed tracking-normal text-neutral-300">
+              <div className="text-[13px] font-normal normal-case leading-relaxed tracking-normal text-white/75">
                 {text}
               </div>
             </div>

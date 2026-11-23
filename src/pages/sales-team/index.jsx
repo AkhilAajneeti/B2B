@@ -446,7 +446,7 @@ const SalesTeam = () => {
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center">
-                  <Icon name="MapPin" size={24} className="text-amber-600" />
+                  <Icon name="MapPin" size={24} className="text-amber-600 dark:text-amber-300" />
                 </div>
               </div>
             </div>

@@ -29,7 +29,7 @@ const CategoryView = ({ category }) => (
     <header
       className="rounded-2xl border border-border px-6 py-6 mb-6 flex items-center gap-4"
       style={{
-        background: `linear-gradient(135deg, ${BRAND_SOFT} 0%, #ffffff 80%)`,
+        background: `linear-gradient(135deg, rgb(var(--help-soft)) 0%, rgb(var(--color-card)) 80%)`,
       }}
     >
       <div

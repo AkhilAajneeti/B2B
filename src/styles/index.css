@@ -124,7 +124,7 @@ select:focus {
    stops here to restyle every heading at once. */
 .heading-gradient {
   /* Tricolor gradient removed — headings use a solid colour again. */
-  color: var(--color-foreground);
+  color: rgb(var(--color-foreground));
 }
 
 /* Like heading-gradient but with a hint of white in the middle (full tricolor).
@@ -133,7 +133,7 @@ select:focus {
    vanish on a light background. */
 .heading-gradient-flag {
   /* Tricolor gradient removed — solid colour. */
-  color: var(--color-foreground);
+  color: rgb(var(--color-foreground));
 }
 
 /*  */
@@ -173,7 +173,7 @@ select:focus {
 
 .flag-flow {
   /* Tricolor gradient removed — "CRM" wordmark uses a solid colour. */
-  color: var(--color-foreground);
+  color: rgb(var(--color-foreground));
 }
 
 /* Horizontal strips that scroll but should not show a bar — the period tabs
@@ -327,5 +327,73 @@ select:focus {
   .diya-flame,
   .bunting-bulb {
     animation: none;
+  }
+}
+
+/* ==========================================================================
+ * Theme toggle (components/ThemeToggle.jsx)
+ * ==========================================================================
+ * The toggle sits next to the notification bell, which has a coloured glyph
+ * and a hover glow; a flat outline button beside it reads as disabled. These
+ * keyframes give it a resting life of its own — rays that turn, a core that
+ * breathes, stars that blink — so it is findable without being louder than
+ * the bell, which is the one that actually carries unread state.
+ *
+ * SVG elements need transform-box: fill-box, otherwise transform-origin
+ * resolves against the whole SVG viewport and a "rotate in place" becomes an
+ * orbit around the top-left corner.
+ * ========================================================================== */
+.tt-art [class^="tt-a-"] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes tt-ray-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes tt-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Staggered per star in the component, so they never blink in unison —
+   simultaneous twinkling reads as a flicker, which looks like a fault. */
+@keyframes tt-twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tt-a-rays {
+  animation: tt-ray-spin 18s linear infinite;
+}
+
+.tt-a-core {
+  animation: tt-breathe 3.6s ease-in-out infinite;
+}
+
+.tt-a-star {
+  animation: tt-twinkle 2.6s ease-in-out infinite;
+}
+
+/* The resting animations are decoration; the state change is carried by the
+   icon swap, which still happens. */
+@media (prefers-reduced-motion: reduce) {
+  .tt-art [class^="tt-a-"] {
+    animation: none !important;
   }
 }

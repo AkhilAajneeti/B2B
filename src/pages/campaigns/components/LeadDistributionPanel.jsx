@@ -694,14 +694,14 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
                     }`}
                   >
                     <span
-                      className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white shadow transition-transform ${
+                      className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-card shadow transition-transform ${
                         m.paused ? "translate-x-[22px]" : "translate-x-[2px]"
                       }`}
                     />
                   </button>
                   <span
                     className={`text-xs font-semibold ${
-                      m.paused ? "text-[#C2410C]" : "text-emerald-700"
+                      m.paused ? "text-[#C2410C]" : "text-emerald-700 dark:text-emerald-300"
                     }`}
                   >
                     {m.paused ? "Paused" : "Active"}
@@ -712,7 +712,7 @@ const LeadDistributionPanel = ({ deal, onUpdate, users = [] }) => {
                   type="button"
                   onClick={() => removeMember(m)}
                   title="Remove from this project"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 dark:hover:text-rose-300"
                 >
                   <Icon name="Trash2" size={15} />
                 </button>

@@ -31,12 +31,12 @@ const LineTooltip = ({ active, payload, label }) => {
   if (!row) return null;
 
   return (
-    <div className="rounded-xl border border-white/40 bg-white/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-3 text-xs min-w-[200px]">
+    <div className="rounded-xl border border-white/40 bg-card/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-3 text-xs min-w-[200px]">
       <div className="flex items-center justify-between mb-2">
         <span className="font-semibold text-slate-900">
           {label} {YEAR}
         </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300 bg-violet-50 px-2 py-0.5 rounded-full">
           {row.winRate}%
         </span>
       </div>
@@ -81,7 +81,7 @@ const PieTooltip = ({ active, payload }) => {
   if (!data) return null;
 
   return (
-    <div className="rounded-xl border border-white/40 bg-white/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-2.5 text-xs min-w-[140px]">
+    <div className="rounded-xl border border-white/40 bg-card/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-2.5 text-xs min-w-[140px]">
       <div className="flex items-center gap-2 mb-1">
         <span
           className="w-2.5 h-2.5 rounded-sm"
@@ -118,8 +118,8 @@ const TrendBadge = ({ trend, invert = false }) => {
     isGood === null
       ? "text-slate-400 bg-slate-100"
       : isGood
-        ? "text-emerald-700 bg-emerald-50"
-        : "text-rose-700 bg-rose-50";
+        ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50"
+        : "text-rose-700 dark:text-rose-300 bg-rose-50";
 
   const arrow =
     direction === "up" ? "ArrowUpRight" : direction === "down" ? "ArrowDownRight" : "Minus";
@@ -166,7 +166,7 @@ const EmptyState = ({
 }) => (
   <div className="h-full flex flex-col items-center justify-center gap-3 text-center px-4">
     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center">
-      <Icon name={iconName} size={24} className="text-violet-500" />
+      <Icon name={iconName} size={24} className="text-violet-500 dark:text-violet-400" />
     </div>
     <div>
       <p className="text-sm font-semibold text-slate-700">{title}</p>
@@ -281,16 +281,16 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
                   <stop offset="100%" stopColor={PRIMARY} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-border))" vertical={false} />
               <XAxis
                 dataKey="month"
-                stroke="#94A3B8"
+                stroke="rgb(var(--color-muted-foreground))"
                 fontSize={11}
                 tickLine={false}
                 axisLine={{ stroke: "#E2E8F0" }}
               />
               <YAxis
-                stroke="#94A3B8"
+                stroke="rgb(var(--color-muted-foreground))"
                 fontSize={11}
                 domain={[0, "dataMax + 5"]}
                 tickFormatter={(v) => `${v}%`}
@@ -324,14 +324,14 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5 pt-5 border-t border-border">
           <KpiTile
             icon="CheckCircle2"
-            iconColor="text-emerald-600"
+            iconColor="text-emerald-600 dark:text-emerald-300"
             label="Total Won"
             value={summary.totalWon}
             trend={summary.trends?.won}
           />
           <KpiTile
             icon="XCircle"
-            iconColor="text-rose-600"
+            iconColor="text-rose-600 dark:text-rose-300"
             label="Total Lost"
             value={summary.totalLost}
             trend={summary.trends?.lost}
@@ -339,7 +339,7 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
           />
           <KpiTile
             icon="Target"
-            iconColor="text-violet-600"
+            iconColor="text-violet-600 dark:text-violet-300"
             label="Win Rate"
             value={`${summary.overallWinRate}%`}
             trend={summary.trends?.winRate}
@@ -347,7 +347,7 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
           />
           <KpiTile
             icon="TrendingUp"
-            iconColor="text-amber-600"
+            iconColor="text-amber-600 dark:text-amber-300"
             label="Best Month"
             value={
               summary.bestMonth

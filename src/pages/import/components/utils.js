@@ -78,10 +78,10 @@ export const formatShortDateTime = (raw) => {
 // Import-record statuses on the main table.
 export const getStatusBadge = (status) => {
   const styles = {
-    Complete: "bg-green-50 text-green-700 border border-green-200",
-    "In Progress": "bg-blue-50 text-blue-700 border border-blue-200",
-    Failed: "bg-red-50 text-red-700 border border-red-200",
-    Standby: "bg-amber-50 text-amber-700 border border-amber-200",
+    Complete: "bg-green-50 text-green-700 dark:text-green-300 border border-green-200",
+    "In Progress": "bg-blue-50 text-blue-700 dark:text-blue-300 border border-blue-200",
+    Failed: "bg-red-50 text-red-700 dark:text-red-300 border border-red-200",
+    Standby: "bg-amber-50 text-amber-700 dark:text-amber-300 border border-amber-200",
   };
   return styles[status] || "bg-gray-100 text-gray-700 border border-gray-200";
 };

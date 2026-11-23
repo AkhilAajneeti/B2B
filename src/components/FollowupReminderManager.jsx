@@ -444,21 +444,21 @@ const FollowupReminderManager = () => {
     >
       {expanded ? (
         /* EXPANDED — vertical list of all active reminders */
-        <div className="bg-white rounded-2xl shadow-[0_18px_50px_-12px_rgba(249,115,22,0.30)] border border-orange-200/80 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-[0_18px_50px_-12px_rgba(249,115,22,0.30)] border border-orange-200/80 overflow-hidden">
           {/* Header strip — cream ground, rounded-square icon tile, title in
               deep orange rather than grey. */}
           {/* Header tile is a CIRCLE here and a rounded square in the body
               below — the reference deliberately uses both shapes. */}
           <div className="flex items-center gap-2.5 px-4 py-2.5 bg-orange-50/90 border-b border-orange-100">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-500">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-500 dark:text-orange-400">
               <Icon name="Phone" size={16} strokeWidth={2.5} />
             </span>
-            <p className="flex-1 text-[15px] font-bold text-orange-900">
+            <p className="flex-1 text-[15px] font-bold text-orange-900 dark:text-orange-300">
               {total} follow-up{total > 1 ? "s" : ""} pending
             </p>
             <button
               onClick={dismissAll}
-              className="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:text-red-300"
               aria-label="Dismiss all reminders"
               title="Dismiss all"
             >
@@ -501,14 +501,14 @@ const FollowupReminderManager = () => {
                           name="Phone"
                           size={22}
                           strokeWidth={2.5}
-                          className="relative text-orange-500"
+                          className="relative text-orange-500 dark:text-orange-400"
                         />
                       </div>
                       <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
                     </div>
 
                     <div className="min-w-0 flex-1 pt-0.5">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-orange-600">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-orange-600 dark:text-orange-300">
                         <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
                         {headline}
                       </span>
@@ -531,7 +531,7 @@ const FollowupReminderManager = () => {
                   <div className="relative mt-2.5 flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
                     <button
                       onClick={() => handleDismiss(entry)}
-                      className="text-xs font-semibold text-slate-400 transition-colors hover:text-red-600"
+                      className="text-xs font-semibold text-slate-400 transition-colors hover:text-red-600 dark:hover:text-red-300"
                     >
                       Dismiss
                     </button>
@@ -573,11 +573,11 @@ const FollowupReminderManager = () => {
             <div className="absolute inset-x-3 top-3 -bottom-3 bg-orange-50 rounded-xl border border-orange-200 shadow" />
           )}
           {total > 1 && (
-            <div className="absolute inset-x-1.5 top-1.5 -bottom-1.5 bg-white rounded-xl border border-orange-200 shadow" />
+            <div className="absolute inset-x-1.5 top-1.5 -bottom-1.5 bg-card rounded-xl border border-orange-200 shadow" />
           )}
 
           {/* Top card */}
-          <div className="relative flex items-center gap-3 rounded-2xl border border-orange-200/70 bg-white p-3.5 shadow-[0_12px_30px_-14px_rgba(249,115,22,0.38)] transition group-hover:shadow-[0_18px_44px_-14px_rgba(249,115,22,0.5)] group-active:scale-[0.99]">
+          <div className="relative flex items-center gap-3 rounded-2xl border border-orange-200/70 bg-card p-3.5 shadow-[0_12px_30px_-14px_rgba(249,115,22,0.38)] transition group-hover:shadow-[0_18px_44px_-14px_rgba(249,115,22,0.5)] group-active:scale-[0.99]">
             {/* Circle here, rounded square in the expanded body — the
                 reference uses both. Two nested discs give the concentric ring
                 the flat first pass was missing. */}
@@ -589,7 +589,7 @@ const FollowupReminderManager = () => {
                   name="Phone"
                   size={18}
                   strokeWidth={2.5}
-                  className="text-orange-500"
+                  className="text-orange-500 dark:text-orange-400"
                 />
               </div>
               <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white" />
@@ -631,7 +631,7 @@ const FollowupReminderManager = () => {
         <button
           type="button"
           onClick={dismissAll}
-          className="absolute -top-2 -right-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-orange-200 bg-white text-gray-400 shadow-md transition-colors hover:text-red-600 hover:border-red-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+          className="absolute -top-2 -right-2 z-10 grid h-7 w-7 place-items-center rounded-full border border-orange-200 bg-card text-gray-400 shadow-md transition-colors hover:text-red-600 dark:hover:text-red-300 hover:border-red-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
           aria-label={`Dismiss ${total} pending follow-up reminder${total > 1 ? "s" : ""}`}
           title="Dismiss all"
         >

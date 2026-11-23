@@ -221,10 +221,10 @@ const ContactDrawer = ({
   const callLater = userLeads.filter((l) => l.status === "Call Later").length;
   const getActivityColor = (type) => {
     const colors = {
-      call: "text-blue-500",
-      email: "text-green-500",
-      meeting: "text-purple-500",
-      task: "text-orange-500",
+      call: "text-blue-500 dark:text-blue-400",
+      email: "text-green-500 dark:text-green-400",
+      meeting: "text-purple-500 dark:text-purple-400",
+      task: "text-orange-500 dark:text-orange-400",
     };
     return colors?.[type] || "text-muted-foreground";
   };
@@ -296,11 +296,11 @@ const ContactDrawer = ({
   const getStreamIconColor = (type = "") => {
     switch (type) {
       case "Post":
-        return "text-indigo-600";
+        return "text-indigo-600 dark:text-indigo-300";
       case "Update":
-        return "text-blue-600";
+        return "text-blue-600 dark:text-blue-300";
       case "CreateRelated":
-        return "text-purple-600";
+        return "text-purple-600 dark:text-purple-300";
       default:
         return "text-gray-500";
     }
@@ -379,49 +379,49 @@ const ContactDrawer = ({
   };
 
   const STATUS_STYLES = {
-    New: "bg-blue-100 text-blue-700",
+    New: "bg-blue-100 text-blue-700 dark:text-blue-300",
 
     Dead: "bg-gray-200 text-gray-700",
 
-    Interested: "bg-indigo-100 text-indigo-700",
+    Interested: "bg-indigo-100 text-indigo-700 dark:text-indigo-300",
 
-    "Not Interested": "bg-red-100 text-red-700",
+    "Not Interested": "bg-red-100 text-red-700 dark:text-red-300",
 
-    "Follow up": "bg-amber-100 text-amber-700",
+    "Follow up": "bg-amber-100 text-amber-700 dark:text-amber-300",
 
-    "Site Visit Scheduled": "bg-cyan-100 text-cyan-700",
+    "Site Visit Scheduled": "bg-cyan-100 text-cyan-700 dark:text-cyan-300",
 
-    "Site Visit Done": "bg-teal-100 text-teal-700",
+    "Site Visit Done": "bg-teal-100 text-teal-700 dark:text-teal-300",
 
-    "Call Later": "bg-yellow-100 text-yellow-700",
+    "Call Later": "bg-yellow-100 text-yellow-700 dark:text-yellow-300",
 
     "Switch Off": "bg-gray-300 text-gray-800",
 
-    "Invalid Number": "bg-rose-100 text-rose-700",
+    "Invalid Number": "bg-rose-100 text-rose-700 dark:text-rose-300",
 
-    Broker: "bg-purple-100 text-purple-700",
+    Broker: "bg-purple-100 text-purple-700 dark:text-purple-300",
 
-    "Call Not Picked": "bg-orange-100 text-orange-700",
+    "Call Not Picked": "bg-orange-100 text-orange-700 dark:text-orange-300",
 
-    "Low Budget": "bg-orange-200 text-orange-800",
+    "Low Budget": "bg-orange-200 text-orange-800 dark:text-orange-300",
 
-    "Low Interest": "bg-yellow-200 text-yellow-800",
+    "Low Interest": "bg-yellow-200 text-yellow-800 dark:text-yellow-300",
 
     "Irrelevant Lead": "bg-slate-200 text-slate-700",
 
     "Call Not Connecting": "bg-stone-200 text-stone-700",
 
-    "Fake Lead": "bg-pink-200 text-pink-700",
+    "Fake Lead": "bg-pink-200 text-pink-700 dark:text-pink-300",
 
-    Purchased: "bg-green-100 text-green-700",
+    Purchased: "bg-green-100 text-green-700 dark:text-green-300",
 
-    "Other Location": "bg-lime-100 text-lime-700",
+    "Other Location": "bg-lime-100 text-lime-700 dark:text-lime-300",
 
-    Converted: "bg-green-100 text-green-700",
+    Converted: "bg-green-100 text-green-700 dark:text-green-300",
 
-    "Deal Closed": "bg-emerald-100 text-emerald-700",
+    "Deal Closed": "bg-emerald-100 text-emerald-700 dark:text-emerald-300",
 
-    "Proposal Shared": "bg-violet-100 text-violet-700",
+    "Proposal Shared": "bg-violet-100 text-violet-700 dark:text-violet-300",
   };
 
   return (
@@ -745,35 +745,35 @@ const ContactDrawer = ({
                           {/* 🔵 PIPELINE */}
 
                           <div className="bg-blue-50 p-4 rounded-lg hover:shadow-md transition">
-                            <p className="text-sm text-blue-600">
+                            <p className="text-sm text-blue-600 dark:text-blue-300">
                               Active Leads
                             </p>
-                            <p className="text-xl font-semibold text-blue-700">
+                            <p className="text-xl font-semibold text-blue-700 dark:text-blue-300">
                               {activeLeads}
                             </p>
                           </div>
 
                           <div className="bg-indigo-50 p-4 rounded-lg hover:shadow-md transition">
-                            <p className="text-sm text-indigo-600">
+                            <p className="text-sm text-indigo-600 dark:text-indigo-300">
                               Interested
                             </p>
-                            <p className="text-xl font-semibold text-indigo-700">
+                            <p className="text-xl font-semibold text-indigo-700 dark:text-indigo-300">
                               {interestedLeads}
                             </p>
                           </div>
 
                           <div className="bg-purple-50 p-4 rounded-lg hover:shadow-md transition">
-                            <p className="text-sm text-purple-600">Follow Up</p>
-                            <p className="text-xl font-semibold text-purple-700">
+                            <p className="text-sm text-purple-600 dark:text-purple-300">Follow Up</p>
+                            <p className="text-xl font-semibold text-purple-700 dark:text-purple-300">
                               {followUp}
                             </p>
                           </div>
 
                           <div className="bg-amber-50 p-4 rounded-lg hover:shadow-md transition">
-                            <p className="text-sm text-amber-600">
+                            <p className="text-sm text-amber-600 dark:text-amber-300">
                               Site Visits
                             </p>
-                            <p className="text-xl font-semibold text-amber-700">
+                            <p className="text-xl font-semibold text-amber-700 dark:text-amber-300">
                               {siteVisits}
                             </p>
                           </div>
@@ -781,19 +781,19 @@ const ContactDrawer = ({
                           {/* 🟢 SUCCESS */}
 
                           <div className="bg-green-50 p-4 rounded-lg hover:shadow-md transition">
-                            <p className="text-sm text-green-600">
+                            <p className="text-sm text-green-600 dark:text-green-300">
                               Deals Closed
                             </p>
-                            <p className="text-xl font-semibold text-green-700">
+                            <p className="text-xl font-semibold text-green-700 dark:text-green-300">
                               {closedDeals}
                             </p>
                           </div>
 
                           <div className="bg-emerald-50 p-4 rounded-lg hover:shadow-md transition">
-                            <p className="text-sm text-emerald-600">
+                            <p className="text-sm text-emerald-600 dark:text-emerald-300">
                               Converted
                             </p>
-                            <p className="text-xl font-semibold text-emerald-700">
+                            <p className="text-xl font-semibold text-emerald-700 dark:text-emerald-300">
                               {converted}
                             </p>
                           </div>
@@ -801,10 +801,10 @@ const ContactDrawer = ({
                           {/* 🔴 NEGATIVE / LOST */}
 
                           <div className="bg-red-50 p-4 rounded-lg hover:shadow-md transition">
-                            <p className="text-sm text-red-600">
+                            <p className="text-sm text-red-600 dark:text-red-300">
                               Not Interested
                             </p>
-                            <p className="text-xl font-semibold text-red-700">
+                            <p className="text-xl font-semibold text-red-700 dark:text-red-300">
                               {notInterestedLeads}
                             </p>
                           </div>
@@ -819,10 +819,10 @@ const ContactDrawer = ({
                           </div>
 
                           <div className="bg-orange-50 p-4 rounded-lg hover:shadow-md transition">
-                            <p className="text-sm text-orange-600">
+                            <p className="text-sm text-orange-600 dark:text-orange-300">
                               Call Later
                             </p>
-                            <p className="text-xl font-semibold text-orange-700">
+                            <p className="text-xl font-semibold text-orange-700 dark:text-orange-300">
                               {callLater}
                             </p>
                           </div>

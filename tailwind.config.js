@@ -1,5 +1,13 @@
+import colors from "tailwindcss/colors";
+
 /** @type {import('tailwindcss').Config} */
 export default {
+  // Dark mode is driven by a `dark` class on <html>, not by the OS media
+  // query. The OS preference is still honoured — utils/theme.js seeds the
+  // first visit from prefers-color-scheme — but it is honoured by ADDING the
+  // class, which leaves the user a toggle that can disagree with their OS.
+  // With the default "media" strategy there is nothing to toggle.
+  darkMode: "class",
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,52 +15,251 @@ export default {
   theme: {
     extend: {
       colors: {
-        border: 'var(--color-border)', // slate-200
-        input: 'var(--color-input)', // white
-        ring: 'var(--color-ring)', // violet-500
-        background: 'var(--color-background)', // #FAF8F6 warm off-white
-        sidebar: 'var(--color-sidebar)', // #F9F9F8 neutral warm off-white
-        foreground: 'var(--color-foreground)', // slate-800
+        border: 'rgb(var(--color-border) / <alpha-value>)', // slate-200
+        input: 'rgb(var(--color-input) / <alpha-value>)', // white
+        ring: 'rgb(var(--color-ring) / <alpha-value>)', // violet-500
+        background: 'rgb(var(--color-background) / <alpha-value>)', // #FAF8F6 warm off-white
+        sidebar: 'rgb(var(--color-sidebar) / <alpha-value>)', // #F9F9F8 neutral warm off-white
+        foreground: 'rgb(var(--color-foreground) / <alpha-value>)', // slate-800
         mahroon:"#fee0df",//#AC2334
+        /* ----------------------------------------------------------------
+         * HUE RAMPS — only the pale end (50/100/200) is redirected to a
+         * variable; 300-950 are spread in from Tailwind untouched. Spread
+         * explicitly rather than relying on `extend` to deep-merge, so what
+         * each ramp contains is readable here instead of inferred.
+         *
+         * Scoping is by STEP, not by property, so `text-red-50` and
+         * `ring-red-200` follow the theme too. Checked before committing to
+         * it: there is no text at these steps outside an existing `dark:`
+         * variant, and all 18 ring usages are decorative halos rather than
+         * focus indicators, so a dark-tinted halo is what they should become.
+         * A light LABEL at step 50 would need changing to text-white; there
+         * are none today, and that is the thing to watch for when adding one.
+         * ---------------------------------------------------------------- */
+        red: {
+          ...colors.red,
+          50: 'rgb(var(--red-50) / <alpha-value>)',
+          100: 'rgb(var(--red-100) / <alpha-value>)',
+          200: 'rgb(var(--red-200) / <alpha-value>)',
+        },
+        orange: {
+          ...colors.orange,
+          50: 'rgb(var(--orange-50) / <alpha-value>)',
+          100: 'rgb(var(--orange-100) / <alpha-value>)',
+          200: 'rgb(var(--orange-200) / <alpha-value>)',
+        },
+        amber: {
+          ...colors.amber,
+          50: 'rgb(var(--amber-50) / <alpha-value>)',
+          100: 'rgb(var(--amber-100) / <alpha-value>)',
+          200: 'rgb(var(--amber-200) / <alpha-value>)',
+        },
+        yellow: {
+          ...colors.yellow,
+          50: 'rgb(var(--yellow-50) / <alpha-value>)',
+          100: 'rgb(var(--yellow-100) / <alpha-value>)',
+          200: 'rgb(var(--yellow-200) / <alpha-value>)',
+        },
+        lime: {
+          ...colors.lime,
+          50: 'rgb(var(--lime-50) / <alpha-value>)',
+          100: 'rgb(var(--lime-100) / <alpha-value>)',
+          200: 'rgb(var(--lime-200) / <alpha-value>)',
+        },
+        green: {
+          ...colors.green,
+          50: 'rgb(var(--green-50) / <alpha-value>)',
+          100: 'rgb(var(--green-100) / <alpha-value>)',
+          200: 'rgb(var(--green-200) / <alpha-value>)',
+        },
+        emerald: {
+          ...colors.emerald,
+          50: 'rgb(var(--emerald-50) / <alpha-value>)',
+          100: 'rgb(var(--emerald-100) / <alpha-value>)',
+          200: 'rgb(var(--emerald-200) / <alpha-value>)',
+        },
+        teal: {
+          ...colors.teal,
+          50: 'rgb(var(--teal-50) / <alpha-value>)',
+          100: 'rgb(var(--teal-100) / <alpha-value>)',
+          200: 'rgb(var(--teal-200) / <alpha-value>)',
+        },
+        cyan: {
+          ...colors.cyan,
+          50: 'rgb(var(--cyan-50) / <alpha-value>)',
+          100: 'rgb(var(--cyan-100) / <alpha-value>)',
+          200: 'rgb(var(--cyan-200) / <alpha-value>)',
+        },
+        sky: {
+          ...colors.sky,
+          50: 'rgb(var(--sky-50) / <alpha-value>)',
+          100: 'rgb(var(--sky-100) / <alpha-value>)',
+          200: 'rgb(var(--sky-200) / <alpha-value>)',
+        },
+        blue: {
+          ...colors.blue,
+          50: 'rgb(var(--blue-50) / <alpha-value>)',
+          100: 'rgb(var(--blue-100) / <alpha-value>)',
+          200: 'rgb(var(--blue-200) / <alpha-value>)',
+        },
+        indigo: {
+          ...colors.indigo,
+          50: 'rgb(var(--indigo-50) / <alpha-value>)',
+          100: 'rgb(var(--indigo-100) / <alpha-value>)',
+          200: 'rgb(var(--indigo-200) / <alpha-value>)',
+        },
+        violet: {
+          ...colors.violet,
+          50: 'rgb(var(--violet-50) / <alpha-value>)',
+          100: 'rgb(var(--violet-100) / <alpha-value>)',
+          200: 'rgb(var(--violet-200) / <alpha-value>)',
+        },
+        purple: {
+          ...colors.purple,
+          50: 'rgb(var(--purple-50) / <alpha-value>)',
+          100: 'rgb(var(--purple-100) / <alpha-value>)',
+          200: 'rgb(var(--purple-200) / <alpha-value>)',
+        },
+        fuchsia: {
+          ...colors.fuchsia,
+          50: 'rgb(var(--fuchsia-50) / <alpha-value>)',
+          100: 'rgb(var(--fuchsia-100) / <alpha-value>)',
+          200: 'rgb(var(--fuchsia-200) / <alpha-value>)',
+        },
+        pink: {
+          ...colors.pink,
+          50: 'rgb(var(--pink-50) / <alpha-value>)',
+          100: 'rgb(var(--pink-100) / <alpha-value>)',
+          200: 'rgb(var(--pink-200) / <alpha-value>)',
+        },
+        rose: {
+          ...colors.rose,
+          50: 'rgb(var(--rose-50) / <alpha-value>)',
+          100: 'rgb(var(--rose-100) / <alpha-value>)',
+          200: 'rgb(var(--rose-200) / <alpha-value>)',
+        },
+        /* ----------------------------------------------------------------
+         * NEUTRAL RAMPS — all five Tailwind ships: slate, gray, zinc, neutral,
+     * stone. All five, because missing one is invisible until someone hovers
+     * the row that uses it: the Settings nav item was `hover:bg-zinc-100`
+     * and stayed a white slab after the other ramps were done.
+         *
+         * The values are IDENTICAL to Tailwind's in light mode (see the
+         * :root block in styles/tailwind.css), so this override changes
+         * nothing today. What it buys is that the ~900 hardcoded
+         * `bg-slate-50` / `text-slate-700` / `bg-gray-300` utilities across
+         * the app follow the theme instead of staying light — without
+         * rewriting 900 call sites, which is the only reason dark mode was
+         * affordable here at all.
+         *
+         * The six places that use these ramps for a DARK surface are the
+         * exception and carry their own `dark:` override; see the note in
+         * styles/tailwind.css.
+         * ---------------------------------------------------------------- */
+        zinc: {
+          50: 'rgb(var(--zinc-50) / <alpha-value>)',
+          100: 'rgb(var(--zinc-100) / <alpha-value>)',
+          200: 'rgb(var(--zinc-200) / <alpha-value>)',
+          300: 'rgb(var(--zinc-300) / <alpha-value>)',
+          400: 'rgb(var(--zinc-400) / <alpha-value>)',
+          500: 'rgb(var(--zinc-500) / <alpha-value>)',
+          600: 'rgb(var(--zinc-600) / <alpha-value>)',
+          700: 'rgb(var(--zinc-700) / <alpha-value>)',
+          800: 'rgb(var(--zinc-800) / <alpha-value>)',
+          900: 'rgb(var(--zinc-900) / <alpha-value>)',
+          950: 'rgb(var(--zinc-950) / <alpha-value>)',
+        },
+        stone: {
+          50: 'rgb(var(--stone-50) / <alpha-value>)',
+          100: 'rgb(var(--stone-100) / <alpha-value>)',
+          200: 'rgb(var(--stone-200) / <alpha-value>)',
+          300: 'rgb(var(--stone-300) / <alpha-value>)',
+          400: 'rgb(var(--stone-400) / <alpha-value>)',
+          500: 'rgb(var(--stone-500) / <alpha-value>)',
+          600: 'rgb(var(--stone-600) / <alpha-value>)',
+          700: 'rgb(var(--stone-700) / <alpha-value>)',
+          800: 'rgb(var(--stone-800) / <alpha-value>)',
+          900: 'rgb(var(--stone-900) / <alpha-value>)',
+          950: 'rgb(var(--stone-950) / <alpha-value>)',
+        },
+        slate: {
+          50: 'rgb(var(--slate-50) / <alpha-value>)',
+          100: 'rgb(var(--slate-100) / <alpha-value>)',
+          200: 'rgb(var(--slate-200) / <alpha-value>)',
+          300: 'rgb(var(--slate-300) / <alpha-value>)',
+          400: 'rgb(var(--slate-400) / <alpha-value>)',
+          500: 'rgb(var(--slate-500) / <alpha-value>)',
+          600: 'rgb(var(--slate-600) / <alpha-value>)',
+          700: 'rgb(var(--slate-700) / <alpha-value>)',
+          800: 'rgb(var(--slate-800) / <alpha-value>)',
+          900: 'rgb(var(--slate-900) / <alpha-value>)',
+          950: 'rgb(var(--slate-950) / <alpha-value>)',
+        },
+        gray: {
+          50: 'rgb(var(--gray-50) / <alpha-value>)',
+          100: 'rgb(var(--gray-100) / <alpha-value>)',
+          200: 'rgb(var(--gray-200) / <alpha-value>)',
+          300: 'rgb(var(--gray-300) / <alpha-value>)',
+          400: 'rgb(var(--gray-400) / <alpha-value>)',
+          500: 'rgb(var(--gray-500) / <alpha-value>)',
+          600: 'rgb(var(--gray-600) / <alpha-value>)',
+          700: 'rgb(var(--gray-700) / <alpha-value>)',
+          800: 'rgb(var(--gray-800) / <alpha-value>)',
+          900: 'rgb(var(--gray-900) / <alpha-value>)',
+          950: 'rgb(var(--gray-950) / <alpha-value>)',
+        },
+        neutral: {
+          50: 'rgb(var(--neutral-50) / <alpha-value>)',
+          100: 'rgb(var(--neutral-100) / <alpha-value>)',
+          200: 'rgb(var(--neutral-200) / <alpha-value>)',
+          300: 'rgb(var(--neutral-300) / <alpha-value>)',
+          400: 'rgb(var(--neutral-400) / <alpha-value>)',
+          500: 'rgb(var(--neutral-500) / <alpha-value>)',
+          600: 'rgb(var(--neutral-600) / <alpha-value>)',
+          700: 'rgb(var(--neutral-700) / <alpha-value>)',
+          800: 'rgb(var(--neutral-800) / <alpha-value>)',
+          900: 'rgb(var(--neutral-900) / <alpha-value>)',
+          950: 'rgb(var(--neutral-950) / <alpha-value>)',
+        },
         primary: {
-          DEFAULT: 'var(--color-primary)', // violet-500
-          foreground: 'var(--color-primary-foreground)', // white
+          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)', // violet-500
+          foreground: 'rgb(var(--color-primary-foreground) / <alpha-value>)', // white
         },
         secondary: {
-          DEFAULT: 'var(--color-secondary)', // violet-400
-          foreground: 'var(--color-secondary-foreground)', // white
+          DEFAULT: 'rgb(var(--color-secondary) / <alpha-value>)', // violet-400
+          foreground: 'rgb(var(--color-secondary-foreground) / <alpha-value>)', // white
         },
         destructive: {
-          DEFAULT: 'var(--color-destructive)', // red-500
-          foreground: 'var(--color-destructive-foreground)', // white
+          DEFAULT: 'rgb(var(--color-destructive) / <alpha-value>)', // red-500
+          foreground: 'rgb(var(--color-destructive-foreground) / <alpha-value>)', // white
         },
         muted: {
-          DEFAULT: 'var(--color-muted)', // slate-50
-          foreground: 'var(--color-muted-foreground)', // slate-500
+          DEFAULT: 'rgb(var(--color-muted) / <alpha-value>)', // slate-50
+          foreground: 'rgb(var(--color-muted-foreground) / <alpha-value>)', // slate-500
         },
         accent: {
-          DEFAULT: 'var(--color-accent)', // amber-300
-          foreground: 'var(--color-accent-foreground)', // slate-800
+          DEFAULT: 'rgb(var(--color-accent) / <alpha-value>)', // amber-300
+          foreground: 'rgb(var(--color-accent-foreground) / <alpha-value>)', // slate-800
         },
         popover: {
-          DEFAULT: 'var(--color-popover)', // white
-          foreground: 'var(--color-popover-foreground)', // slate-800
+          DEFAULT: 'rgb(var(--color-popover) / <alpha-value>)', // white
+          foreground: 'rgb(var(--color-popover-foreground) / <alpha-value>)', // slate-800
         },
         card: {
-          DEFAULT: 'var(--color-card)', // white
-          foreground: 'var(--color-card-foreground)', // slate-800
+          DEFAULT: 'rgb(var(--color-card) / <alpha-value>)', // white
+          foreground: 'rgb(var(--color-card-foreground) / <alpha-value>)', // slate-800
         },
         success: {
-          DEFAULT: 'var(--color-success)', // emerald-500
-          foreground: 'var(--color-success-foreground)', // white
+          DEFAULT: 'rgb(var(--color-success) / <alpha-value>)', // emerald-500
+          foreground: 'rgb(var(--color-success-foreground) / <alpha-value>)', // white
         },
         warning: {
-          DEFAULT: 'var(--color-warning)', // amber-500
-          foreground: 'var(--color-warning-foreground)', // white
+          DEFAULT: 'rgb(var(--color-warning) / <alpha-value>)', // amber-500
+          foreground: 'rgb(var(--color-warning-foreground) / <alpha-value>)', // white
         },
         error: {
-          DEFAULT: 'var(--color-error)', // red-500
-          foreground: 'var(--color-error-foreground)', // white
+          DEFAULT: 'rgb(var(--color-error) / <alpha-value>)', // red-500
+          foreground: 'rgb(var(--color-error-foreground) / <alpha-value>)', // white
         },
       },
       fontFamily: {

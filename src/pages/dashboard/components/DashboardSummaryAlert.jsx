@@ -18,22 +18,22 @@ const formatClock = (date) =>
 // Per-status colour palette. Tailwind needs full class strings at build time,
 // so we list them literally. Unknown statuses fall through to NEUTRAL.
 const STATUS_STYLES = {
-  Interested:           { bg: "bg-emerald-50", text: "text-emerald-700" },
-  "Follow up":          { bg: "bg-blue-50",    text: "text-blue-700"    },
-  "Call Not Picked":    { bg: "bg-amber-50",   text: "text-amber-700"   },
-  "Call Later":         { bg: "bg-indigo-50",  text: "text-indigo-700"  },
-  "Call Not Connecting":{ bg: "bg-orange-50",  text: "text-orange-700"  },
-  "Site Visit Scheduled": { bg: "bg-cyan-50",  text: "text-cyan-700"    },
-  "Site Visit Done":    { bg: "bg-teal-50",    text: "text-teal-700"    },
+  Interested:           { bg: "bg-emerald-50", text: "text-emerald-700 dark:text-emerald-300" },
+  "Follow up":          { bg: "bg-blue-50",    text: "text-blue-700 dark:text-blue-300"    },
+  "Call Not Picked":    { bg: "bg-amber-50",   text: "text-amber-700 dark:text-amber-300"   },
+  "Call Later":         { bg: "bg-indigo-50",  text: "text-indigo-700 dark:text-indigo-300"  },
+  "Call Not Connecting":{ bg: "bg-orange-50",  text: "text-orange-700 dark:text-orange-300"  },
+  "Site Visit Scheduled": { bg: "bg-cyan-50",  text: "text-cyan-700 dark:text-cyan-300"    },
+  "Site Visit Done":    { bg: "bg-teal-50",    text: "text-teal-700 dark:text-teal-300"    },
   New:                  { bg: "bg-slate-100",  text: "text-slate-700"   },
-  Purchased:            { bg: "bg-green-50",   text: "text-green-700"   },
-  "Not Interested":     { bg: "bg-rose-50",    text: "text-rose-700"    },
-  "Fake Lead":          { bg: "bg-pink-50",    text: "text-pink-700"    },
+  Purchased:            { bg: "bg-green-50",   text: "text-green-700 dark:text-green-300"   },
+  "Not Interested":     { bg: "bg-rose-50",    text: "text-rose-700 dark:text-rose-300"    },
+  "Fake Lead":          { bg: "bg-pink-50",    text: "text-pink-700 dark:text-pink-300"    },
   "Invalid Number":     { bg: "bg-gray-100",   text: "text-gray-700"    },
   "Irrelevant Lead":    { bg: "bg-stone-100",  text: "text-stone-700"   },
-  "Low Budget":         { bg: "bg-yellow-50",  text: "text-yellow-700"  },
-  "Low Interest":       { bg: "bg-lime-50",    text: "text-lime-700"    },
-  "Other Location":     { bg: "bg-sky-50",     text: "text-sky-700"     },
+  "Low Budget":         { bg: "bg-yellow-50",  text: "text-yellow-700 dark:text-yellow-300"  },
+  "Low Interest":       { bg: "bg-lime-50",    text: "text-lime-700 dark:text-lime-300"    },
+  "Other Location":     { bg: "bg-sky-50",     text: "text-sky-700 dark:text-sky-300"     },
   "Switch Off":         { bg: "bg-neutral-100", text: "text-neutral-700" },
 };
 const NEUTRAL_PILL = { bg: "bg-muted/50", text: "text-muted-foreground" };
@@ -68,13 +68,13 @@ const stripeForRow = (variant, value) => {
 
 // Same age scale, but for the right-rail urgency text colour.
 const urgencyTextForRow = (variant, value) => {
-  if (variant !== "overdue") return "text-orange-600";
+  if (variant !== "overdue") return "text-orange-600 dark:text-orange-300";
   const h = hoursUntil(value);
-  if (h === null) return "text-red-600";
+  if (h === null) return "text-red-600 dark:text-red-300";
   const daysLate = -h / 24;
-  if (daysLate < 1) return "text-red-500";
-  if (daysLate < 7) return "text-red-600";
-  return "text-red-700";
+  if (daysLate < 1) return "text-red-500 dark:text-red-400";
+  if (daysLate < 7) return "text-red-600 dark:text-red-300";
+  return "text-red-700 dark:text-red-300";
 };
 
 // Human-friendly "in 2h", "3d late", "due now". Falls back to date+time.
@@ -249,7 +249,7 @@ const NotificationRow = ({ deal, variant, onClick }) => {
               }}
               aria-label="Call lead"
               title="Call lead"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-50 text-sky-600 transition-all hover:scale-105 hover:bg-sky-100 active:scale-95"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-50 text-sky-600 dark:text-sky-300 transition-all hover:scale-105 hover:bg-sky-100 active:scale-95"
             >
               <Icon name="Phone" size={14} />
             </button>
@@ -259,7 +259,7 @@ const NotificationRow = ({ deal, variant, onClick }) => {
               onClick={(e) => e.stopPropagation()}
               aria-label={`Call ${phone}`}
               title={`Call ${phone}`}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-50 text-sky-600 transition-all hover:scale-105 hover:bg-sky-100 active:scale-95"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-50 text-sky-600 dark:text-sky-300 transition-all hover:scale-105 hover:bg-sky-100 active:scale-95"
             >
               <Icon name="Phone" size={14} />
             </a>
@@ -276,7 +276,7 @@ const NotificationRow = ({ deal, variant, onClick }) => {
             onClick={(e) => e.stopPropagation()}
             aria-label="Open WhatsApp chat"
             title="WhatsApp"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 transition-all hover:scale-105 hover:bg-emerald-100 active:scale-95"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:text-emerald-300 transition-all hover:scale-105 hover:bg-emerald-100 active:scale-95"
           >
             <Icon name="MessageCircle" size={14} />
           </a>
@@ -416,9 +416,9 @@ const DashboardSummaryAlert = () => {
                   <Icon
                     name="CalendarClock"
                     size={14}
-                    className="text-orange-600"
+                    className="text-orange-600 dark:text-orange-300"
                   />
-                  <span className="font-bold text-orange-600">
+                  <span className="font-bold text-orange-600 dark:text-orange-300">
                     {urgent.dueToday.length}
                   </span>
                   {urgent.dueToday.length === 1
@@ -428,8 +428,8 @@ const DashboardSummaryAlert = () => {
               )}
               {urgent.overdue.length > 0 && (
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Icon name="AlertCircle" size={14} className="text-red-600" />
-                  <span className="font-bold text-red-600">
+                  <Icon name="AlertCircle" size={14} className="text-red-600 dark:text-red-300" />
+                  <span className="font-bold text-red-600 dark:text-red-300">
                     {urgent.overdue.length}
                   </span>
                   {urgent.overdue.length === 1
@@ -471,7 +471,7 @@ const DashboardSummaryAlert = () => {
             <button
               type="button"
               onClick={() => navigate("/pipeline")}
-              className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-white border border-primary/30 text-primary text-xs font-semibold shadow-sm hover:bg-primary hover:text-white transition-colors"
+              className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-card border border-primary/30 text-primary text-xs font-semibold shadow-sm hover:bg-primary hover:text-white transition-colors"
               aria-label="Open pipeline"
             >
               <Icon name="Kanban" size={14} />
@@ -492,7 +492,7 @@ const DashboardSummaryAlert = () => {
           <button
             type="button"
             onClick={() => navigate("/pipeline")}
-            className="hidden sm:inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full bg-white border border-primary/30 text-primary text-xs font-semibold shadow-sm hover:bg-primary hover:text-white hover:border-primary hover:shadow-[0_6px_20px_-8px_rgba(99,102,241,0.45)] transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full bg-card border border-primary/30 text-primary text-xs font-semibold shadow-sm hover:bg-primary hover:text-white hover:border-primary hover:shadow-[0_6px_20px_-8px_rgba(99,102,241,0.45)] transition-all"
             aria-label="Open pipeline"
           >
             <Icon name="Kanban" size={14} />

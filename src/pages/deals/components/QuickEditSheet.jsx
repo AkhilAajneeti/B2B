@@ -46,18 +46,18 @@ const STATUS_OPTIONS = [
 // Status pill colours — mirror DealsTable.getStageColor so the sheet feels
 // like the same product as the card behind it.
 const STATUS_COLOR = {
-  New: "bg-blue-50 text-blue-700 border-blue-200",
-  "Follow up": "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Interested: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 border-emerald-300",
-  "Site Visit Done": "bg-emerald-300 text-emerald-900 border-emerald-400",
+  New: "bg-blue-50 text-blue-700 dark:text-blue-300 border-blue-200",
+  "Follow up": "bg-emerald-50 text-emerald-700 dark:text-emerald-300 border-emerald-200",
+  Interested: "bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200",
+  "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 dark:text-emerald-300 border-emerald-300",
+  "Site Visit Done": "bg-emerald-300 text-emerald-900 dark:text-emerald-300 border-emerald-400",
   Purchased: "bg-emerald-600 text-white border-emerald-600",
-  "Call Later": "bg-yellow-50 text-yellow-700 border-yellow-200",
-  "Call Not Connecting": "bg-yellow-100 text-yellow-800 border-yellow-200",
-  "Call Not Picked": "bg-yellow-200 text-yellow-800 border-yellow-300",
-  "Switch Off": "bg-yellow-300 text-yellow-900 border-yellow-400",
-  "Not Interested": "bg-red-100 text-red-700 border-red-200",
-  "Low Budget": "bg-red-50 text-red-700 border-red-200",
+  "Call Later": "bg-yellow-50 text-yellow-700 dark:text-yellow-300 border-yellow-200",
+  "Call Not Connecting": "bg-yellow-100 text-yellow-800 dark:text-yellow-300 border-yellow-200",
+  "Call Not Picked": "bg-yellow-200 text-yellow-800 dark:text-yellow-300 border-yellow-300",
+  "Switch Off": "bg-yellow-300 text-yellow-900 dark:text-yellow-300 border-yellow-400",
+  "Not Interested": "bg-red-100 text-red-700 dark:text-red-300 border-red-200",
+  "Low Budget": "bg-red-50 text-red-700 dark:text-red-300 border-red-200",
 };
 const selectedChip = (s) =>
   STATUS_COLOR[s] || "bg-primary/10 text-primary border-primary/30";
@@ -80,7 +80,7 @@ const STATUS_ACCENT = {
   "Not Interested": "#DC2626",
   "Low Budget": "#EF4444",
 };
-const accentFor = (s) => STATUS_ACCENT[s] || "var(--color-primary)";
+const accentFor = (s) => STATUS_ACCENT[s] || "rgb(var(--color-primary))";
 
 const QuickEditSheet = ({ open, deal, onClose, onSave }) => {
   const [status, setStatus] = useState("");
@@ -378,7 +378,7 @@ const QuickEditSheet = ({ open, deal, onClose, onSave }) => {
                 type="button"
                 onClick={handleSave}
                 disabled={saving || !dirty}
-                className="min-h-[52px] flex-[1.5] rounded-2xl bg-primary text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_var(--color-primary)] transition active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                className="min-h-[52px] flex-[1.5] rounded-2xl bg-primary text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgb(var(--color-primary))] transition active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
               >
                 {saving ? (
                   <span className="flex items-center justify-center gap-2">

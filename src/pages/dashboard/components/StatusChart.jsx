@@ -34,7 +34,7 @@ const STATUS_COLOR_MAP = {
   Interested: "#22c55e",      // green — positive intent
   "Not interested": "#ef4444", // red — negative outcome
   // Site Visit Scheduled — sky palette matches the pill used elsewhere
-  // in the app (`bg-sky-50 text-sky-700`). Uses sky-500 as the solid
+  // in the app (`bg-sky-50 text-sky-700 dark:text-sky-300`). Uses sky-500 as the solid
   // fill so the segment reads as the same status family across the UI.
   "Site Visit Scheduled": "#0ea5e9",
   Purchased: "#10b981",       // emerald — closed-won

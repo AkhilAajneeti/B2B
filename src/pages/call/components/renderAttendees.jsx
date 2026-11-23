@@ -45,9 +45,9 @@ const renderAttendees = (names = {}, columns = {}, phoneMap = {}) => {
             <span
               className={`text-xs px-2 py-1 rounded-full ${
                 status === "Accepted"
-                  ? "bg-green-100 text-green-700"
+                  ? "bg-green-100 text-green-700 dark:text-green-300"
                   : status === "Tentative"
-                    ? "bg-yellow-100 text-yellow-700"
+                    ? "bg-yellow-100 text-yellow-700 dark:text-yellow-300"
                     : "bg-muted text-muted-foreground"
               }`}
             >

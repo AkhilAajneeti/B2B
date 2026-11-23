@@ -93,7 +93,7 @@ const ConfirmDeleteModal = ({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
             onClick={loading ? undefined : onCancel}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -128,7 +128,7 @@ const ConfirmDeleteModal = ({
                     animate={{ scale: [1, 1.6], opacity: [0.5, 0] }}
                     transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
                   />
-                  <span className="relative grid h-16 w-16 place-items-center rounded-full bg-red-100 text-red-600 ring-8 ring-red-50">
+                  <span className="relative grid h-16 w-16 place-items-center rounded-full bg-red-100 text-red-600 dark:text-red-300 ring-8 ring-red-50">
                     <AnimatedTrash />
                   </span>
                 </div>
@@ -150,7 +150,7 @@ const ConfirmDeleteModal = ({
                   </div>
                 )}
 
-                <div className="relative mt-3.5 inline-flex items-center gap-1.5 text-xs font-semibold text-red-600">
+                <div className="relative mt-3.5 inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-300">
                   <Icon name="AlertTriangle" size={13} />
                   This action cannot be undone
                 </div>

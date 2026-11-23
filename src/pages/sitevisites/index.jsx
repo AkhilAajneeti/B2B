@@ -66,11 +66,11 @@ const sameDay = (a, b) =>
   a.getDate() === b.getDate();
 
 const STATUS_STYLES = {
-  Rescheduled: { dot: "bg-violet-500", pill: "bg-violet-50 text-violet-700" },
-  Scheduled: { dot: "bg-amber-500", pill: "bg-amber-50 text-amber-700" },
-  Confirmed: { dot: "bg-emerald-500", pill: "bg-emerald-50 text-emerald-700" },
+  Rescheduled: { dot: "bg-violet-500", pill: "bg-violet-50 text-violet-700 dark:text-violet-300" },
+  Scheduled: { dot: "bg-amber-500", pill: "bg-amber-50 text-amber-700 dark:text-amber-300" },
+  Confirmed: { dot: "bg-emerald-500", pill: "bg-emerald-50 text-emerald-700 dark:text-emerald-300" },
   Visited: { pill: "bg-emerald-600 text-white", icon: "Check" },
-  "No-show": { pill: "bg-red-50 text-red-600", icon: "X" },
+  "No-show": { pill: "bg-red-50 text-red-600 dark:text-red-300", icon: "X" },
 };
 
 const StatusBadge = ({ status }) => {
@@ -428,7 +428,7 @@ const SiteVisitePage = () => {
                     </span>
                     <span className="text-white/85">still need confirming</span>
                   </div>
-                  <button className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[#7a1420] transition-colors hover:bg-white/90">
+                  <button className="inline-flex items-center gap-2 rounded-lg bg-card px-4 py-2.5 text-sm font-semibold text-[#7a1420] transition-colors hover:bg-card/90">
                     <Icon name="Phone" size={15} />
                     Start Friday calls
                   </button>
@@ -470,13 +470,13 @@ const SiteVisitePage = () => {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search by lead, project or phone..."
-                    className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#AC2334] focus:ring-2 focus:ring-[#AC2334]/10"
+                    className="h-10 w-full rounded-lg border border-slate-200 bg-card pl-9 pr-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#AC2334] focus:ring-2 focus:ring-[#AC2334]/10"
                   />
                 </div>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-600 outline-none focus:border-[#AC2334]"
+                  className="h-10 rounded-lg border border-slate-200 bg-card px-3 text-sm text-slate-600 outline-none focus:border-[#AC2334]"
                 >
                   <option value="">All statuses</option>
                   <option value="Scheduled">Scheduled</option>
@@ -485,7 +485,7 @@ const SiteVisitePage = () => {
                 <select
                   value={repFilter}
                   onChange={(e) => setRepFilter(e.target.value)}
-                  className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-600 outline-none focus:border-[#AC2334]"
+                  className="h-10 rounded-lg border border-slate-200 bg-card px-3 text-sm text-slate-600 outline-none focus:border-[#AC2334]"
                 >
                   <option value="">All reps</option>
                   {reps.map((r) => (

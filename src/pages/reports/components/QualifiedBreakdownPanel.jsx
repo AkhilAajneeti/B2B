@@ -40,7 +40,21 @@ const LABELS = {
   "Site Visit Done": "Visit Done",
 };
 
-const QualifiedBreakdownPanel = ({ open, rows = [], total = 0, isLoading }) => {
+/**
+ * `className` is for the gap ABOVE the drawer, and belongs to the caller
+ * because the two callers start from different places: the Reports grid
+ * already declares `mb-8`, while the Dashboard grid declares nothing and the
+ * drawer came out flush against the cards. Applied to the inner element rather
+ * than the animated wrapper so the margin collapses away with the height —
+ * on the wrapper it would leave a permanent gap under a closed drawer.
+ */
+const QualifiedBreakdownPanel = ({
+  open,
+  rows = [],
+  total = 0,
+  isLoading,
+  className = "",
+}) => {
   const max = rows.reduce((n, r) => Math.max(n, r.value || 0), 0);
   const sum = rows.reduce((n, r) => n + (r.value || 0), 0);
 
@@ -55,10 +69,10 @@ const QualifiedBreakdownPanel = ({ open, rows = [], total = 0, isLoading }) => {
           transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
           className="overflow-hidden"
         >
-          <div className="relative mb-8 rounded-2xl border border-[#99F6E4] bg-gradient-to-br from-[#F0FDFA] via-white to-white p-5 shadow-[0_1px_2px_rgba(16,24,40,.04),0_8px_28px_rgba(13,148,136,.10)] sm:p-6">
+          <div className={`relative mb-8 rounded-2xl border border-[#99F6E4] bg-gradient-to-br from-[#F0FDFA] via-white to-card dark:border-teal-900/70 dark:from-teal-950/50 dark:via-card dark:to-card p-5 shadow-[0_1px_2px_rgba(16,24,40,.04),0_8px_28px_rgba(13,148,136,.10)] sm:p-6 ${className}`}>
             {/* Notch pointing back at the card that opened this, so the drawer
                 reads as belonging to it rather than floating under the row. */}
-            <span className="absolute -top-[7px] left-10 h-3 w-3 rotate-45 border-l border-t border-[#99F6E4] bg-[#F0FDFA]" />
+            <span className="absolute -top-[7px] left-10 h-3 w-3 rotate-45 border-l border-t border-[#99F6E4] bg-[#F0FDFA] dark:border-teal-900/70 dark:bg-teal-950" />
 
             <div className="mb-5 flex flex-wrap items-end justify-between gap-2">
               <div>
@@ -70,7 +84,7 @@ const QualifiedBreakdownPanel = ({ open, rows = [], total = 0, isLoading }) => {
                 </p>
               </div>
               <p className="text-xs text-slate-500">
-                <span className="text-lg font-bold tracking-tight text-teal-700">
+                <span className="text-lg font-bold tracking-tight text-teal-700 dark:text-teal-300">
                   {sum.toLocaleString()}
                 </span>{" "}
                 across {rows.length} statuses
@@ -97,7 +111,7 @@ const QualifiedBreakdownPanel = ({ open, rows = [], total = 0, isLoading }) => {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.25, delay: 0.04 * i }}
-                      className="group flex items-center gap-3 rounded-xl border border-transparent px-2 py-2 transition-colors hover:border-[#CCFBF1] hover:bg-white"
+                      className="group flex items-center gap-3 rounded-xl border border-transparent px-2 py-2 transition-colors hover:border-[#CCFBF1] hover:bg-card dark:hover:border-teal-900/60"
                     >
                       <span
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-sm"
@@ -139,7 +153,7 @@ const QualifiedBreakdownPanel = ({ open, rows = [], total = 0, isLoading }) => {
               </div>
             )}
 
-            <p className="mt-4 border-t border-[#CCFBF1] pt-3 text-[11px] leading-relaxed text-slate-500">
+            <p className="mt-4 border-t border-[#CCFBF1] dark:border-teal-900/60 pt-3 text-[11px] leading-relaxed text-slate-500">
               Bars are scaled to the largest status so the small ones stay
               visible; the percentage is of the qualified total. Qualified Due To
               Delay is counted on its own card and is not included here.

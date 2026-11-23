@@ -81,7 +81,7 @@ const InsightSheet = ({ activeInsight, data = [], onClose, formatDate, formatTim
         >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -191,8 +191,8 @@ const InsightSheet = ({ activeInsight, data = [], onClose, formatDate, formatTim
                               <span
                                 className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
                                   item.insightType === "Created Today"
-                                    ? "bg-blue-100 text-blue-700"
-                                    : "bg-green-100 text-green-700"
+                                    ? "bg-blue-100 text-blue-700 dark:text-blue-300"
+                                    : "bg-green-100 text-green-700 dark:text-green-300"
                                 }`}
                               >
                                 {item.insightType}

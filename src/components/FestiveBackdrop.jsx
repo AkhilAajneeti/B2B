@@ -40,7 +40,7 @@ const FestiveBackdrop = ({
       initial={reduce ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`relative grid min-h-screen grid-cols-1 bg-[#fffaf4] lg:h-screen lg:grid-cols-[1.18fr_1fr] lg:overflow-hidden ${className}`}
+      className={`force-light relative grid min-h-screen grid-cols-1 bg-[#fffaf4] lg:h-screen lg:grid-cols-[1.18fr_1fr] lg:overflow-hidden ${className}`}
     >
       {/* ───────────────────── LEFT · ARTWORK ───────────────────── */}
       <div className="relative hidden overflow-hidden bg-[#fffaf4] lg:block">

@@ -139,7 +139,7 @@ const Pipeline = () => {
                   {stats.overdue} {stats.overdue === 1 ? "is" : "are"} overdue
                 </span>
                 {stats.overdue === 0 ? (
-                  <span className="font-medium text-emerald-600">
+                  <span className="font-medium text-emerald-600 dark:text-emerald-300">
                     {" "}— you're on top of it.
                   </span>
                 ) : (
@@ -245,7 +245,7 @@ const Pipeline = () => {
             ) : isError ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-3">
-                  <Icon name="AlertTriangle" size={26} className="text-red-600" />
+                  <Icon name="AlertTriangle" size={26} className="text-red-600 dark:text-red-300" />
                 </div>
                 <p className="text-foreground font-medium mb-1">
                   Couldn't load the pipeline

@@ -10,6 +10,7 @@ import { useNotificationCount } from "hooks/useNotificationCount";
 import Avatar from "react-avatar";
 import { useQueryClient } from "@tanstack/react-query";
 import { isMaskedUser } from "utils/permission";
+import ThemeToggle from "components/ThemeToggle";
 const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   // `login_object` may be missing (fresh tab, mid-logout race) or
   // malformed (manual clear). Default to an empty object so the
@@ -299,6 +300,12 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
 
           {/* Right Section - Actions & User */}
           <div className="flex items-center space-x-2">
+            {/* Light / dark switch, immediately left of the bell. Outside the
+                `!masked` guard below on purpose — restricted accounts lose the
+                bell because its feed is internal workflow, but a theme is
+                nobody's business but the person looking at the screen. */}
+            <ThemeToggle />
+
             {!masked && (
             <div className="relative" ref={notificationRef}>
               {/* Notifications */}
@@ -330,6 +337,10 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                   // at the circumference, fading smoothly inward to near-white
                   // by the halfway point. The blue lives entirely in the FILL.
                   //
+                  // The three stops are --bell-* in styles/tailwind.css so the
+                  // dark theme can restate them; hardcoded here they made the
+                  // bell a white porthole punched through a dark header.
+                  //
                   // No rim shadow and no resting glow, deliberately. A 1px rim
                   // showed up in the pixel profile as a saturation spike (83
                   // against the reference's smooth 46 and falling) and an outer
@@ -339,7 +350,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                   // Hover still lifts a glow — that's an affordance, and it
                   // doesn't disturb the resting shape.
                   background:
-                    "radial-gradient(circle, #FAFCFE 0%, #F2F7FD 46%, #D0E7FE 100%)",
+                    "radial-gradient(circle, var(--bell-core) 0%, var(--bell-mid) 46%, var(--bell-edge) 100%)",
                 }}
               >
                 {/* Drifting light — blue only, blurred, and under the glyph.
@@ -432,7 +443,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                   />
 
                   {/* dropdown */}
-                  <div className="absolute right-0 top-full mt-3 w-72 overflow-hidden rounded-2xl border border-white/20 bg-white/75 backdrop-blur-2xl shadow-[0_12px_40px_rgba(15,23,42,0.12)] z-[60] animate-in fade-in zoom-in-95 duration-200">
+                  <div className="absolute right-0 top-full mt-3 w-72 overflow-hidden rounded-2xl border border-white/20 bg-card/75 backdrop-blur-2xl shadow-[0_12px_40px_rgba(15,23,42,0.12)] z-[60] animate-in fade-in zoom-in-95 duration-200">
 
                     {/* top user section */}
                     <div className="p-5">
@@ -471,7 +482,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                       {/* profile */}
                       <button
                         onClick={handleProfileClick}
-                        className="flex items-center gap-3 w-full rounded-xl px-3 py-3 text-sm text-slate-700 transition-all hover:bg-white/70"
+                        className="flex items-center gap-3 w-full rounded-xl px-3 py-3 text-sm text-slate-700 transition-all hover:bg-card/70"
                       >
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100">
                           <Icon name="User" size={17} />
@@ -491,7 +502,7 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
                       {/* logout */}
                       <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 w-full rounded-xl px-3 py-3 text-sm text-red-500 transition-all hover:bg-red-50/80"
+                        className="flex items-center gap-3 w-full rounded-xl px-3 py-3 text-sm text-red-500 dark:text-red-400 transition-all hover:bg-red-50/80"
                       >
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50">
                           <Icon name="LogOut" size={17} />

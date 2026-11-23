@@ -122,13 +122,13 @@ const DealDrawer = ({
 
   const getStageColor = (stage) => {
     const colors = {
-      New: "bg-blue-100 text-blue-800",
-      Interested: "bg-sky-100 text-sky-800",
-      "Follow up": "bg-indigo-100 text-indigo-800",
-      Converted: "bg-green-100 text-green-800",
-      "Not interested": "bg-orange-100 text-orange-800",
-      Broker: "bg-purple-100 text-purple-800",
-      "Call Not Picked": "bg-red-100 text-red-800",
+      New: "bg-blue-100 text-blue-800 dark:text-blue-300",
+      Interested: "bg-sky-100 text-sky-800 dark:text-sky-300",
+      "Follow up": "bg-indigo-100 text-indigo-800 dark:text-indigo-300",
+      Converted: "bg-green-100 text-green-800 dark:text-green-300",
+      "Not interested": "bg-orange-100 text-orange-800 dark:text-orange-300",
+      Broker: "bg-purple-100 text-purple-800 dark:text-purple-300",
+      "Call Not Picked": "bg-red-100 text-red-800 dark:text-red-300",
       Invalid: "bg-gray-100 text-gray-700",
     };
     return colors?.[stage] || "bg-gray-100 text-gray-800";
@@ -157,13 +157,13 @@ const DealDrawer = ({
   const getActivityIconColor = (type) => {
     switch (type) {
       case "Post":
-        return "text-indigo-600";
+        return "text-indigo-600 dark:text-indigo-300";
       case "Update":
-        return "text-blue-600";
+        return "text-blue-600 dark:text-blue-300";
       case "Assign":
-        return "text-purple-600";
+        return "text-purple-600 dark:text-purple-300";
       case "Create":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-300";
       default:
         return "text-gray-500";
     }
@@ -400,7 +400,7 @@ const DealDrawer = ({
                     : deal?.name}
               </h2>
               <span
-                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${deal?.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${deal?.isActive ? "bg-green-100 text-green-800 dark:text-green-300" : "bg-red-100 text-red-800 dark:text-red-300"}`}
               ></span>
             </div>
 
@@ -514,11 +514,11 @@ const DealDrawer = ({
                         }),
                         multiValue: (base) => ({
                           ...base,
-                          backgroundColor: "#EEF2FF",
+                          backgroundColor: "rgb(var(--select-chip))",
                         }),
                         multiValueLabel: (base) => ({
                           ...base,
-                          color: "#000",
+                          color: "rgb(var(--color-foreground))",
                           fontWeight: 500,
                         }),
                         multiValueRemove: (base) => ({
@@ -552,11 +552,11 @@ const DealDrawer = ({
                         }),
                         multiValue: (base) => ({
                           ...base,
-                          backgroundColor: "#EEF2FF",
+                          backgroundColor: "rgb(var(--select-chip))",
                         }),
                         multiValueLabel: (base) => ({
                           ...base,
-                          color: "#000",
+                          color: "rgb(var(--color-foreground))",
                           fontWeight: 500,
                         }),
                         multiValueRemove: (base) => ({
@@ -647,11 +647,11 @@ const DealDrawer = ({
                         }),
                         multiValue: (base) => ({
                           ...base,
-                          backgroundColor: "#EEF2FF",
+                          backgroundColor: "rgb(var(--select-chip))",
                         }),
                         multiValueLabel: (base) => ({
                           ...base,
-                          color: "#000",
+                          color: "rgb(var(--color-foreground))",
                           fontWeight: 500,
                         }),
                         multiValueRemove: (base) => ({
@@ -685,11 +685,11 @@ const DealDrawer = ({
                         }),
                         multiValue: (base) => ({
                           ...base,
-                          backgroundColor: "#EEF2FF",
+                          backgroundColor: "rgb(var(--select-chip))",
                         }),
                         multiValueLabel: (base) => ({
                           ...base,
-                          color: "#000",
+                          color: "rgb(var(--color-foreground))",
                           fontWeight: 500,
                         }),
                         multiValueRemove: (base) => ({
@@ -728,8 +728,8 @@ const DealDrawer = ({
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
                           deal?.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-green-100 text-green-800 dark:text-green-300"
+                            : "bg-red-100 text-red-800 dark:text-red-300"
                         }`}
                       >
                         {deal?.isActive ? "Active" : "Inactive"}
@@ -762,7 +762,7 @@ const DealDrawer = ({
                           ? deal.fieldList.map((field) => (
                               <span
                                 key={field}
-                                className="px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded-full"
+                                className="px-2 py-1 text-xs bg-indigo-100 text-indigo-800 dark:text-indigo-300 rounded-full"
                               >
                                 {field}
                               </span>
@@ -812,7 +812,7 @@ const DealDrawer = ({
                   {/* Method */}
                   <div className="mb-4">
                     <p className="text-sm text-muted-foreground mb-1">Method</p>
-                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 dark:text-green-300 rounded-full">
                       {deal?.exampleRequestMethod}
                     </span>
                   </div>

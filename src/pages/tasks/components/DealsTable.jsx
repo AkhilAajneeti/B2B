@@ -50,21 +50,21 @@ const DealsTable = ({
     deal?.assignedUserId === currentUserId;
   const getStageColor = (stage) => {
     const colors = {
-      Started: "bg-blue-100 text-blue-800",
-      Completed: "bg-green-100 text-green-800",
+      Started: "bg-blue-100 text-blue-800 dark:text-blue-300",
+      Completed: "bg-green-100 text-green-800 dark:text-green-300",
       Deffered: "bg-slate-200 text-slate-200",
-      Canceled: "bg-purple-100 text-purple-800",
-      "Not Started": "bg-orange-100 text-orange-700",
+      Canceled: "bg-purple-100 text-purple-800 dark:text-purple-300",
+      "Not Started": "bg-orange-100 text-orange-700 dark:text-orange-300",
     };
 
     return colors?.[stage] || "bg-gray-100 text-gray-800";
   };
   const getPrioriyColor = (stage) => {
     const colors = {
-      Low: "bg-blue-100 text-blue-800",
-      Normal: "bg-green-100 text-green-800",
+      Low: "bg-blue-100 text-blue-800 dark:text-blue-300",
+      Normal: "bg-green-100 text-green-800 dark:text-green-300",
       High: "bg-orange-100 text-danger-800",
-      Urgent: "bg-purple-100 text-purple-800",
+      Urgent: "bg-purple-100 text-purple-800 dark:text-purple-300",
     };
 
     return colors?.[stage] || "bg-gray-100 text-gray-800";

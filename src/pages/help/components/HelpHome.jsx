@@ -30,7 +30,7 @@ const HelpHome = () => {
       <header
         className="rounded-2xl border border-border px-6 py-8 mb-8"
         style={{
-          background: `linear-gradient(135deg, ${BRAND_SOFT} 0%, #ffffff 80%)`,
+          background: `linear-gradient(135deg, rgb(var(--help-soft)) 0%, rgb(var(--color-card)) 80%)`,
         }}
       >
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">

@@ -16,8 +16,8 @@ import { useNavigate } from "react-router-dom";
  */
 
 const PRIORITY_STYLES = {
-  High: "bg-red-100 text-red-700",
-  Medium: "bg-amber-100 text-amber-700",
+  High: "bg-red-100 text-red-700 dark:text-red-300",
+  Medium: "bg-amber-100 text-amber-700 dark:text-amber-300",
   Low: "bg-gray-100 text-gray-600",
 };
 
@@ -25,11 +25,11 @@ const getStatusColor = (status = "") => {
   const value = status.toLowerCase();
   if (!value) return "bg-gray-100 text-gray-700";
   if (value.includes("budget") || value.includes("payment"))
-    return "bg-red-100 text-red-700";
+    return "bg-red-100 text-red-700 dark:text-red-300";
   if (value.includes("interested") || value.includes("qualified"))
-    return "bg-green-100 text-green-700";
-  if (value.includes("follow")) return "bg-yellow-100 text-yellow-700";
-  return "bg-blue-100 text-blue-700";
+    return "bg-green-100 text-green-700 dark:text-green-300";
+  if (value.includes("follow")) return "bg-yellow-100 text-yellow-700 dark:text-yellow-300";
+  return "bg-blue-100 text-blue-700 dark:text-blue-300";
 };
 
 const DealCard = ({ deal = {}, onViewHistory }) => {
@@ -47,7 +47,7 @@ const DealCard = ({ deal = {}, onViewHistory }) => {
     >
       {/* Hover actions */}
       {isHovered && (
-        <div className="absolute top-2 right-2 flex space-x-1 bg-white border rounded-md shadow p-1 z-10">
+        <div className="absolute top-2 right-2 flex space-x-1 bg-card border rounded-md shadow p-1 z-10">
           <Button
             variant="ghost"
             size="icon"
@@ -145,7 +145,7 @@ const DealCard = ({ deal = {}, onViewHistory }) => {
 
         {/* Site visit (when present) */}
         {deal.siteVisitAt && (
-          <div className="flex items-center gap-2 text-sm text-green-600">
+          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-300">
             <Icon name="CheckCircle" size={14} />
             <span>Site Visit: {formatShortDate(deal.siteVisitAt)}</span>
           </div>

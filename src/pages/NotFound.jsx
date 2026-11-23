@@ -314,7 +314,7 @@ const NotFound = () => {
     typeof window !== "undefined" && (window.history?.length ?? 0) > 1;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white via-slate-50 to-slate-100 px-4 py-10">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-card via-slate-50 to-slate-100 px-4 py-10">
       <style>{motionStyles}</style>
 
       <div className="w-full max-w-lg">
@@ -339,7 +339,7 @@ const NotFound = () => {
         </div>
 
         <div
-          className="nf-rise bg-white rounded-2xl border border-slate-200 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] px-8 pt-8 pb-9 text-center"
+          className="nf-rise bg-card rounded-2xl border border-slate-200 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] px-8 pt-8 pb-9 text-center"
           style={{ animationDelay: "0.15s" }}
         >
           <MissingPageArt />
@@ -381,7 +381,7 @@ const NotFound = () => {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-white hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] text-slate-700 text-sm font-semibold border border-slate-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+                className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-card hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] text-slate-700 text-sm font-semibold border border-slate-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
               >
                 {/* The arrow slides left on hover - the button previews its
                     own direction before it is clicked. */}

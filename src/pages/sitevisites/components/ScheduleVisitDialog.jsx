@@ -57,7 +57,7 @@ const ScheduleVisitDialog = ({ onClose, onScheduled }) => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200"
+        className="w-full max-w-md overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-slate-200"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-800">Schedule a site visit</h3>
@@ -80,7 +80,7 @@ const ScheduleVisitDialog = ({ onClose, onScheduled }) => {
               <select
                 value={repId}
                 onChange={(e) => setRepId(e.target.value)}
-                className="h-10 w-full appearance-none rounded-lg border border-slate-200 bg-none bg-white pl-3 pr-9 text-sm text-slate-700 outline-none focus:border-[#AC2334]"
+                className="h-10 w-full appearance-none rounded-lg border border-slate-200 bg-none bg-card pl-3 pr-9 text-sm text-slate-700 outline-none focus:border-[#AC2334]"
               >
                 <option value="">Unassigned</option>
                 {reps.map((u) => (
@@ -96,7 +96,7 @@ const ScheduleVisitDialog = ({ onClose, onScheduled }) => {
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Date &amp; time</label>
             <button
               onClick={() => setPickerOpen(true)}
-              className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition-colors hover:border-slate-300 focus:border-[#AC2334]"
+              className="flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-card px-3 text-sm outline-none transition-colors hover:border-slate-300 focus:border-[#AC2334]"
             >
               <span className={when ? "text-slate-800" : "text-slate-400"}>
                 {when ? fmtWhen(when) : "Pick a date & time"}

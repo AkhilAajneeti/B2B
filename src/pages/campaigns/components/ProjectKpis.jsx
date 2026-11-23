@@ -132,7 +132,7 @@ const ProjectKpis = ({ totalProjects = 0, scopeProjects = null, isFiltered = fal
                   {c.value}
                 </p>
                 {c.sub && (
-                  <p className="mt-1.5 text-xs font-medium text-red-600">
+                  <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-300">
                     {c.sub}
                   </p>
                 )}

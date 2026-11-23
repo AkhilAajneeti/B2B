@@ -42,7 +42,7 @@ const SetupWizard = ({ integration, isOpen, onClose, onComplete }) => {
                   <span className="text-sm text-card-foreground">{feature}</span>
                 </div>
                 <div className="w-8 h-4 bg-primary rounded-full relative">
-                  <div className="w-3 h-3 bg-white rounded-full absolute top-0.5 right-0.5 shadow-sm"></div>
+                  <div className="w-3 h-3 bg-card rounded-full absolute top-0.5 right-0.5 shadow-sm"></div>
                 </div>
               </div>
             ))}

@@ -14,7 +14,7 @@ const BadgeCards = ({ items = [] }) => (
     {items.map((item, i) => (
       <div
         key={i}
-        className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+        className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm"
       >
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           Weightage

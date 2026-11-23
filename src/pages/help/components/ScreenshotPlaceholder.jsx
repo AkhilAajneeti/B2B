@@ -12,7 +12,7 @@ const ScreenshotPlaceholder = ({ label, src, alt }) => (
     <div
       className="aspect-[16/9] rounded-xl border border-border flex items-center justify-center overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, #fafafa 0%, ${BRAND_SOFT} 100%)`,
+        background: `linear-gradient(135deg, rgb(var(--slate-50)) 0%, ${BRAND_SOFT} 100%)`,
       }}
     >
       {src ? (

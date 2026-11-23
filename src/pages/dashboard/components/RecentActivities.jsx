@@ -135,12 +135,12 @@ const RecentActivities = ({ activities = [] }) => {
                   {/* RIGHT */}
                   <div className="flex flex-col items-end gap-2 text-xs">
                     {/* TYPE BADGE */}
-                    <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">
+                    <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:text-blue-300 font-medium">
                       {activity.type}
                     </span>
 
                     {/* COMPLETE ICON */}
-                    <Icon name="Check" size={16} className="text-green-600" />
+                    <Icon name="Check" size={16} className="text-green-600 dark:text-green-300" />
                   </div>
                 </div>
               </div>

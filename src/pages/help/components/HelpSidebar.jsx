@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../../../components/AppIcon";
 import { CATEGORIES, searchArticles } from "../content";
-import { BRAND, BRAND_SOFT, brandBg } from "../theme";
+import { BRAND, BRAND_SOFT, brandBg, brandAlpha } from "../theme";
 
 const HelpSidebar = () => {
   const [query, setQuery] = useState("");
@@ -40,7 +40,7 @@ const HelpSidebar = () => {
             className="w-full pl-9 pr-3 py-2.5 rounded-xl border bg-card text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition"
             style={{
               borderColor: focused ? BRAND : undefined,
-              boxShadow: focused ? `0 0 0 3px ${BRAND}1a` : undefined,
+              boxShadow: focused ? `0 0 0 3px ${brandAlpha(0.1)}` : undefined,
             }}
           />
         </div>

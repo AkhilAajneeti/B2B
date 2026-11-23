@@ -102,8 +102,8 @@ const DistributionCell = ({ deal }) => {
       <span
         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
           custom
-            ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+            ? "bg-indigo-50 text-indigo-700 dark:text-indigo-300 border border-indigo-200"
+            : "bg-emerald-50 text-emerald-700 dark:text-emerald-300 border border-emerald-200"
         }`}
       >
         {custom ? "Custom" : "Round robin"}
@@ -116,7 +116,7 @@ const DistributionCell = ({ deal }) => {
           back on, and a rep can sit paused for weeks on quietly falling
           numbers. */}
       {paused > 0 && (
-        <span className="ml-2 rounded-full bg-orange-50 px-1.5 py-0.5 text-[11px] font-semibold text-orange-700 border border-orange-200">
+        <span className="ml-2 rounded-full bg-orange-50 px-1.5 py-0.5 text-[11px] font-semibold text-orange-700 dark:text-orange-300 border border-orange-200">
           {paused} paused
         </span>
       )}
@@ -353,7 +353,7 @@ const SortHeader = ({ label, column }) => (
                           e.stopPropagation();
                           onDealClick(deal);
                         }}
-                        className="h-8 w-8 text-sky-600 hover:text-sky-700"
+                        className="h-8 w-8 text-sky-600 dark:text-sky-300 hover:text-sky-700 dark:hover:text-sky-300"
                         aria-label="View project"
                       >
                         <Icon name="Eye" size={14} />

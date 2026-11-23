@@ -18,7 +18,7 @@ const STAGES = [
     label: "New lead",
     sub: "uncontacted",
     grad: "bg-gradient-to-br from-blue-200 to-background border-blue-200",
-    text: "text-blue-700",
+    text: "text-blue-700 dark:text-blue-300",
     statuses: ["New"],
   },
   {
@@ -26,7 +26,7 @@ const STAGES = [
     label: "Contacted",
     sub: "reached out",
     grad: "bg-gradient-to-br from-indigo-200 to-background border-indigo-200",
-    text: "text-indigo-700",
+    text: "text-indigo-700 dark:text-indigo-300",
     statuses: ["Follow up", "Call Later", "Call Not Connecting", "Call Not Picked"],
   },
   {
@@ -34,7 +34,7 @@ const STAGES = [
     label: "Interested",
     sub: "qualified",
     grad: "bg-gradient-to-br from-emerald-200 to-background border-emerald-200",
-    text: "text-emerald-700",
+    text: "text-emerald-700 dark:text-emerald-300",
     statuses: ["Interested", "Low Interest"],
   },
   {
@@ -42,7 +42,7 @@ const STAGES = [
     label: "Site visit",
     sub: "property shown",
     grad: "bg-gradient-to-br from-sky-200 to-background border-sky-200",
-    text: "text-sky-700",
+    text: "text-sky-700 dark:text-sky-300",
     statuses: ["Site Visit Scheduled", "Site Visit Done"],
   },
   {
@@ -50,7 +50,7 @@ const STAGES = [
     label: "Negotiation",
     sub: "discussing terms",
     grad: "bg-gradient-to-br from-fuchsia-200 to-background border-fuchsia-200",
-    text: "text-fuchsia-700",
+    text: "text-fuchsia-700 dark:text-fuchsia-300",
     statuses: ["QDTD", "Low Budget"],
   },
   {
@@ -58,7 +58,7 @@ const STAGES = [
     label: "Closed · won",
     sub: "booked",
     grad: "bg-gradient-to-br from-amber-200 to-background border-amber-200",
-    text: "text-amber-700",
+    text: "text-amber-700 dark:text-amber-300",
     statuses: ["Purchased", "Converted", "Booked"],
   },
 ];
@@ -68,8 +68,8 @@ const STAGES = [
 // as neutral, not alarming.
 const dropSeverity = (conv) => {
   if (conv == null || conv >= 70) return "bg-slate-100 text-slate-600";
-  if (conv >= 40) return "bg-amber-50 text-amber-700";
-  return "bg-red-50 text-red-600";
+  if (conv >= 40) return "bg-amber-50 text-amber-700 dark:text-amber-300";
+  return "bg-red-50 text-red-600 dark:text-red-300";
 };
 
 const LeadFunnel = () => {

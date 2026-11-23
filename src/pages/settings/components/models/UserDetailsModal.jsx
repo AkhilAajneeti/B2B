@@ -8,22 +8,22 @@ import Icon from "../../../../components/AppIcon";
  */
 const TONES = {
   rose: {
-    tile: "bg-rose-50 text-rose-600",
+    tile: "bg-rose-50 text-rose-600 dark:text-rose-300",
     wash: "from-rose-50/60",
     ring: "ring-rose-100",
   },
   sky: {
-    tile: "bg-sky-50 text-sky-600",
+    tile: "bg-sky-50 text-sky-600 dark:text-sky-300",
     wash: "from-sky-50/60",
     ring: "ring-sky-100",
   },
   violet: {
-    tile: "bg-violet-50 text-violet-600",
+    tile: "bg-violet-50 text-violet-600 dark:text-violet-300",
     wash: "from-violet-50/60",
     ring: "ring-violet-100",
   },
   emerald: {
-    tile: "bg-emerald-50 text-emerald-600",
+    tile: "bg-emerald-50 text-emerald-600 dark:text-emerald-300",
     wash: "from-emerald-50/60",
     ring: "ring-emerald-100",
   },
@@ -253,7 +253,7 @@ const UserDetailsModal = ({ user, onClose, getStatusBadge }) => {
                               },
                               e.invalid && {
                                 label: "Invalid",
-                                className: "bg-rose-100 text-rose-700",
+                                className: "bg-rose-100 text-rose-700 dark:text-rose-300",
                               },
                               e.optOut && {
                                 label: "Opt-out",
@@ -335,7 +335,7 @@ const UserDetailsModal = ({ user, onClose, getStatusBadge }) => {
                         {teams.map((t, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700"
+                            className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700 dark:text-violet-300"
                           >
                             {t}
                           </span>
@@ -355,7 +355,7 @@ const UserDetailsModal = ({ user, onClose, getStatusBadge }) => {
                         {roles.map((r, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800"
+                            className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:text-amber-300"
                           >
                             {r}
                           </span>

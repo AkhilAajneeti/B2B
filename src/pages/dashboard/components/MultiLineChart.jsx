@@ -424,12 +424,12 @@ const MultiLineChart = ({ leads = [] }) => {
                   : { top: 20, right: 30, left: 20, bottom: 5 }
               }
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#2e2e2e" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-border))" />
 
-              <XAxis dataKey="label" stroke="#888" fontSize={12} />
+              <XAxis dataKey="label" stroke="rgb(var(--color-muted-foreground))" fontSize={12} />
 
               <YAxis
-                stroke="#888"
+                stroke="rgb(var(--color-muted-foreground))"
                 fontSize={12}
                 width={35}
                 allowDecimals={false}

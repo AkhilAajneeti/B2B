@@ -37,7 +37,7 @@ const KPICard = ({
       style={{ '--kpi-glow': glow }}
       className={`group relative h-full overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(16,24,40,.04),0_2px_8px_rgba(16,24,40,.05)] transition-all duration-300 ease-premium hover:-translate-y-1 hover:shadow-[0_1px_2px_rgba(16,24,40,.04),0_20px_44px_-16px_var(--kpi-glow)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
         festive
-          ? 'border-[#EBD9B4] bg-[linear-gradient(135deg,#FFFDF8_0%,#FDF6EA_100%)] hover:border-[#DEC28A]'
+          ? 'border-[#EBD9B4] bg-[linear-gradient(135deg,#FFFDF8_0%,#FDF6EA_100%)] hover:border-[#DEC28A] dark:border-amber-900/60 dark:bg-[linear-gradient(135deg,#241B10_0%,#1C160D_100%)] dark:hover:border-amber-800'
           : 'border-[rgba(20,20,30,0.07)] bg-card hover:border-[rgba(20,20,30,0.12)]'
       } ${
         featured ? 'p-5 sm:p-6 md:p-6' : 'p-4 sm:p-5'

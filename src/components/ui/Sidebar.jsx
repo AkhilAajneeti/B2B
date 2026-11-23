@@ -26,13 +26,13 @@ const FESTIVE_SIDEBAR = false;
 // unstyled.
 const NAV_ICON_STYLES = {
   "/dashboard": {
-    icon: "text-indigo-500",
+    icon: "text-indigo-500 dark:text-indigo-400",
     row: "hover:bg-indigo-50",
     tile: "group-hover:bg-indigo-100",
     bar: "bg-indigo-500",
   },
   "/leads": {
-    icon: "text-rose-500",
+    icon: "text-rose-500 dark:text-rose-400",
     row: "hover:bg-rose-50",
     tile: "group-hover:bg-rose-100",
     bar: "bg-rose-500",
@@ -44,49 +44,49 @@ const NAV_ICON_STYLES = {
     bar: "bg-slate-400",
   },
   "/campaigns": {
-    icon: "text-amber-500",
+    icon: "text-amber-500 dark:text-amber-400",
     row: "hover:bg-amber-50",
     tile: "group-hover:bg-amber-100",
     bar: "bg-amber-500",
   },
   "/pipeline": {
-    icon: "text-violet-500",
+    icon: "text-violet-500 dark:text-violet-400",
     row: "hover:bg-violet-50",
     tile: "group-hover:bg-violet-100",
     bar: "bg-violet-500",
   },
   "/sitevisite": {
-    icon: "text-emerald-500",
+    icon: "text-emerald-500 dark:text-emerald-400",
     row: "hover:bg-emerald-50",
     tile: "group-hover:bg-emerald-100",
     bar: "bg-emerald-500",
   },
   "/tasks": {
-    icon: "text-blue-500",
+    icon: "text-blue-500 dark:text-blue-400",
     row: "hover:bg-blue-50",
     tile: "group-hover:bg-blue-100",
     bar: "bg-blue-500",
   },
   "/activities": {
-    icon: "text-fuchsia-500",
+    icon: "text-fuchsia-500 dark:text-fuchsia-400",
     row: "hover:bg-fuchsia-50",
     tile: "group-hover:bg-fuchsia-100",
     bar: "bg-fuchsia-500",
   },
   "/reports": {
-    icon: "text-cyan-600",
+    icon: "text-cyan-600 dark:text-cyan-300",
     row: "hover:bg-cyan-50",
     tile: "group-hover:bg-cyan-100",
     bar: "bg-cyan-600",
   },
   "/team-performance": {
-    icon: "text-teal-600",
+    icon: "text-teal-600 dark:text-teal-300",
     row: "hover:bg-teal-50",
     tile: "group-hover:bg-teal-100",
     bar: "bg-teal-600",
   },
   "/import": {
-    icon: "text-sky-500",
+    icon: "text-sky-500 dark:text-sky-400",
     row: "hover:bg-sky-50",
     tile: "group-hover:bg-sky-100",
     bar: "bg-sky-500",
@@ -98,7 +98,7 @@ const NAV_ICON_STYLES = {
     bar: "bg-zinc-500",
   },
   "/help": {
-    icon: "text-teal-500",
+    icon: "text-teal-500 dark:text-teal-400",
     row: "hover:bg-teal-50",
     tile: "group-hover:bg-teal-100",
     bar: "bg-teal-500",
@@ -334,6 +334,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
         className={`
           fixed top-0 left-0 h-full w-64 ${collapsed ? "lg:w-16" : "lg:w-64"} border-r border-border z-50 lg:z-30
           bg-gradient-to-b from-[#FFFDF8] via-[#FFF8EE] to-[#FFEFDC]
+          dark:from-sidebar dark:via-sidebar dark:to-background
           transform transition-all duration-300 ease-out
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `} >
@@ -487,7 +488,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                           transition-colors duration-200
                           ${isActive
                             ? "bg-white/15"
-                            : `bg-white/70 ring-1 ring-slate-900/[0.04] shadow-[0_1px_2px_rgba(16,24,40,0.07)] backdrop-blur-sm ${iconStyle.tile} group-hover:shadow-[0_2px_6px_rgba(16,24,40,0.10)]`
+                            : `bg-card/70 ring-1 ring-slate-900/[0.04] shadow-[0_1px_2px_rgba(16,24,40,0.07)] backdrop-blur-sm ${iconStyle.tile} group-hover:shadow-[0_2px_6px_rgba(16,24,40,0.10)]`
                           }
                         `}
                       >

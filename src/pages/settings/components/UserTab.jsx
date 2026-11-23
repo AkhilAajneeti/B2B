@@ -517,12 +517,12 @@ const UserTab = () => {
   // changes; everything else falls back to slate.
   const getRolePillClass = (type) => {
     const map = {
-      admin: "bg-rose-50 text-rose-700 border-rose-200",
-      manager: "bg-indigo-50 text-indigo-700 border-indigo-200",
-      owner: "bg-amber-50 text-amber-700 border-amber-200",
+      admin: "bg-rose-50 text-rose-700 dark:text-rose-300 border-rose-200",
+      manager: "bg-indigo-50 text-indigo-700 dark:text-indigo-300 border-indigo-200",
+      owner: "bg-amber-50 text-amber-700 dark:text-amber-300 border-amber-200",
       regular: "bg-slate-50 text-slate-700 border-slate-200",
-      portal: "bg-cyan-50 text-cyan-700 border-cyan-200",
-      api: "bg-violet-50 text-violet-700 border-violet-200",
+      portal: "bg-cyan-50 text-cyan-700 dark:text-cyan-300 border-cyan-200",
+      api: "bg-violet-50 text-violet-700 dark:text-violet-300 border-violet-200",
     };
     return map[type] || "bg-gray-50 text-gray-700 border-gray-200";
   };

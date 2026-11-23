@@ -331,17 +331,17 @@ const PipelineChart = ({ leads = [] }) => {
               data={chartData}
               margin={{ top: 10, right: 0, left: -30, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-border))" />
               <XAxis
                 dataKey="label"
-                stroke="var(--color-muted-foreground)"
+                stroke="rgb(var(--color-muted-foreground))"
                 fontSize={12}
               />
-              <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+              <YAxis stroke="rgb(var(--color-muted-foreground))" fontSize={12} />
               <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="value"
-                fill="var(--color-primary)"
+                fill="rgb(var(--color-primary))"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>

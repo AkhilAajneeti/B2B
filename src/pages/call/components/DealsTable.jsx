@@ -35,19 +35,19 @@ const DealsTable = ({
 
   const getStageColor = (stage) => {
     const colors = {
-      Planned: "bg-blue-100 text-blue-800",
-      "Not Held": "bg-red-100 text-red-800",
-      Held: "bg-green-100 text-green-800",
+      Planned: "bg-blue-100 text-blue-800 dark:text-blue-300",
+      "Not Held": "bg-red-100 text-red-800 dark:text-red-300",
+      Held: "bg-green-100 text-green-800 dark:text-green-300",
     };
 
     return colors?.[stage] || "bg-gray-100 text-gray-800";
   };
 
   const getProbabilityColor = (probability) => {
-    if (probability >= 80) return "text-green-600";
-    if (probability >= 60) return "text-yellow-600";
-    if (probability >= 40) return "text-orange-600";
-    return "text-red-600";
+    if (probability >= 80) return "text-green-600 dark:text-green-300";
+    if (probability >= 60) return "text-yellow-600 dark:text-yellow-300";
+    if (probability >= 40) return "text-orange-600 dark:text-orange-300";
+    return "text-red-600 dark:text-red-300";
   };
 
   const getSortIcon = (column) => {

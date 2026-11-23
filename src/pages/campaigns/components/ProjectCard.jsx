@@ -167,7 +167,7 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-[3px] text-[10.5px] font-bold uppercase tracking-[0.06em] ${
                 isActive
-                  ? "border-emerald-600/20 bg-emerald-50 text-emerald-700"
+                  ? "border-emerald-600/20 bg-emerald-50 text-emerald-700 dark:text-emerald-300"
                   : "border-slate-300/60 bg-slate-50 text-slate-500"
               }`}
             >
@@ -212,7 +212,7 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
         )}
 
         {/* ── Metrics panel ──────────────────────────────────────── */}
-        <div className="rounded-[14px] border border-[rgba(20,20,30,0.07)] bg-gradient-to-b from-slate-50/80 to-white p-3.5">
+        <div className="rounded-[14px] border border-[rgba(20,20,30,0.07)] bg-gradient-to-b from-slate-50/80 to-card p-3.5">
           <dl className="flex items-stretch">
             <div className="flex-1 pr-3.5">
               <dt className="text-[9.5px] font-extrabold uppercase tracking-[0.09em] text-muted-foreground">
@@ -231,7 +231,7 @@ const ProjectCard = ({ project, index = 0, onOpen }) => {
               </dt>
               <dd
                 className={`mt-1 flex items-center gap-1 text-[22px] font-bold leading-none tabular-nums tracking-tight ${
-                  isActive ? "text-emerald-600" : "text-foreground"
+                  isActive ? "text-emerald-600 dark:text-emerald-300" : "text-foreground"
                 }`}
               >
                 {today > 0 ? `+${today}` : "0"}

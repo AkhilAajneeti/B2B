@@ -68,36 +68,36 @@ const QUICK_DATE_PILLS = [
     value: "today",
     label: "Today",
     dot: "bg-emerald-500",
-    idle: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-    active: "border-emerald-400 bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300",
+    idle: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100",
+    active: "border-emerald-400 bg-emerald-100 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-300",
   },
   {
     value: "yesterday",
     label: "Yesterday",
     dot: "bg-amber-500",
-    idle: "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100",
-    active: "border-amber-400 bg-amber-100 text-amber-800 ring-1 ring-amber-300",
+    idle: "border-amber-200 bg-amber-50 text-amber-700 dark:text-amber-300 hover:bg-amber-100",
+    active: "border-amber-400 bg-amber-100 text-amber-800 dark:text-amber-300 ring-1 ring-amber-300",
   },
   {
     value: "lastSevenDays",
     label: "Last 7 Days",
     dot: "bg-sky-500",
-    idle: "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100",
-    active: "border-sky-400 bg-sky-100 text-sky-800 ring-1 ring-sky-300",
+    idle: "border-sky-200 bg-sky-50 text-sky-700 dark:text-sky-300 hover:bg-sky-100",
+    active: "border-sky-400 bg-sky-100 text-sky-800 dark:text-sky-300 ring-1 ring-sky-300",
   },
   {
     value: "currentMonth",
     label: "Current Month",
     dot: "bg-violet-500",
-    idle: "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100",
-    active: "border-violet-400 bg-violet-100 text-violet-800 ring-1 ring-violet-300",
+    idle: "border-violet-200 bg-violet-50 text-violet-700 dark:text-violet-300 hover:bg-violet-100",
+    active: "border-violet-400 bg-violet-100 text-violet-800 dark:text-violet-300 ring-1 ring-violet-300",
   },
   {
     value: "lastMonth",
     label: "Last Month",
     dot: "bg-rose-500",
-    idle: "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100",
-    active: "border-rose-400 bg-rose-100 text-rose-800 ring-1 ring-rose-300",
+    idle: "border-rose-200 bg-rose-50 text-rose-700 dark:text-rose-300 hover:bg-rose-100",
+    active: "border-rose-400 bg-rose-100 text-rose-800 dark:text-rose-300 ring-1 ring-rose-300",
   },
 ];
 
@@ -645,14 +645,14 @@ const DealsFilters = ({
         <div className="relative px-5 py-3 bg-gradient-to-r from-violet-100/80 via-fuchsia-100/70 to-pink-100/80 border-b border-violet-200/60">
           <div className="relative flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-white/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600">
+              <div className="w-9 h-9 rounded-full bg-card/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600 dark:text-violet-300">
                 <Icon name="CheckCircle2" size={18} />
               </div>
               <div>
-                <p className="text-sm font-semibold leading-tight text-violet-900">
+                <p className="text-sm font-semibold leading-tight text-violet-900 dark:text-violet-300">
                   {selectedCount} lead{selectedCount !== 1 ? "s" : ""} selected
                 </p>
-                <p className="text-[11px] text-violet-700/70 leading-tight mt-0.5">
+                <p className="text-[11px] text-violet-700/70 dark:text-violet-300/70 leading-tight mt-0.5">
                   Pick an action to apply to all
                 </p>
               </div>
@@ -665,8 +665,8 @@ const DealsFilters = ({
                   onClick={() => handleBulkActionSelect(action.value)}
                   className={
                     action.destructive
-                      ? "bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-300 shadow-sm"
-                      : "bg-white/90 hover:bg-white text-violet-700 hover:text-violet-800 border border-violet-300 shadow-sm"
+                      ? "bg-rose-50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 hover:text-rose-800 dark:hover:text-rose-300 border border-rose-300 shadow-sm"
+                      : "bg-card/90 hover:bg-card text-violet-700 dark:text-violet-300 hover:text-violet-800 dark:hover:text-violet-300 border border-violet-300 shadow-sm"
                   }
                 >
                   <Icon name={action.icon} size={14} className="mr-1.5" />
@@ -683,7 +683,7 @@ const DealsFilters = ({
                   size="sm"
                   variant="ghost"
                   onClick={onClearSelection}
-                  className="text-violet-700 hover:text-violet-900 hover:bg-white/70"
+                  className="text-violet-700 dark:text-violet-300 hover:text-violet-900 dark:hover:text-violet-300 hover:bg-card/70"
                 >
                   <Icon name="X" size={14} className="mr-1.5" />
                   Clear selection

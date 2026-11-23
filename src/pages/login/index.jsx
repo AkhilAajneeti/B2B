@@ -24,19 +24,19 @@ const FEATURES = [
     icon: "TrendingUp",
     title: "Real-time Performance",
     body: "Track progress and make informed decisions",
-    tile: "bg-rose-100 text-rose-600",
+    tile: "bg-rose-100 text-rose-600 dark:text-rose-300",
   },
   {
     icon: "Users",
     title: "Seamless Team Collaboration",
     body: "Keep teams aligned and work moving forward",
-    tile: "bg-violet-100 text-violet-600",
+    tile: "bg-violet-100 text-violet-600 dark:text-violet-300",
   },
   {
     icon: "ShieldCheck",
     title: "Secure & Reliable Access",
     body: "Your workspace, protected at every step",
-    tile: "bg-amber-100 text-amber-600",
+    tile: "bg-amber-100 text-amber-600 dark:text-amber-300",
   },
 ];
 
@@ -202,7 +202,7 @@ const LoginPage = () => {
             className="mx-auto mb-5 mt-6 w-[260px] select-none"
           />
 
-          <div className="mx-auto w-full max-w-[470px] rounded-3xl bg-white/[0.97] px-8 pb-9 pt-8 shadow-[0_24px_60px_-30px_rgba(90,60,25,0.4)] sm:px-10 sm:pb-10">
+          <div className="mx-auto w-full max-w-[470px] rounded-3xl bg-card/[0.97] px-8 pb-9 pt-8 shadow-[0_24px_60px_-30px_rgba(90,60,25,0.4)] sm:px-10 sm:pb-10">
             <img
               src="/assets/images/logo.webp"
               alt="AAJneeti"
@@ -249,7 +249,7 @@ const LoginPage = () => {
         />
       </Helmet>
 
-      <div className="relative min-h-screen grid grid-cols-1 lg:grid-cols-[60%_40%] bg-[#f6f2ea]">
+      <div className="force-light relative min-h-screen grid grid-cols-1 lg:grid-cols-[60%_40%] bg-[#f6f2ea]">
         {/* ───────────────────────── LEFT · HERO ───────────────────────── */}
         <div
           onPointerMove={handlePointer}
@@ -306,7 +306,7 @@ const LoginPage = () => {
               <motion.span
                 key={i}
                 aria-hidden
-                className="absolute rounded-full bg-white/70 shadow-[0_0_12px_2px_rgba(255,255,255,0.45)]"
+                className="absolute rounded-full bg-card/70 shadow-[0_0_12px_2px_rgba(255,255,255,0.45)]"
                 style={{
                   left: p.left,
                   top: p.top,

@@ -118,14 +118,14 @@ const RevenueChart = () => {
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'bar' ? (
             <BarChart data={currentData} barGap={10}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-border))" />
               <XAxis 
                 dataKey="period" 
-                stroke="#64748B"
+                stroke="rgb(var(--color-muted-foreground))"
                 fontSize={12}
               />
               <YAxis 
-                stroke="#64748B"
+                stroke="rgb(var(--color-muted-foreground))"
                 fontSize={12}
                 tickFormatter={formatYAxis}
               />
@@ -151,14 +151,14 @@ const RevenueChart = () => {
             </BarChart>
           ) : (
             <LineChart data={currentData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-border))" />
               <XAxis 
                 dataKey="period" 
-                stroke="#64748B"
+                stroke="rgb(var(--color-muted-foreground))"
                 fontSize={12}
               />
               <YAxis 
-                stroke="#64748B"
+                stroke="rgb(var(--color-muted-foreground))"
                 fontSize={12}
                 tickFormatter={formatYAxis}
               />

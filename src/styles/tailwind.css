@@ -5,79 +5,509 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* Core Colors */
-    --color-background: #FAF8F6; /* warm off-white for the main content area — Notion / Linear feel */
-    --color-sidebar: #F9F9F8; /* neutral off-white with a hint of warmth — subtle vs main so the sidebar reads as its own surface */
-    --color-foreground: #0F1419; /* even darker gray for maximum contrast */
-    --color-border: #E2E8F0; /* clean light gray border */
-    --color-input: #FFFFFF; /* clean white input */
-    --color-ring: #A3D9A5; /* much darker mint green ring */
-    
-    /* Card Colors */
-    --color-card: #FFFFFF; /* clean white card */
-    --color-card-foreground: #0F1419; /* even darker gray for maximum contrast */
-    
-    /* Popover Colors */
-    --color-popover: #FFFFFF; /* clean white popover */
-    --color-popover-foreground: #0F1419; /* even darker gray for maximum contrast */
-    
-    /* Muted Colors */
-    --color-muted: #F1F5F9; /* light gray muted */
-    --color-muted-foreground: #1A202C; /* significantly darker for better visibility */
-    
-    /* Primary Colors */
-    --color-primary: #AC2334; /* much darker mint green */
-    --color-primary-foreground: #ffffff; /* even darker gray for maximum contrast */
-    
-    /* Secondary Colors */
-    --color-secondary: #D1A3E8; /* much darker light purple */
-    --color-secondary-foreground: #0F1419; /* even darker gray for maximum contrast */
-    
-    /* Destructive Colors */
-    --color-destructive: #E8A8A0; /* much darker soft pink */
-    --color-destructive-foreground: #4A1010; /* darker red for better contrast */
-    
-    /* Accent Colors */
-    --color-accent: #fee0df; /* much darker pale yellow */
-    --color-accent-foreground: #0F1419; /* even darker gray for maximum contrast */
-    
-    /* Success Colors */
-    --color-success: #A3D9A5; /* much darker mint green */
-    --color-success-foreground: #0A251A; /* darker emerald for better contrast */
-    
-    /* Warning Colors */
-    --color-warning: #D9DB7A; /* much darker pale yellow */
-    --color-warning-foreground: #4A1A08; /* darker amber for better contrast */
-    
-    /* Error Colors */
-    --color-error: #E8A8A0; /* much darker soft pink */
-    --color-error-foreground: #4A1010; /* darker red for better contrast */
+  /* ==========================================================================
+   * THEME TOKENS — light and dark
+   * ==========================================================================
+   *
+   * Every colour the app uses resolves to one of these variables, so a theme
+   * switch is a variable swap rather than a sweep through 176 component files.
+   *
+   * WHY THE VALUES ARE "R G B" AND NOT HEX. Tailwind can only apply an opacity
+   * modifier (`bg-card/80`) to a colour it can take apart. Given a plain
+   * `var(--color-card)` it silently generates NOTHING for the modified class —
+   * verified in the built stylesheet: `.text-muted-foreground\/70` did not
+   * exist, so those 207 usages were falling back to inherited colour. Written
+   * as channels and consumed as `rgb(var(--x) / <alpha-value>)` in
+   * tailwind.config.js, they work. The hex each triplet came from is in the
+   * comment beside it.
+   *
+   * THE .dark CLASS goes on <html>, set by utils/theme.js and, before first
+   * paint, by the inline script in index.html. `darkMode: "class"` in the
+   * Tailwind config is what makes `dark:` variants key off it.
+   * ========================================================================== */
+  /* `.force-light` pins a subtree to the light tokens even when <html> is
+     dark. It exists for the LOGIN screen, which is a hand-designed warm cream
+     splash — ivory, gold, festive artwork — not an app surface. There is no
+     dark version of that palette, and half-converting it (dark inputs on a
+     cream card) looked worse than either theme. Because CSS variables resolve
+     by proximity, redeclaring them on an ancestor beats the `.dark` on <html>
+     with no !important and no specificity fight. */
+  :root,
+  .force-light {
+    --color-background: 250 248 246; /* #FAF8F6 */
+    --color-sidebar: 249 249 248; /* #F9F9F8 */
+    --color-foreground: 15 20 25; /* #0F1419 */
+    --color-border: 226 232 240; /* #E2E8F0 */
+    --color-input: 255 255 255; /* #FFFFFF */
+    --color-ring: 163 217 165; /* #A3D9A5 */
+    --color-card: 255 255 255; /* #FFFFFF */
+    --color-card-foreground: 15 20 25; /* #0F1419 */
+    --color-popover: 255 255 255; /* #FFFFFF */
+    --color-popover-foreground: 15 20 25; /* #0F1419 */
+    --color-muted: 241 245 249; /* #F1F5F9 */
+    --color-muted-foreground: 26 32 44; /* #1A202C */
+    --color-primary: 172 35 52; /* #AC2334 */
+    --color-primary-foreground: 255 255 255; /* #FFFFFF */
+    --color-secondary: 209 163 232; /* #D1A3E8 */
+    --color-secondary-foreground: 15 20 25; /* #0F1419 */
+    --color-destructive: 232 168 160; /* #E8A8A0 */
+    --color-destructive-foreground: 74 16 16; /* #4A1010 */
+    --color-accent: 254 224 223; /* #FEE0DF */
+    --color-accent-foreground: 15 20 25; /* #0F1419 */
+    --color-success: 163 217 165; /* #A3D9A5 */
+    --color-success-foreground: 10 37 26; /* #0A251A */
+    --color-warning: 217 219 122; /* #D9DB7A */
+    --color-warning-foreground: 74 26 8; /* #4A1A08 */
+    --color-error: 232 168 160; /* #E8A8A0 */
+    --color-error-foreground: 74 16 16; /* #4A1010 */
+
+    /* ------------------------------------------------------------------------
+     * NEUTRAL RAMPS — Tailwind's own slate/gray/neutral values, unchanged.
+     *
+     * These exist so the ~900 hardcoded `bg-slate-50` / `text-slate-700` /
+     * `bg-gray-300` utilities already in the codebase can follow the theme
+     * without being rewritten. In light mode they are byte-for-byte what
+     * Tailwind ships, so defining them here changes nothing; the .dark block
+     * below is where they earn their keep.
+     *
+     * This works because the codebase uses the ramp in ONE direction — light
+     * surfaces, dark text. Measured: only 6 places used a ramp step as a DARK
+     * surface, and inverting those would have turned the dark tooltip white
+     * with white text still on it. All six were rewritten to say what they
+     * actually mean instead of being given a `dark:` override:
+     *
+     *   - components/ui/Tooltip.jsx  the panel is dark in BOTH themes, so it
+     *                               is a literal #171A20, not a ramp step
+     *   - the status trail inside it uses white-alpha for the same reason
+     *   - three modal scrims became `bg-black/NN`, which is what a scrim is
+     *
+     * So the ramps are now used in one direction only, with no exceptions —
+     * keep it that way: reach for `bg-black/NN` or a literal when you want
+     * something dark in both themes.
+     * --------------------------------------------------------------------- */
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+
+    --zinc-50: 250 250 250; /* #fafafa */
+    --zinc-100: 244 244 245; /* #f4f4f5 */
+    --zinc-200: 228 228 231; /* #e4e4e7 */
+    --zinc-300: 212 212 216; /* #d4d4d8 */
+    --zinc-400: 161 161 170; /* #a1a1aa */
+    --zinc-500: 113 113 122; /* #71717a */
+    --zinc-600: 82 82 91; /* #52525b */
+    --zinc-700: 63 63 70; /* #3f3f46 */
+    --zinc-800: 39 39 42; /* #27272a */
+    --zinc-900: 24 24 27; /* #18181b */
+    --zinc-950: 9 9 11; /* #09090b */
+
+    --stone-50: 250 250 249; /* #fafaf9 */
+    --stone-100: 245 245 244; /* #f5f5f4 */
+    --stone-200: 231 229 228; /* #e7e5e4 */
+    --stone-300: 214 211 209; /* #d6d3d1 */
+    --stone-400: 168 162 158; /* #a8a29e */
+    --stone-500: 120 113 108; /* #78716c */
+    --stone-600: 87 83 78; /* #57534e */
+    --stone-700: 68 64 60; /* #44403c */
+    --stone-800: 41 37 36; /* #292524 */
+    --stone-900: 28 25 23; /* #1c1917 */
+    --stone-950: 12 10 9; /* #0c0a09 */
+
+    --gray-50: 249 250 251;
+    --gray-100: 243 244 246;
+    --gray-200: 229 231 235;
+    --gray-300: 209 213 219;
+    --gray-400: 156 163 175;
+    --gray-500: 107 114 128;
+    --gray-600: 75 85 99;
+    --gray-700: 55 65 81;
+    --gray-800: 31 41 55;
+    --gray-900: 17 24 39;
+    --gray-950: 3 7 18;
+
+    --neutral-50: 250 250 250;
+    --neutral-100: 245 245 245;
+    --neutral-200: 229 229 229;
+    --neutral-300: 212 212 212;
+    --neutral-400: 163 163 163;
+    --neutral-500: 115 115 115;
+    --neutral-600: 82 82 82;
+    --neutral-700: 64 64 64;
+    --neutral-800: 38 38 38;
+    --neutral-900: 23 23 23;
+    --neutral-950: 10 10 10;
+
+    /* react-select widgets (the three DealDrawers). Their colours live in a
+       JS `styles` object, which produces INLINE styles — no `dark:` variant
+       can reach them, and inline wins over any class we could add. So the
+       values became rgb(var(--...)) and the two that have no semantic token
+       get one here. Light values are the originals, unchanged. */
+    --select-chip: 238 242 255; /* #EEF2FF */
+    --select-chip-text: 91 33 182; /* #5B21B6 */
+
+    /* ------------------------------------------------------------------------
+     * HUE RAMPS, steps 50/100/200 only.
+     *
+     * These are the tinted surfaces the app uses for meaning — a green call
+     * button's hover, a red warning panel, the blue row highlight. There are
+     * 895 of them across 60 files, which is far past annotating each with a
+     * `dark:` variant; and at steps 50-200 every one of them is a near-WHITE
+     * fill, so in dark mode they read as white slabs. The leads table's
+     * `hover:bg-sky-50` row was the obvious one.
+     *
+     * Only 50/100/200 are redefined. Steps 300-950 keep Tailwind's values, so
+     * `bg-emerald-500` badges, `text-red-600` labels and every saturated
+     * accent are untouched in both themes — it is specifically the pale end
+     * of each ramp, the end used for surfaces, that follows the theme.
+     *
+     * Light values are Tailwind's own, generated from the installed package.
+     * ---------------------------------------------------------------------- */
+    --red-50: 254 242 242; /* #fef2f2 */
+    --red-100: 254 226 226; /* #fee2e2 */
+    --red-200: 254 202 202; /* #fecaca */
+
+    --orange-50: 255 247 237; /* #fff7ed */
+    --orange-100: 255 237 213; /* #ffedd5 */
+    --orange-200: 254 215 170; /* #fed7aa */
+
+    --amber-50: 255 251 235; /* #fffbeb */
+    --amber-100: 254 243 199; /* #fef3c7 */
+    --amber-200: 253 230 138; /* #fde68a */
+
+    --yellow-50: 254 252 232; /* #fefce8 */
+    --yellow-100: 254 249 195; /* #fef9c3 */
+    --yellow-200: 254 240 138; /* #fef08a */
+
+    --lime-50: 247 254 231; /* #f7fee7 */
+    --lime-100: 236 252 203; /* #ecfccb */
+    --lime-200: 217 249 157; /* #d9f99d */
+
+    --green-50: 240 253 244; /* #f0fdf4 */
+    --green-100: 220 252 231; /* #dcfce7 */
+    --green-200: 187 247 208; /* #bbf7d0 */
+
+    --emerald-50: 236 253 245; /* #ecfdf5 */
+    --emerald-100: 209 250 229; /* #d1fae5 */
+    --emerald-200: 167 243 208; /* #a7f3d0 */
+
+    --teal-50: 240 253 250; /* #f0fdfa */
+    --teal-100: 204 251 241; /* #ccfbf1 */
+    --teal-200: 153 246 228; /* #99f6e4 */
+
+    --cyan-50: 236 254 255; /* #ecfeff */
+    --cyan-100: 207 250 254; /* #cffafe */
+    --cyan-200: 165 243 252; /* #a5f3fc */
+
+    --sky-50: 240 249 255; /* #f0f9ff */
+    --sky-100: 224 242 254; /* #e0f2fe */
+    --sky-200: 186 230 253; /* #bae6fd */
+
+    --blue-50: 239 246 255; /* #eff6ff */
+    --blue-100: 219 234 254; /* #dbeafe */
+    --blue-200: 191 219 254; /* #bfdbfe */
+
+    --indigo-50: 238 242 255; /* #eef2ff */
+    --indigo-100: 224 231 255; /* #e0e7ff */
+    --indigo-200: 199 210 254; /* #c7d2fe */
+
+    --violet-50: 245 243 255; /* #f5f3ff */
+    --violet-100: 237 233 254; /* #ede9fe */
+    --violet-200: 221 214 254; /* #ddd6fe */
+
+    --purple-50: 250 245 255; /* #faf5ff */
+    --purple-100: 243 232 255; /* #f3e8ff */
+    --purple-200: 233 213 255; /* #e9d5ff */
+
+    --fuchsia-50: 253 244 255; /* #fdf4ff */
+    --fuchsia-100: 250 232 255; /* #fae8ff */
+    --fuchsia-200: 245 208 254; /* #f5d0fe */
+
+    --pink-50: 253 242 248; /* #fdf2f8 */
+    --pink-100: 252 231 243; /* #fce7f3 */
+    --pink-200: 251 207 232; /* #fbcfe8 */
+
+    --rose-50: 255 241 242; /* #fff1f2 */
+    --rose-100: 255 228 230; /* #ffe4e6 */
+    --rose-200: 254 205 211; /* #fecdd3 */
+
+    /* Help-centre hero wash. The pages build this gradient in an INLINE
+       style, which no `dark:` variant can reach, so the two ends live here
+       instead. Light is the brand's soft pink (#FBE9EC) fading to the card. */
+    --help-soft: 251 233 236; /* #FBE9EC */
+    --help-brand: 172 35 52; /* #AC2334 — the brand crimson itself */
+
+    /* Theme-toggle fill (Header), built to sit beside the notification bell
+       without being outshone by it. Warm daylight in light mode: a radial that
+       is palest at the centre and strongest at the rim, the same construction
+       as --bell-*, so the two controls read as a matched pair. */
+    --toggle-core: #FFFEF8;
+    --toggle-mid: #FEF6DC;
+    --toggle-edge: #FCD96B;
+    --toggle-glow: rgba(250, 204, 21, 0.45);
+
+    /* Notification bell fill (Header). The light values were matched to a
+       reference icon pixel by pixel — a radial fill that is strongest at the
+       circumference and fades to near-white inside. Lifted into variables so
+       the dark theme can restate them; left inline in the component they made
+       the bell a white porthole on a dark header. */
+    --bell-core: #FAFCFE;
+    --bell-mid: #F2F7FD;
+    --bell-edge: #D0E7FE;
+
+    color-scheme: light;
+  }
+
+  /* ==========================================================================
+   * DARK
+   * ==========================================================================
+   * Surfaces step up in lightness as they come forward — background (#0E1116)
+   * < sidebar < card < popover — so stacked panels keep their edges without
+   * relying on borders, which are the first thing to disappear in dark mode.
+   *
+   * THE PASTEL CHIPS ARE DELIBERATELY UNCHANGED: secondary, destructive,
+   * accent, success, warning, error. Each is a pale fill paired with a dark
+   * `*-foreground`, which is what makes a status badge legible. Darkening the
+   * fill would mean lightening the text too, and the result stops reading as a
+   * chip at all. Pale chips on a dark page look intentional; half-inverted
+   * ones look broken.
+   *
+   * `--color-primary` is also unchanged, at the brand's exact #AC2334. It is
+   * noticeably darker against a dark page than a light one — brightening it is
+   * a one-value change here if you want it, but it would no longer be the
+   * brand colour.
+   * ========================================================================== */
+  .dark {
+    --color-background: 14 17 22; /* #0E1116 */
+    --color-sidebar: 18 22 32; /* #121620 */
+    --color-foreground: 231 235 242; /* #E7EBF2 */
+    --color-border: 51 60 76; /* #333C4C — lifted from #262C38 so a 1px
+                                   divider is actually visible on #0E1116;
+                                   measured 1.35:1 before, 1.78:1 after */
+    --color-input: 23 28 37; /* #171C25 */
+    --color-ring: 163 217 165; /* #A3D9A5 */
+    --color-card: 22 27 35; /* #161B23 */
+    --color-card-foreground: 231 235 242; /* #E7EBF2 */
+    --color-popover: 26 31 41; /* #1A1F29 */
+    --color-popover-foreground: 231 235 242; /* #E7EBF2 */
+    --color-muted: 30 36 48; /* #1E2430 */
+    --color-muted-foreground: 174 184 199; /* #AEB8C7 */
+    --color-primary: 172 35 52; /* #AC2334 */
+    --color-primary-foreground: 255 255 255; /* #FFFFFF */
+    --color-secondary: 209 163 232; /* #D1A3E8 */
+    --color-secondary-foreground: 15 20 25; /* #0F1419 */
+    --color-destructive: 232 168 160; /* #E8A8A0 */
+    --color-destructive-foreground: 74 16 16; /* #4A1010 */
+    --color-accent: 254 224 223; /* #FEE0DF */
+    --color-accent-foreground: 15 20 25; /* #0F1419 */
+    --color-success: 163 217 165; /* #A3D9A5 */
+    --color-success-foreground: 10 37 26; /* #0A251A */
+    --color-warning: 217 219 122; /* #D9DB7A */
+    --color-warning-foreground: 74 26 8; /* #4A1A08 */
+    --color-error: 232 168 160; /* #E8A8A0 */
+    --color-error-foreground: 74 16 16; /* #4A1010 */
+
+    --slate-50: 23 28 36;
+    --slate-100: 28 34 44;
+    --slate-200: 38 45 57;
+    --slate-300: 51 60 74;
+    --slate-400: 124 135 152;
+    --slate-500: 150 161 177;
+    --slate-600: 178 188 201;
+    --slate-700: 203 212 224;
+    --slate-800: 223 229 238;
+    --slate-900: 238 242 248;
+    --slate-950: 248 250 255;
+
+    --zinc-50: 24 25 28;
+    --zinc-100: 29 31 35;
+    --zinc-200: 39 42 47;
+    --zinc-300: 52 56 64;
+    --zinc-400: 128 133 142;
+    --zinc-500: 154 159 168;
+    --zinc-600: 182 187 195;
+    --zinc-700: 206 211 218;
+    --zinc-800: 226 230 235;
+    --zinc-900: 240 242 245;
+    --zinc-950: 249 250 251;
+
+    --stone-50: 23 24 26;
+    --stone-100: 28 29 32;
+    --stone-200: 38 40 43;
+    --stone-300: 52 54 58;
+    --stone-400: 128 131 138;
+    --stone-500: 154 157 164;
+    --stone-600: 182 185 191;
+    --stone-700: 206 209 214;
+    --stone-800: 226 228 232;
+    --stone-900: 240 241 243;
+    --stone-950: 250 250 250;
+
+    --gray-50: 24 25 28;
+    --gray-100: 29 31 35;
+    --gray-200: 39 42 47;
+    --gray-300: 52 56 64;
+    --gray-400: 128 133 142;
+    --gray-500: 154 159 168;
+    --gray-600: 182 187 195;
+    --gray-700: 206 211 218;
+    --gray-800: 226 230 235;
+    --gray-900: 240 242 245;
+    --gray-950: 249 250 251;
+
+    --neutral-50: 23 24 26;
+    --neutral-100: 28 29 32;
+    --neutral-200: 38 40 43;
+    --neutral-300: 52 54 58;
+    --neutral-400: 128 131 138;
+    --neutral-500: 154 157 164;
+    --neutral-600: 182 185 191;
+    --neutral-700: 206 209 214;
+    --neutral-800: 226 228 232;
+    --neutral-900: 240 241 243;
+    --neutral-950: 250 250 250;
+
+    /* Tells the browser to render native widgets — scrollbars, form controls,
+       the autofill overlay — dark as well. Without it they stay light and the
+       page looks half-converted at the edges. */
+    /* Hue tints: each hue's own 500 mixed into the page colour at 12% / 19% /
+       30%. Computed rather than hand-picked, so every hue is equally subtle
+       and still recognisably itself — a red panel stays red, three steps of
+       emphasis still read as three steps. */
+    --red-50: 41 23 28;
+    --red-100: 57 27 31;
+    --red-200: 82 32 36;
+
+    --orange-50: 42 29 22;
+    --orange-100: 59 36 22;
+    --orange-200: 85 46 22;
+
+    --amber-50: 42 34 21;
+    --amber-100: 58 44 20;
+    --amber-200: 83 59 19;
+
+    --yellow-50: 40 36 20;
+    --yellow-100: 56 48 19;
+    --yellow-200: 80 66 18;
+
+    --lime-50: 28 39 22;
+    --lime-100: 36 53 22;
+    --lime-200: 49 73 22;
+
+    --green-50: 16 39 31;
+    --green-100: 18 51 36;
+    --green-200: 20 71 44;
+
+    --emerald-50: 14 37 35;
+    --emerald-100: 14 49 42;
+    --emerald-200: 15 67 54;
+
+    --teal-50: 15 37 39;
+    --teal-100: 15 49 49;
+    --teal-200: 16 67 65;
+
+    --cyan-50: 13 37 45;
+    --cyan-100: 12 48 58;
+    --cyan-200: 12 67 79;
+
+    --sky-50: 14 35 47;
+    --sky-100: 14 45 62;
+    --sky-200: 14 61 85;
+
+    --blue-50: 19 31 49;
+    --blue-100: 23 38 65;
+    --blue-200: 28 51 89;
+
+    --indigo-50: 24 27 48;
+    --indigo-100: 30 33 64;
+    --indigo-200: 40 43 88;
+
+    --violet-50: 29 26 49;
+    --violet-100: 38 31 65;
+    --violet-200: 51 40 89;
+
+    --purple-50: 32 25 49;
+    --purple-100: 43 30 65;
+    --purple-200: 60 37 90;
+
+    --fuchsia-50: 38 23 48;
+    --fuchsia-100: 53 27 63;
+    --fuchsia-200: 75 33 87;
+
+    --pink-50: 41 24 38;
+    --pink-100: 56 27 47;
+    --pink-200: 81 34 61;
+
+    --rose-50: 42 23 31;
+    --rose-100: 58 26 36;
+    --rose-200: 83 31 44;
+
+    /* Chip fill drops to a dark indigo and its label lifts to violet-300, so
+       a selected value stays readable instead of dark-on-dark. */
+    --select-chip: 30 36 56; /* #1E2438 */
+    --select-chip-text: 196 181 253; /* #C4B5FD */
+
+    /* Deep plum rather than pink: the same brand hue at dark-surface
+       lightness, so the Help hero still reads as branded instead of as a
+       pink slab on a dark page. */
+    --help-soft: 44 26 32; /* #2C1A20 */
+    /* The crimson lifted to a rose tint: #AC2334 as TEXT on a dark plum
+       card measures about 2:1, which is unreadable. This is the same hue
+       at a lightness that works against dark surfaces. */
+    --help-brand: 240 138 152; /* #F08A98 */
+
+    /* Night sky. Deep indigo rather than grey so the control still reads as a
+       lit object on a dark header, and so the switch between themes is a
+       change of scene rather than a change of brightness. */
+    --toggle-core: #222B45;
+    --toggle-mid: #1C2440;
+    --toggle-edge: #3A4A80;
+    --toggle-glow: rgba(129, 140, 248, 0.45);
+
+    /* Same radial shape as light — strongest at the rim, fading inward — but
+       in the blues of a dark UI, so the bell still reads as a lit button
+       rather than a hole cut in the header. */
+    --bell-core: #19212E;
+    --bell-mid: #1B2636;
+    --bell-edge: #24405F;
+
+    color-scheme: dark;
   }
 
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Neutralize Chrome's autofill tint on the login inputs — force a white
-     background with dark text so our brand focus border/ring shows through
-     instead of the browser's mint-blue autofill styling. */
+  /* Neutralize Chrome's autofill tint on the login inputs — force the input
+     background with readable text so our brand focus border/ring shows through
+     instead of the browser's mint-blue autofill styling.
+
+     Reads --color-input rather than a literal #ffffff so it follows the theme;
+     hardcoding white here put a white slab inside a dark input the moment the
+     browser autofilled it. */
   .login-input:-webkit-autofill,
   .login-input:-webkit-autofill:hover,
   .login-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
-    -webkit-text-fill-color: #333333;
-    caret-color: #333333;
+    -webkit-box-shadow: 0 0 0 1000px rgb(var(--color-input)) inset;
+    -webkit-text-fill-color: rgb(var(--color-foreground));
+    caret-color: rgb(var(--color-foreground));
     transition: background-color 9999s ease-in-out 0s;
   }
   .login-input:-webkit-autofill:focus {
     -webkit-box-shadow:
-      0 0 0 1000px #ffffff inset,
+      0 0 0 1000px rgb(var(--color-input)) inset,
       0 0 0 4px rgba(172, 35, 52, 0.12);
     border-color: #ac2334;
   }
@@ -103,4 +533,52 @@
   .transition-spring {
     transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
+}
+
+/* ==========================================================================
+ * react-select, dark theme
+ * ==========================================================================
+ * Every instance sets classNamePrefix="react-select", which is what makes
+ * this possible at all — the library otherwise emits hashed emotion classes
+ * with nothing stable to target.
+ *
+ * ONLY the slots with no inline `styles` entry are handled here. react-select
+ * renders its `styles` prop as INLINE styles, which beat any class, so the
+ * control, chips and options carry their theming as rgb(var(--...)) inside the
+ * component instead. These rules cover the menu surface, which most instances
+ * never styled and which therefore came out library-default WHITE.
+ * ========================================================================== */
+.dark .react-select__menu,
+.dark .react-select__menu-list {
+  background-color: rgb(var(--color-popover));
+  color: rgb(var(--color-popover-foreground));
+}
+
+.dark .react-select__option {
+  background-color: transparent;
+  color: rgb(var(--color-popover-foreground));
+}
+
+.dark .react-select__option--is-focused {
+  background-color: rgb(var(--color-muted));
+}
+
+.dark .react-select__option--is-selected {
+  background-color: rgb(var(--select-chip));
+  color: rgb(var(--select-chip-text));
+}
+
+.dark .react-select__single-value,
+.dark .react-select__input-container,
+.dark .react-select__input {
+  color: rgb(var(--color-foreground)) !important;
+}
+
+.dark .react-select__indicator-separator {
+  background-color: rgb(var(--color-border));
+}
+
+.dark .react-select__no-options-message,
+.dark .react-select__loading-message {
+  color: rgb(var(--color-muted-foreground));
 }

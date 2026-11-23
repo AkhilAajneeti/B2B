@@ -68,7 +68,7 @@ const FunnelTooltip = ({ active, payload }) => {
   if (!row) return null;
 
   return (
-    <div className="rounded-xl border border-white/40 bg-white/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-3 text-xs min-w-[200px]">
+    <div className="rounded-xl border border-white/40 bg-card/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-3 text-xs min-w-[200px]">
       <div className="flex items-center gap-2 mb-2">
         <span
           className="w-2.5 h-2.5 rounded-sm"
@@ -94,7 +94,7 @@ const FunnelTooltip = ({ active, payload }) => {
         {row.dropOff > 0 && (
           <div className="flex items-center justify-between gap-4 pt-1 mt-1 border-t border-slate-200/70">
             <span className="text-slate-500">Drop-off vs prev.</span>
-            <span className="font-semibold text-rose-600 tabular-nums">
+            <span className="font-semibold text-rose-600 dark:text-rose-300 tabular-nums">
               −{row.dropOff}%
             </span>
           </div>
@@ -147,9 +147,9 @@ const RepCard = ({ rep, index }) => {
   const hasTrend = rep.trend.some((t) => t.value > 0);
   const growthBadge =
     rep.growthDirection === "up"
-      ? { icon: "ArrowUpRight", className: "text-emerald-700 bg-emerald-50" }
+      ? { icon: "ArrowUpRight", className: "text-emerald-700 dark:text-emerald-300 bg-emerald-50" }
       : rep.growthDirection === "down"
-        ? { icon: "ArrowDownRight", className: "text-rose-700 bg-rose-50" }
+        ? { icon: "ArrowDownRight", className: "text-rose-700 dark:text-rose-300 bg-rose-50" }
         : { icon: "Minus", className: "text-slate-500 bg-slate-100" };
 
   // Width of the active-leads progress bar relative to total.
@@ -191,26 +191,26 @@ const RepCard = ({ rep, index }) => {
 
       <div className="grid grid-cols-3 gap-1.5 mb-3 text-center">
         <div className="rounded-md bg-emerald-50 py-1">
-          <div className="text-[9px] uppercase tracking-wider text-emerald-700 font-medium">
+          <div className="text-[9px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300 font-medium">
             Won
           </div>
-          <div className="text-sm font-bold text-emerald-700 tabular-nums">
+          <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
             {rep.purchased}
           </div>
         </div>
         <div className="rounded-md bg-blue-50 py-1">
-          <div className="text-[9px] uppercase tracking-wider text-blue-700 font-medium">
+          <div className="text-[9px] uppercase tracking-wider text-blue-700 dark:text-blue-300 font-medium">
             Active
           </div>
-          <div className="text-sm font-bold text-blue-700 tabular-nums">
+          <div className="text-sm font-bold text-blue-700 dark:text-blue-300 tabular-nums">
             {rep.active}
           </div>
         </div>
         <div className="rounded-md bg-violet-50 py-1">
-          <div className="text-[9px] uppercase tracking-wider text-violet-700 font-medium">
+          <div className="text-[9px] uppercase tracking-wider text-violet-700 dark:text-violet-300 font-medium">
             Conv
           </div>
-          <div className="text-sm font-bold text-violet-700 tabular-nums">
+          <div className="text-sm font-bold text-violet-700 dark:text-violet-300 tabular-nums">
             {rep.conversion}%
           </div>
         </div>
@@ -240,7 +240,7 @@ const RepCard = ({ rep, index }) => {
             <Line
               type="monotone"
               dataKey="value"
-              stroke={hasTrend ? rep.color : "#CBD5E1"}
+              stroke={hasTrend ? rep.color : "rgb(var(--color-border))"}
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 3, fill: rep.color, strokeWidth: 0 }}
@@ -267,7 +267,7 @@ const RepCard = ({ rep, index }) => {
 const EmptyState = ({ monthLabel }) => (
   <div className="flex flex-col items-center justify-center gap-3 text-center px-4 py-10">
     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center">
-      <Icon name="Filter" size={24} className="text-violet-500" />
+      <Icon name="Filter" size={24} className="text-violet-500 dark:text-violet-400" />
     </div>
     <div>
       <p className="text-sm font-semibold text-slate-700">
@@ -458,14 +458,14 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
               />
               <KpiTile
                 icon="Target"
-                iconColor="text-violet-600"
+                iconColor="text-violet-600 dark:text-violet-300"
                 label="Top → Won"
                 value={`${overallConversion}%`}
                 accent
               />
               <KpiTile
                 icon="AlertTriangle"
-                iconColor="text-rose-500"
+                iconColor="text-rose-500 dark:text-rose-400"
                 label="Top drop"
                 value={highestDropOff ? `${highestDropOff.dropOff}%` : "—"}
               />
@@ -484,12 +484,12 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
                       horizontal rules would cross every bar for nothing. */}
                   <CartesianGrid
                     horizontal={false}
-                    stroke="#E2E8F0"
+                    stroke="rgb(var(--color-border))"
                     strokeDasharray="3 3"
                   />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 10, fill: "#94A3B8" }}
+                    tick={{ fontSize: 10, fill: "rgb(var(--color-muted-foreground))" }}
                     tickLine={false}
                     axisLine={false}
                     allowDecimals={false}
@@ -498,7 +498,7 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
                     type="category"
                     dataKey="shortLabel"
                     width={112}
-                    tick={{ fontSize: 11, fill: "#0F172A", fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: "rgb(var(--color-foreground))", fontWeight: 600 }}
                     tickLine={false}
                     axisLine={false}
                   />
@@ -537,7 +537,7 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
             <div className="grid grid-cols-2 gap-2 text-xs">
               {bestConversion && (
                 <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">
-                  <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-medium">
                     <Icon name="TrendingUp" size={12} />
                     Best conversion
                   </div>
@@ -548,13 +548,13 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
               )}
               {highestDropOff && (
                 <div className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2">
-                  <div className="flex items-center gap-1.5 text-rose-700 font-medium">
+                  <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 font-medium">
                     <Icon name="AlertTriangle" size={12} />
                     Highest drop
                   </div>
                   <div className="text-sm font-bold text-slate-900 mt-0.5 truncate">
                     {highestDropOff.label}{" "}
-                    <span className="text-xs font-medium text-rose-600">
+                    <span className="text-xs font-medium text-rose-600 dark:text-rose-300">
                       −{highestDropOff.dropOff}%
                     </span>
                   </div>

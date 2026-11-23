@@ -469,7 +469,7 @@ const Dashboard = () => {
                   That is exactly how this washed out the whole artwork twice. */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] from-0% via-[#FFF4E2]/75 via-[26%] to-transparent to-[46%]"
+                className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#FFF4E2] from-0% via-[#FFF4E2]/75 via-[26%] to-transparent to-[46%] dark:from-background dark:via-background/75"
               />
 
               <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center px-5 sm:max-w-[34%] sm:px-8">
@@ -567,11 +567,15 @@ const Dashboard = () => {
               })}
             </div>
 
+            {/* Takes the card grid's own gutter (gap-3 sm:gap-5) as its top
+                margin, so the drawer sits in the same rhythm as the cards it
+                belongs to instead of an arbitrary value. */}
             <QualifiedBreakdownPanel
               open={qualifiedOpen}
               rows={qualifyingBreakdown}
               total={qualifiedTotal}
               isLoading={breakdownLoading}
+              className="mt-3 sm:mt-5"
             />
           </div>
         )}

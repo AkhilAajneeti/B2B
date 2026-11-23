@@ -1,6 +1,6 @@
 import React from "react";
 import Icon from "../../../components/AppIcon";
-import { brandBg, BRAND } from "../theme";
+import { brandBg, BRAND, brandAlpha } from "../theme";
 
 /**
  * A simple left-to-right flow diagram of labelled steps joined by arrows.
@@ -16,7 +16,10 @@ const FlowDiagram = ({ items = [] }) => (
       <React.Fragment key={i}>
         <div
           className="flex-1 min-w-[130px] rounded-xl border px-3 py-2.5 text-center shadow-sm"
-          style={{ borderColor: `${BRAND}33`, backgroundColor: "#fff" }}
+          style={{
+          borderColor: brandAlpha(0.2),
+          backgroundColor: "rgb(var(--color-card))",
+        }}
         >
           <span
             className="inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-[11px] font-semibold mb-1.5 shadow-sm"

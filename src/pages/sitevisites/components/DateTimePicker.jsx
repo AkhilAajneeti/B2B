@@ -152,7 +152,7 @@ const DateTimePicker = ({ value, title = "Pick date & time", onApply, onClose })
     <div className="fixed inset-0 z-[120] grid place-items-center bg-black/30 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[560px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200"
+        className="w-full max-w-[560px] overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-slate-200"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">

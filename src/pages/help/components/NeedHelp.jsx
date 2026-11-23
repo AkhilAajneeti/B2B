@@ -1,13 +1,13 @@
 import React from "react";
 import Icon from "../../../components/AppIcon";
-import { BRAND, BRAND_SOFT, brandBg } from "../theme";
+import { BRAND, BRAND_SOFT, brandBg, brandAlpha } from "../theme";
 
 const NeedHelp = () => (
   <div
     className="mt-10 rounded-2xl border px-5 py-5 flex flex-col sm:flex-row sm:items-center gap-4"
     style={{
-      borderColor: `${BRAND}33`,
-      background: `linear-gradient(135deg, ${BRAND_SOFT} 0%, #ffffff 80%)`,
+      borderColor: brandAlpha(0.2),
+      background: `linear-gradient(135deg, rgb(var(--help-soft)) 0%, rgb(var(--color-card)) 80%)`,
     }}
   >
     <div
@@ -28,7 +28,7 @@ const NeedHelp = () => (
       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-shadow"
       style={brandBg}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = `0 8px 24px -8px ${BRAND}99`;
+        e.currentTarget.style.boxShadow = `0 8px 24px -8px ${brandAlpha(0.6)}`;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.boxShadow = "";

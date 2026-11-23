@@ -24,32 +24,32 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
     // Hue = category, depth = progress/intensity. Opaque light shades so a chip
     // stays readable on both light and dark rows (no `dark:` variants in-app).
     const colors = {
-      New: "bg-blue-50 text-blue-700 border-blue-200",
+      New: "bg-blue-50 text-blue-700 dark:text-blue-300 border-blue-200",
 
-      "Follow up": "bg-emerald-50 text-emerald-700 border-emerald-200",
-      Interested: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 border-emerald-300",
-      "Invitation Sent": "bg-emerald-200 text-emerald-800 border-emerald-300",
-      "Site Visit Done": "bg-emerald-300 text-emerald-900 border-emerald-400",
+      "Follow up": "bg-emerald-50 text-emerald-700 dark:text-emerald-300 border-emerald-200",
+      Interested: "bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200",
+      "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 dark:text-emerald-300 border-emerald-300",
+      "Invitation Sent": "bg-emerald-200 text-emerald-800 dark:text-emerald-300 border-emerald-300",
+      "Site Visit Done": "bg-emerald-300 text-emerald-900 dark:text-emerald-300 border-emerald-400",
       Purchased: "bg-emerald-600 text-white border-emerald-600",
 
-      "Call Later": "bg-yellow-50 text-yellow-700 border-yellow-200",
-      "Call Not Connecting": "bg-yellow-100 text-yellow-800 border-yellow-200",
-      "Call Not Picked": "bg-yellow-200 text-yellow-800 border-yellow-300",
-      "Switch Off": "bg-yellow-300 text-yellow-900 border-yellow-400",
+      "Call Later": "bg-yellow-50 text-yellow-700 dark:text-yellow-300 border-yellow-200",
+      "Call Not Connecting": "bg-yellow-100 text-yellow-800 dark:text-yellow-300 border-yellow-200",
+      "Call Not Picked": "bg-yellow-200 text-yellow-800 dark:text-yellow-300 border-yellow-300",
+      "Switch Off": "bg-yellow-300 text-yellow-900 dark:text-yellow-300 border-yellow-400",
 
-      QDTD: "bg-violet-100 text-violet-800 border-violet-300",
+      QDTD: "bg-violet-100 text-violet-800 dark:text-violet-300 border-violet-300",
 
       Duplicate: "bg-slate-100 text-slate-600 border-slate-200",
 
-      "Low Budget": "bg-red-50 text-red-700 border-red-200",
-      "Low Interest": "bg-red-50 text-red-700 border-red-200",
-      "Other Location": "bg-red-50 text-red-700 border-red-200",
-      "Irrelevant Lead": "bg-red-50 text-red-700 border-red-200",
-      "Not Interested": "bg-red-100 text-red-700 border-red-200",
-      Broker: "bg-red-100 text-red-700 border-red-200",
-      Dead: "bg-red-200 text-red-800 border-red-300",
-      "Fake Lead": "bg-red-300 text-red-900 border-red-400",
+      "Low Budget": "bg-red-50 text-red-700 dark:text-red-300 border-red-200",
+      "Low Interest": "bg-red-50 text-red-700 dark:text-red-300 border-red-200",
+      "Other Location": "bg-red-50 text-red-700 dark:text-red-300 border-red-200",
+      "Irrelevant Lead": "bg-red-50 text-red-700 dark:text-red-300 border-red-200",
+      "Not Interested": "bg-red-100 text-red-700 dark:text-red-300 border-red-200",
+      Broker: "bg-red-100 text-red-700 dark:text-red-300 border-red-200",
+      Dead: "bg-red-200 text-red-800 dark:text-red-300 border-red-300",
+      "Fake Lead": "bg-red-300 text-red-900 dark:text-red-300 border-red-400",
       "Invalid Number": "bg-red-600 text-white border-red-600",
     };
     return colors?.[status] || "bg-slate-100 text-slate-600 border-slate-200";
@@ -57,17 +57,17 @@ const DealsTable = ({ deals, sortConfig, onSort, isLoading }) => {
 
   const getSourceTag = (source) => {
     const colors = {
-      Call: "bg-emerald-50 text-emerald-700",
-      Email: "bg-blue-50 text-blue-700",
-      "Existing Customer": "bg-violet-50 text-violet-700",
-      Partner: "bg-orange-50 text-orange-700",
-      "Public Relations": "bg-pink-50 text-pink-700",
-      "Web Site": "bg-cyan-50 text-cyan-700",
-      Campaign: "bg-amber-50 text-amber-700",
-      facebook: "bg-blue-50 text-blue-700",
+      Call: "bg-emerald-50 text-emerald-700 dark:text-emerald-300",
+      Email: "bg-blue-50 text-blue-700 dark:text-blue-300",
+      "Existing Customer": "bg-violet-50 text-violet-700 dark:text-violet-300",
+      Partner: "bg-orange-50 text-orange-700 dark:text-orange-300",
+      "Public Relations": "bg-pink-50 text-pink-700 dark:text-pink-300",
+      "Web Site": "bg-cyan-50 text-cyan-700 dark:text-cyan-300",
+      Campaign: "bg-amber-50 text-amber-700 dark:text-amber-300",
+      facebook: "bg-blue-50 text-blue-700 dark:text-blue-300",
       IVR: "bg-slate-100 text-slate-600",
       Other: "bg-slate-100 text-slate-600",
-      ACL: "bg-violet-50 text-violet-700",
+      ACL: "bg-violet-50 text-violet-700 dark:text-violet-300",
     };
     return colors?.[source] || "bg-slate-100 text-slate-600";
   };

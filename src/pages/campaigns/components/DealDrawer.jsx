@@ -29,11 +29,11 @@ import {
  * itself in words, so nothing depends on telling rose from violet.
  */
 const FIELD_TONES = {
-  rose: "bg-rose-50/70 text-rose-600",
-  violet: "bg-violet-50/70 text-violet-600",
-  sky: "bg-sky-50/70 text-sky-600",
-  amber: "bg-amber-50/70 text-amber-600",
-  emerald: "bg-emerald-50/70 text-emerald-600",
+  rose: "bg-rose-50/70 text-rose-600 dark:text-rose-300",
+  violet: "bg-violet-50/70 text-violet-600 dark:text-violet-300",
+  sky: "bg-sky-50/70 text-sky-600 dark:text-sky-300",
+  amber: "bg-amber-50/70 text-amber-600 dark:text-amber-300",
+  emerald: "bg-emerald-50/70 text-emerald-600 dark:text-emerald-300",
   slate: "bg-slate-100/70 text-slate-600",
 };
 
@@ -684,7 +684,7 @@ const DealDrawer = ({
                     <div className="col-span-2 space-y-4 rounded-2xl border border-border bg-gradient-to-br from-violet-50/40 via-card to-card p-5 shadow-sm">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex min-w-0 items-center gap-3">
-                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50/70 text-violet-600">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-50/70 text-violet-600 dark:text-violet-300">
                             <Icon name="Users" size={18} />
                           </span>
                           <div className="min-w-0">
@@ -700,7 +700,7 @@ const DealDrawer = ({
                         {/* The count, because the chips wrap and a long list
                             gives no sense of how many people are actually in
                             the rotation. */}
-                        <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
+                        <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-semibold text-violet-700 dark:text-violet-300">
                           {(formData.collaboratorsIds || []).length} selected
                         </span>
                       </div>
@@ -728,7 +728,7 @@ const DealDrawer = ({
                             ...base,
                             minHeight: "48px",
                             borderRadius: "14px",
-                            backgroundColor: "#fff",
+                            backgroundColor: "rgb(var(--color-input))",
                             borderColor: state.isFocused ? "#8b5cf6" : "#E2E8F0",
                             boxShadow: state.isFocused
                               ? "0 0 0 3px rgba(139,92,246,.15)"
@@ -739,7 +739,7 @@ const DealDrawer = ({
                           }),
                           placeholder: (base) => ({
                             ...base,
-                            color: "#94A3B8",
+                            color: "rgb(var(--slate-400))",
                             fontSize: "14px",
                           }),
                           valueContainer: (base) => ({
@@ -749,7 +749,7 @@ const DealDrawer = ({
                           }),
                           multiValue: (base) => ({
                             ...base,
-                            backgroundColor: "#F5F3FF",
+                            backgroundColor: "rgb(var(--select-chip))",
                             border: "1px solid #DDD6FE",
                             borderRadius: "9999px",
                             margin: 0,
@@ -758,7 +758,7 @@ const DealDrawer = ({
                           }),
                           multiValueLabel: (base) => ({
                             ...base,
-                            color: "#5B21B6",
+                            color: "rgb(var(--select-chip-text))",
                             fontWeight: 600,
                             fontSize: "12.5px",
                             padding: "3px 6px",
@@ -776,7 +776,7 @@ const DealDrawer = ({
                             ...base,
                             borderRadius: "14px",
                             overflow: "hidden",
-                            border: "1px solid #E2E8F0",
+                            border: "1px solid rgb(var(--color-border))",
                             boxShadow: "0 12px 32px -12px rgba(16,24,40,.25)",
                             zIndex: 30,
                           }),
@@ -784,9 +784,11 @@ const DealDrawer = ({
                             ...base,
                             fontSize: "14px",
                             backgroundColor: state.isFocused
-                              ? "#F5F3FF"
-                              : "#fff",
-                            color: state.isSelected ? "#5B21B6" : "#0F172A",
+                              ? "rgb(var(--select-chip))"
+                              : "rgb(var(--color-popover))",
+                            color: state.isSelected
+                              ? "rgb(var(--select-chip-text))"
+                              : "rgb(var(--color-foreground))",
                             fontWeight: state.isSelected ? 600 : 400,
                             cursor: "pointer",
                           }),
@@ -846,7 +848,7 @@ const DealDrawer = ({
                               <span className="min-w-0 flex-1">
                                 <span className="flex items-center gap-2">
                                   <span
-                                    className={`text-sm font-bold ${active ? "text-violet-900" : "text-foreground"
+                                    className={`text-sm font-bold ${active ? "text-violet-900 dark:text-violet-300" : "text-foreground"
                                       }`}
                                   >
                                     {opt.title}
@@ -855,7 +857,7 @@ const DealDrawer = ({
                                     <Icon
                                       name="CheckCircle2"
                                       size={15}
-                                      className="shrink-0 text-violet-600"
+                                      className="shrink-0 text-violet-600 dark:text-violet-300"
                                     />
                                   )}
                                 </span>
@@ -892,7 +894,7 @@ const DealDrawer = ({
                               <div className="flex min-w-0 items-center gap-2.5">
                                 {/* Initials, so a row is recognisable at a
                                     glance in a list of eight or ten. */}
-                                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">
+                                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700 dark:text-violet-300">
                                   {initialsOf(item.name)}
                                 </span>
                                 <span className="truncate text-sm font-medium text-foreground">
@@ -984,7 +986,7 @@ const DealDrawer = ({
                             >
                               <span
                                 aria-hidden="true"
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-1 ring-slate-900/10 transition-transform ${formData.sendWhatsappNotification
+                                className={`inline-block h-5 w-5 transform rounded-full bg-card shadow-sm ring-1 ring-slate-900/10 transition-transform ${formData.sendWhatsappNotification
                                   ? "translate-x-[22px]"
                                   : "translate-x-0.5"
                                   }`}
@@ -1352,7 +1354,7 @@ const DealDrawer = ({
                                 Object.values(deal.collaboratorsNames).map((name, index) => (
                                   <span
                                     key={index}
-                                    className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-3 py-1 text-sm font-medium text-orange-600"
+                                    className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-3 py-1 text-sm font-medium text-orange-600 dark:text-orange-300"
                                   >
                                    {name}
                                   </span>

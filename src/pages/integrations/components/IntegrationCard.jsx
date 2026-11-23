@@ -155,7 +155,7 @@ const IntegrationCard = ({ integration, onConnect, onDisconnect, onConfigure }) 
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Auto Sync</span>
                 <div className="w-8 h-4 bg-primary rounded-full relative">
-                  <div className="w-3 h-3 bg-white rounded-full absolute top-0.5 right-0.5 shadow-sm"></div>
+                  <div className="w-3 h-3 bg-card rounded-full absolute top-0.5 right-0.5 shadow-sm"></div>
                 </div>
               </div>
             </div>
@@ -169,7 +169,7 @@ const IntegrationCard = ({ integration, onConnect, onDisconnect, onConfigure }) 
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">{notification?.label}</span>
                     <div className={`w-8 h-4 rounded-full relative ${notification?.enabled ? 'bg-primary' : 'bg-muted'}`}>
-                      <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 shadow-sm transition-transform ${notification?.enabled ? 'right-0.5' : 'left-0.5'}`}></div>
+                      <div className={`w-3 h-3 bg-card rounded-full absolute top-0.5 shadow-sm transition-transform ${notification?.enabled ? 'right-0.5' : 'left-0.5'}`}></div>
                     </div>
                   </div>
                 ))}

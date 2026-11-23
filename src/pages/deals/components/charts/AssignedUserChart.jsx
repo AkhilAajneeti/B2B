@@ -96,7 +96,7 @@ const CustomTooltip = ({ active, payload }) => {
         initial={{ opacity: 0, y: 6, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.18, ease: "easeOut" }}
-        className="rounded-xl border border-white/40 bg-white/90 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-3 text-xs min-w-[230px]"
+        className="rounded-xl border border-white/40 bg-card/90 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-3 text-xs min-w-[230px]"
       >
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ const CustomTooltip = ({ active, payload }) => {
             </span>
             <span className="font-semibold text-slate-900">{row.name}</span>
           </div>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-300 bg-indigo-50 px-2 py-0.5 rounded-full">
             {row.total} leads
           </span>
         </div>
@@ -162,7 +162,7 @@ const CustomTooltip = ({ active, payload }) => {
           <div className="mt-2.5 pt-2 border-t border-slate-200/70">
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Overdue follow-ups</span>
-              <span className="font-semibold text-rose-600 tabular-nums">
+              <span className="font-semibold text-rose-600 dark:text-rose-300 tabular-nums">
                 {row.overdue}
               </span>
             </div>
@@ -428,7 +428,7 @@ const AssignedUserChartComponent = ({ filters = {}, enabled = true }) => {
                   <XAxis
                     type="number"
                     allowDecimals={false}
-                    tick={{ fontSize: 11, fill: "#94A3B8" }}
+                    tick={{ fontSize: 11, fill: "rgb(var(--color-muted-foreground))" }}
                     tickLine={false}
                     axisLine={{ stroke: "#E2E8F0" }}
                   />
@@ -480,7 +480,7 @@ const AssignedUserChartComponent = ({ filters = {}, enabled = true }) => {
               </div>
             </div>
             <div className="rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 px-3 py-2 text-right">
-              <div className="text-[10px] uppercase tracking-wider text-indigo-700 font-medium">
+              <div className="text-[10px] uppercase tracking-wider text-indigo-700 dark:text-indigo-300 font-medium">
                 Total leads
               </div>
               <motion.div

@@ -44,7 +44,7 @@ const HelpTable = ({ headers = [], rows = [], align = [], caption }) => {
               <tr
                 key={r}
                 className={`border-t border-slate-100 ${
-                  r % 2 === 1 ? "bg-slate-50/50" : "bg-white"
+                  r % 2 === 1 ? "bg-slate-50/50" : "bg-card"
                 }`}
               >
                 {row.map((cell, c) => (

@@ -191,9 +191,9 @@ const DealDrawer = ({
 
   const getStageColor = (stage) => {
     const colors = {
-      Planned: "bg-blue-100 text-blue-800",
-      "Not Held": "bg-red-100 text-red-800",
-      Held: "bg-green-100 text-green-800",
+      Planned: "bg-blue-100 text-blue-800 dark:text-blue-300",
+      "Not Held": "bg-red-100 text-red-800 dark:text-red-300",
+      Held: "bg-green-100 text-green-800 dark:text-green-300",
     };
     return colors?.[stage] || "bg-gray-100 text-gray-800";
   };
@@ -223,13 +223,13 @@ const DealDrawer = ({
   const getActivityIconColor = (type) => {
     switch (type) {
       case "Post":
-        return "text-indigo-600";
+        return "text-indigo-600 dark:text-indigo-300";
       case "Update":
-        return "text-blue-600";
+        return "text-blue-600 dark:text-blue-300";
       case "Assign":
-        return "text-purple-600";
+        return "text-purple-600 dark:text-purple-300";
       case "Create":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-300";
       default:
         return "text-gray-500";
     }
@@ -239,13 +239,13 @@ const DealDrawer = ({
       case "Not Started":
         return "bg-gray-100 text-gray-700";
       case "Started":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-100 text-blue-700 dark:text-blue-300";
       case "Completed":
-        return "bg-green-100 text-green-700";
+        return "bg-green-100 text-green-700 dark:text-green-300";
       case "Cancelled":
-        return "bg-red-100 text-red-700";
+        return "bg-red-100 text-red-700 dark:text-red-300";
       case "Deferred":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-yellow-100 text-yellow-700 dark:text-yellow-300";
       default:
         return "bg-gray-100 text-gray-700";
     }

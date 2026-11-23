@@ -203,7 +203,7 @@ class ErrorBoundary extends React.Component {
     const { offline } = this.state;
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white via-slate-50 to-slate-100 px-4 py-10">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-card via-slate-50 to-slate-100 px-4 py-10">
         <div className="w-full max-w-lg">
           {/* Brand mark above the card. Seeing the CRM's own identity here is
               part of the reassurance — an unbranded error page reads as the
@@ -224,7 +224,7 @@ class ErrorBoundary extends React.Component {
             </span>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] px-8 pt-8 pb-9 text-center">
+          <div className="bg-card rounded-2xl border border-slate-200 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] px-8 pt-8 pb-9 text-center">
             <ConnectionArt offline={offline} />
 
             <h1 className="mt-6 text-[1.375rem] leading-tight font-semibold text-slate-900">
@@ -273,7 +273,7 @@ class ErrorBoundary extends React.Component {
               <button
                 type="button"
                 onClick={this.handleHome}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 text-sm font-semibold border border-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-card hover:bg-slate-50 active:scale-[0.98] text-slate-700 text-sm font-semibold border border-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
               >
                 <Icon name="LayoutDashboard" size={16} />
                 Dashboard

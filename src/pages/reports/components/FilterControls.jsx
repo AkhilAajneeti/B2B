@@ -246,7 +246,7 @@ const FilterControls = ({
                 buttons). Soft violet matches the "selection mode" tone
                 used in deals/meeting/tasks toolbars. */}
             {selectedCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-100/80 text-violet-700 text-xs font-medium rounded-full border border-violet-200/60">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-100/80 text-violet-700 dark:text-violet-300 text-xs font-medium rounded-full border border-violet-200/60">
                 <Icon name="CheckCircle2" size={12} />
                 {selectedCount} selected
               </span>

@@ -676,7 +676,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
                     size="sm"
                     onClick={handleRevertImport}
                     disabled={!!state.pendingAction}
-                    className="bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
+                    className="bg-rose-50 border-rose-200 text-rose-700 dark:text-rose-300 hover:bg-rose-100"
                   >
                     {state.pendingAction === "Revert Import" && (
                       <Icon
@@ -864,7 +864,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
                                       <button
                                         type="button"
                                         onClick={() => removeError(err)}
-                                        className="block w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50"
+                                        className="block w-full text-left px-3 py-2 text-sm text-rose-600 dark:text-rose-300 hover:bg-rose-50"
                                       >
                                         Remove
                                       </button>
@@ -996,7 +996,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
                       <Icon
                         name="AlertOctagon"
                         size={20}
-                        className="text-rose-600"
+                        className="text-rose-600 dark:text-rose-300"
                       />
                     </div>
                     <div className="min-w-0">
@@ -1057,9 +1057,9 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
                     <Icon
                       name="AlertCircle"
                       size={12}
-                      className="text-rose-600"
+                      className="text-rose-600 dark:text-rose-300"
                     />
-                    <span className="text-xs font-semibold text-rose-700">
+                    <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">
                       {errType}
                     </span>
                   </span>
@@ -1076,7 +1076,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
                       <Icon
                         name="ShieldAlert"
                         size={14}
-                        className="text-rose-600"
+                        className="text-rose-600 dark:text-rose-300"
                       />
                       <h4 className="text-sm font-semibold text-foreground">
                         What went wrong
@@ -1107,7 +1107,7 @@ const ImportDrawer = ({ isOpen, onClose, onSuccess, viewImportId }) => {
                                   </p>
                                 )}
                               </div>
-                              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-semibold uppercase tracking-wide shrink-0">
+                              <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:text-rose-300 text-[10px] font-semibold uppercase tracking-wide shrink-0">
                                 {reason}
                               </span>
                             </div>

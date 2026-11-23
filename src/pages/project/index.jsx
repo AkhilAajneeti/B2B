@@ -67,10 +67,10 @@ const CAMPAIGNS = [
 ];
 
 const KPIS = [
-  { label: "Live Projects", value: "3", sub: "2 running · 1 paused", subTone: "text-emerald-600", icon: "Layers", rail: BRAND },
-  { label: "Leads Today", value: "47", sub: "↑ 18% vs yesterday", subTone: "text-emerald-600", icon: "UserPlus", rail: "#E0871E" },
-  { label: "Unassigned", value: "5", sub: "Needs distribution", subTone: "text-red-600", icon: "AlertCircle", rail: "#D8283B" },
-  { label: "Avg Response", value: "4m 12s", sub: "Fastest this week", subTone: "text-emerald-600", icon: "Clock", rail: "#2F8F83" },
+  { label: "Live Projects", value: "3", sub: "2 running · 1 paused", subTone: "text-emerald-600 dark:text-emerald-300", icon: "Layers", rail: BRAND },
+  { label: "Leads Today", value: "47", sub: "↑ 18% vs yesterday", subTone: "text-emerald-600 dark:text-emerald-300", icon: "UserPlus", rail: "#E0871E" },
+  { label: "Unassigned", value: "5", sub: "Needs distribution", subTone: "text-red-600 dark:text-red-300", icon: "AlertCircle", rail: "#D8283B" },
+  { label: "Avg Response", value: "4m 12s", sub: "Fastest this week", subTone: "text-emerald-600 dark:text-emerald-300", icon: "Clock", rail: "#2F8F83" },
 ];
 
 // --- small pieces ----------------------------------------------------
@@ -103,11 +103,11 @@ const CampaignCard = ({ c }) => {
     <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       {/* Thumbnail */}
       <div className="relative flex h-32 items-end p-3" style={{ backgroundImage: c.thumb }}>
-        <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${paused ? "text-slate-500" : "text-emerald-600"}`}>
+        <span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-card/95 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${paused ? "text-slate-500" : "text-emerald-600 dark:text-emerald-300"}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${paused ? "bg-slate-400" : "bg-emerald-500"}`} />
           {paused ? "Paused" : "Live"}
         </span>
-        <button className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg bg-white/95 text-[#6E1420]" title="Share">
+        <button className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg bg-card/95 text-[#6E1420]" title="Share">
           <Icon name="Share2" size={15} />
         </button>
         <span className="flex items-center gap-1 text-xs font-semibold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">
@@ -132,7 +132,7 @@ const CampaignCard = ({ c }) => {
             <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Total leads</div>
           </div>
           <div>
-            <div className="text-sm font-bold leading-none text-emerald-600">{c.leadsToday > 0 ? `+${c.leadsToday}` : "0"}</div>
+            <div className="text-sm font-bold leading-none text-emerald-600 dark:text-emerald-300">{c.leadsToday > 0 ? `+${c.leadsToday}` : "0"}</div>
             <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Today</div>
           </div>
           <div className="ml-auto self-center"><Sparkline up={c.trendUp} /></div>
@@ -266,7 +266,7 @@ const ProjectPage = () => {
                         <td className="px-5 py-3 text-muted-foreground">{c.location}</td>
                         <td className="px-5 py-3 font-semibold text-foreground">{c.leadsTotal}</td>
                         <td className="px-5 py-3">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${c.status === "paused" ? "bg-slate-100 text-slate-500" : "bg-emerald-50 text-emerald-700"}`}>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${c.status === "paused" ? "bg-slate-100 text-slate-500" : "bg-emerald-50 text-emerald-700 dark:text-emerald-300"}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${c.status === "paused" ? "bg-slate-400" : "bg-emerald-500"}`} />
                             {c.status === "paused" ? "Paused" : "Live"}
                           </span>

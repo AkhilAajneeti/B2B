@@ -38,10 +38,10 @@ const ActivityTimeline = ({
 
   const getActivityColor = (type) => {
     const colorMap = {
-      task: "text-blue-600",
-      call: "text-green-600",
-      meeting: "text-purple-600",
-      email: "text-orange-600",
+      task: "text-blue-600 dark:text-blue-300",
+      call: "text-green-600 dark:text-green-300",
+      meeting: "text-purple-600 dark:text-purple-300",
+      email: "text-orange-600 dark:text-orange-300",
       note: "text-gray-600",
     };
     return colorMap?.[type] || "text-gray-600";
@@ -141,41 +141,41 @@ const ActivityTimeline = ({
   // Same coverage: Task/Meeting outcomes + the full Lead status list.
   const getStatusPillColor = (status) => {
     const colors = {
-      Closed: "bg-green-100 text-green-800",
-      Completed: "bg-green-100 text-green-800",
-      Held: "bg-emerald-100 text-emerald-800",
-      Open: "bg-blue-100 text-blue-800",
-      "In Progress": "bg-amber-100 text-amber-800",
-      Pending: "bg-amber-100 text-amber-800",
-      "Not Held": "bg-red-100 text-red-800",
+      Closed: "bg-green-100 text-green-800 dark:text-green-300",
+      Completed: "bg-green-100 text-green-800 dark:text-green-300",
+      Held: "bg-emerald-100 text-emerald-800 dark:text-emerald-300",
+      Open: "bg-blue-100 text-blue-800 dark:text-blue-300",
+      "In Progress": "bg-amber-100 text-amber-800 dark:text-amber-300",
+      Pending: "bg-amber-100 text-amber-800 dark:text-amber-300",
+      "Not Held": "bg-red-100 text-red-800 dark:text-red-300",
 
-      New: "bg-blue-50 text-blue-700",
+      New: "bg-blue-50 text-blue-700 dark:text-blue-300",
 
-      "Follow up": "bg-emerald-50 text-emerald-700",
-      Interested: "bg-emerald-100 text-emerald-700",
-      "Site Visit Scheduled": "bg-emerald-200 text-emerald-800",
-      "Site Visit Done": "bg-emerald-300 text-emerald-900",
+      "Follow up": "bg-emerald-50 text-emerald-700 dark:text-emerald-300",
+      Interested: "bg-emerald-100 text-emerald-700 dark:text-emerald-300",
+      "Site Visit Scheduled": "bg-emerald-200 text-emerald-800 dark:text-emerald-300",
+      "Site Visit Done": "bg-emerald-300 text-emerald-900 dark:text-emerald-300",
       Purchased: "bg-emerald-600 text-white",
 
-      "Call Later": "bg-yellow-50 text-yellow-700",
-      "Call Not Connecting": "bg-yellow-100 text-yellow-800",
-      "Call Not Picked": "bg-yellow-200 text-yellow-800",
-      "Switch Off": "bg-yellow-300 text-yellow-900",
+      "Call Later": "bg-yellow-50 text-yellow-700 dark:text-yellow-300",
+      "Call Not Connecting": "bg-yellow-100 text-yellow-800 dark:text-yellow-300",
+      "Call Not Picked": "bg-yellow-200 text-yellow-800 dark:text-yellow-300",
+      "Switch Off": "bg-yellow-300 text-yellow-900 dark:text-yellow-300",
 
-      QDTD: "bg-violet-100 text-violet-800",
+      QDTD: "bg-violet-100 text-violet-800 dark:text-violet-300",
 
       Duplicate: "bg-slate-100 text-slate-600",
 
-      "Low Budget": "bg-red-50 text-red-700",
-      "Low Interest": "bg-red-50 text-red-700",
-      "Other Location": "bg-red-50 text-red-700",
-      "Irrelevant Lead": "bg-red-50 text-red-700",
-      "Not Interested": "bg-red-100 text-red-700",
-      Broker: "bg-red-100 text-red-700",
-      Dead: "bg-red-200 text-red-800",
-      "Fake Lead": "bg-red-300 text-red-900",
+      "Low Budget": "bg-red-50 text-red-700 dark:text-red-300",
+      "Low Interest": "bg-red-50 text-red-700 dark:text-red-300",
+      "Other Location": "bg-red-50 text-red-700 dark:text-red-300",
+      "Irrelevant Lead": "bg-red-50 text-red-700 dark:text-red-300",
+      "Not Interested": "bg-red-100 text-red-700 dark:text-red-300",
+      Broker: "bg-red-100 text-red-700 dark:text-red-300",
+      Dead: "bg-red-200 text-red-800 dark:text-red-300",
+      "Fake Lead": "bg-red-300 text-red-900 dark:text-red-300",
       "Invalid Number": "bg-red-600 text-white",
-      Planned: "bg-blue-100 text-blue-800",
+      Planned: "bg-blue-100 text-blue-800 dark:text-blue-300",
     };
     return colors?.[status] || "bg-gray-100 text-gray-800";
   };
@@ -334,7 +334,7 @@ const ActivityTimeline = ({
 
                     {/* END DATE */}
                     {activity.data?.attributes?.became?.dateEnd && (
-                      <span className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 font-medium">
+                      <span className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 dark:text-orange-300 font-medium">
                         Ends{" "}
                         {formatDate(activity.data.attributes.became.dateEnd)}
                       </span>
@@ -349,7 +349,7 @@ const ActivityTimeline = ({
                           parentId: activity.parentId,
                           parentType: activity.parentType,
                         })}
-                        className="h-8 w-8 text-green-600 hover:bg-green-50"
+                        className="h-8 w-8 text-green-600 dark:text-green-300 hover:bg-green-50"
                         title="Mark as completed"
                       >
                         <Icon name="Check" size={16} />
@@ -371,7 +371,7 @@ const ActivityTimeline = ({
                             onDelete(activity.id);
                           }
                         }}
-                        className="h-8 w-8 text-red-600 hover:bg-red-50"
+                        className="h-8 w-8 text-red-600 dark:text-red-300 hover:bg-red-50"
                         title="Delete activity"
                       >
                         <Icon name="Trash2" size={16} />

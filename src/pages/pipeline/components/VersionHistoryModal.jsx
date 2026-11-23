@@ -60,7 +60,7 @@ const VersionHistoryModal = ({ isOpen, onClose, dealId }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -87,12 +87,12 @@ const VersionHistoryModal = ({ isOpen, onClose, dealId }) => {
               return (
                 <div key={item.id} className="mb-6 ml-6 relative">
                   {/* Timeline Dot */}
-                  <span className="absolute -left-[33px] flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 border-gray-400 text-xs">
+                  <span className="absolute -left-[33px] flex items-center justify-center w-5 h-5 rounded-full bg-card border-2 border-gray-400 text-xs">
                     {activity.icon}
                   </span>
 
                   {/* Activity Card */}
-                  <div className="bg-white p-4 rounded-xl shadow-sm">
+                  <div className="bg-card p-4 rounded-xl shadow-sm">
                     {/* Title */}
                     <p className="text-sm font-semibold text-gray-800">
                       {activity.title}

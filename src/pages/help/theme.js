@@ -9,13 +9,23 @@
  * branded — they communicate meaning, not affiliation.
  */
 
-// Hex of the deep-crimson end-stop. Use it directly for borders, text
-// accents, icons, and rgba shadows.
-export const BRAND = "#AC2334";
+// The deep-crimson end-stop. Use it for borders, text accents and icons.
+//
+// A var() REFERENCE, not a hex literal, because every consumer applies these
+// through an inline `style` prop, which no `dark:` variant can reach. Pointing
+// them at tokens makes the whole Help Center follow the theme without touching
+// the ten components that read them. The light values are unchanged; see
+// --help-brand / --help-soft in styles/tailwind.css.
+//
+// Anything that needs this colour with alpha must use brandAlpha() below —
+// string-concatenating a hex suffix onto a var() produces nonsense.
+export const BRAND = "rgb(var(--help-brand))";
 
 // Soft tint of the brand for card backgrounds and subtle highlights.
-// Roughly matches Tailwind rose-50 with a hint more saturation.
-export const BRAND_SOFT = "#FBE9EC";
+export const BRAND_SOFT = "rgb(var(--help-soft))";
+
+/** The brand colour at a given opacity, for borders, rings and shadows. */
+export const brandAlpha = (alpha) => `rgb(var(--help-brand) / ${alpha})`;
 
 // Inline-style strings for the brand gradient.
 export const BRAND_GRADIENT = "linear-gradient(52deg, #000000, #AC2334)";

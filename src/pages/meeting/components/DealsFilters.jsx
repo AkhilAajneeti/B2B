@@ -136,14 +136,14 @@ const DealsFilters = ({
         <div className="relative px-5 py-3 bg-gradient-to-r from-violet-100/80 via-fuchsia-100/70 to-pink-100/80 border-y border-violet-200/60">
           <div className="relative flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-white/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600">
+              <div className="w-9 h-9 rounded-full bg-card/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600 dark:text-violet-300">
                 <Icon name="CheckCircle2" size={18} />
               </div>
               <div>
-                <p className="text-sm font-semibold leading-tight text-violet-900">
+                <p className="text-sm font-semibold leading-tight text-violet-900 dark:text-violet-300">
                   {selectedCount} meeting{selectedCount !== 1 ? "s" : ""} selected
                 </p>
-                <p className="text-[11px] text-violet-700/70 leading-tight mt-0.5">
+                <p className="text-[11px] text-violet-700/70 dark:text-violet-300/70 leading-tight mt-0.5">
                   Pick an action to apply to all
                 </p>
               </div>
@@ -159,8 +159,8 @@ const DealsFilters = ({
                   // the neutral white-on-violet pill.
                   className={
                     action.destructive
-                      ? "bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-300 shadow-sm"
-                      : "bg-white/90 hover:bg-white text-violet-700 hover:text-violet-800 border border-violet-300 shadow-sm"
+                      ? "bg-rose-50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 hover:text-rose-800 dark:hover:text-rose-300 border border-rose-300 shadow-sm"
+                      : "bg-card/90 hover:bg-card text-violet-700 dark:text-violet-300 hover:text-violet-800 dark:hover:text-violet-300 border border-violet-300 shadow-sm"
                   }
                 >
                   <Icon name={action.icon} size={14} className="mr-1.5" />

@@ -157,16 +157,16 @@ export const FIELD_OPTIONS = [
 // modules.
 export const LEAD_STATUS_PILL = {
   New: "bg-gray-100 text-gray-700",
-  Interested: "bg-emerald-50 text-emerald-700",
-  "Follow up": "bg-indigo-50 text-indigo-700",
-  "Call Later": "bg-amber-50 text-amber-700",
-  "Call Not Connecting": "bg-rose-50 text-rose-700",
-  "Call Not Picked": "bg-amber-50 text-amber-700",
+  Interested: "bg-emerald-50 text-emerald-700 dark:text-emerald-300",
+  "Follow up": "bg-indigo-50 text-indigo-700 dark:text-indigo-300",
+  "Call Later": "bg-amber-50 text-amber-700 dark:text-amber-300",
+  "Call Not Connecting": "bg-rose-50 text-rose-700 dark:text-rose-300",
+  "Call Not Picked": "bg-amber-50 text-amber-700 dark:text-amber-300",
   Dead: "bg-slate-200 text-slate-800",
-  "Site Visit Scheduled": "bg-sky-50 text-sky-700",
-  "Site Visit Done": "bg-teal-50 text-teal-700",
-  Purchased: "bg-green-50 text-green-700",
-  QDTD: "bg-fuchsia-50 text-fuchsia-700",
+  "Site Visit Scheduled": "bg-sky-50 text-sky-700 dark:text-sky-300",
+  "Site Visit Done": "bg-teal-50 text-teal-700 dark:text-teal-300",
+  Purchased: "bg-green-50 text-green-700 dark:text-green-300",
+  QDTD: "bg-fuchsia-50 text-fuchsia-700 dark:text-fuchsia-300",
 };
 
 // Drawer initial state. Used by ImportDrawer on mount and to reset state on

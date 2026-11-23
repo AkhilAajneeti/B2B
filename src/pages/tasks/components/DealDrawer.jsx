@@ -200,26 +200,26 @@ const DealDrawer = ({
       case "Not Started":
         return "bg-gray-100 text-gray-700";
       case "Started":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-100 text-blue-700 dark:text-blue-300";
       case "Completed":
-        return "bg-green-100 text-green-700";
+        return "bg-green-100 text-green-700 dark:text-green-300";
       case "Cancelled":
-        return "bg-red-100 text-red-700";
+        return "bg-red-100 text-red-700 dark:text-red-300";
       case "Deferred":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-yellow-100 text-yellow-700 dark:text-yellow-300";
       default:
         return "bg-gray-100 text-gray-700";
     }
   };
   const getStageColor = (stage) => {
     const colors = {
-      New: "bg-blue-100 text-blue-800",
-      Interested: "bg-sky-100 text-sky-800",
-      "Follow up": "bg-indigo-100 text-indigo-800",
-      Converted: "bg-green-100 text-green-800",
-      "Not interested": "bg-orange-100 text-orange-800",
-      Broker: "bg-purple-100 text-purple-800",
-      "Call Not Picked": "bg-red-100 text-red-800",
+      New: "bg-blue-100 text-blue-800 dark:text-blue-300",
+      Interested: "bg-sky-100 text-sky-800 dark:text-sky-300",
+      "Follow up": "bg-indigo-100 text-indigo-800 dark:text-indigo-300",
+      Converted: "bg-green-100 text-green-800 dark:text-green-300",
+      "Not interested": "bg-orange-100 text-orange-800 dark:text-orange-300",
+      Broker: "bg-purple-100 text-purple-800 dark:text-purple-300",
+      "Call Not Picked": "bg-red-100 text-red-800 dark:text-red-300",
       Invalid: "bg-gray-100 text-gray-700",
     };
     return colors?.[stage] || "bg-gray-100 text-gray-800";
@@ -250,13 +250,13 @@ const DealDrawer = ({
   const getActivityIconColor = (type) => {
     switch (type) {
       case "Post":
-        return "text-indigo-600";
+        return "text-indigo-600 dark:text-indigo-300";
       case "Update":
-        return "text-blue-600";
+        return "text-blue-600 dark:text-blue-300";
       case "Assign":
-        return "text-purple-600";
+        return "text-purple-600 dark:text-purple-300";
       case "Create":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-300";
       default:
         return "text-gray-500";
     }
@@ -995,7 +995,7 @@ const DealDrawer = ({
                           </form>
                         )}
                         {(!mockStream || mockStream.length === 0) && (
-                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/40 via-white to-indigo-50/30 p-8 text-center">
+                          <div className="relative overflow-hidden rounded-3xl border border-dashed border-violet-200 bg-gradient-to-br from-violet-50/40 via-white to-indigo-50/30 dark:from-card dark:via-card dark:to-card p-8 text-center">
                             <div className="absolute -top-12 -right-12 w-40 h-40 bg-violet-200/40 rounded-full blur-3xl pointer-events-none" />
                             <div className="relative inline-flex">
                               <div className="absolute inset-0 bg-gradient-to-br from-violet-400 to-indigo-500 rounded-2xl blur-md opacity-40 animate-pulse" />
@@ -1008,10 +1008,10 @@ const DealDrawer = ({
                               Notes, updates, and team mentions about this task live here as a timeline.
                             </p>
                             <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-violet-700 bg-violet-100/70 rounded-full">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-violet-700 dark:text-violet-300 bg-violet-100/70 rounded-full">
                                 <Icon name="Sparkles" size={10} />Quick notes
                               </span>
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-indigo-700 bg-indigo-100/70 rounded-full">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-100/70 rounded-full">
                                 <Icon name="AtSign" size={10} />Mention teammates
                               </span>
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-slate-700 bg-slate-100 rounded-full">
@@ -1132,7 +1132,7 @@ const DealDrawer = ({
                     line, which read as an afterthought. */}
                 <div className="px-6 pt-4 pb-3">
                   <div className="rounded-xl bg-gradient-to-r from-rose-100/80 via-pink-100/70 to-rose-100/80 border border-rose-200/60 p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/80 ring-1 ring-rose-200 flex items-center justify-center text-[#AC2334] shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-card/80 ring-1 ring-rose-200 flex items-center justify-center text-[#AC2334] shrink-0">
                       <Icon name="Wand2" size={18} />
                     </div>
                     <div>
@@ -1140,7 +1140,7 @@ const DealDrawer = ({
                         Updating {selectedIds.length} selected task
                         {selectedIds.length !== 1 ? "s" : ""}
                       </p>
-                      <p className="text-xs text-rose-700/80 mt-0.5 leading-relaxed">
+                      <p className="text-xs text-rose-700/80 dark:text-rose-300/80 mt-0.5 leading-relaxed">
                         Toggle the fields you want to change — unchecked fields stay as they are on each record.
                       </p>
                     </div>
@@ -1158,7 +1158,7 @@ const DealDrawer = ({
                     <div
                       className={`rounded-xl border p-3 transition-colors ${
                         massFields.status
-                          ? "bg-white border-rose-300 shadow-sm"
+                          ? "bg-card border-rose-300 shadow-sm"
                           : "bg-slate-50/60 border-slate-200"
                       }`}
                     >
@@ -1173,7 +1173,7 @@ const DealDrawer = ({
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                            className={`inline-block h-4 w-4 rounded-full bg-card shadow ring-1 ring-black/5 transition-transform ${
                               massFields.status ? "translate-x-5" : "translate-x-1"
                             }`}
                           />
@@ -1201,7 +1201,7 @@ const DealDrawer = ({
                     <div
                       className={`rounded-xl border p-3 transition-colors ${
                         massFields.priority
-                          ? "bg-white border-rose-300 shadow-sm"
+                          ? "bg-card border-rose-300 shadow-sm"
                           : "bg-slate-50/60 border-slate-200"
                       }`}
                     >
@@ -1216,7 +1216,7 @@ const DealDrawer = ({
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                            className={`inline-block h-4 w-4 rounded-full bg-card shadow ring-1 ring-black/5 transition-transform ${
                               massFields.priority ? "translate-x-5" : "translate-x-1"
                             }`}
                           />
@@ -1246,7 +1246,7 @@ const DealDrawer = ({
                     <div
                       className={`rounded-xl border p-3 transition-colors ${
                         massFields.assignedUserId
-                          ? "bg-white border-rose-300 shadow-sm"
+                          ? "bg-card border-rose-300 shadow-sm"
                           : "bg-slate-50/60 border-slate-200"
                       }`}
                     >
@@ -1261,7 +1261,7 @@ const DealDrawer = ({
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                            className={`inline-block h-4 w-4 rounded-full bg-card shadow ring-1 ring-black/5 transition-transform ${
                               massFields.assignedUserId ? "translate-x-5" : "translate-x-1"
                             }`}
                           />
@@ -1290,7 +1290,7 @@ const DealDrawer = ({
                     <div
                       className={`rounded-xl border p-3 transition-colors ${
                         massFields.dueDate
-                          ? "bg-white border-rose-300 shadow-sm"
+                          ? "bg-card border-rose-300 shadow-sm"
                           : "bg-slate-50/60 border-slate-200"
                       }`}
                     >
@@ -1305,7 +1305,7 @@ const DealDrawer = ({
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow ring-1 ring-black/5 transition-transform ${
+                            className={`inline-block h-4 w-4 rounded-full bg-card shadow ring-1 ring-black/5 transition-transform ${
                               massFields.dueDate ? "translate-x-5" : "translate-x-1"
                             }`}
                           />
