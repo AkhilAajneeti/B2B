@@ -386,17 +386,17 @@ const DealsTable = ({
   const isIndeterminate =
     selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
 
-  // Data columns between the checkbox and the Actions cell: Name, Project,
-  // Source, Status, Next Contact, Create At, Assigned User. Restricted
-  // accounts lose Source, Next Contact and Assigned User (see the <thead>
-  // below), leaving Name, Project, Status and Create At.
+  // Data columns between the checkbox and the Actions cell.
+  //   everyone: Name, Project, Source, Status, Next Contact, Create At,
+  //             Assigned User                                        = 7
+  //   masked:   Name, Project, City, Status, Create At, Assigned User = 6
+  //             (loses Source and Next Contact, GAINS City)
   //
   // KEEP THIS IN STEP with the conditional <th>/<td> pairs below. The skeleton
   // rows and the empty-state colSpan both derive from it, and a mismatch
   // silently shears the table: loading rows wider than the header, and the
   // "No leads available" cell spanning past the end of the row.
-  // masked: loses Source / Next Contact / Assigned User, GAINS City.
-  const DATA_COLUMNS = masked ? 5 : 7;
+  const DATA_COLUMNS = masked ? 6 : 7;
   const COLUMN_COUNT = DATA_COLUMNS + 2; // + checkbox + actions
 
   const SkeletonRow = () => (
@@ -435,7 +435,7 @@ const DealsTable = ({
               <SortHeader label="Name" column="name" />
               <SortHeader label="Project Name" column="cProjectName" />
               {/* City — shown ONLY to restricted accounts, who have no Source
-                  / Next Contact / Assigned User columns and so have the room.
+                  or Next Contact column and so have the room.
                   A plain <th>, not a SortHeader: `addressCity` is not in the
                   service's SORTABLE allowlist, so a sortable header here
                   would silently fall back to sorting by createdAt and lie
@@ -451,23 +451,27 @@ const DealsTable = ({
                   the unrelated `source` field before. */}
               {!masked && <SortHeader label="Source" column="cSubSource" />}
               <SortHeader label="Status" column="status" />
-              {/* Next Contact and Assigned User are hidden from restricted
-                  accounts — internal-team views of the pipeline, matching the
-                  filters of the same names. Each <th> here has a matching <td>
-                  below under the same condition, and COLUMN_COUNT tracks both
-                  so the skeleton rows and the empty-state colSpan stay in
-                  step; a mismatch silently shears the table layout. */}
+              {/* Next Contact is hidden from restricted accounts — an
+                  internal-team view of the pipeline, matching the filter of
+                  the same name. Each conditional <th> here has a matching
+                  <td> below under the same condition, and COLUMN_COUNT tracks
+                  both so the skeleton rows and the empty-state colSpan stay
+                  in step; a mismatch silently shears the table layout. */}
               {!masked && (
                 <SortHeader label="Next Contact" column="cNextContactAt" />
               )}
               <SortHeader label="Create At" column="createdAt" />
-              {!masked && (
-                <th className="text-left px-4 py-3">
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                    Assigned User
-                  </span>
-                </th>
-              )}
+              {/* Assigned User — shown to EVERY account, restricted ones
+                  included, as of 2026-11-23 by request. It was hidden with
+                  Source and Next Contact as part of not revealing how the
+                  internal team is organised; restricted accounts turned out
+                  to need to know who owns a lead before acting on it.
+                  Unconditional, so no COLUMN_COUNT branch depends on it. */}
+              <th className="text-left px-4 py-3">
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                  Assigned User
+                </span>
+              </th>
               <th className="w-24 px-4 py-3">
                 <span className="text-sm font-medium text-foreground">
                   Actions
@@ -631,27 +635,26 @@ const DealsTable = ({
                     </div>
                   </td>
 
-                  {!masked && (
-                    <td className="px-4 py-4">
-                      {deal?.assignedUserName ? (
-                        <div className="inline-flex items-center gap-2 pl-1 pr-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors max-w-full">
-                          <span
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                            style={{
-                              backgroundColor: getNameColor(deal.assignedUserName),
-                            }}
-                          >
-                            {getInitials(deal.assignedUserName)}
-                          </span>
-                          <span className="text-sm font-medium text-slate-700 truncate capitalize">
-                            {deal.assignedUserName}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
-                      )}
-                    </td>
-                  )}
+                  {/* Assigned User — every account, see the <th> above. */}
+                  <td className="px-4 py-4">
+                    {deal?.assignedUserName ? (
+                      <div className="inline-flex items-center gap-2 pl-1 pr-2.5 py-0.5 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors max-w-full">
+                        <span
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                          style={{
+                            backgroundColor: getNameColor(deal.assignedUserName),
+                          }}
+                        >
+                          {getInitials(deal.assignedUserName)}
+                        </span>
+                        <span className="text-sm font-medium text-slate-700 truncate capitalize">
+                          {deal.assignedUserName}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
+                  </td>
 
                   <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                     <div
@@ -822,12 +825,11 @@ const DealsTable = ({
                   {/* Bottom */}
                   <div className="flex items-end justify-between mt-3 gap-3">
                     <div className="space-y-1 min-w-0">
-                      {/* Assigned — hidden for restricted accounts, same rule
-                          as the desktop column. The mobile card is a separate
-                          render of the same row, so gating only the table
-                          would leave the rep's name on screen for anyone on a
-                          phone. */}
-                      {!masked && deal?.assignedUserName && (
+                      {/* Assigned — shown to every account, same rule as the
+                          desktop column. The mobile card is a separate render
+                          of the same row, so leaving this gated would hide it
+                          from anyone on a phone while the table showed it. */}
+                      {deal?.assignedUserName && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Icon name="User2" size={12} />
                           <span className="truncate capitalize">
