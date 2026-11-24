@@ -1,5 +1,6 @@
 import { handleUnauthorized } from "services/session";
 import { API_BASE_URL } from "services/apiBase";
+import { fetchLeadsCount } from "services/leads.service";
 /**
  * Win Rate analytics data layer.
  *
@@ -420,6 +421,139 @@ export const fetchWinRateDataset = async ({ filters = {}, year }) => {
 
   inFlight.set(key, promise);
   return promise;
+};
+
+// ---------------------------------------------------------------------------
+// Monthly counts (the Win Rate chart's series)
+// ---------------------------------------------------------------------------
+
+/**
+ * CANONICAL status spellings, exactly as EspoCRM stores them.
+ *
+ * Taken from the status dropdown in deals/DealDrawer.jsx — the control that
+ * WRITES these values, so it is the only authoritative source. This matters
+ * more than it looks: these strings go into `whereGroup[...][type]=in`
+ * queries, and a status the backend does not recognise does not raise an
+ * error, it returns a count of zero. A typo here is a chart that quietly
+ * reads "no losses this month" forever.
+ *
+ * The three lists are the same categorisation the chart has always used. Some
+ * statuses are in NONE of them on purpose — Duplicate, Invitation Sent, Event
+ * Attend, Future Prospect, QDTD — so they are excluded from the totals rather
+ * than silently inflating "active".
+ */
+export const WON_STATUSES = ["Purchased"];
+
+export const ACTIVE_STATUSES = [
+  "New",
+  "Follow up",
+  "Interested",
+  "Site Visit Scheduled",
+  "Site Visit Done",
+  "Call Later",
+  "Broker",
+  "Call Not Picked",
+  "Call Not Connecting",
+  "Switch Off",
+];
+
+export const LOST_STATUSES = [
+  "Dead",
+  "Fake Lead",
+  "Invalid Number",
+  "Irrelevant Lead",
+  "Low Budget",
+  "Low Interest",
+  "Not Interested",
+  "Other Location",
+];
+
+const CATEGORY_STATUSES = {
+  won: WON_STATUSES,
+  active: ACTIVE_STATUSES,
+  lost: LOST_STATUSES,
+};
+
+/**
+ * The bounds of a calendar month, as the dashboard's monthly chart sends them.
+ *
+ * Built from LOCAL midnight and converted to UTC by toISOString(), which is
+ * what makes "November" mean November where the user is sitting. Formatting
+ * the local time as a naive "YYYY-MM-DD HH:mm:ss" string instead would hand
+ * the backend a local wall-clock time that it reads as UTC, and in IST that
+ * drags the first 5.5 hours of every month into the previous one.
+ *
+ * This matches dashboard/components/PipelineChart, which counts leads by month
+ * the same way against the same gateway.
+ */
+const monthBounds = (year, monthIndex) => {
+  const start = new Date(year, monthIndex, 1, 0, 0, 0, 0);
+  const end = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999);
+  return [start.toISOString(), end.toISOString()];
+};
+
+/**
+ * The monthly Won / Active / Lost series, counted BY THE SERVER.
+ *
+ * WHY NOT THE RECORD DATASET ABOVE. fetchWinRateDataset pulls records newest
+ * first and stops at MAX_LEADS. Past that cap the oldest months are simply
+ * never fetched, so on a busy CRM the chart showed twelve months of which only
+ * the most recent few weeks had any data — not because the months were empty,
+ * but because the rows never arrived. Counting server-side is O(months), not
+ * O(leads): it is correct at any volume and the payload is 36 integers.
+ *
+ * BUCKETED BY createdAt, for every category. The record version bucketed
+ * closed leads by `modifiedAt` as a proxy for when they closed, which means
+ * any bulk status change, import or reassignment moves every lead it touches
+ * into the current month and rewrites the history of the chart. createdAt
+ * cannot be rewritten by an edit, so this reads as "of the leads that arrived
+ * in month M, where do they stand now" — a cohort. The trade-off is that the
+ * newest months look weak because their leads have not had time to convert.
+ *
+ * Future months are not requested at all; they cannot contain anything.
+ */
+export const fetchMonthlyWinRateCounts = async ({ filters = {}, year }) => {
+  const base = filtersToWhereGroup(filters);
+
+  const now = new Date();
+  const lastMonth = year === now.getFullYear() ? now.getMonth() : 11;
+
+  const jobs = [];
+  for (let m = 0; m <= lastMonth; m += 1) {
+    const [start, end] = monthBounds(year, m);
+    for (const category of ["won", "active", "lost"]) {
+      jobs.push({
+        month: m,
+        category,
+        clauses: [
+          ...base,
+          { type: "in", attribute: "status", value: CATEGORY_STATUSES[category] },
+          { type: "between", attribute: "createdAt", value: [start, end] },
+        ],
+      });
+    }
+  }
+
+  const months = Array.from({ length: 12 }, () => ({ won: 0, active: 0, lost: 0 }));
+
+  // Batched rather than all at once: a full year is 36 requests, and firing
+  // them together saturates the browser's ~6 connections per host, so the rest
+  // of the Reports page waits behind them. Matches the batching the record
+  // fetch above already uses.
+  const BATCH = 6;
+  for (let i = 0; i < jobs.length; i += BATCH) {
+    const slice = jobs.slice(i, i + BATCH);
+    const counts = await Promise.all(
+      slice.map((j) =>
+        fetchLeadsCount(j.clauses).catch(() => 0),
+      ),
+    );
+    slice.forEach((j, k) => {
+      months[j.month][j.category] = counts[k] || 0;
+    });
+  }
+
+  return months;
 };
 
 export const invalidateWinRateCache = () => {

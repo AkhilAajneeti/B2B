@@ -19,13 +19,20 @@ import { useWinRateAnalytics } from "../hooks/useWinRateAnalytics";
 
 const PRIMARY = "#8B5CF6";
 const PRIMARY_DARK = "#6D28D9";
-const YEAR = new Date().getFullYear();
+/**
+ * The chart always covers the CURRENT year — there is no year picker.
+ *
+ * `year` is still threaded through the hook and the tooltip rather than read
+ * from this constant in each of them, so pointing the chart at another year is
+ * a one-line change here instead of a hunt through the file.
+ */
+const CURRENT_YEAR = new Date().getFullYear();
 
 // ---------------------------------------------------------------------------
 // Tooltip — shows won / lost / active / win rate
 // ---------------------------------------------------------------------------
 
-const LineTooltip = ({ active, payload, label }) => {
+const LineTooltip = ({ active, payload, label, year }) => {
   if (!active || !payload?.length) return null;
   const row = payload[0]?.payload;
   if (!row) return null;
@@ -34,7 +41,7 @@ const LineTooltip = ({ active, payload, label }) => {
     <div className="rounded-xl border border-white/40 bg-card/95 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(15,23,42,0.25)] px-3.5 py-3 text-xs min-w-[200px]">
       <div className="flex items-center justify-between mb-2">
         <span className="font-semibold text-slate-900">
-          {label} {YEAR}
+          {label} {year}
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300 bg-violet-50 px-2 py-0.5 rounded-full">
           {row.winRate}%
@@ -207,6 +214,7 @@ const Skeleton = () => (
 
 const WinRateChart = ({ filters = {}, enabled = true }) => {
   const [chartType, setChartType] = useState("line");
+  const year = CURRENT_YEAR;
 
   const {
     monthlyData,
@@ -216,7 +224,7 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
     hasWins,
     isLoading,
     isFetching,
-  } = useWinRateAnalytics({ filters, year: YEAR, enabled });
+  } = useWinRateAnalytics({ filters, year, enabled });
 
   return (
     <motion.div
@@ -240,11 +248,11 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
             )}
           </h3>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Monthly win rate trends and distribution · {YEAR}
+            By the month each lead arrived · {year}
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Button
             variant={chartType === "line" ? "default" : "outline"}
             size="sm"
@@ -254,7 +262,6 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
           >
             Trend
           </Button>
-          
         </div>
       </div>
 
@@ -300,7 +307,7 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
                 axisLine={false}
               />
               <Tooltip
-                content={<LineTooltip />}
+                content={<LineTooltip year={year} />}
                 cursor={{ stroke: "#CBD5E1", strokeDasharray: "3 3" }}
               />
               <Area

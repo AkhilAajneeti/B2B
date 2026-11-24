@@ -1,19 +1,28 @@
 /**
  * Win Rate analytics hook.
  *
- * One backend fetch per (filters × year). Frontend groups records by month and
- * by category (Win / Active / Lost) into:
+ * COUNTED BY THE SERVER, one small query per (month × category). It used to
+ * pull up to 5,000 lead RECORDS newest-first and group them here, which meant
+ * that past the cap the oldest months were never fetched at all: the chart
+ * drew twelve months with data in only the most recent few weeks, and looked
+ * like an empty year rather than a truncated one. See
+ * fetchMonthlyWinRateCounts for the full reasoning, including why every
+ * category now buckets by createdAt.
+ *
+ * Shape is unchanged for callers:
  *   - monthlyData: 12 rows (Jan–Dec) with { month, won, lost, active, total, winRate }
  *   - pieData:     [{ name: "Won", value, fill }, { name: "Active", … }, { name: "Lost", … }]
  *   - summary:     { totalWon, totalLost, totalActive, overallWinRate, bestMonth, trends }
  *   - isEmpty:     true when every monthly bucket is zero (drives "no data" state)
  *
- * React Query handles in-memory caching and silent background refresh every 5 min.
- * localStorage seeds `initialData` so reloads paint instantly.
+ * React Query handles in-memory caching and silent background refresh. The
+ * underlying counts come through services/leads.service's fetchLeadsCount,
+ * which has its own memory + localStorage cache, so revisiting a year costs
+ * nothing.
  */
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchWinRateDataset, readCachedDataset } from "../services/winRateService";
+import { fetchMonthlyWinRateCounts } from "../services/winRateService";
 
 const STALE = 1000 * 60 * 5; // 5 min — silent refresh interval
 const GC = 1000 * 60 * 30;
@@ -23,41 +32,11 @@ const MONTH_LABELS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// Category sets per spec — lowercase for case-insensitive matching.
-// "Call Not Picked / Connecting" and "Switch Off" describe connection
-// failures (still in progress, just unreachable for now), not closed-lost
-// outcomes — keeping them in ACTIVE so they don't drag the win rate down.
-const WIN_SET = new Set(["purchased"]);
-const ACTIVE_SET = new Set([
-  "new",
-  "follow up",
-  "interested",
-  "site visit scheduled",
-  "site visit done",
-  "call later",
-  "broker",
-  "call not picked",
-  "call not connecting",
-  "switch off",
-]);
-const LOST_SET = new Set([
-  "dead",
-  "fake lead",
-  "invalid number",
-  "irrelevant lead",
-  "low budget",
-  "low interest",
-  "not interested",
-  "other location",
-]);
-
-const categorize = (status) => {
-  const n = (status || "").trim().toLowerCase();
-  if (WIN_SET.has(n)) return "won";
-  if (ACTIVE_SET.has(n)) return "active";
-  if (LOST_SET.has(n)) return "lost";
-  return null; // uncategorised — ignore so totals stay clean
-};
+// The Won / Active / Lost status lists live in the service now, next to the
+// queries that send them — see WON_STATUSES / ACTIVE_STATUSES / LOST_STATUSES
+// in services/winRateService. They were duplicated here as lowercase sets for
+// client-side matching; with the counting done server-side there is nothing
+// left to match, and one copy cannot drift from the other.
 
 const buildEmptyMonth = (label) => ({
   month: label,
@@ -84,16 +63,10 @@ export const useWinRateAnalytics = ({
   year = new Date().getFullYear(),
   enabled = true,
 }) => {
-  const { data: list, isLoading, isFetching, isError } = useQuery({
-    queryKey: ["win-rate-dataset", filters, year],
-    queryFn: () => fetchWinRateDataset({ filters, year }),
+  const { data: months, isLoading, isFetching, isError } = useQuery({
+    queryKey: ["win-rate-monthly", filters, year],
+    queryFn: () => fetchMonthlyWinRateCounts({ filters, year }),
     enabled,
-    initialData: () => {
-      const cached = readCachedDataset(filters, year);
-      return cached?.list ?? undefined;
-    },
-    // Treat cached as immediately stale so React Query fires a background refetch.
-    initialDataUpdatedAt: 0,
     staleTime: STALE,
     gcTime: GC,
     refetchInterval: 60 * 60 * 1000, // silent background refresh every 60 min
@@ -104,35 +77,15 @@ export const useWinRateAnalytics = ({
 
   const aggregated = useMemo(() => {
     const monthly = MONTH_LABELS.map(buildEmptyMonth);
-    const records = list || [];
+    const counts = months || [];
 
-    for (const lead of records) {
-      const category = categorize(lead.status);
-      if (!category) continue;
-
-      // Closed deals (won / lost) bucket by when they actually closed
-      // (modifiedAt is the proxy — the Purchased/Lost transition is the last
-      // meaningful edit). Active leads still bucket by createdAt because
-      // they haven't closed yet. Falls back to createdAt if modifiedAt is
-      // missing on an older record.
-      const dateField =
-        category === "active"
-          ? lead.createdAt
-          : lead.modifiedAt || lead.createdAt;
-      if (!dateField) continue;
-
-      const d = new Date(`${dateField.replace(" ", "T")}Z`);
-      if (Number.isNaN(d.getTime())) continue;
-      // Only count rows whose bucket year matches the requested year. Stops
-      // a 2025 lead that closed in 2026 from showing under both years, and
-      // guards against stale localStorage entries.
-      if (d.getFullYear() !== year) continue;
-
-      const idx = d.getMonth();
-      const row = monthly[idx];
-      row[category] += 1;
-      row.total += 1;
-    }
+    monthly.forEach((row, i) => {
+      const c = counts[i] || {};
+      row.won = c.won || 0;
+      row.active = c.active || 0;
+      row.lost = c.lost || 0;
+      row.total = row.won + row.active + row.lost;
+    });
 
     // Compute winRate per month — Won / (Won + Lost) × 100.
     for (const row of monthly) {
@@ -207,7 +160,7 @@ export const useWinRateAnalytics = ({
       isEmpty,
       hasWins,
     };
-  }, [list, year]);
+  }, [months, year]);
 
   return {
     ...aggregated,
