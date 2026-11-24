@@ -417,8 +417,10 @@ const Reports = () => {
                   table's status / source / date filters deliberately do NOT
                   narrow them. The one exception is the TEAM filter, which they
                   do honour, so a "Team: X" chip scopes the whole page
-                  consistently. Both charts share a single network fetch (same
-                  React Query key), so this stays one request.
+                  consistently. The funnel pulls the shared record dataset;
+                  the Win Rate chart counts per month server-side under its own
+                  query key, so they no longer share a request — see
+                  fetchMonthlyWinRateCounts for why it stopped pulling records.
                 */}
                 <div className="grid grid-cols-1 gap-6 mb-8">
                   <ConversionFunnelChart

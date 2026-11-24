@@ -17,6 +17,7 @@ import Icon from "../../../components/AppIcon";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
 import { useFunnelAnalytics } from "../hooks/useFunnelAnalytics";
+import FunnelTrendChart from "./FunnelTrendChart";
 import { todayLocal } from "../../../utils/dateFilter";
 
 const DATE_FILTER_OPTIONS = [
@@ -379,192 +380,236 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
       transition={{ duration: 0.4 }}
       className="bg-card border border-border rounded-xl p-4 sm:p-6 hover:shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition-shadow duration-500"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5">
-        <div>
-          <h3 className="text-lg font-bold flex items-center gap-2">
-            <span className="bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 bg-clip-text text-transparent">
-              Sales Funnel & Rep Insights
-            </span>
-            {isFetching && !isLoading && (
-              <span className="relative inline-flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+        <div className="mb-5">
+          <div>
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span className="bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 bg-clip-text text-transparent">
+                Sales Funnel
               </span>
-            )}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {periodLabel} · lead pipeline progression and per-rep performance
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-end gap-2 w-full sm:w-auto">
-          <Select
-            options={DATE_FILTER_OPTIONS}
-            value={filterType}
-            onChange={setFilterType}
-            className="w-full sm:w-40"
-            aria-label="Funnel date filter"
-          />
-
-          {filterType === "on" && (
-            <Input
-              type="date"
-              max={todayLocal()}
-              value={selectedDate}
-              onChange={(event) => setSelectedDate(event.target.value)}
-              className="h-10 w-full sm:w-40"
-              aria-label="Funnel date"
-            />
-          )}
-
-          {filterType === "between" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
-              <Input
-                type="date"
-                max={todayLocal()}
-                value={startDate}
-                onChange={(event) => handleStartDateChange(event.target.value)}
-                className="h-10 w-full sm:w-40"
-                aria-label="Funnel start date"
-              />
-              <Input
-                type="date"
-                max={todayLocal()}
-                value={endDate}
-                min={startDate}
-                onChange={(event) => setEndDate(event.target.value)}
-                className="h-10 w-full sm:w-40"
-                aria-label="Funnel end date"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {isLoading && isEmpty ? (
-        <Skeleton />
-      ) : isEmpty ? (
-        <EmptyState monthLabel={periodLabel} />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Funnel — left 2/5 on wide screens */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="grid grid-cols-3 gap-2">
-              <KpiTile
-                icon="Users"
-                iconColor="text-slate-500"
-                label="In funnel"
-                value={totalLeads}
-              />
-              <KpiTile
-                icon="Target"
-                iconColor="text-violet-600 dark:text-violet-300"
-                label="Top → Won"
-                value={`${overallConversion}%`}
-                accent
-              />
-              <KpiTile
-                icon="AlertTriangle"
-                iconColor="text-rose-500 dark:text-rose-400"
-                label="Top drop"
-                value={highestDropOff ? `${highestDropOff.dropOff}%` : "—"}
-              />
-            </div>
-
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  layout="vertical"
-                  margin={{ top: 4, right: 52, bottom: 4, left: 4 }}
-                  barCategoryGap={10}
-                >
-                  {/* Recessive grid, and only along the measured axis — a
-                      horizontal bar is read against the x scale, so
-                      horizontal rules would cross every bar for nothing. */}
-                  <CartesianGrid
-                    horizontal={false}
-                    stroke="rgb(var(--color-border))"
-                    strokeDasharray="3 3"
-                  />
-                  <XAxis
-                    type="number"
-                    tick={{ fontSize: 10, fill: "rgb(var(--color-muted-foreground))" }}
-                    tickLine={false}
-                    axisLine={false}
-                    allowDecimals={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="shortLabel"
-                    width={112}
-                    tick={{ fontSize: 11, fill: "rgb(var(--color-foreground))", fontWeight: 600 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    content={<FunnelTooltip />}
-                    cursor={{ fill: "rgba(15,23,42,0.04)" }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    name="Leads"
-                    radius={[0, 4, 4, 0]}
-                    isAnimationActive
-                    animationDuration={700}
-                    animationEasing="ease-out"
-                  >
-                    {/* One fixed hue per stage. Colour follows the STAGE,
-                        never its rank, so filtering to fewer stages never
-                        repaints the survivors. */}
-                    {chartData.map((row) => (
-                      <Cell key={row.key || row.label} fill={row.to} />
-                    ))}
-                    {/* The count sits at the end of each bar, so the number
-                        is readable without a tooltip and the lighter bars
-                        carry a label rather than relying on fill alone. */}
-                    <LabelList
-                      dataKey="count"
-                      position="right"
-                      offset={8}
-                      style={{ fontSize: 11, fontWeight: 700, fill: "#334155" }}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {bestConversion && (
-                <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">
-                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-medium">
-                    <Icon name="TrendingUp" size={12} />
-                    Best conversion
-                  </div>
-                  <div className="text-sm font-bold text-slate-900 mt-0.5 truncate">
-                    {bestConversion.label}
-                  </div>
-                </div>
+              {isFetching && !isLoading && (
+                <span className="relative inline-flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
               )}
-              {highestDropOff && (
-                <div className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2">
-                  <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 font-medium">
-                    <Icon name="AlertTriangle" size={12} />
-                    Highest drop
-                  </div>
-                  <div className="text-sm font-bold text-slate-900 mt-0.5 truncate">
-                    {highestDropOff.label}{" "}
-                    <span className="text-xs font-medium text-rose-600 dark:text-rose-300">
-                      −{highestDropOff.dropOff}%
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
+            </h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {periodLabel} · lead pipeline progression
+            </p>
           </div>
 
-          {/* Rep cards — right 3/5 on wide screens, scroll vertically */}
-          <div className="lg:col-span-3 min-w-0">
+          {/* ───────────────────────────────────────────────────────────────
+              DATE FILTER COMMENTED OUT — 2026-11-24, by request.
+
+              The card stays on `filterType = "current"`, its initial value, so
+              it is pinned to THIS MONTH and the subtitle still reads the period
+              from `periodLabel` exactly as before — only the ability to change
+              it is gone.
+
+              The whole control group goes, not just the Select: the two date
+              Inputs below it only render for the "on" and "between" options,
+              which nothing can select any more.
+
+              The `filterType` / `selectedDate` / `startDate` / `endDate` state
+              and the Select / Input / todayLocal imports are left in place on
+              purpose — they are what the block below needs, so restoring it is
+              uncommenting and nothing else. Expect "declared but never read"
+              hints on the setters until then.
+              ─────────────────────────────────────────────────────────────── */}
+          {/*
+          <div className="flex flex-col sm:flex-row sm:items-end gap-2 w-full sm:w-auto">
+            <Select
+              options={DATE_FILTER_OPTIONS}
+              value={filterType}
+              onChange={setFilterType}
+              className="w-full sm:w-40"
+              aria-label="Funnel date filter"
+            />
+
+            {filterType === "on" && (
+              <Input
+                type="date"
+                max={todayLocal()}
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+                className="h-10 w-full sm:w-40"
+                aria-label="Funnel date"
+              />
+            )}
+
+            {filterType === "between" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
+                <Input
+                  type="date"
+                  max={todayLocal()}
+                  value={startDate}
+                  onChange={(event) => handleStartDateChange(event.target.value)}
+                  className="h-10 w-full sm:w-40"
+                  aria-label="Funnel start date"
+                />
+                <Input
+                  type="date"
+                  max={todayLocal()}
+                  value={endDate}
+                  min={startDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                  className="h-10 w-full sm:w-40"
+                  aria-label="Funnel end date"
+                />
+              </div>
+            )}
+          </div>
+          */}
+        </div>
+
+        {isLoading && isEmpty ? (
+          <Skeleton />
+        ) : isEmpty ? (
+          <EmptyState monthLabel={periodLabel} />
+        ) : (
+          <>
+          <div className="grid grid-cols-3 gap-2">
+            <KpiTile
+              icon="Users"
+              iconColor="text-slate-500"
+              label="In funnel"
+              value={totalLeads}
+            />
+            <KpiTile
+              icon="Target"
+              iconColor="text-violet-600 dark:text-violet-300"
+              label="Top → Won"
+              value={`${overallConversion}%`}
+              accent
+            />
+            <KpiTile
+              icon="AlertTriangle"
+              iconColor="text-rose-500 dark:text-rose-400"
+              label="Top drop"
+              value={highestDropOff ? `${highestDropOff.dropOff}%` : "—"}
+            />
+          </div>
+
+          {/* Horizontal funnel bars, replaced 2026-11-24 by the stage
+              trend chart below. Kept behind a false guard rather than a JSX
+              comment because the block contains comments of its own, and a
+              nested comment terminator would close the outer one early.
+
+              Note the two now answer different timeframes: the bars showed
+              one month, the lines show the year. Restoring them is deleting
+              the guard and the FunnelTrendChart line. */}
+          {false && (
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 4, right: 52, bottom: 4, left: 4 }}
+                barCategoryGap={10}
+              >
+                {/* Recessive grid, and only along the measured axis — a
+                    horizontal bar is read against the x scale, so
+                    horizontal rules would cross every bar for nothing. */}
+                <CartesianGrid
+                  horizontal={false}
+                  stroke="rgb(var(--color-border))"
+                  strokeDasharray="3 3"
+                />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 10, fill: "rgb(var(--color-muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="shortLabel"
+                  width={112}
+                  tick={{ fontSize: 11, fill: "rgb(var(--color-foreground))", fontWeight: 600 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  content={<FunnelTooltip />}
+                  cursor={{ fill: "rgba(15,23,42,0.04)" }}
+                />
+                <Bar
+                  dataKey="count"
+                  name="Leads"
+                  radius={[0, 4, 4, 0]}
+                  isAnimationActive
+                  animationDuration={700}
+                  animationEasing="ease-out"
+                >
+                  {/* One fixed hue per stage. Colour follows the STAGE,
+                      never its rank, so filtering to fewer stages never
+                      repaints the survivors. */}
+                  {chartData.map((row) => (
+                    <Cell key={row.key || row.label} fill={row.to} />
+                  ))}
+                  {/* The count sits at the end of each bar, so the number
+                      is readable without a tooltip and the lighter bars
+                      carry a label rather than relying on fill alone. */}
+                  <LabelList
+                    dataKey="count"
+                    position="right"
+                    offset={8}
+                    style={{ fontSize: 11, fontWeight: 700, fill: "#334155" }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          )}
+
+          <FunnelTrendChart filters={filters} enabled={enabled} />
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {bestConversion && (
+              <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">
+                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-medium">
+                  <Icon name="TrendingUp" size={12} />
+                  Best conversion
+                </div>
+                <div className="text-sm font-bold text-slate-900 mt-0.5 truncate">
+                  {bestConversion.label}
+                </div>
+              </div>
+            )}
+            {highestDropOff && (
+              <div className="rounded-lg bg-rose-50 border border-rose-100 px-3 py-2">
+                <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-300 font-medium">
+                  <Icon name="AlertTriangle" size={12} />
+                  Highest drop
+                </div>
+                <div className="text-sm font-bold text-slate-900 mt-0.5 truncate">
+                  {highestDropOff.label}{" "}
+                  <span className="text-xs font-medium text-rose-600 dark:text-rose-300">
+                    −{highestDropOff.dropOff}%
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          </>
+        )}
+
+        {/* ───────────────────────────────────────────────────────────────
+            Rep cards.
+
+              SALES REP INSIGHTS COMMENTED OUT — 2026-11-24, by request, and
+              replaced with the Win Rate chart. Commented rather than deleted
+              so it can come back: uncomment the block below, delete the
+              the Win Rate chart. That chart has since moved back out to its
+              own full-width card below this one, so this column is gone and
+              restoring the block means putting it somewhere sensible first.
+
+              `reps` and `RepCard` are deliberately left in place rather than
+              removed — they are what the commented block needs, and stripping
+              them would turn a one-line restore into a rewrite.
+              ─────────────────────────────────────────────────────────────── */}
+            {/*
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-semibold text-slate-700">Sales Rep Insights</h4>
               <span className="text-[10px] uppercase tracking-wider text-slate-500">
@@ -582,9 +627,7 @@ const ConversionFunnelChart = ({ filters = {}, enabled = true }) => {
                 ))}
               </div>
             )}
-          </div>
-        </div>
-      )}
+            */}
     </motion.div>
   );
 };

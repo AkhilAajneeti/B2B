@@ -1,17 +1,13 @@
 import React, { memo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from "recharts";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
@@ -212,13 +208,20 @@ const Skeleton = () => (
 
 // ---------------------------------------------------------------------------
 
-const WinRateChart = ({ filters = {}, enabled = true }) => {
-  const [chartType, setChartType] = useState("line");
+/**
+ * `embedded` drops the card chrome so this can sit INSIDE another card —
+ * which is where it lives on Reports, in the right column of the Sales Funnel
+ * panel. Without it you get a bordered, padded, shadow-on-hover card nested in
+ * a bordered, padded card, and the inset reads as a mistake rather than as
+ * structure. It also skips the scale-in: the parent card has already animated
+ * in, and a second entrance inside it looks like a stutter.
+ */
+const WinRateChart = ({ filters = {}, enabled = true, embedded = false }) => {
+  const [chartType, setChartType] = useState("bar");
   const year = CURRENT_YEAR;
 
   const {
     monthlyData,
-    pieData,
     summary,
     isEmpty,
     hasWins,
@@ -228,10 +231,14 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={embedded ? false : { opacity: 0, scale: 0.96 }}
+      animate={embedded ? undefined : { opacity: 1, scale: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="bg-card border border-border rounded-xl p-4 sm:p-6 hover:shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition-shadow duration-500"
+      className={
+        embedded
+          ? "h-full flex flex-col"
+          : "bg-card border border-border rounded-xl p-4 sm:p-6 hover:shadow-[0_20px_50px_-20px_rgba(15,23,42,0.25)] transition-shadow duration-500"
+      }
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3">
@@ -254,9 +261,9 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
 
         <div className="flex items-center gap-2">
           <Button
-            variant={chartType === "line" ? "default" : "outline"}
+            variant={chartType === "bar" ? "default" : "outline"}
             size="sm"
-            onClick={() => setChartType("line")}
+            onClick={() => setChartType("bar")}
             iconName="TrendingUp"
             iconPosition="left"
           >
@@ -266,26 +273,30 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
       </div>
 
       {/* Chart body */}
-      <div className="h-80">
+      <div className={embedded ? "h-80 flex-1 min-h-[18rem]" : "h-80"}>
         {isLoading && (!monthlyData || monthlyData.every((m) => m.total === 0)) ? (
           <Skeleton />
         ) : isEmpty ? (
           <EmptyState />
-        ) : chartType === "line" && !hasWins ? (
-          // Lost/active exist but zero purchases → win rate would draw a flat 0% line.
-          // Per spec, replace with a contextual empty state instead.
+        ) : chartType === "bar" && !hasWins ? (
+          // Lost/active exist but zero purchases → every bar would be zero,
+          // which draws as an empty plot rather than as information.
           <EmptyState
             iconName="Trophy"
             title="No closed deals yet"
-            message="Move a lead to “Purchased” to start the win rate trend. Switch to Distribution to see active and lost leads."
+            message="Move a lead to “Purchased” to start the win rate trend."
           />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={monthlyData} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
+            <BarChart data={monthlyData} margin={{ top: 12, right: 16, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="wrc-area" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={PRIMARY} stopOpacity={0.4} />
-                  <stop offset="100%" stopColor={PRIMARY} stopOpacity={0} />
+                {/* Top-lit so the bars read as solid objects rather than flat
+                    blocks. Opaque at the cap and softening downward, which
+                    also keeps the gridlines faintly visible through the feet
+                    instead of being cut off by a hard edge. */}
+                <linearGradient id="wrc-bar" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={PRIMARY_DARK} stopOpacity={0.95} />
+                  <stop offset="100%" stopColor={PRIMARY} stopOpacity={0.55} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-border))" vertical={false} />
@@ -294,7 +305,7 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
                 stroke="rgb(var(--color-muted-foreground))"
                 fontSize={11}
                 tickLine={false}
-                axisLine={{ stroke: "#E2E8F0" }}
+                axisLine={{ stroke: "rgb(var(--color-border))" }}
               />
               <YAxis
                 stroke="rgb(var(--color-muted-foreground))"
@@ -308,27 +319,37 @@ const WinRateChart = ({ filters = {}, enabled = true }) => {
               />
               <Tooltip
                 content={<LineTooltip year={year} />}
-                cursor={{ stroke: "#CBD5E1", strokeDasharray: "3 3" }}
+                // A band, not the line cursor the area chart used: on bars a
+                // dashed vertical rule reads as a data series of its own.
+                cursor={{ fill: "rgb(var(--color-muted))", fillOpacity: 0.6 }}
               />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="winRate"
-                stroke={PRIMARY}
-                strokeWidth={2.5}
-                fill="url(#wrc-area)"
-                dot={{ r: 4, fill: PRIMARY, stroke: "#fff", strokeWidth: 2 }}
-                activeDot={{ r: 7, fill: PRIMARY_DARK, stroke: "#fff", strokeWidth: 2 }}
-                animationDuration={1200}
+                fill="url(#wrc-bar)"
+                // Rounded caps only — a radius on all four corners makes a
+                // short bar look like it floats off the axis.
+                radius={[6, 6, 0, 0]}
+                // Twelve months in a 3/5-width column: uncapped, Recharts
+                // widens each bar to fill its slot and they merge into a
+                // block. Capped, the gaps stay readable at any width.
+                maxBarSize={38}
+                animationDuration={900}
                 animationEasing="ease-out"
               />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         )}
       </div>
 
       {/* KPI tiles */}
       {summary && !isEmpty && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5 pt-5 border-t border-border">
+        <div
+          className={`grid gap-3 mt-5 pt-5 border-t border-border ${
+            // Four across a 3/5-width column squeezes every tile to about
+            // 120px and wraps "May · 100%" onto two lines. Two across fits.
+            embedded ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-4"
+          }`}
+        >
           <KpiTile
             icon="CheckCircle2"
             iconColor="text-emerald-600 dark:text-emerald-300"

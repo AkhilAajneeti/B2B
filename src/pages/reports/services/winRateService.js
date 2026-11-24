@@ -512,49 +512,85 @@ const monthBounds = (year, monthIndex) => {
  *
  * Future months are not requested at all; they cannot contain anything.
  */
-export const fetchMonthlyWinRateCounts = async ({ filters = {}, year }) => {
+/**
+ * Twelve months x N status groups, counted by the server.
+ *
+ * @param groups {{ key: string, statuses: string[] }[]}
+ * @returns {Promise<Object[]>} 12 rows, one per month, keyed by group
+ */
+const fetchMonthlyCountsByGroup = async ({ filters = {}, year, groups }) => {
   const base = filtersToWhereGroup(filters);
 
   const now = new Date();
+  // Future months cannot contain anything, so they are not requested at all.
   const lastMonth = year === now.getFullYear() ? now.getMonth() : 11;
 
   const jobs = [];
   for (let m = 0; m <= lastMonth; m += 1) {
     const [start, end] = monthBounds(year, m);
-    for (const category of ["won", "active", "lost"]) {
+    for (const g of groups) {
       jobs.push({
         month: m,
-        category,
+        key: g.key,
         clauses: [
           ...base,
-          { type: "in", attribute: "status", value: CATEGORY_STATUSES[category] },
+          { type: "in", attribute: "status", value: g.statuses },
           { type: "between", attribute: "createdAt", value: [start, end] },
         ],
       });
     }
   }
 
-  const months = Array.from({ length: 12 }, () => ({ won: 0, active: 0, lost: 0 }));
+  const blank = () => Object.fromEntries(groups.map((g) => [g.key, 0]));
+  const months = Array.from({ length: 12 }, blank);
 
-  // Batched rather than all at once: a full year is 36 requests, and firing
-  // them together saturates the browser's ~6 connections per host, so the rest
-  // of the Reports page waits behind them. Matches the batching the record
-  // fetch above already uses.
+  // Batched rather than all at once. Firing every request together saturates
+  // the browser's ~6 connections per host, so the rest of the Reports page
+  // waits behind them; one at a time is the 10s paint this replaced. A failed
+  // count becomes 0 rather than failing the whole chart — one empty series is
+  // recoverable, a blank panel is not.
   const BATCH = 6;
   for (let i = 0; i < jobs.length; i += BATCH) {
     const slice = jobs.slice(i, i + BATCH);
     const counts = await Promise.all(
-      slice.map((j) =>
-        fetchLeadsCount(j.clauses).catch(() => 0),
-      ),
+      slice.map((j) => fetchLeadsCount(j.clauses).catch(() => 0)),
     );
     slice.forEach((j, k) => {
-      months[j.month][j.category] = counts[k] || 0;
+      months[j.month][j.key] = counts[k] || 0;
     });
   }
 
   return months;
 };
+
+export const fetchMonthlyWinRateCounts = ({ filters = {}, year }) =>
+  fetchMonthlyCountsByGroup({
+    filters,
+    year,
+    groups: [
+      { key: "won", statuses: WON_STATUSES },
+      { key: "active", statuses: ACTIVE_STATUSES },
+      { key: "lost", statuses: LOST_STATUSES },
+    ],
+  });
+
+/**
+ * The funnel's stages, month by month — one series per stage.
+ *
+ * `New` is deliberately absent: it was excluded by request, and it would
+ * dominate the scale anyway, since every lead passes through it and most sit
+ * there. Six series over twelve months is 72 small count queries on a cold
+ * cache; fetchLeadsCount memoises each one, so revisiting costs nothing.
+ *
+ * Counted by `createdAt`, like the win rate series, so a lead belongs to the
+ * month it ARRIVED and a later status change cannot move it between months.
+ */
+export const fetchMonthlyFunnelCounts = ({ filters = {}, year, stages }) =>
+  fetchMonthlyCountsByGroup({
+    filters,
+    year,
+    groups: stages.map((st) => ({ key: st.key, statuses: [st.key] })),
+  });
 
 export const invalidateWinRateCache = () => {
   inFlight.clear();
