@@ -116,15 +116,40 @@ const isTeamRecord = (record, user) => {
   );
 };
 
+/**
+ * Entities the elevated bypass below must NOT cover.
+ *
+ * The bypass exists for BUSINESS records — a lead assigned to someone else,
+ * in a team the owner isn't in. Administration is a different thing: who may
+ * edit a USER is decided by the CRM's own ACL, not by holding the Owner role.
+ * Without this, an Owner saw the edit pencil on every row of Settings → Users
+ * even where the server would refuse the save, because `isElevated()` answered
+ * before the ACL was ever read.
+ *
+ * `type: "admin"` still passes, since that is what administers users.
+ *
+ * Only User is listed. Team and Role are arguably the same class of surface,
+ * but restricting those changes who can manage teams today, so that is a
+ * deliberate decision rather than a side effect of this fix.
+ */
+const ADMIN_SCOPED_ENTITIES = new Set(["User"]);
+
 export const canEntityRecord = (entity, action, record) => {
-  // Owners / admins / managers can EDIT (and read/create) any record across the
-  // org — regardless of who it's assigned to, its team scoping, or a missing
-  // ACL. Role is read from login_object (not the ACL table), so this holds even
-  // when a lead sits in a team the owner isn't in, the assigned user isn't in
-  // the loaded users list, or the ACL failed to load.
-  // DELETE is deliberately EXCLUDED — deleting still follows normal own/team
-  // scoping for everyone, so an elevated user can't wipe any record.
-  if (isElevated() && action !== "delete") return true;
+  // Administration follows the ACL, never the elevated bypass. Falling through
+  // means a missing ACL denies rather than allows — the right direction for a
+  // surface that can change other people's accounts.
+  if (ADMIN_SCOPED_ENTITIES.has(entity)) {
+    if (isSupAdmin()) return true;
+  } else if (isElevated() && action !== "delete") {
+    // Owners / admins / managers can EDIT (and read/create) any record across
+    // the org — regardless of who it's assigned to, its team scoping, or a
+    // missing ACL. Role is read from login_object (not the ACL table), so this
+    // holds even when a lead sits in a team the owner isn't in, the assigned
+    // user isn't in the loaded users list, or the ACL failed to load.
+    // DELETE is deliberately EXCLUDED — deleting still follows normal own/team
+    // scoping for everyone, so an elevated user can't wipe any record.
+    return true;
+  }
 
   const rawAccess = getEntityActionValue(entity, action);
   const access = typeof rawAccess === "string" ? rawAccess.toLowerCase() : rawAccess;
