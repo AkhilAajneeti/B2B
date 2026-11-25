@@ -169,7 +169,7 @@ const DealsFilters = ({
       {selectedCount > 0 && (
         <div className="relative px-5 py-3 bg-gradient-to-r from-violet-100/80 via-fuchsia-100/70 to-pink-100/80 border-y border-violet-200/60">
           <div className="relative flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-card/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600 dark:text-violet-300">
                 <Icon name="CheckCircle2" size={18} />
               </div>
@@ -182,7 +182,10 @@ const DealsFilters = ({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            {/* flex-wrap: without it these buttons are one unbreakable row,
+                wider than a phone, and the page scrolls sideways instead of
+                the bar wrapping. Same fix as pages/deals/DealsFilters. */}
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               {bulkActions?.map((action) => (
                 <Button
                   key={action.value}

@@ -638,10 +638,13 @@ const DealsFilters = ({
           don't fire delete by accident; Mass Update keeps the neutral
           white-on-violet pill. */}
       {selectedCount > 0 && (
-        <div className="relative px-5 py-3 bg-gradient-to-r from-violet-100/80 via-fuchsia-100/70 to-pink-100/80 border-b border-violet-200/60">
+        <div className="relative px-4 sm:px-5 py-3 bg-gradient-to-r from-violet-100/80 via-fuchsia-100/70 to-pink-100/80 border-b border-violet-200/60">
           <div className="relative flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-card/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600 dark:text-violet-300">
+            {/* min-w-0 so this block can shrink: a flex child defaults to
+                min-width:auto, which means the text refuses to wrap and sets
+                a floor on the row's width. */}
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="w-9 h-9 shrink-0 rounded-full bg-card/80 ring-1 ring-violet-200 flex items-center justify-center text-violet-600 dark:text-violet-300">
                 <Icon name="CheckCircle2" size={18} />
               </div>
               <div>
@@ -653,7 +656,12 @@ const DealsFilters = ({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            {/* flex-wrap is the fix for the mobile overflow: without it the
+                four buttons are one unbreakable row, wider than a phone, and
+                the page scrolls sideways rather than the bar wrapping.
+                Full width below sm so the wrapped rows align to the edges
+                instead of hanging off the right. */}
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               {bulkActions?.map((action) => (
                 <Button
                   key={action.value}
