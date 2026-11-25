@@ -55,6 +55,16 @@ const ExportDialog = ({
   phase = PHASES.IDLE,
   progress = { fetched: 0, target: 0 },
   resultCount = 0,
+  // INDETERMINATE MODE. The server-side export is one request that either
+  // returns a file or does not — there is nothing to report between those two
+  // states. The header above says this dialog's bar is REAL and not a
+  // placeholder, and that stays true: rather than animate a fake percentage,
+  // this mode drops the number entirely and sweeps the bar, which says "still
+  // working" without claiming to know how far along it is.
+  indeterminate = false,
+  title = "Export leads",
+  subtitle = "From the current filter & sort",
+  busyLabel = "Fetching leads…",
 }) => {
   const busy = phase === PHASES.WORKING;
   const done = phase === PHASES.DONE;
@@ -151,11 +161,9 @@ const ExportDialog = ({
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900">
-                        Export leads
+                        {title}
                       </h3>
-                      <p className="mt-0.5 text-xs text-slate-600">
-                        From the current filter &amp; sort
-                      </p>
+                      <p className="mt-0.5 text-xs text-slate-600">{subtitle}</p>
                     </div>
                     {!busy && (
                       <button
@@ -211,23 +219,49 @@ const ExportDialog = ({
                       <div className="relative mx-auto mb-4 h-16 w-16">
                         <span className="absolute inset-0 rounded-full border-4 border-primary/15" />
                         <span className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-primary" />
-                        <span className="absolute inset-0 grid place-items-center text-xs font-semibold tabular-nums text-primary">
-                          {pct}%
-                        </span>
+                        {!indeterminate && (
+                          <span className="absolute inset-0 grid place-items-center text-xs font-semibold tabular-nums text-primary">
+                            {pct}%
+                          </span>
+                        )}
+                        {indeterminate && (
+                          <span className="absolute inset-0 grid place-items-center text-primary">
+                            <Icon name="FileSpreadsheet" size={20} />
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm font-medium text-slate-800">
-                        Fetching leads…
+                        {indeterminate ? busyLabel : "Fetching leads…"}
                       </p>
                       <p className="mt-0.5 text-xs tabular-nums text-slate-500">
-                        {progress.fetched} of {progress.target}
+                        {indeterminate
+                          ? `${resultCount} lead${resultCount === 1 ? "" : "s"} · the server is building the sheet`
+                          : `${progress.fetched} of ${progress.target}`}
                       </p>
                       <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70">
-                        <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-primary to-rose-500"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ ease: "easeOut", duration: 0.3 }}
-                        />
+                        {indeterminate ? (
+                          // A short bar travelling the track, not a width that
+                          // grows: growth implies a measured fraction, and
+                          // there isn't one. Under reduced motion it sits
+                          // still at a third rather than sliding forever.
+                          <motion.div
+                            className="h-full w-1/3 rounded-full bg-gradient-to-r from-primary to-rose-500"
+                            initial={{ x: "-100%" }}
+                            animate={reduceMotion ? { x: "100%" } : { x: ["-100%", "300%"] }}
+                            transition={
+                              reduceMotion
+                                ? { duration: 0 }
+                                : { duration: 1.1, repeat: Infinity, ease: "easeInOut" }
+                            }
+                          />
+                        ) : (
+                          <motion.div
+                            className="h-full rounded-full bg-gradient-to-r from-primary to-rose-500"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ ease: "easeOut", duration: 0.3 }}
+                          />
+                        )}
                       </div>
                     </div>
                   )}
@@ -268,4 +302,5 @@ const ExportDialog = ({
   );
 };
 
+export { PHASES };
 export default ExportDialog;

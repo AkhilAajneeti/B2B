@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet";
 import toast from "react-hot-toast";
 
@@ -7,6 +7,7 @@ import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
+import ExportDialog from "./components/ExportDialog";
 import DealDrawer from "./components/DealDrawer";
 // import Papa from "papaparse"; // only the commented CSV builder below used it
 import TablePagination from "./components/TablePagination";
@@ -357,6 +358,51 @@ const DealsPage = () => {
   */
 
   /**
+   * Export progress, shown in the ExportDialog rather than a toast.
+   *
+   * `count` is what the dialog reports; `phase` drives its three states. A
+   * failure CLOSES the dialog and falls back to an error toast — leaving a
+   * card on screen that says "preparing" while nothing is happening is worse
+   * than no card, and the error text is long enough to want the width a toast
+   * gives it.
+   */
+  const [exportState, setExportState] = useState({
+    open: false,
+    phase: "idle",
+    count: 0,
+  });
+
+  // The done state lingers so it can be read, then closes itself. Tracked in
+  // a ref so leaving the page mid-export doesn't set state on an unmounted
+  // component.
+  const exportTimer = useRef(null);
+  useEffect(() => () => clearTimeout(exportTimer.current), []);
+
+  /**
+   * One path for both buttons: Export All sends the page's ids, Export
+   * Selected sends the ticked ones, and everything after that is identical.
+   */
+  const runExport = (ids, fileName, format = "csv") => {
+    clearTimeout(exportTimer.current);
+    setExportState({ open: true, phase: "working", count: ids.length });
+
+    exportLeadsByIds(ids, { format })
+      .then((blob) => {
+        const stamp = new Date().toISOString().split("T")[0];
+        downloadBlob(blob, `${fileName}_${stamp}.${format}`);
+        setExportState({ open: true, phase: "done", count: ids.length });
+        exportTimer.current = setTimeout(
+          () => setExportState((prev) => ({ ...prev, open: false })),
+          1800,
+        );
+      })
+      .catch((err) => {
+        setExportState({ open: false, phase: "idle", count: 0 });
+        toast.error(err?.message || "Export failed");
+      });
+  };
+
+  /**
    * Export All — the leads currently on screen, built by the SERVER.
    *
    * Same rows as before: `leads` is the current page, so the file still holds
@@ -364,16 +410,18 @@ const DealsPage = () => {
    * changed is only who builds it — the ids go to /Export and the file comes
    * back, instead of the browser assembling a CSV from data it already had.
    *
-   * xlsx, not csv. It was switched to csv on request and switched back the
-   * same day: `cPreference` holds multi-line values — "Select Your
-   * Preference: …" then "What's your availability …" on the next line — and a
-   * CSV field containing a line break only survives if the writer quotes it.
-   * The server does not, so Excel ended the row at the break and everything
-   * after the first line was lost. The browser-built CSV could have quoted it
-   * on the way out; the server-built one is not ours to fix.
+   * CSV, by request.
    *
-   * In xlsx a line break is simply part of the cell, so the value arrives
-   * whole. Set format back to "csv" here if the backend starts quoting.
+   * KNOWN COST, accepted deliberately: `cPreference` holds multi-line values
+   * — "Select Your Preference: …" then "What's your availability …" on the
+   * next line — and a CSV field containing a line break only survives if the
+   * writer quotes it. The server does not, so Excel ends the row at the break
+   * and everything after the first line is lost. xlsx does not have this
+   * problem because a line break is simply part of the cell.
+   *
+   * The browser-built CSV could have quoted it on the way out; the
+   * server-built one is not ours to fix. Either ask the backend to quote
+   * fields containing newlines, or pass "xlsx" to runExport below.
    *
    * The gateway applies the user's own ACL to the contents either way, which
    * a file built in the tab never could.
@@ -396,20 +444,7 @@ const DealsPage = () => {
       return;
     }
 
-    const toastId = toast.loading(
-      `Preparing ${ids.length} lead${ids.length === 1 ? "" : "s"}…`,
-    );
-    exportLeadsByIds(ids, { format: "xlsx" })
-      .then((blob) => {
-        const stamp = new Date().toISOString().split("T")[0];
-        downloadBlob(blob, `leads_${stamp}.xlsx`);
-        toast.success(`Exported ${ids.length} lead${ids.length === 1 ? "" : "s"}`, {
-          id: toastId,
-        });
-      })
-      .catch((err) => {
-        toast.error(err?.message || "Export failed", { id: toastId });
-      });
+    runExport(ids, "leads", "csv");
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -712,21 +747,7 @@ const DealsPage = () => {
       // server decides what the file contains, so "3 of your 10 no longer
       // exist" is no longer something the client can know. It also applies
       // the user's own ACL, which the client-side path could not.
-      const toastId = toast.loading(
-        `Preparing ${selectedDeals.length} lead${selectedDeals.length === 1 ? "" : "s"}…`,
-      );
-      exportLeadsByIds(selectedDeals, { format: "xlsx" })
-        .then((blob) => {
-          const stamp = new Date().toISOString().split("T")[0];
-          downloadBlob(blob, `selected_leads_${stamp}.xlsx`);
-          toast.success(
-            `Exported ${selectedDeals.length} lead${selectedDeals.length === 1 ? "" : "s"}`,
-            { id: toastId },
-          );
-        })
-        .catch((err) => {
-          toast.error(err?.message || "Export failed", { id: toastId });
-        });
+      runExport(selectedDeals, "selected_leads", "csv");
       return;
     }
 
@@ -952,6 +973,20 @@ const DealsPage = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Export progress — one dialog for both export buttons. */}
+            <ExportDialog
+              isOpen={exportState.open}
+              phase={exportState.phase}
+              resultCount={exportState.count}
+              indeterminate
+              title="Preparing your file"
+              subtitle="The server is building the spreadsheet"
+              busyLabel="Preparing your file…"
+              onClose={() =>
+                setExportState((prev) => ({ ...prev, open: false }))
+              }
+            />
 
             {/* Filters */}
             <DealsFilters
