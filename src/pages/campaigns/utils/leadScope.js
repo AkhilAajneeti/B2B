@@ -1,16 +1,23 @@
 /**
  * Lead ↔ campaign matching — the single source of truth.
  *
- * The linkage is inconsistent: some leads carry the clean label in
- * `cProjectNomen` (with a messy `cProject`), others have it in `cProject`
- * (with a null `cProjectNomen`). So we match EITHER — `cProjectNomen` equals OR
- * `cProject` contains the projectNomen. For a "Default" projectNomen (no real
- * per-campaign label) we scope by `cClientNomen` (client-level) instead.
+ * There is NO project id on a lead. The linkage is text, and it is spread
+ * inconsistently across `cProject`, `cProjectName` and `cProjectNomen` (the
+ * leads table renders whichever is populated, which is why the column can look
+ * right while a filter on one field finds nothing).
+ *
+ * A campaign is identified by the CLIENT + PROJECT PAIR, not by the project
+ * name alone — two clients can run a campaign under the same project nomen,
+ * because "Prestige" and "Godrej" are builder names rather than campaign
+ * names. DealDrawer already treats the pair as the identity when it looks up a
+ * lead's WhatsApp template; this file now matches it.
  *
  * This lived inline in ProjectCard while the KPI row counted leads globally,
  * which is exactly how the two ended up disagreeing (cards showing 103 leads
  * under a "7743 Total Leads" KPI). Both now build their filters from here, so
- * the row and the cards can never drift apart again.
+ * the row and the cards can never drift apart again — and both now agree with
+ * the Leads page filter too, since all three go through
+ * `projectExactLeadCondition` for the project half of the match.
  */
 
 /**
@@ -19,35 +26,45 @@
  * a larger `or` group across many campaigns.
  */
 export const projectLeadCondition = (project = {}) => {
-  const hasNomen = project.projectNomen && project.projectNomen !== "Default";
+  // THE PAIR IS THE IDENTITY — the same rule DealDrawer already uses to find a
+  // lead's campaign for the WhatsApp template:
+  //
+  //     lead.cClientNomen  === project.clientNomen
+  //     lead.cProjectNomen === project.projectNomen
+  //
+  // Two clients can run a campaign under the same project nomen. "Prestige",
+  // "Godrej" and the like are builder names, not campaign names, so a
+  // project-only match counts every client's Prestige leads into each one.
+  //
+  // The previous rule here was client-blind AND substring-based
+  // (`cProject CONTAINS projectNomen`), so a brand-new "prestige" campaign
+  // opened reading 84 leads: one real, the rest other clients' — and
+  // `contains` also swept in PrestigeParkGrove, PrestigeCityHyderabad and
+  // anything else carrying those letters.
+  const client = (project.clientNomen || "").trim();
+  const projectArm = projectExactLeadCondition(project);
 
-  if (hasNomen) {
-    return {
-      type: "or",
-      value: [
-        {
-          type: "equals",
-          attribute: "cProjectNomen",
-          value: project.projectNomen,
-        },
-        {
-          type: "contains",
-          attribute: "cProject",
-          value: project.projectNomen,
-        },
-      ],
-    };
+  // Nothing identifying at all: match nothing rather than everything. An
+  // impossible condition is deliberate — returning null here would read as
+  // "no scope" to projectsLeadScope and count the whole company.
+  if (!client && !projectArm) {
+    return { type: "equals", attribute: "id", value: "__no_project_scope__" };
   }
 
-  if (project.clientNomen) {
-    return {
-      type: "equals",
-      attribute: "cClientNomen",
-      value: project.clientNomen,
-    };
-  }
+  // A campaign with no client label can only be identified by its project.
+  if (!client) return projectArm;
 
-  return { type: "contains", attribute: "cProject", value: project.name };
+  const clientArm = {
+    type: "equals",
+    attribute: "cClientNomen",
+    value: client,
+  };
+
+  // No usable project token (a "Default" nomen and no name) — the campaign is
+  // client-level, which is what the old code did for this case too.
+  if (!projectArm) return clientArm;
+
+  return { type: "and", value: [clientArm, projectArm] };
 };
 
 /** whereGroup (array form) for a single campaign — what ProjectCard counts on. */
@@ -74,13 +91,15 @@ export const projectsLeadScope = (projects = []) => {
 };
 
 /**
- * The leads-filter match for ONE project — exact, and deliberately narrow.
+ * The project half of the match for ONE project — exact, and deliberately
+ * narrow.
  *
- * Separate from `projectLeadCondition` above, which campaign counting uses and
- * which is built on `contains` for tolerance. Tolerance is exactly wrong for
- * the Leads page filter: `cProject CONTAINS "MigsunRohini"` also returns every
- * "MigsunRohiniCentral" lead, and a rep filtering to one project wants that one
- * project.
+ * Used BOTH by the Leads page filter and (as of the client+project pair fix)
+ * by `projectLeadCondition` above, so a campaign card, the KPI row and the
+ * Leads filter all count the same leads. They previously did not: counting
+ * used `contains` for tolerance, and tolerance is exactly wrong here —
+ * `cProject CONTAINS "MigsunRohini"` also returns every "MigsunRohiniCentral"
+ * lead, and a rep filtering to one project wants that one project.
  *
  * Two unknowns are covered by brute force instead of assumption:
  *   - WHICH TOKEN identifies the project on a lead — its short `projectNomen`

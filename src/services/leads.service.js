@@ -243,42 +243,61 @@ export const fetchLeadsCount = async (filters = []) => {
     "after",
   ];
 
+  /**
+   * Serialize ONE condition at `prefix` (e.g. `whereGroup[0]`).
+   *
+   * RECURSIVE, because campaign scoping needs more than one level: a campaign
+   * is identified by a client + project PAIR, so its condition is an `and` of
+   * two `or` groups, and the KPI row then ORs one of those per campaign —
+   * `or[ and[ or[…], or[…] ] ]`, three deep.
+   *
+   * The previous version handled exactly one level (a top-level `or` whose
+   * children were assumed flat). A nested group hit the flat branch below,
+   * which emitted `[attribute]=undefined` and no children — a query EspoCRM
+   * rejects. That matters more than it sounds: a rejected whereGroup comes
+   * back looking exactly like an empty result set, so the symptom would have
+   * been "this campaign has no leads" rather than an error.
+   *
+   * Espo itself has always accepted arbitrarily nested and/or groups; this
+   * only ever was a limitation of the serializer.
+   */
+  const serializeCondition = (f, prefix) => {
+    // Group node: `{ type: "and"|"or", value: [ …conditions… ] }`.
+    if ((f.type === "or" || f.type === "and") && Array.isArray(f.value)) {
+      const parts = [`${prefix}[type]=${f.type}`];
+      f.value.forEach((sub, j) => {
+        parts.push(serializeCondition(sub, `${prefix}[value][${j}]`));
+      });
+      return parts.join("&");
+    }
+
+    // Leaf node.
+    let q = `${prefix}[type]=${f.type}`;
+
+    // `isNull` and friends carry no value, and some carry no attribute — only
+    // append what is actually present rather than emitting `undefined`.
+    if (f.attribute) {
+      q += `&${prefix}[attribute]=${f.attribute}`;
+    }
+
+    if (Array.isArray(f.value)) {
+      f.value.forEach((v) => {
+        q += `&${prefix}[value][]=${encodeURIComponent(v)}`;
+      });
+    } else if (f.value != null && f.value !== "") {
+      q += `&${prefix}[value]=${encodeURIComponent(f.value)}`;
+    }
+
+    // ✅ dateTime flag (based on backend support)
+    if (DATE_TYPES.includes(f.type)) {
+      q += `&${prefix}[dateTime]=true`;
+    }
+
+    return q;
+  };
+
   const query = filters
-    .map((f, i) => {
-      // Nested OR group — `{ type: "or", value: [ {type,attribute,value}, … ] }`.
-      // Serialized as whereGroup[i][value][j][…] for each sub-clause.
-      if (f.type === "or" && Array.isArray(f.value)) {
-        let q = `whereGroup[${i}][type]=or`;
-        f.value.forEach((sub, j) => {
-          q += `&whereGroup[${i}][value][${j}][type]=${sub.type}`;
-          if (sub.attribute) {
-            q += `&whereGroup[${i}][value][${j}][attribute]=${sub.attribute}`;
-          }
-          if (sub.value != null && sub.value !== "") {
-            q += `&whereGroup[${i}][value][${j}][value]=${encodeURIComponent(sub.value)}`;
-          }
-        });
-        return q;
-      }
-
-      let q = `whereGroup[${i}][type]=${f.type}&whereGroup[${i}][attribute]=${f.attribute}`;
-
-      // ✅ value handling
-      if (Array.isArray(f.value)) {
-        f.value.forEach((v) => {
-          q += `&whereGroup[${i}][value][]=${encodeURIComponent(v)}`;
-        });
-      } else if (f.value != null && f.value !== "") {
-        q += `&whereGroup[${i}][value]=${encodeURIComponent(f.value)}`;
-      }
-
-      // ✅ dateTime flag (based on backend support)
-      if (DATE_TYPES.includes(f.type)) {
-        q += `&whereGroup[${i}][dateTime]=true`;
-      }
-
-      return q;
-    })
+    .map((f, i) => serializeCondition(f, `whereGroup[${i}]`))
     .join("&");
 
   const url = `${API_BASE_URL}/Lead?${query}&maxSize=1`;
