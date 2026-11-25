@@ -22,8 +22,16 @@ import {
   // purpose; the service still exports it for the range-export path.
   exportLeadsByIds,
   downloadBlob,
+  fetchLeadsForExport,
+  EXPORT_DATE_RANGES,
   EXPORT_SELECTION_LIMIT,
+  // EXPORT_RANGE_OPTIONS — the parked First 100/250/500 picker. Kept
+  // imported-free; uncomment it with the <ExportDialog options=…> line below
+  // to put the count picker back.
+  // EXPORT_RANGE_OPTIONS,
 } from "services/leads.service";
+import { ensureStepUp, isCancellation } from "services/stepUp.service";
+import { useExportRanges } from "hooks/useExportRanges";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 import StatusChart from "./components/charts/StatusChart";
 import IndustryChart from "./components/charts/IndustryChart";
@@ -366,10 +374,26 @@ const DealsPage = () => {
    * than no card, and the error text is long enough to want the width a toast
    * gives it.
    */
+  /**
+   * Export state. `stage` is what the card is doing, `phase` is what the
+   * dialog renders:
+   *
+   *   pick     phase "idle"     — the 100 / 250 / 500 picker
+   *   collect  phase "working"  — REAL progress, paging the CRM for ids
+   *   build    phase "working"  — indeterminate, the server builds the file
+   *            phase "done"     — briefly, then closes itself
+   *
+   * The two working stages are deliberately told apart. Collecting reports
+   * true progress because it pages 200 at a time and knows the target;
+   * building is one request that either returns a file or does not, so a
+   * percentage there would be invented.
+   */
   const [exportState, setExportState] = useState({
     open: false,
     phase: "idle",
+    stage: "pick",
     count: 0,
+    progress: { fetched: 0, target: 0 },
   });
 
   // The done state lingers so it can be read, then closes itself. Tracked in
@@ -381,12 +405,22 @@ const DealsPage = () => {
   /**
    * One path for both buttons: Export All sends the page's ids, Export
    * Selected sends the ticked ones, and everything after that is identical.
+   *
+   * THE "PREPARING YOUR FILE" CARD IS NOT SHOWN YET. /Export is step-up
+   * protected, so exportLeadsByIds may first put up the verification dialog,
+   * and a progress card promising a file while the person is being asked for
+   * a code reads as two things happening at once. ensureStepUp() returns
+   * immediately for an already-elevated session, so in the common case this
+   * costs nothing.
    */
   const runExport = (ids, fileName, format = "csv") => {
     clearTimeout(exportTimer.current);
-    setExportState({ open: true, phase: "working", count: ids.length });
 
-    exportLeadsByIds(ids, { format })
+    ensureStepUp()
+      .then(() => {
+        setExportState({ open: true, phase: "working", count: ids.length });
+        return exportLeadsByIds(ids, { format });
+      })
       .then((blob) => {
         const stamp = new Date().toISOString().split("T")[0];
         downloadBlob(blob, `${fileName}_${stamp}.${format}`);
@@ -397,7 +431,121 @@ const DealsPage = () => {
         );
       })
       .catch((err) => {
-        setExportState({ open: false, phase: "idle", count: 0 });
+        setExportState({
+          open: false,
+          phase: "idle",
+          stage: "pick",
+          count: 0,
+          progress: { fetched: 0, target: 0 },
+        });
+        // A cancelled verification is a decision, not a failure. "Export
+        // failed" after someone deliberately closed the dialog reads as a
+        // bug and invites them to try again.
+        if (isCancellation(err)) return;
+        toast.error(err?.message || "Export failed");
+      });
+  };
+
+  /**
+   * The picker's rows. Counts are fetched only while the dialog is open on
+   * the pick stage — four small requests, and none at all if nobody opens it.
+   */
+  const { options: exportRangeOptions, counts: exportRangeCounts } =
+    useExportRanges({
+      filters: filtersForBackend,
+      enabled: exportState.open && exportState.stage === "pick",
+    });
+
+  const closeExport = () =>
+    setExportState({
+      open: false,
+      phase: "idle",
+      stage: "pick",
+      count: 0,
+      progress: { fetched: 0, target: 0 },
+    });
+
+  /**
+   * The picker answer: export the first N leads matching the CURRENT FILTER
+   * AND SORT — not the page on screen.
+   *
+   * This is why the picker is back. Export All handed back exactly one page,
+   * so pulling 500 leads meant visiting five pages and exporting five times,
+   * then stitching the files together by hand.
+   *
+   * `filtersForBackend` is passed, NOT the raw `filters`: it is the same
+   * object the table's own query uses, so the export cannot drift from what
+   * the person is looking at. It also carries the restricted-account scoping
+   * and the hidden-status exclusion, which raw `filters` does not.
+   *
+   * TWO STEPS, and the dialog says which is which. First page the CRM for the
+   * ids (real progress), then POST those ids to /Export and let the server
+   * build the file (indeterminate). Step-up is asked for ONCE, up front —
+   * verifying after a 40-second collection would be a poor trade.
+   */
+  const handlePickRange = (rangeKey) => {
+    const range = EXPORT_DATE_RANGES.find((r) => r.key === rangeKey);
+    if (!range) return;
+
+    // The count the row showed. Used as the collection target so the progress
+    // bar counts toward what is actually there — asking for the 500 cap when
+    // the range holds 83 would park the bar at 17% and then jump to done.
+    // Unknown (a count that failed) falls back to the cap.
+    const known = exportRangeCounts[rangeKey];
+    const target =
+      typeof known === "number" && known > 0
+        ? Math.min(known, EXPORT_SELECTION_LIMIT)
+        : EXPORT_SELECTION_LIMIT;
+
+    clearTimeout(exportTimer.current);
+
+    ensureStepUp()
+      .then(() => {
+        setExportState({
+          open: true,
+          phase: "working",
+          stage: "collect",
+          count: target,
+          progress: { fetched: 0, target },
+        });
+        return fetchLeadsForExport({
+          // The range's dateType REPLACES any date already set in the filter
+          // bar: the two answer the same question, and the picker is the more
+          // recent instruction. Every other filter is kept, so "This month"
+          // means this month within what is on screen.
+          filters: { ...filtersForBackend, dateType: range.dateType },
+          orderBy: sortConfig?.key,
+          order: sortConfig?.direction,
+          limit: target,
+          onProgress: (fetched, target) =>
+            setExportState((prev) => ({ ...prev, progress: { fetched, target } })),
+        });
+      })
+      .then((rows) => {
+        const ids = (rows || []).map((row) => row?.id).filter(Boolean);
+        // A filter that matches nothing is not a failure, but it has no file
+        // either — say so rather than downloading an empty sheet.
+        if (!ids.length) throw new Error("No leads match the current filter");
+
+        // `count` becomes what was ACTUALLY found. Asking for 500 and finding
+        // 83 should report 83, not keep promising 500.
+        setExportState((prev) => ({ ...prev, stage: "build", count: ids.length }));
+        return exportLeadsByIds(ids, { format: "csv" });
+      })
+      .then((blob) => {
+        const stamp = new Date().toISOString().split("T")[0];
+        // The range is in the FILENAME, so a folder of exports stays
+        // readable without opening them.
+        downloadBlob(blob, `leads_${range.key}_${stamp}.csv`);
+        setExportState((prev) => ({ ...prev, phase: "done" }));
+        exportTimer.current = setTimeout(
+          () => setExportState((prev) => ({ ...prev, open: false })),
+          1800,
+        );
+      })
+      .catch((err) => {
+        closeExport();
+        if (isCancellation(err)) return;
         toast.error(err?.message || "Export failed");
       });
   };
@@ -438,13 +586,13 @@ const DealsPage = () => {
       return;
     }
 
-    const ids = (leads || []).map((lead) => lead?.id).filter(Boolean);
-    if (!ids.length) {
-      toast.error("No leads to export");
-      return;
-    }
-
-    runExport(ids, "leads", "csv");
+    setExportState({
+      open: true,
+      phase: "idle",
+      stage: "pick",
+      count: 0,
+      progress: { fetched: 0, target: 0 },
+    });
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -933,7 +1081,7 @@ const DealsPage = () => {
               </div>
               <div className="flex items-center space-x-3">
                 {/* ───────────────────────────────────────────────────────────
-                    Export All exports the CURRENT PAGE of the table. Visible
+                    Export opens the range picker. Visible
                     to elevated users: admin (by type) or the Owner / Manager
                     roles. Narrowing this to admin-only locked Owners out,
                     which was a regression rather than an intent.
@@ -943,15 +1091,15 @@ const DealsPage = () => {
                     can come back without reopening lead data to that account:
                     a named account outranks any role it is given, so making
                     it an Owner would not quietly undo the block. The same
-                    guard is repeated inside exportLeadsToCSV, because hiding
-                    a button is presentation, not permission.
+                    guard is repeated inside the export handlers, because
+                    hiding a button is presentation, not permission.
 
-                    The label overstates what it does: it sits beside a total
-                    in the tens of thousands but hands back one page. Kept
-                    deliberately — the range-export version that replaced it
-                    (First 100/250/500 from the current filter) is still in
-                    the codebase, see ExportDialog.jsx and fetchLeadsForExport,
-                    ready to be wired back up.
+                    IT NO LONGER EXPORTS ONE PAGE. The button opens the range
+                    picker (First 100 / 250 / 500 from the current filter and
+                    sort), which is why it is labelled "Export" rather than
+                    "Export All" — the old label promised everything and
+                    delivered a page, and the fix was to stop exporting a page
+                    rather than to keep apologising for it in a comment.
                     ───────────────────────────────────────────────────────── */}
                 {isElevated() && !isMaskedUser() && (
                   <Button
@@ -960,7 +1108,7 @@ const DealsPage = () => {
                     onClick={handleExportAll}
                   >
                     <Icon name="Download" size={16} className="mr-2" />
-                    Export All
+                    Export
                   </Button>
                 )}
 
@@ -974,18 +1122,33 @@ const DealsPage = () => {
               </div>
             </div>
 
-            {/* Export progress — one dialog for both export buttons. */}
+            {/* One dialog for the whole export: the picker, then both
+                working stages, then the result. Its wording follows `stage`
+                so the card never claims to be doing something it is not. */}
             <ExportDialog
               isOpen={exportState.open}
               phase={exportState.phase}
+              options={exportRangeOptions}
+              onPick={handlePickRange}
+              progress={exportState.progress}
               resultCount={exportState.count}
-              indeterminate
-              title="Preparing your file"
-              subtitle="The server is building the spreadsheet"
-              busyLabel="Preparing your file…"
-              onClose={() =>
-                setExportState((prev) => ({ ...prev, open: false }))
+              indeterminate={exportState.stage === "build"}
+              title={
+                exportState.stage === "build"
+                  ? "Preparing your file"
+                  : "Export leads"
               }
+              subtitle={
+                exportState.stage === "build"
+                  ? "The server is building the spreadsheet"
+                  : "Pick a date range from the current filter"
+              }
+              busyLabel={
+                exportState.stage === "build"
+                  ? "Preparing your file…"
+                  : "Collecting leads…"
+              }
+              onClose={closeExport}
             />
 
             {/* Filters */}

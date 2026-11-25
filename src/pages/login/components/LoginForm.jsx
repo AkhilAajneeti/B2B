@@ -250,6 +250,8 @@ const LoginForm = ({ variant = "default" }) => {
         const challenge = {
           challengeToken: outcome.challengeToken,
           emailMasked: outcome.emailMasked,
+          mobileMasked: outcome.mobileMasked,
+          channels: outcome.channels,
           message: outcome.message,
           gateway: outcome.gateway,
           issuedAt: Date.now(),
@@ -299,6 +301,8 @@ const LoginForm = ({ variant = "default" }) => {
       const challenge2 = {
         challengeToken: next.challengeToken,
         emailMasked: next.emailMasked || challenge.emailMasked,
+        mobileMasked: next.mobileMasked || challenge.mobileMasked,
+        channels: next.channels?.length ? next.channels : challenge.channels,
         message: next.message,
         gateway: challenge.gateway,
         issuedAt: Date.now(),
@@ -360,6 +364,8 @@ const LoginForm = ({ variant = "default" }) => {
     return (
       <OtpStep
         emailMasked={challenge.emailMasked}
+        mobileMasked={challenge.mobileMasked}
+        channels={challenge.channels}
         message={challenge.message}
         issuedAt={challenge.issuedAt}
         onVerify={handleVerifyOtp}

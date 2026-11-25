@@ -3,22 +3,41 @@ import { motion } from "framer-motion";
 import Icon from "../../../components/AppIcon";
 
 /**
- * Step 2 of sign-in: the 6-digit email OTP.
+ * The 6-digit OTP form.
  *
  * Styling deliberately mirrors LoginForm's — same input radius, same
  * `#AC2334` focus ring, same submit button in both default and festive
  * variants — because this is the same form at a later step, not a separate
  * screen. A different look here would read as a third-party page asking for a
  * code, which is exactly the shape of a phishing prompt.
+ *
+ * USED TWICE: step 2 of sign-in, and the step-up dialog that guards sensitive
+ * actions (StepUpDialog). The two differ only in wording and in how long a
+ * code lives, so those are optional props whose DEFAULTS ARE THE LOGIN
+ * VALUES — passing none of them leaves the sign-in screen byte-identical to
+ * before step-up existed. Everything that is actually hard here (paste and
+ * autofill spreading across the boxes, backspace stepping back, the
+ * deadline-driven countdown that survives a throttled background tab) is
+ * shared rather than written twice.
  */
 
 const OTP_LENGTH = 6;
 
-/** 15 minutes, matching the gateway's OTP lifetime. */
+/** 15 minutes, matching the gateway's LOGIN OTP lifetime. A step-up code
+ *  lives 5 minutes and passes its own `ttlMs`. */
 const OTP_TTL_MS = 15 * 60 * 1000;
 
-/** How long before "Resend code" becomes available again. */
-const RESEND_COOLDOWN_S = 30;
+/**
+ * How long before "Resend code" becomes available again.
+ *
+ * SIXTY SECONDS, NOT THIRTY, and that is a backend constraint rather than a
+ * UX preference: WhatsApp refuses to re-send to the same number inside 60
+ * seconds while email will happily re-send immediately. At 30s a user on both
+ * channels got a fresh email and no WhatsApp message, so the code in their
+ * inbox and the one on their phone disagreed. The countdown keeps the two
+ * channels in step.
+ */
+const RESEND_COOLDOWN_S = 60;
 
 const formatCountdown = (ms) => {
   const total = Math.max(0, Math.ceil(ms / 1000));
@@ -29,6 +48,8 @@ const formatCountdown = (ms) => {
 
 const OtpStep = ({
   emailMasked,
+  mobileMasked,
+  channels,
   message,
   onVerify,
   onResend,
@@ -37,11 +58,38 @@ const OtpStep = ({
   error,
   // Remounts the countdown when a resend issues a fresh code.
   issuedAt,
+  /**
+   * Bump to clear the boxes WITHOUT restarting the countdown.
+   *
+   * A rejected code has to leave the input empty — otherwise the next
+   * keystroke appends to six digits that are already known to be wrong. It
+   * must not touch the timers, though: the code the server rejected and the
+   * one still pending share a lifetime, and resetting `issuedAt` here would
+   * hand the user a fresh five minutes that the gateway is not honouring.
+   */
+  clearAt = 0,
   festive = false,
+  // --- wording and lifetime, defaulted to the sign-in screen's -------------
+  ttlMs = OTP_TTL_MS,
+  title = "Enter the 6-digit code",
+  /** Optional line above the server's message. Step-up explains why it asks. */
+  intro = "",
+  /**
+   * Render the "where the code went" block above the boxes.
+   *
+   * The sign-in screen wants it (default). The step-up dialog draws its own
+   * heading, so leaving this on gave the card TWO titles stacked on top of
+   * each other and three sentences before the first input.
+   */
+  renderHeader = true,
+  submitLabel = "Verify & sign in",
+  submitBusyLabel = "Verifying…",
+  resendLabel = "Resend code",
+  backLabel = "Use a different account",
 }) => {
   const [digits, setDigits] = useState(() => Array(OTP_LENGTH).fill(""));
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_S);
-  const [remaining, setRemaining] = useState(OTP_TTL_MS);
+  const [remaining, setRemaining] = useState(ttlMs);
   const [resending, setResending] = useState(false);
 
   const inputsRef = useRef([]);
@@ -61,20 +109,28 @@ const OtpStep = ({
   useEffect(() => {
     setDigits(Array(OTP_LENGTH).fill(""));
     setCooldown(RESEND_COOLDOWN_S);
-    setRemaining(OTP_TTL_MS);
+    setRemaining(ttlMs);
     inputsRef.current[0]?.focus();
-  }, [issuedAt]);
+  }, [issuedAt, ttlMs]);
+
+  // Clear-only, for a rejected code. Guarded on a truthy `clearAt` so the
+  // initial mount does not fight the autofocus effect above.
+  useEffect(() => {
+    if (!clearAt) return;
+    setDigits(Array(OTP_LENGTH).fill(""));
+    inputsRef.current[0]?.focus();
+  }, [clearAt]);
 
   // Expiry countdown. Driven from a deadline rather than by decrementing a
   // counter, because a background tab throttles timers and a decrementing
   // counter would drift far behind real time.
   useEffect(() => {
-    const deadline = issuedAt + OTP_TTL_MS;
+    const deadline = issuedAt + ttlMs;
     const tick = () => setRemaining(deadline - Date.now());
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [issuedAt]);
+  }, [issuedAt, ttlMs]);
 
   useEffect(() => {
     if (cooldown <= 0) return undefined;
@@ -83,6 +139,23 @@ const OtpStep = ({
   }, [cooldown]);
 
   const expired = remaining <= 0;
+
+  /**
+   * Icon matching the delivery channel.
+   *
+   * A mail icon above "sent on WhatsApp to +91 ******3742" reads as a
+   * mismatch, and the icon is the part people take in before the sentence.
+   * An unknown channel list falls back to mail, which is what every gateway
+   * before this change used.
+   */
+  const channelIcon = useMemo(() => {
+    const list = Array.isArray(channels) ? channels : [];
+    const email = list.includes("email");
+    const whatsapp = list.includes("whatsapp");
+    if (whatsapp && !email) return "MessageCircle";
+    if (whatsapp && email) return "ShieldCheck";
+    return "MailCheck";
+  }, [channels]);
 
   const setDigitAt = useCallback((index, value) => {
     setDigits((prev) => {
@@ -180,13 +253,22 @@ const OtpStep = ({
     [],
   );
 
+  /**
+   * The boxes.
+   *
+   * DARK VARIANTS ARE FOR THE STEP-UP DIALOG, not the sign-in page — that one
+   * is always light. This form now also opens over the app, where `.dark`
+   * applies, and `text-slate-900` on a dark `bg-card` is all but invisible.
+   * Everything added here is a `dark:` variant, so the light rendering is
+   * unchanged.
+   */
   const boxClass = (filled, hasError) =>
-    `login-input h-13 w-full rounded-xl border bg-card text-center text-xl font-semibold text-slate-900 shadow-sm outline-none transition-all duration-200 focus:ring-4 disabled:opacity-60 ${
+    `login-input h-13 w-full rounded-xl border bg-card text-center text-xl font-semibold text-slate-900 shadow-sm outline-none transition-all duration-200 focus:ring-4 disabled:opacity-60 dark:text-slate-100 ${
       hasError
-        ? "!border-red-300 focus:!border-red-400 focus:ring-red-500/10"
+        ? "!border-red-300 focus:!border-red-400 focus:ring-red-500/10 dark:!border-red-500/60"
         : filled
-          ? "!border-[#AC2334]/60 focus:!border-[#AC2334] focus:ring-[#AC2334]/10"
-          : "!border-[#D5CFC8] focus:!border-[#AC2334] focus:ring-[#AC2334]/10"
+          ? "!border-[#AC2334]/60 focus:!border-[#AC2334] focus:ring-[#AC2334]/10 dark:!border-[#E05A6B]/70 dark:focus:!border-[#E05A6B]"
+          : "!border-[#D5CFC8] focus:!border-[#AC2334] focus:ring-[#AC2334]/10 dark:!border-slate-500 dark:focus:!border-[#E05A6B]"
     }`;
 
   return (
@@ -198,29 +280,46 @@ const OtpStep = ({
       className="space-y-5"
       noValidate
     >
-      {/* Where the code went. Shown so the person can tell at a glance whether
-          it was sent to an address they can actually open — and so a wrong
-          address is diagnosable without contacting support. */}
+      {/* Where the code went.
+          THE SERVER'S `message` IS SHOWN VERBATIM, and composing our own copy
+          here is a bug, not a style choice. The code now goes to email, to
+          WhatsApp, or to both, and only the server knows which — it picks one
+          of three message variants accordingly. This block used to render
+          "Sent to {emailMasked}" whenever an address was present, so a user
+          who got the code on WhatsApp as well was told to check their inbox
+          and nothing else; a WhatsApp-only user was told about an email that
+          was never sent. The fallbacks below are for an older gateway that
+          returns no `message` at all. */}
+      {renderHeader && (
       <motion.div variants={item} className="space-y-2">
         <div className="flex items-start gap-2.5 rounded-xl border border-[#E6DFD6] bg-[#FBF8F4] p-3.5">
-          <Icon name="MailCheck" size={18} className="mt-0.5 shrink-0 text-[#AC2334]" />
+          <Icon name={channelIcon} size={18} className="mt-0.5 shrink-0 text-[#AC2334]" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-800">
-              Enter the 6-digit code
-            </p>
+            <p className="text-sm font-semibold text-slate-800">{title}</p>
+            {intro ? (
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-700">{intro}</p>
+            ) : null}
             <p className="mt-0.5 break-words text-xs leading-relaxed text-slate-600">
-              {emailMasked ? (
+              {message ? (
+                message
+              ) : emailMasked ? (
                 <>
                   Sent to <span className="font-medium text-slate-800">{emailMasked}</span>.
                   Check your spam folder if it has not arrived.
                 </>
+              ) : mobileMasked ? (
+                <>
+                  Sent on WhatsApp to{" "}
+                  <span className="font-medium text-slate-800">{mobileMasked}</span>.
+                </>
               ) : (
-                message || "We sent a verification code to your registered email address."
+                "We sent a verification code to your registered email address."
               )}
             </p>
           </div>
         </div>
       </motion.div>
+      )}
 
       {error && (
         <motion.div
@@ -268,9 +367,9 @@ const OtpStep = ({
               This code has expired — request a new one.
             </span>
           ) : (
-            <span className="text-slate-500">
+            <span className="text-slate-500 dark:text-slate-400">
               Expires in{" "}
-              <span className="font-semibold tabular-nums text-slate-700">
+              <span className="font-semibold tabular-nums text-slate-700 dark:text-slate-200">
                 {formatCountdown(remaining)}
               </span>
             </span>
@@ -280,13 +379,13 @@ const OtpStep = ({
             type="button"
             onClick={handleResend}
             disabled={cooldown > 0 || resending || isLoading}
-            className="shrink-0 font-semibold text-[#AC2334] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:text-slate-400"
+            className="shrink-0 font-semibold text-[#AC2334] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:text-slate-400 dark:text-[#E8798A] dark:disabled:text-slate-500"
           >
             {resending
               ? "Sending…"
               : cooldown > 0
-                ? `Resend in ${cooldown}s`
-                : "Resend code"}
+                ? `${resendLabel} in ${cooldown}s`
+                : resendLabel}
           </button>
         </div>
       </motion.div>
@@ -308,12 +407,12 @@ const OtpStep = ({
           {isLoading ? (
             <>
               <Icon name="Loader2" size={18} className="animate-spin" />
-              Verifying…
+              {submitBusyLabel}
             </>
           ) : (
             <>
               <Icon name="ShieldCheck" size={16} />
-              Verify &amp; sign in
+              {submitLabel}
             </>
           )}
         </motion.button>
@@ -324,10 +423,10 @@ const OtpStep = ({
           type="button"
           onClick={onBack}
           disabled={isLoading}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-700 disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-700 disabled:opacity-60 dark:text-slate-400 dark:hover:text-slate-200"
         >
           <Icon name="ArrowLeft" size={14} />
-          Use a different account
+          {backLabel}
         </button>
       </motion.div>
     </motion.form>

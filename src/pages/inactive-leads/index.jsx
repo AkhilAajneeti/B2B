@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import toast from "react-hot-toast";
-import Papa from "papaparse";
+// Papa drove the browser-built CSV, now parked below. Kept commented with it
+// so restoring that path is one uncomment rather than a re-import.
+// import Papa from "papaparse";
 
 import Button from "../../components/ui/Button";
 import Icon from "../../components/AppIcon";
@@ -10,7 +12,22 @@ import DealDrawer from "../deals/components/DealDrawer";
 import TablePagination from "../deals/components/TablePagination";
 import ConfirmDeleteModal from "../deals/components/ConfirmDeleteModal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteLead, updateLead } from "services/leads.service";
+import {
+  deleteLead,
+  updateLead,
+  exportLeadsByIds,
+  downloadBlob,
+  fetchLeadsForExport,
+  EXPORT_DATE_RANGES,
+  EXPORT_SELECTION_LIMIT,
+  // EXPORT_RANGE_OPTIONS — the parked First 100/250/500 picker. Kept
+  // imported-free; uncomment it with the <ExportDialog options=…> line below
+  // to put the count picker back.
+  // EXPORT_RANGE_OPTIONS,
+} from "services/leads.service";
+import { ensureStepUp, isCancellation } from "services/stepUp.service";
+import { useExportRanges } from "hooks/useExportRanges";
+import ExportDialog from "../deals/components/ExportDialog";
 import { useNewLeads } from "hooks/useLeads";
 import { useMetaData } from "hooks/useMetaData";
 import { useLeadDetails } from "hooks/useLeadDetails";
@@ -160,6 +177,20 @@ const InactiveLeadsPage = () => {
     };
   };
 
+  /*
+   * PARKED — the browser-built CSV this page used to export.
+   *
+   * Replaced by the server route below, for the same reasons as the Leads
+   * page: the gateway applies the user's own ACL to the file's contents, which
+   * a CSV assembled in the tab never could, and /Export is step-up protected
+   * so the export now needs a fresh verification code. While this ran, someone
+   * who cancelled the verification dialog on Leads could still pull the same
+   * contact data out from here — the one hole left in the step-up story.
+   *
+   * Not dead code: it is the fallback if the gateway ever stops proxying
+   * /Export, and it is the only version that QUOTES fields, so it is also the
+   * reference for the cPreference line-break problem noted on the Leads page.
+   *
   const exportLeadsToCSV = (rows, fileName = "inactive_leads") => {
     // Contact details are most of what this export is FOR, so a restricted
     // user doesn't get one at all — masking the table while letting them
@@ -196,6 +227,172 @@ const InactiveLeadsPage = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+  */
+
+  /**
+   * Export progress. Same card and same three phases as the Leads page — a
+   * failure closes it and falls back to an error toast rather than leaving
+   * "preparing" on screen over nothing.
+   */
+  /**
+   * Export state. `stage` is what is happening, `phase` is what the dialog
+   * renders — pick (idle) → collect (working, real progress) → build
+   * (working, indeterminate) → done. Mirrors the Leads page exactly; see the
+   * longer note there.
+   */
+  const [exportState, setExportState] = useState({
+    open: false,
+    phase: "idle",
+    stage: "pick",
+    count: 0,
+    progress: { fetched: 0, target: 0 },
+  });
+
+  // Tracked in a ref so leaving the page mid-export cannot set state on an
+  // unmounted component.
+  const exportTimer = useRef(null);
+  useEffect(() => () => clearTimeout(exportTimer.current), []);
+
+  /**
+   * One path for both buttons, lifted from the Leads page so the two cannot
+   * drift: Export All sends the page's ids, the bulk action sends the ticked
+   * ones, and the server builds the file.
+   *
+   * The progress card is NOT shown until the verification resolves — /Export
+   * is step-up protected, and a card promising a file while the person is
+   * being asked for a code reads as two things happening at once.
+   *
+   * The masked-user guard stays HERE rather than only on the button, so the
+   * bulk "export selected" action cannot reach it either — same reasoning as
+   * the parked version above.
+   */
+  const runExport = (ids, fileName, format = "csv") => {
+    if (isMaskedUser()) {
+      toast.error("Export isn't available for your account");
+      return;
+    }
+    if (!ids.length) {
+      toast.error("No data to export");
+      return;
+    }
+
+    clearTimeout(exportTimer.current);
+
+    ensureStepUp()
+      .then(() => {
+        setExportState({ open: true, phase: "working", count: ids.length });
+        return exportLeadsByIds(ids, { format });
+      })
+      .then((blob) => {
+        const stamp = new Date().toISOString().split("T")[0];
+        downloadBlob(blob, `${fileName}_${stamp}.${format}`);
+        setExportState({ open: true, phase: "done", count: ids.length });
+        exportTimer.current = setTimeout(
+          () => setExportState((prev) => ({ ...prev, open: false })),
+          1800,
+        );
+      })
+      .catch((err) => {
+        closeExport();
+        // A cancelled verification is a decision, not a failure.
+        if (isCancellation(err)) return;
+        toast.error(err?.message || "Export failed");
+      });
+  };
+
+  /**
+   * The picker's rows. Counts are fetched only while the dialog is open on
+   * the pick stage — four small requests, and none at all if nobody opens it.
+   */
+  const { options: exportRangeOptions, counts: exportRangeCounts } =
+    useExportRanges({
+      filters: filtersForBackend,
+      enabled: exportState.open && exportState.stage === "pick",
+    });
+
+  const closeExport = () =>
+    setExportState({
+      open: false,
+      phase: "idle",
+      stage: "pick",
+      count: 0,
+      progress: { fetched: 0, target: 0 },
+    });
+
+  /**
+   * Export the first N INACTIVE leads matching the current filter and sort.
+   *
+   * `filtersForBackend` carries the INACTIVE_STATUSES constraint this page is
+   * built on, so the picker cannot reach an active lead — passing the raw
+   * `filters` would export the whole pipeline from a page that only ever
+   * shows the dead end of it.
+   */
+  const handlePickRange = (rangeKey) => {
+    const range = EXPORT_DATE_RANGES.find((r) => r.key === rangeKey);
+    if (!range) return;
+
+    // The count the row showed. Used as the collection target so the progress
+    // bar counts toward what is actually there — asking for the 500 cap when
+    // the range holds 83 would park the bar at 17% and then jump to done.
+    // Unknown (a count that failed) falls back to the cap.
+    const known = exportRangeCounts[rangeKey];
+    const target =
+      typeof known === "number" && known > 0
+        ? Math.min(known, EXPORT_SELECTION_LIMIT)
+        : EXPORT_SELECTION_LIMIT;
+
+    if (isMaskedUser()) {
+      toast.error("Export isn't available for your account");
+      return;
+    }
+
+    clearTimeout(exportTimer.current);
+
+    ensureStepUp()
+      .then(() => {
+        setExportState({
+          open: true,
+          phase: "working",
+          stage: "collect",
+          count: target,
+          progress: { fetched: 0, target },
+        });
+        return fetchLeadsForExport({
+          // The range's dateType REPLACES any date already set in the filter
+          // bar: the two answer the same question, and the picker is the more
+          // recent instruction. Every other filter is kept, so "This month"
+          // means this month within what is on screen.
+          filters: { ...filtersForBackend, dateType: range.dateType },
+          orderBy: sortConfig?.key,
+          order: sortConfig?.direction,
+          limit: target,
+          onProgress: (fetched, target) =>
+            setExportState((prev) => ({ ...prev, progress: { fetched, target } })),
+        });
+      })
+      .then((rows) => {
+        const ids = (rows || []).map((row) => row?.id).filter(Boolean);
+        if (!ids.length) throw new Error("No leads match the current filter");
+        setExportState((prev) => ({ ...prev, stage: "build", count: ids.length }));
+        return exportLeadsByIds(ids, { format: "csv" });
+      })
+      .then((blob) => {
+        const stamp = new Date().toISOString().split("T")[0];
+        // The range is in the FILENAME, so a folder of exports stays
+        // readable without opening them.
+        downloadBlob(blob, `inactive_leads_${range.key}_${stamp}.csv`);
+        setExportState((prev) => ({ ...prev, phase: "done" }));
+        exportTimer.current = setTimeout(
+          () => setExportState((prev) => ({ ...prev, open: false })),
+          1800,
+        );
+      })
+      .catch((err) => {
+        closeExport();
+        if (isCancellation(err)) return;
+        toast.error(err?.message || "Export failed");
+      });
   };
 
   const deleteLeadMutation = useMutation({
@@ -332,7 +529,11 @@ const InactiveLeadsPage = () => {
         toast.error("Export isn't available for your account");
         return;
       }
-      exportLeadsToCSV(selectedLeadRecords, "selected_inactive_leads");
+      runExport(
+        selectedLeadRecords.map((lead) => lead?.id).filter(Boolean),
+        "selected_inactive_leads",
+        "csv",
+      );
       return;
     }
     if (action === "delete") {
@@ -398,19 +599,28 @@ const InactiveLeadsPage = () => {
                 </p>
               </div>
 
-              {/* Export All — mirrors the Leads page: exports the CURRENT PAGE
-                  of the table, visible to elevated users (admin / Owner /
-                  Manager) and never to a restricted account. This page had no
-                  export entry point at all before; the only way out was to
-                  select rows first and use the bulk action. */}
+              {/* Export — mirrors the Leads page: opens the range picker
+                  (First 100 / 250 / 500 from the current filter and sort),
+                  visible to elevated users (admin / Owner / Manager) and
+                  never to a restricted account. The filter it exports from
+                  always carries INACTIVE_STATUSES, so this cannot reach an
+                  active lead. */}
               {isElevated() && !isMaskedUser() && (
                 <Button
                   className="linearbg-1 text-white hover:text-white shrink-0"
                   variant="outline"
-                  onClick={() => exportLeadsToCSV(leads, "inactive_leads")}
+                  onClick={() =>
+                    setExportState({
+                      open: true,
+                      phase: "idle",
+                      stage: "pick",
+                      count: 0,
+                      progress: { fetched: 0, target: 0 },
+                    })
+                  }
                 >
                   <Icon name="Download" size={16} className="mr-2" />
-                  Export All
+                  Export
                 </Button>
               )}
             </div>
@@ -495,6 +705,32 @@ const InactiveLeadsPage = () => {
               loading={bulkDeleteMutation.isPending}
               onCancel={() => setShowDeleteConfirm(false)}
               onConfirm={handleConfirmBulkDelete}
+            />
+
+            <ExportDialog
+              isOpen={exportState.open}
+              phase={exportState.phase}
+              options={exportRangeOptions}
+              onPick={handlePickRange}
+              progress={exportState.progress}
+              resultCount={exportState.count}
+              indeterminate={exportState.stage === "build"}
+              title={
+                exportState.stage === "build"
+                  ? "Preparing your file"
+                  : "Export inactive leads"
+              }
+              subtitle={
+                exportState.stage === "build"
+                  ? "The server is building the spreadsheet"
+                  : "Pick a date range from the current filter"
+              }
+              busyLabel={
+                exportState.stage === "build"
+                  ? "Preparing your file…"
+                  : "Collecting leads…"
+              }
+              onClose={closeExport}
             />
 
             <ConfirmDeleteModal

@@ -8,6 +8,8 @@ import RoleGuard from "components/RoleGuard";
 import { useTeams } from "hooks/useTeams";
 import { useProjectOptions } from "hooks/useProjects";
 import { todayLocal } from "../../../utils/dateFilter";
+// canExportLeads is currently used only by the parked "Export Selected" entry
+// below. Kept imported on purpose, so restoring that entry is one uncomment.
 import { isSupAdmin, isMaskedUser, canSeeStatusHistory, canExportLeads } from "utils/permission";
 
 // Full status list — the default the Leads page uses (it passes no override, so
@@ -135,12 +137,24 @@ const DealsFilters = ({
   // non-admins never see the Delete button at all.
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
-    // Export Selected — admin or Owner, and never a restricted account. The
-    // rule lives in canExportLeads() because the two handlers that act on this
-    // menu entry have to agree with it; see the note there.
-    ...(canExportLeads()
-      ? [{ value: "export", label: "Export Selected", icon: "Download" }]
-      : []),
+    // EXPORT SELECTED — COMMENTED OUT, by request.
+    //
+    // Retired once Export All moved to the server route: both buttons now
+    // POST the same ids to /Export and get the same file back, so the only
+    // difference left was which ids they sent. Export All sends the page.
+    //
+    // This bar is SHARED by the Leads page and Inactive Leads, so this one
+    // entry is what put the action on both — uncommenting it restores it to
+    // both at once. The handlers it drives are still live and still gated
+    // (pages/deals/index.jsx and pages/inactive-leads/index.jsx, action ===
+    // "export"), so nothing else has to change either way.
+    //
+    // The rule stays in canExportLeads() rather than being inlined here,
+    // because the two handlers have to agree with it; see the note there.
+    //
+    // ...(canExportLeads()
+    //   ? [{ value: "export", label: "Export Selected", icon: "Download" }]
+    //   : []),
     ...(isSupAdmin()
       ? [{ value: "delete", label: "Delete Selected", icon: "Trash2", destructive: true }]
       : []),

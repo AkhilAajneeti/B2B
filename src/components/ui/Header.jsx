@@ -11,6 +11,7 @@ import Avatar from "react-avatar";
 import { useQueryClient } from "@tanstack/react-query";
 import { isMaskedUser } from "utils/permission";
 import ThemeToggle from "components/ThemeToggle";
+import { resetElevation } from "utils/elevation";
 const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   // `login_object` may be missing (fresh tab, mid-logout race) or
   // malformed (manual clear). Default to an empty object so the
@@ -57,6 +58,9 @@ const Header = ({ onMenuToggle, isSidebarOpen = false }) => {
   const handleLogout = () => {
     // Clear react-query cache
     queryClient.clear();
+
+    // Step-up elevation goes with the session — see utils/elevation.
+    resetElevation();
 
     // Explicit removes instead of `localStorage.clear()`. Wiping
     // everything also nuked unrelated keys: the

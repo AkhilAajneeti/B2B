@@ -2,6 +2,7 @@ import { projectExactLeadCondition } from "pages/campaigns/utils/leadScope";
 import { isMaskedUser } from "utils/permission";
 import { handleUnauthorized } from "./session";
 import { API_BASE_URL } from "services/apiBase";
+import { ensureStepUp, withStepUp } from "./stepUp.service";
 
 // Fields the leads LIST actually needs, for the request made on behalf of a
 // restricted user. Espo's `select` is a whitelist with no "exclude" form, so
@@ -907,6 +908,19 @@ const EXPORT_SELECT = [
  *
  * NO PERMISSION CHECK HERE. The caller guards it, and the gateway applies the
  * user's own ACL to the export regardless, which is the check that counts.
+ *
+ * STEP-UP VERIFICATION. /Export is a protected path: without an OTP verified
+ * in the last 5 minutes the gateway answers 403 `step_up_required` and never
+ * calls the CRM. Handled in two places on purpose —
+ *
+ *   ask-first   ensureStepUp() below, so the dialog appears instead of a
+ *               request that was always going to be refused;
+ *   the net     withStepUp(), which catches the 403 and retries once, for the
+ *               case where our 5-minute record is stale or the backend adds a
+ *               protected path we do not know about.
+ *
+ * The /Attachment/file step is NOT protected — only /Export and paths under
+ * it — so the download half needs none of this.
  */
 const EXPORT_FIELD_LIST = [
   "name",
@@ -938,24 +952,39 @@ const EXPORT_ATTRIBUTE_LIST = [
 ];
 
 export const exportLeadsByIds = async (ids, { format = "xlsx" } = {}) => {
-  const token = localStorage.getItem("auth_token");
+  // Ask before firing. Resolves immediately when the session is already
+  // elevated, and rejects with a cancellation if the user closes the dialog —
+  // which the caller must not report as a failure.
+  await ensureStepUp();
 
-  const res = await fetch(`${API_BASE_URL}/Export`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", token },
-    body: JSON.stringify({
-      entityType: "Lead",
-      ids,
-      fieldList: EXPORT_FIELD_LIST,
-      attributeList: EXPORT_ATTRIBUTE_LIST,
-      format,
-      // `idle: false` runs it inline and returns the file in this response.
-      // Idle mode queues a job and hands back something to poll, which would
-      // need a second code path for no benefit at these selection sizes.
-      idle: false,
-      params: { lite: false, recordLinks: false, title: false },
-    }),
-  });
+  // Rebuilt per attempt: withStepUp calls this again after a verification,
+  // and a body read once cannot be sent a second time. The token is read
+  // inside for the same reason — a step-up REPLACES it, and a value captured
+  // before the dialog would be the old one on the retry.
+  const send = () =>
+    fetch(`${API_BASE_URL}/Export`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        token: localStorage.getItem("auth_token"),
+      },
+      body: JSON.stringify({
+        entityType: "Lead",
+        ids,
+        fieldList: EXPORT_FIELD_LIST,
+        attributeList: EXPORT_ATTRIBUTE_LIST,
+        format,
+        // `idle: false` runs it inline and returns the file in this response.
+        // Idle mode queues a job and hands back something to poll, which
+        // would need a second code path for no benefit at these selection
+        // sizes.
+        idle: false,
+        params: { lite: false, recordLinks: false, title: false },
+      }),
+    });
+
+  const res = await withStepUp(send);
+  const token = localStorage.getItem("auth_token");
 
   if (!res.ok) {
     if (res.status === 401) handleUnauthorized();
@@ -1095,6 +1124,63 @@ export const downloadBlob = (blob, fileName) => {
 // Offered in the Export menu. Kept to round numbers rather than a free input
 // so nobody types 50,000 and waits.
 export const EXPORT_RANGE_OPTIONS = [100, 250, 500];
+
+/**
+ * Date ranges the export picker offers, newest-first.
+ *
+ * WHY RANGES AND NOT COUNTS. "First 250 leads" does not tell anyone WHICH 250
+ * they are about to download — it depends on the sort, and the answer changes
+ * every time a lead is created. "This month" is a question a person can
+ * actually answer before clicking.
+ *
+ * EVERY `dateType` HERE IS ALREADY IN USE by the filter bar, translated by the
+ * date switch in fetchNewLeads and proven against this gateway. That matters
+ * more than it looks: Espo answers a whereGroup it does not understand with an
+ * empty list, not an error, so an invented operator would present as "there
+ * are no leads this month" rather than as a bug.
+ *
+ * NO "THIS WEEK". Espo's native set has no current-week operator in the
+ * switch this builds on, and `lastSevenDays` is both supported and what people
+ * usually mean. Labelled honestly as "Last 7 days" rather than sold as a week
+ * it is not — a Monday export labelled "This week" returning the previous
+ * Tuesday onward would be quietly wrong.
+ */
+export const EXPORT_DATE_RANGES = [
+  { key: "today", label: "Today", dateType: "today" },
+  { key: "lastSevenDays", label: "Last 7 days", dateType: "lastSevenDays" },
+  { key: "currentMonth", label: "This month", dateType: "currentMonth" },
+  { key: "lastMonth", label: "Last month", dateType: "lastMonth" },
+];
+
+/**
+ * How many leads a range holds, for the picker to show BEFORE anyone exports.
+ *
+ * One request per range with `maxSize=1`: the rows are thrown away, only
+ * `total` is wanted. That is the whole point of the feature — the export cap
+ * is 500, and without the count a range holding 1,200 leads would hand back
+ * the newest 500 under a label promising the month.
+ *
+ * The range's own `dateType` REPLACES whatever the filter bar had set, because
+ * the two answer the same question and the picker is the more recent instruction.
+ * Every other filter is kept, so "This month" still means "this month, within
+ * what is on screen".
+ *
+ * Returns null on failure rather than throwing: a count that will not load is
+ * a missing hint, not a reason to block the export.
+ */
+export const countLeadsInRange = async ({ filters = {}, dateType }) => {
+  try {
+    const res = await fetchNewLeads({
+      limit: 1,
+      page: 1,
+      filters: { ...filters, dateType },
+      select: ["id"],
+    });
+    return typeof res?.total === "number" ? res.total : null;
+  } catch {
+    return null;
+  }
+};
 
 /**
  * The first N leads matching the CURRENT filter and sort — "give me the top

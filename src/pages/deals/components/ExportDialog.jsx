@@ -47,6 +47,33 @@ const COMET_BRAND =
 const COMET_SUCCESS =
   "conic-gradient(from 0deg, transparent 0%, transparent 58%, rgba(5,150,105,0.5) 70%, #059669 82%, #34D399 92%, transparent 100%)";
 
+/**
+ * Options come in two shapes, and both are supported on purpose.
+ *
+ *   number            the parked count picker — 100 / 250 / 500
+ *   { key, label, … } the date-range picker, which also carries a count
+ *
+ * The count picker is commented out at both call sites rather than deleted,
+ * so dropping number support here would quietly break it the day someone
+ * uncomments it.
+ */
+const normalizeOption = (opt) =>
+  typeof opt === "number"
+    ? {
+        key: opt,
+        value: opt,
+        label: `First ${opt} leads`,
+        hint: `${Math.ceil(opt / 200)} request${Math.ceil(opt / 200) > 1 ? "s" : ""} to the CRM`,
+        disabled: false,
+      }
+    : {
+        key: opt.key,
+        value: opt.value ?? opt.key,
+        label: opt.label,
+        hint: opt.hint || "",
+        disabled: Boolean(opt.disabled),
+      };
+
 const ExportDialog = ({
   isOpen,
   onClose,
@@ -141,7 +168,7 @@ const ExportDialog = ({
                 the rotating gradient is only ever visible in the 1.5px the
                 padding leaves exposed — that's what keeps it a hairline
                 instead of bleeding behind the content. */}
-            <div className="relative overflow-hidden rounded-2xl bg-slate-200/40 p-[1.5px]">
+            <div className="relative overflow-hidden rounded-2xl bg-slate-200/40 p-[1.5px] dark:bg-white/10">
               <motion.div
                 className="pointer-events-none absolute inset-[-50%]"
                 style={{ background: comet }}
@@ -154,8 +181,15 @@ const ExportDialog = ({
                 aria-label="Export leads"
                 className="relative overflow-hidden rounded-[15px] bg-card/90 p-6 shadow-[0_24px_70px_-18px_rgba(15,23,42,0.5)] backdrop-blur-2xl"
               >
-                {/* Diagonal sheen so the surface reads as glass. */}
-                <div className="pointer-events-none absolute -top-1/2 left-0 h-[200%] w-full bg-gradient-to-br from-white/70 via-white/0 to-transparent" />
+                {/* Diagonal sheen so the surface reads as glass.
+                    HARDCODED WHITE, SO IT NEEDS A DARK VARIANT. The slate
+                    classes elsewhere in this file invert themselves — the
+                    ramp is remapped per step in tailwind.css — but `white` is
+                    white in both themes, and 70% of it over a near-black card
+                    came out as a grey wash across the top-left corner rather
+                    than as a highlight. 6% is enough to catch the eye at the
+                    corner without lifting the whole surface. */}
+                <div className="pointer-events-none absolute -top-1/2 left-0 h-[200%] w-full bg-gradient-to-br from-white/70 via-white/0 to-transparent dark:from-white/[0.06]" />
 
                 <div className="relative">
                   <div className="mb-5 flex items-start justify-between gap-4">
@@ -170,7 +204,7 @@ const ExportDialog = ({
                         type="button"
                         onClick={onClose}
                         aria-label="Close"
-                        className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-card/80 text-slate-500 transition hover:bg-card hover:text-slate-800"
+                        className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 bg-card/80 text-slate-500 transition hover:bg-card hover:text-slate-800 dark:border-white/15 dark:hover:bg-white/10"
                       >
                         <Icon name="X" size={15} />
                       </button>
@@ -179,35 +213,40 @@ const ExportDialog = ({
 
                   {phase === PHASES.IDLE && (
                     <div className="space-y-2">
-                      {options.map((count, i) => (
+                      {options.map(normalizeOption).map((opt, i) => (
                         <motion.button
-                          key={count}
+                          key={opt.key}
                           type="button"
-                          onClick={() => onPick?.(count)}
+                          disabled={opt.disabled}
+                          onClick={() => !opt.disabled && onPick?.(opt.value)}
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.05 + i * 0.05, duration: 0.2 }}
-                          whileHover={{ x: 2 }}
-                          className="group flex w-full items-center justify-between rounded-xl border border-slate-200/80 bg-card/70 px-4 py-3 text-left transition hover:border-primary/40 hover:bg-card hover:shadow-lg active:scale-[0.99]"
+                          whileHover={opt.disabled ? undefined : { x: 2 }}
+                          className="group flex w-full items-center justify-between rounded-xl border border-slate-200/80 bg-card/70 px-4 py-3 text-left transition hover:border-primary/40 hover:bg-card hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-slate-200/80 disabled:hover:bg-card/70 disabled:hover:shadow-none dark:border-white/[0.14] dark:bg-white/[0.04] dark:hover:border-primary/50 dark:hover:bg-white/[0.08] dark:disabled:hover:border-white/[0.14] dark:disabled:hover:bg-white/[0.04]"
                         >
-                          <span className="flex items-center gap-3">
-                            <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-primary to-rose-500 text-white shadow-sm">
+                          <span className="flex min-w-0 items-center gap-3">
+                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-primary to-rose-500 text-white shadow-sm">
                               <Icon name="Download" size={16} />
                             </span>
-                            <span>
+                            <span className="min-w-0">
                               <span className="block text-sm font-semibold text-slate-900">
-                                First {count} leads
+                                {opt.label}
                               </span>
-                              <span className="block text-[11px] text-slate-500">
-                                {Math.ceil(count / 200)} request
-                                {Math.ceil(count / 200) > 1 ? "s" : ""} to the CRM
+                              {/* The hint carries the count and, when a range
+                                  holds more than the export cap, says what
+                                  will actually be downloaded. Reserving the
+                                  line even while it is empty stops the rows
+                                  jumping as the counts arrive. */}
+                              <span className="block min-h-[14px] text-[11px] text-slate-500">
+                                {opt.hint}
                               </span>
                             </span>
                           </span>
                           <Icon
                             name="ChevronRight"
                             size={16}
-                            className="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-primary"
+                            className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-primary dark:text-slate-500"
                           />
                         </motion.button>
                       ))}
@@ -238,7 +277,7 @@ const ExportDialog = ({
                           ? `${resultCount} lead${resultCount === 1 ? "" : "s"} · the server is building the sheet`
                           : `${progress.fetched} of ${progress.target}`}
                       </p>
-                      <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70">
+                      <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-white/10">
                         {indeterminate ? (
                           // A short bar travelling the track, not a width that
                           // grows: growth implies a measured fraction, and

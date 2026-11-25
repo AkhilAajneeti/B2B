@@ -28,6 +28,7 @@
  */
 
 import { API_BASE_URL, DEFAULT_GATEWAY, GATEWAYS } from "services/apiBase";
+import { resetElevation } from "utils/elevation";
 
 /**
  * TEMPORARY — accounts that sign in WITHOUT the email OTP.
@@ -166,6 +167,12 @@ export const initiateLogin = async (username, password) => {
       gateway,
       challengeToken: data.challengeToken,
       emailMasked: data.emailMasked || "",
+      // NEW: null for users with no WhatsApp-capable mobile. Only used to
+      // pick the OTP screen's icon — the copy itself comes from `message`.
+      mobileMasked: data.mobileMasked || "",
+      // NEW: ["email"], ["whatsapp"] or both. Older gateways omit it, so an
+      // empty array has to mean "unknown", not "nothing was sent".
+      channels: Array.isArray(data.channels) ? data.channels : [],
       message: data.message || "",
     };
   }
@@ -238,6 +245,8 @@ export const resendOtp = async (challengeToken) => {
   return {
     challengeToken: data.challengeToken,
     emailMasked: data.emailMasked || "",
+    mobileMasked: data.mobileMasked || "",
+    channels: Array.isArray(data.channels) ? data.channels : [],
     message: data.message || "",
   };
 };
@@ -353,6 +362,12 @@ const REBUILDABLE_CACHE_PREFIXES = [
  * @returns {boolean} true on success; false means storage is genuinely full.
  */
 export const persistSession = ({ token, loginObject, acl }) => {
+  // A FRESH LOGIN IS NOT A STEP-UP. The gateway treats them separately, so
+  // the first export after signing in still asks for a code; clearing the
+  // record here keeps our bookkeeping honest about that instead of promising
+  // an elevation the gateway will refuse.
+  resetElevation();
+
   const write = () => {
     localStorage.setItem("auth_token", token);
     localStorage.setItem("login_object", JSON.stringify(loginObject));

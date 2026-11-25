@@ -27,6 +27,8 @@
  *    services never got the same treatment. This matches that behaviour.
  */
 
+import { resetElevation } from "utils/elevation";
+
 // The session itself.
 const AUTH_KEYS = ["auth_token", "login_object", "acl", "isAuthenticated"];
 
@@ -46,6 +48,11 @@ const USER_CACHE_PREFIXES = [
 
 /** Removes the session and per-user caches, leaving unrelated keys alone. */
 export const clearSession = () => {
+  // A new session must start un-elevated. Left behind, a step-up record from
+  // the previous sign-in would let the next person on this tab export without
+  // being asked for a code.
+  resetElevation();
+
   try {
     [...AUTH_KEYS, SESSION_GATEWAY_KEY].forEach((k) => localStorage.removeItem(k));
     Object.keys(localStorage).forEach((k) => {
