@@ -36,7 +36,6 @@ import { useTeamUsers } from "hooks/useTeams";
 import {
   canEditRecord,
   canDeleteRecord,
-  isElevated,
   isMaskedUser,
   isSupAdmin,
   canExportLeads,
@@ -605,7 +604,7 @@ const InactiveLeadsPage = () => {
                   never to a restricted account. The filter it exports from
                   always carries INACTIVE_STATUSES, so this cannot reach an
                   active lead. */}
-              {isElevated() && !isMaskedUser() && (
+              {canExportLeads() && (
                 <Button
                   className="linearbg-1 text-white hover:text-white shrink-0"
                   variant="outline"

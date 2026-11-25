@@ -51,7 +51,6 @@ import {
   canDeleteRecord,
   canExportLeads,
   getStoredUser,
-  isElevated,
   isMaskedUser,
   isSupAdmin,
 } from "utils/permission";
@@ -1101,7 +1100,7 @@ const DealsPage = () => {
                     delivered a page, and the fix was to stop exporting a page
                     rather than to keep apologising for it in a comment.
                     ───────────────────────────────────────────────────────── */}
-                {isElevated() && !isMaskedUser() && (
+                {canExportLeads() && (
                   <Button
                     className="linearbg-1 text-white hover:text-white"
                     variant="outline"

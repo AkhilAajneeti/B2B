@@ -247,22 +247,28 @@ export const isElevated = () => {
   );
 };
 
-// Who can EXPORT leads off the CRM — the "Export Selected" bulk action on the
-// Leads and Inactive Leads pages. Admin (by type) or the Owner role.
+// Who can EXPORT leads off the CRM — the header Export button and the
+// "Export Selected" bulk action, on both Leads and Inactive Leads.
 //
-// Owner was added 2026-11-25 by request. It was admin-only before, on the
-// reasoning that bulk-exporting customer contact details is the same class of
-// action as deleting them — which is still why Manager is NOT included.
+// Now every elevated user: admin by type, or the Owner / Manager roles.
+//
+// WIDENED TWICE, and the second time closed a gap rather than opening one.
+// It was admin-only (bulk-exporting customer contact details being the same
+// class of action as deleting them), then Owner was added on 2026-11-25, then
+// Manager on the same day by request. The gap: the header Export button has
+// always RENDERED on isElevated(), which already included Manager — so a
+// manager could see the button and was refused on click. Visibility and
+// permission now read the same set, which is the point of the helper.
 //
 // The isMaskedUser() half is not optional: a restricted account that is also
-// an Owner is still restricted, because naming an account in MASKED_USERNAMES
-// deliberately outranks any role it is given.
+// an Owner or Manager is still restricted, because naming an account in
+// MASKED_USERNAMES deliberately outranks any role it is given.
 //
-// THREE call sites read this — the bulk-action list in deals/DealsFilters,
-// and the handlers in deals/index and inactive-leads/index. They were three
-// copies of the same expression, which is exactly how a gate drifts: widening
+// FOUR call sites read this — the bulk-action list in deals/DealsFilters, the
+// handlers in deals/index and inactive-leads/index, and handleExportAll. They
+// were copies of one expression, which is exactly how a gate drifts: widening
 // one and forgetting another leaves a button that errors when pressed.
-export const canExportLeads = () => (isSupAdmin() || isOwner()) && !isMaskedUser();
+export const canExportLeads = () => isElevated() && !isMaskedUser();
 
 // Who can see lead STATUS HISTORY — the "was Follow up" badge in the table and
 // the "Previously in status" filter. Admin (by type) or the Owner role.
