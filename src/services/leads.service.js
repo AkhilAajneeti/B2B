@@ -880,6 +880,197 @@ const EXPORT_SELECT = [
 ].join(",");
 
 /**
+ * Export leads through the SERVER, which builds the file itself.
+ *
+ * Two steps, because the file comes back by reference:
+ *   1. POST /Export  { entityType, ids, fieldList, attributeList, format }
+ *        -> { id: <attachmentId> }
+ *   2. GET  /Attachment/file/<attachmentId>  -> the bytes
+ *
+ * THE ENDPOINT IS /Export, NOT /Lead/action/export. An earlier attempt used
+ * the latter and got a 500, which was read as "this gateway cannot export"
+ * and shelved the whole idea; it was simply the wrong URL. The entity goes in
+ * the BODY as `entityType`. Shape taken from a capture of EspoCRM's own UI
+ * making the same call, so it is known to work rather than inferred.
+ *
+ * WHY THIS BEATS BUILDING THE FILE IN THE BROWSER. The CSV path has to pull
+ * every record into the page first, which is what the 5,000-row cap and the
+ * sequential paging in fetchLeadsByIds exist to survive. Here one request
+ * produces the file, nothing streams through the tab, and xlsx is available —
+ * so phone numbers keep their leading zeros as a typed cell instead of the
+ * `"..."` quoting hack exportLeadsToCSV needs.
+ *
+ * `fieldList` names FIELDS, `attributeList` names ATTRIBUTES — they are not
+ * the same list. assignedUser is one field but two attributes
+ * (assignedUserId, assignedUserName), which is why it appears differently in
+ * each.
+ *
+ * NO PERMISSION CHECK HERE. The caller guards it, and the gateway applies the
+ * user's own ACL to the export regardless, which is the check that counts.
+ */
+const EXPORT_FIELD_LIST = [
+  "name",
+  "emailAddress",
+  "phoneNumber",
+  "status",
+  "cSubSource",
+  "cProject",
+  // "Preference" on the lead drawer — what the buyer is actually looking for.
+  "cPreference",
+  "cNextContactAt",
+  "createdAt",
+  "assignedUser",
+];
+
+const EXPORT_ATTRIBUTE_LIST = [
+  "name",
+  "emailAddress",
+  "phoneNumber",
+  "phoneNumberData",
+  "status",
+  "cSubSource",
+  "cProject",
+  "cPreference",
+  "cNextContactAt",
+  "createdAt",
+  "assignedUserId",
+  "assignedUserName",
+];
+
+export const exportLeadsByIds = async (ids, { format = "xlsx" } = {}) => {
+  const token = localStorage.getItem("auth_token");
+
+  const res = await fetch(`${API_BASE_URL}/Export`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", token },
+    body: JSON.stringify({
+      entityType: "Lead",
+      ids,
+      fieldList: EXPORT_FIELD_LIST,
+      attributeList: EXPORT_ATTRIBUTE_LIST,
+      format,
+      // `idle: false` runs it inline and returns the file in this response.
+      // Idle mode queues a job and hands back something to poll, which would
+      // need a second code path for no benefit at these selection sizes.
+      idle: false,
+      params: { lite: false, recordLinks: false, title: false },
+    }),
+  });
+
+  if (!res.ok) {
+    if (res.status === 401) handleUnauthorized();
+    // Surface what the server said. A silent failure here looks identical to
+    // an export that produced nothing, which is how the 500 above went
+    // unexplained for a month.
+    let detail = "";
+    try {
+      detail = (await res.text())?.slice(0, 200);
+    } catch {
+      /* body already consumed or empty */
+    }
+    throw new Error(`Export failed (${res.status})${detail ? `: ${detail}` : ""}`);
+  }
+
+  const { id: attachmentId } = (await res.json()) || {};
+  if (!attachmentId) throw new Error("Export returned no file");
+
+  const fileRes = await fetch(`${API_BASE_URL}/Attachment/file/${attachmentId}`, {
+    method: "GET",
+    headers: { token },
+  });
+  if (!fileRes.ok) {
+    if (fileRes.status === 401) handleUnauthorized();
+    throw new Error(`Could not download the export (${fileRes.status})`);
+  }
+
+  const raw = await fileRes.arrayBuffer();
+
+  // UNWRAP A JSON-ENCODED BODY.
+  //
+  // This gateway does not stream the attachment: it returns the file as a
+  // JSON *string*, so the body begins with a quote and every byte arrives as
+  // an escape — `"PK..."`. Saved as-is that is a text file
+  // with an .xlsx name, which is why Excel reported the extension not matching
+  // the format. The Content-Type header says xlsx and is no help at all.
+  //
+  // JSON.parse gives a string whose code units ARE the byte values, so each
+  // one maps straight back. Masked to a byte: a code unit above 0xFF would
+  // mean the server encoded the binary as real UTF-8 text, in which case the
+  // file is unrecoverable here and the signature check below will say so
+  // rather than writing something broken to disk.
+  let buffer = raw;
+  // Length-checked first: a zero-length body makes the one-byte view throw,
+  // which would replace the clear "empty file" message below with a
+  // TypeError about typed array length.
+  if (raw.byteLength && new Uint8Array(raw, 0, 1)[0] === 0x22) {
+    try {
+      const binary = JSON.parse(new TextDecoder().decode(raw));
+      if (typeof binary === "string") {
+        buffer = Uint8Array.from(binary, (ch) => ch.charCodeAt(0) & 0xff).buffer;
+      }
+    } catch {
+      // Not valid JSON after all — fall through to the check below, which
+      // reports what actually arrived.
+    }
+  }
+
+  // VERIFY THE BYTES BEFORE HANDING THEM TO THE BROWSER.
+  //
+  // A 200 is not proof of a file. If the gateway answers this route with a
+  // JSON error, an HTML login page or an empty body, saving it as .xlsx
+  // produces something Excel refuses with "the file format or file extension
+  // is not valid" — a message that points at the file and says nothing about
+  // the server, which is where the fault actually is.
+  //
+  // xlsx is a zip, so the first two bytes are always "PK" (0x50 0x4B). csv has
+  // no signature, so it is only checked for being non-empty.
+  const head = new Uint8Array(buffer.slice(0, 4));
+  const isZip = head[0] === 0x50 && head[1] === 0x4b;
+
+  if (!buffer.byteLength || (format === "xlsx" && !isZip)) {
+    // Show what did come back. Trimmed, because an HTML error page is long and
+    // the first line is the part that identifies it.
+    const text = new TextDecoder()
+      .decode(buffer.slice(0, 300))
+      .replace(/\s+/g, " ")
+      .trim();
+    const contentType = fileRes.headers.get("content-type") || "unknown";
+    throw new Error(
+      buffer.byteLength
+        ? `Server returned ${contentType}, not a file — ${text.slice(0, 160)}`
+        : "Server returned an empty file",
+    );
+  }
+
+  // Typed explicitly rather than inheriting the response's Content-Type: a
+  // gateway that labels the body text/html hands the OS the wrong hint even
+  // when the bytes are right.
+  return new Blob([buffer], {
+    type:
+      format === "xlsx"
+        ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        : "text/csv;charset=utf-8;",
+  });
+};
+
+/**
+ * Hands a blob to the browser as a download.
+ *
+ * revokeObjectURL matters: without it the blob is pinned in memory for the
+ * life of the tab, and an export of a few thousand rows is not small.
+ */
+export const downloadBlob = (blob, fileName) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+/**
  * Fetch the full records for a set of lead ids, so the browser can build the
  * export file from them.
  *

@@ -22,6 +22,7 @@ import {
   isElevated,
   isMaskedUser,
   isSupAdmin,
+  canExportLeads,
 } from "utils/permission";
 
 /**
@@ -326,8 +327,8 @@ const InactiveLeadsPage = () => {
         toast.error("Select at least one lead");
         return;
       }
-      // Matches the Leads page: admin-only, and never for a restricted account.
-      if (!isSupAdmin() || isMaskedUser()) {
+      // Matches the Leads page — same helper, so the two cannot drift.
+      if (!canExportLeads()) {
         toast.error("Export isn't available for your account");
         return;
       }

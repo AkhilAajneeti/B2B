@@ -8,7 +8,7 @@ import Button from "../../components/ui/Button";
 import DealsTable from "./components/DealsTable";
 import DealsFilters from "./components/DealsFilters";
 import DealDrawer from "./components/DealDrawer";
-import Papa from "papaparse";
+// import Papa from "papaparse"; // only the commented CSV builder below used it
 import TablePagination from "./components/TablePagination";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -17,7 +17,10 @@ import {
   deleteActivity,
   deleteLead,
   updateLead,
-  fetchLeadsByIds,
+  // fetchLeadsByIds is no longer used by the export — kept imported-free on
+  // purpose; the service still exports it for the range-export path.
+  exportLeadsByIds,
+  downloadBlob,
   EXPORT_SELECTION_LIMIT,
 } from "services/leads.service";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
@@ -37,6 +40,7 @@ import {
   canCreate,
   canEditRecord,
   canDeleteRecord,
+  canExportLeads,
   getStoredUser,
   isElevated,
   isMaskedUser,
@@ -297,6 +301,12 @@ const DealsPage = () => {
   const status = metaData?.status || [];
   const industry = metaData?.industries || [];
   const total = leadsData?.total || 0;
+  // BROWSER-BUILT CSV — unused since 2026-11-25. Both exports (Export All and
+  // Export Selected) now go through /Export, so the server builds the file and
+  // nothing is assembled in the tab. Commented rather than deleted: it is the
+  // fallback if the gateway ever stops proxying /Export, and it is the only
+  // thing here that can produce a CSV, since the server route returns xlsx.
+  /*
   // Lead export was switched off on 2026-11-18 and restored on 2026-11-23, by
   // request, with the original role gates intact: the only account barred
   // outright is the restricted one (`isMaskedUser()`), and the buttons stay
@@ -343,6 +353,63 @@ const DealsPage = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+  */
+
+  /**
+   * Export All — the leads currently on screen, built by the SERVER.
+   *
+   * Same rows as before: `leads` is the current page, so the file still holds
+   * exactly what the table is showing, at whatever page size is set. What
+   * changed is only who builds it — the ids go to /Export and the file comes
+   * back, instead of the browser assembling a CSV from data it already had.
+   *
+   * xlsx, not csv. It was switched to csv on request and switched back the
+   * same day: `cPreference` holds multi-line values — "Select Your
+   * Preference: …" then "What's your availability …" on the next line — and a
+   * CSV field containing a line break only survives if the writer quotes it.
+   * The server does not, so Excel ended the row at the break and everything
+   * after the first line was lost. The browser-built CSV could have quoted it
+   * on the way out; the server-built one is not ours to fix.
+   *
+   * In xlsx a line break is simply part of the cell, so the value arrives
+   * whole. Set format back to "csv" here if the backend starts quoting.
+   *
+   * The gateway applies the user's own ACL to the contents either way, which
+   * a file built in the tab never could.
+   *
+   * The label still overstates it: this is the page, not everything matching
+   * the filter. Exporting the whole filtered set needs a `where` body rather
+   * than ids, and that shape is not confirmed against this gateway yet — a
+   * filter the backend does not recognise exports EVERYTHING rather than
+   * failing, which is a worse outcome than the label being imprecise.
+   */
+  const handleExportAll = () => {
+    if (!canExportLeads()) {
+      toast.error("Export isn't available for your account");
+      return;
+    }
+
+    const ids = (leads || []).map((lead) => lead?.id).filter(Boolean);
+    if (!ids.length) {
+      toast.error("No leads to export");
+      return;
+    }
+
+    const toastId = toast.loading(
+      `Preparing ${ids.length} lead${ids.length === 1 ? "" : "s"}…`,
+    );
+    exportLeadsByIds(ids, { format: "xlsx" })
+      .then((blob) => {
+        const stamp = new Date().toISOString().split("T")[0];
+        downloadBlob(blob, `leads_${stamp}.xlsx`);
+        toast.success(`Exported ${ids.length} lead${ids.length === 1 ? "" : "s"}`, {
+          id: toastId,
+        });
+      })
+      .catch((err) => {
+        toast.error(err?.message || "Export failed", { id: toastId });
+      });
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -623,7 +690,7 @@ const DealsPage = () => {
       // Guarded here as well as on the button: hiding a control is
       // presentation, and this handler is reachable from anything that can
       // dispatch a bulk action.
-      if (!isSupAdmin() || isMaskedUser()) {
+      if (!canExportLeads()) {
         toast.error("Export isn't available for your account");
         return;
       }
@@ -634,30 +701,26 @@ const DealsPage = () => {
         return;
       }
 
-      // Fetch the selected records by ID, then build the file from those.
-      // The old version filtered `leads`, which only holds the current page —
-      // selecting across pages and exporting silently produced a file
-      // containing just the visible page. Fetching by id is what makes the
-      // full cross-page selection actually reach the CSV.
+      // SERVER-SIDE EXPORT. The browser used to fetch every selected record
+      // (fetchLeadsByIds, paged, sequential) and assemble a CSV from them;
+      // now one POST produces the file and we download it. Nothing streams
+      // through the tab, and the result is xlsx, so phone numbers arrive as
+      // typed cells with their leading zeros rather than needing the quoting
+      // hack the CSV builder uses.
+      //
+      // Reported counts are gone with it, and that is the honest trade: the
+      // server decides what the file contains, so "3 of your 10 no longer
+      // exist" is no longer something the client can know. It also applies
+      // the user's own ACL, which the client-side path could not.
       const toastId = toast.loading(
         `Preparing ${selectedDeals.length} lead${selectedDeals.length === 1 ? "" : "s"}…`,
       );
-      fetchLeadsByIds(selectedDeals)
-        .then((rows) => {
-          if (!rows.length) {
-            toast.error("None of the selected leads could be loaded", {
-              id: toastId,
-            });
-            return;
-          }
-          exportLeadsToCSV(rows, "selected_leads");
-          // A short result means some selected leads no longer exist. Say so
-          // rather than handing over a file that's quietly missing rows.
-          const missing = selectedDeals.length - rows.length;
+      exportLeadsByIds(selectedDeals, { format: "xlsx" })
+        .then((blob) => {
+          const stamp = new Date().toISOString().split("T")[0];
+          downloadBlob(blob, `selected_leads_${stamp}.xlsx`);
           toast.success(
-            missing > 0
-              ? `Exported ${rows.length} leads (${missing} no longer exist)`
-              : `Exported ${rows.length} leads`,
+            `Exported ${selectedDeals.length} lead${selectedDeals.length === 1 ? "" : "s"}`,
             { id: toastId },
           );
         })
@@ -873,7 +936,7 @@ const DealsPage = () => {
                   <Button
                     className="linearbg-1 text-white hover:text-white"
                     variant="outline"
-                    onClick={() => exportLeadsToCSV(leads, "all_leads")}
+                    onClick={handleExportAll}
                   >
                     <Icon name="Download" size={16} className="mr-2" />
                     Export All

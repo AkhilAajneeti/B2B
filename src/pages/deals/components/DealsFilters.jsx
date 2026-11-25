@@ -8,7 +8,7 @@ import RoleGuard from "components/RoleGuard";
 import { useTeams } from "hooks/useTeams";
 import { useProjectOptions } from "hooks/useProjects";
 import { todayLocal } from "../../../utils/dateFilter";
-import { isSupAdmin, isMaskedUser, canSeeStatusHistory } from "utils/permission";
+import { isSupAdmin, isMaskedUser, canSeeStatusHistory, canExportLeads } from "utils/permission";
 
 // Full status list — the default the Leads page uses (it passes no override, so
 // its behaviour is unchanged). Other pages (e.g. Inactive Leads) pass a narrowed
@@ -135,14 +135,10 @@ const DealsFilters = ({
   // non-admins never see the Delete button at all.
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
-    // Export Selected — admin only, the same `type === "admin"` gate Delete
-    // uses below (owners and managers don't qualify). Bulk-exporting customer
-    // contact details off the CRM is the same class of action as deleting
-    // them. The isMaskedUser check matters as well: a restricted account that
-    // is also an admin is still restricted, since naming an account in
-    // MASKED_USERNAMES deliberately outranks the elevated escape hatch — it is
-    // what keeps `aajneeti` out of the export that was restored 2026-11-23.
-    ...(isSupAdmin() && !isMaskedUser()
+    // Export Selected — admin or Owner, and never a restricted account. The
+    // rule lives in canExportLeads() because the two handlers that act on this
+    // menu entry have to agree with it; see the note there.
+    ...(canExportLeads()
       ? [{ value: "export", label: "Export Selected", icon: "Download" }]
       : []),
     ...(isSupAdmin()

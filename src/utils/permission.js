@@ -222,6 +222,23 @@ export const isElevated = () => {
   );
 };
 
+// Who can EXPORT leads off the CRM — the "Export Selected" bulk action on the
+// Leads and Inactive Leads pages. Admin (by type) or the Owner role.
+//
+// Owner was added 2026-11-25 by request. It was admin-only before, on the
+// reasoning that bulk-exporting customer contact details is the same class of
+// action as deleting them — which is still why Manager is NOT included.
+//
+// The isMaskedUser() half is not optional: a restricted account that is also
+// an Owner is still restricted, because naming an account in MASKED_USERNAMES
+// deliberately outranks any role it is given.
+//
+// THREE call sites read this — the bulk-action list in deals/DealsFilters,
+// and the handlers in deals/index and inactive-leads/index. They were three
+// copies of the same expression, which is exactly how a gate drifts: widening
+// one and forgetting another leaves a button that errors when pressed.
+export const canExportLeads = () => (isSupAdmin() || isOwner()) && !isMaskedUser();
+
 // Who can see lead STATUS HISTORY — the "was Follow up" badge in the table and
 // the "Previously in status" filter. Admin (by type) or the Owner role.
 //
