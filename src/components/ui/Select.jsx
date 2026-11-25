@@ -1,5 +1,5 @@
 // components/ui/Select.jsx - Shadcn style Select
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown, Check, Search, X } from "lucide-react";
 import { cn } from "../../utils/cn";
 import Button from "./Button";
@@ -46,6 +46,69 @@ const Select = React.forwardRef(({
     // detect whether a `mousedown` happened inside the select (trigger or
     // dropdown panel) or anywhere else on the page.
     const containerRef = useRef(null);
+
+    // ── Panel placement ───────────────────────────────────────────────────
+    // The panel is absolutely positioned against the trigger and is `w-full`
+    // by default, so it normally matches the trigger exactly and can never
+    // overflow. A caller passing `dropdownClassName="min-w-[320px]"` (the
+    // Leads "Project Name" filter does, so long project names stay readable)
+    // breaks that assumption: the panel is then WIDER than its trigger, and a
+    // trigger sitting at the right edge of a row pushes it off the page.
+    //
+    // Measured rather than guessed, because the overflow depends on the
+    // trigger's position, the panel's min-width and the viewport — none of
+    // which this component can know in advance. On open we read both rects
+    // and flip the anchor only when the default placement actually overflows
+    // AND the flipped one fits, so a select near the LEFT edge is left alone
+    // instead of being pushed off the opposite side.
+    const panelRef = useRef(null);
+    const [alignRight, setAlignRight] = useState(false);
+    const [openUp, setOpenUp] = useState(false);
+    // Hard cap for the narrow-screen case, where flipping cannot help because
+    // neither side has room. Measured rather than `max-w-[100vw]`, because
+    // 100vw counts the scrollbar and so is slightly too wide.
+    const [maxWidth, setMaxWidth] = useState(undefined);
+
+    useLayoutEffect(() => {
+        if (!isOpen) {
+            setAlignRight(false);
+            setOpenUp(false);
+            setMaxWidth(undefined);
+            return;
+        }
+
+        const panel = panelRef.current;
+        const trigger = containerRef.current;
+        if (!panel || !trigger) return;
+
+        const t = trigger.getBoundingClientRect();
+        const p = panel.getBoundingClientRect();
+        const GAP = 12; // air between the panel and the edge
+
+        // Measured against documentElement.clientWidth, NOT window.innerWidth:
+        // innerWidth includes the vertical scrollbar, so a panel judged to fit
+        // by that number can still end up underneath the scrollbar. The Leads
+        // page always has a scrollbar, which is exactly where this showed up.
+        const viewportWidth = document.documentElement.clientWidth;
+        const viewportHeight = document.documentElement.clientHeight;
+
+        // Horizontal. Default is left-aligned to the trigger, so the panel
+        // would end at t.left + p.width.
+        const overflowsRight = t.left + p.width > viewportWidth - GAP;
+        const flippedFits = t.right - p.width >= GAP;
+        setAlignRight(overflowsRight && flippedFits);
+
+        // Vertical. Same rule: only open upwards when there is genuinely more
+        // room above, otherwise a short list near the bottom would flip for
+        // no reason.
+        const spaceBelow = viewportHeight - t.bottom;
+        const spaceAbove = t.top;
+        setOpenUp(p.height > spaceBelow - GAP && spaceAbove > spaceBelow);
+
+        setMaxWidth(viewportWidth - GAP * 2);
+        // Re-measured when the option count changes, since that changes the
+        // panel height and can change whether it still fits below.
+    }, [isOpen, options?.length]);
 
     // Close on outside click / Escape. Only attaches listeners while the
     // dropdown is open so there's zero runtime cost the rest of the time.
@@ -259,8 +322,16 @@ const Select = React.forwardRef(({
 
                 {/* Dropdown */}
                 {isOpen && (
-                    <div className={cn(
-                        "absolute z-50 w-full mt-2 bg-card text-card-foreground border border-border rounded-lg shadow-elevation-2 backdrop-blur-sm",
+                    <div
+                        ref={panelRef}
+                        style={maxWidth ? { maxWidth } : undefined}
+                        className={cn(
+                        "absolute z-50 w-full bg-card text-card-foreground border border-border rounded-lg shadow-elevation-2 backdrop-blur-sm",
+                        // Anchor: right edge when left-aligning would overflow
+                        // (see the placement note above), left edge otherwise.
+                        alignRight ? "right-0" : "left-0",
+                        // Flip above the trigger when it will not fit below.
+                        openUp ? "bottom-full mb-2" : "top-full mt-2",
                         dropdownClassName,
                     )}>
 
