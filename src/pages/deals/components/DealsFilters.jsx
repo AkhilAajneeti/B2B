@@ -8,7 +8,7 @@ import RoleGuard from "components/RoleGuard";
 import { useTeams } from "hooks/useTeams";
 import { useProjectOptions } from "hooks/useProjects";
 import { todayLocal } from "../../../utils/dateFilter";
-// canExportLeads is currently used only by the parked "Export Selected" entry
+// canExportLeads gates the "Export Selected" bulk entry
 // below. Kept imported on purpose, so restoring that entry is one uncomment.
 import { isSupAdmin, isMaskedUser, canSeeStatusHistory, canExportLeads } from "utils/permission";
 
@@ -137,24 +137,29 @@ const DealsFilters = ({
   // non-admins never see the Delete button at all.
   const bulkActions = [
     { value: "mass-update", label: "Mass Update", icon: "GitBranch" },
-    // EXPORT SELECTED — COMMENTED OUT, by request.
+    // EXPORT SELECTED — restored 2026-11-25, by request.
     //
-    // Retired once Export All moved to the server route: both buttons now
-    // POST the same ids to /Export and get the same file back, so the only
-    // difference left was which ids they sent. Export All sends the page.
+    // Identical to Export All apart from WHICH ids it sends: both POST to
+    // /Export, the server builds the file, and the gateway applies the user's
+    // own ACL to the contents. Export All sends the page; this sends the
+    // selection.
+    //
+    // THE OTP IS NOT ASKED TWICE. Both paths go through exportLeadsByIds ->
+    // ensureStepUp(), and elevation is a time window on the session
+    // (utils/elevation, 5 minutes, sessionStorage) rather than a per-action
+    // token. So Export All followed by Export Selected inside that window
+    // verifies once; past it, whichever comes first asks again.
     //
     // This bar is SHARED by the Leads page and Inactive Leads, so this one
-    // entry is what put the action on both — uncommenting it restores it to
-    // both at once. The handlers it drives are still live and still gated
-    // (pages/deals/index.jsx and pages/inactive-leads/index.jsx, action ===
-    // "export"), so nothing else has to change either way.
+    // entry puts the action on both. The handlers are live and gated on both
+    // sides (action === "export" in pages/deals/index.jsx and
+    // pages/inactive-leads/index.jsx).
     //
     // The rule stays in canExportLeads() rather than being inlined here,
     // because the two handlers have to agree with it; see the note there.
-    //
-    // ...(canExportLeads()
-    //   ? [{ value: "export", label: "Export Selected", icon: "Download" }]
-    //   : []),
+    ...(canExportLeads()
+      ? [{ value: "export", label: "Export Selected", icon: "Download" }]
+      : []),
     ...(isSupAdmin()
       ? [{ value: "delete", label: "Delete Selected", icon: "Trash2", destructive: true }]
       : []),
