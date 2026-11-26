@@ -171,14 +171,17 @@ const DealsPage = () => {
   const [filters, setFilters] = useState(() => {
     const restored = { ...DEFAULT_FILTERS, ...(persisted?.filters || {}) };
 
-    // Restricted accounts don't get the Assign User or Next Contact filters
-    // (see DealsFilters). Clear any stored value for them: filters persist in
+    // Restricted accounts don't get the Next Contact filter (see
+    // DealsFilters). Clear any stored value for them: filters persist in
     // sessionStorage, so one set before this gate existed — or left by another
     // account on the same machine — would carry on narrowing the list with no
     // visible control to clear it. That reads as "leads are missing", and the
     // only way out would be to clear site data.
+    //
+    // `assignUser` is deliberately NOT cleared any more: that filter is now
+    // shown to these accounts, so a stored value has a visible control and a
+    // pill to clear it.
     if (isMaskedUser()) {
-      restored.assignUser = "";
       restored.nextContactType = "";
       restored.nextContactFrom = "";
       restored.nextContactTo = "";

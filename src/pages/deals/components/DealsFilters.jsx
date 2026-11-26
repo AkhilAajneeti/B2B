@@ -119,11 +119,14 @@ const DealsFilters = ({
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [assignUser, setAssignUser] = useState([]);
 
-  // Restricted accounts: hides the Assign User and Next Contact filters, and
-  // the active-filter pills that go with them. Both are internal-team views of
-  // the pipeline — who owns a lead and when it's due to be worked — and the
-  // Assigned pill in particular would print the rep's name back out, which is
-  // the very thing the column is being hidden to stop.
+  // Restricted accounts: hides the Next Contact filter and its pill — when a
+  // lead is due to be worked is an internal-team view of the pipeline.
+  //
+  // ASSIGN USER IS NO LONGER AMONG THEM. It was, on the reasoning that the
+  // Assigned pill would print a rep's name back out; that reasoning lapsed
+  // when the Assigned User column itself was made visible to these accounts.
+  // Hiding the filter after that only meant they could see the owner and not
+  // search by it.
   //
   // The stored filter values are cleared for these accounts in
   // pages/deals/index.jsx. Without that, a value persisted in sessionStorage
@@ -478,7 +481,9 @@ const DealsFilters = ({
       });
     }
 
-    if (filters?.assignUser && !masked) {
+    // No `!masked` here any more: the filter is available to restricted
+    // accounts, and a filter with no pill is a filter nobody can see is on.
+    if (filters?.assignUser) {
       const userMatch = assignUserOptions.find(
         (o) => o.value === filters.assignUser,
       );
@@ -852,15 +857,20 @@ const DealsFilters = ({
             onChange={(value) => handleFilterChange("source", value)}
           />
         )}
-        {!masked && (
-          <Select
-            placeholder="Assign User"
-            options={assignUserOptions}
-            value={filters?.assignUser || ""}
-            onChange={(value) => handleFilterChange("assignUser", value)}
-            searchable
-          />
-        )}
+        {/* Assign User — VISIBLE TO RESTRICTED ACCOUNTS TOO, by request.
+            It was hidden with Next Contact as an internal-team view of the
+            pipeline, but the Assigned User COLUMN was already made visible to
+            them, so the name was on screen while the filter for it was not —
+            a column you can read but cannot filter by. Nothing is disclosed
+            that the column does not already show; contact masking is
+            unaffected, since that happens in the API response. */}
+        <Select
+          placeholder="Assign User"
+          options={assignUserOptions}
+          value={filters?.assignUser || ""}
+          onChange={(value) => handleFilterChange("assignUser", value)}
+          searchable
+        />
         {/* Date Type Select */}
         <Select
           className="min-w-0"
