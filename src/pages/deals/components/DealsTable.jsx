@@ -380,11 +380,40 @@ const DealsTable = ({
   };
 
   const paginatedDeals = deals;
-  const isAllSelected =
-    selectedDeals?.length === paginatedDeals?.length &&
-    paginatedDeals?.length > 0;
-  const isIndeterminate =
-    selectedDeals?.length > 0 && selectedDeals?.length < paginatedDeals?.length;
+
+  /**
+   * HEADER CHECKBOX — derived from WHICH leads on this page are selected, not
+   * from how many are selected in total.
+   *
+   * It used to compare counts: `selectedDeals.length === deals.length`. That
+   * is only the same question while the selection never leaves the page, and
+   * it breaks as soon as it does:
+   *
+   *   page 1, tick header -> 20 selected, page holds 20 -> checked (right)
+   *   go to page 2        -> still 20 selected, page holds 20 -> 20 === 20,
+   *                          so CHECKED, though nothing on page 2 is selected
+   *   click it            -> reads as "untick", removes page 2's ids (none are
+   *                          there), selection stays 20 -> still checked. The
+   *                          box is stuck and page 2 cannot be selected at all
+   *   click again         -> ticks page 2 -> 40 selected -> 40 === 20 is
+   *                          false, so now it renders UNCHECKED while both
+   *                          pages ARE selected
+   *
+   * It also explains why it sometimes behaved: at 40 selected the comparison
+   * is already false, so the box reads unchecked and one click works. Whether
+   * it worked depended on arithmetic between the selection count and the page
+   * size, which is why going 4th page -> 3rd page felt fine and 1st -> 2nd
+   * did not.
+   *
+   * Membership answers all of it, and makes `indeterminate` mean what it says:
+   * SOME of this page, not "some of the selection".
+   */
+  const selectedIdSet = new Set(selectedDeals || []);
+  const pageIds = (paginatedDeals || []).map((deal) => deal?.id).filter(Boolean);
+  const selectedOnPage = pageIds.filter((id) => selectedIdSet.has(id)).length;
+
+  const isAllSelected = pageIds.length > 0 && selectedOnPage === pageIds.length;
+  const isIndeterminate = selectedOnPage > 0 && selectedOnPage < pageIds.length;
 
   // Data columns between the checkbox and the Actions cell.
   //   everyone: Name, Project, Source, Status, Next Contact, Create At,

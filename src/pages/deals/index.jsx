@@ -317,6 +317,12 @@ const DealsPage = () => {
   const [offPageRecords, setOffPageRecords] = useState([]);
   const [selectingAll, setSelectingAll] = useState(false);
 
+  // What the last select-all returned: { fetched, total } while one is live,
+  // null otherwise. Drives the banner's two summary states — see
+  // crossPageSelection / selectionTruncated below for why neither can be
+  // derived from the selection itself.
+  const [selectAllRun, setSelectAllRun] = useState(null);
+
   const selectedLeadRecords = useMemo(() => {
     // Current page WINS over the cached copy: the page is the fresher read,
     // so a lead reassigned since the select-all is judged on its new owner.
@@ -814,17 +820,18 @@ const DealsPage = () => {
    * still check permission per record — see offPageRecords above.
    */
   const handleSelectAllMatching = async () => {
-    if (total > EXPORT_SELECTION_LIMIT) {
-      toast.error(
-        `This filter matches ${total.toLocaleString()} leads — up to ${EXPORT_SELECTION_LIMIT} can be selected at once. Narrow the filter first.`,
-      );
-      return;
-    }
     if (!total) return;
+
+    // TRUNCATES, IT DOES NOT REFUSE. Over the cap this takes the newest
+    // EXPORT_SELECTION_LIMIT in the current sort — the same thing the header
+    // Export does with an over-cap date range ("exports the newest 500"), so
+    // the two controls can't give contradictory answers about the same filter.
+    // The banner has already named the number, so this is not a surprise.
+    const target = Math.min(total, EXPORT_SELECTION_LIMIT);
 
     const toastId = "select-all-matching";
     setSelectingAll(true);
-    toast.loading(`Selecting ${total.toLocaleString()} leads…`, { id: toastId });
+    toast.loading(`Selecting ${target.toLocaleString()} leads…`, { id: toastId });
 
     try {
       const records = await fetchAllMatchingLeads({
@@ -836,9 +843,21 @@ const DealsPage = () => {
 
       setOffPageRecords(records);
       setSelectedDeals(records.map((lead) => lead.id).filter(Boolean));
-      toast.success(`${records.length.toLocaleString()} leads selected`, {
-        id: toastId,
-      });
+      setSelectAllRun({ fetched: records.length, total });
+
+      // "of 1,240" whenever it came back short, so the count on screen is
+      // never read as the whole filter. "the maximum" is claimed only when the
+      // cap is what stopped it — a fetch that returned 480 of 1,240 was
+      // limited by the data, not by the cap, and saying otherwise would send
+      // the user off to narrow a filter that would not help.
+      toast.success(
+        records.length < total
+          ? `${records.length.toLocaleString()} of ${total.toLocaleString()} leads selected${
+              records.length >= EXPORT_SELECTION_LIMIT ? " — the maximum" : ""
+            }`
+          : `${records.length.toLocaleString()} leads selected`,
+        { id: toastId },
+      );
     } catch (err) {
       toast.error(err?.message || "Could not select all leads", { id: toastId });
     } finally {
@@ -866,6 +885,7 @@ const DealsPage = () => {
   const clearSelection = () => {
     setSelectedDeals([]);
     setOffPageRecords([]);
+    setSelectAllRun(null);
   };
 
   // The whole visible page is ticked AND there is more beyond it. Both halves
@@ -878,6 +898,40 @@ const DealsPage = () => {
 
   const allMatchingSelected =
     selectedDeals.length > 0 && selectedDeals.length >= total;
+
+  // The filter holds more than one selection can carry, so select-all will
+  // TRUNCATE to the newest EXPORT_SELECTION_LIMIT rather than refuse. The
+  // banner says so before the click — the old behaviour offered "Select all
+  // 1,240", then rejected it with a toast, which is a button that lies.
+  const selectionCapped = total > EXPORT_SELECTION_LIMIT;
+
+  // The select-all TRUNCATED: it returned fewer than the filter holds. Read
+  // from what the fetch actually came back with, not from
+  // `selectedDeals.length >= EXPORT_SELECTION_LIMIT` — that comparison was
+  // the second bug here. A fetch that yields 480 of 1,240 (ACL trimming the
+  // result, or a short page) failed it, so the banner reverted to "all 20 on
+  // this page are selected" and re-offered a select-all that had already run
+  // and would return the same 480: a loop with no exit.
+  //
+  // Shown as its own state because `allMatchingSelected` is false here — 500
+  // is not 1,240 — so without it there is nothing to report the cap at all.
+  const selectionTruncated =
+    Boolean(selectAllRun) && selectAllRun.fetched < selectAllRun.total;
+
+  // A select-all actually ran. Tracked as its own state rather than inferred
+  // from `offPageRecords`, which was the first attempt and was simply wrong:
+  // rememberRecords() fills that array on every MANUAL tick too (see
+  // handleSelectDeal / handleSelectAll), so the proxy was true whenever
+  // anything was selected at all — which put the banner on single-page
+  // filters, announcing a select-all that never happened.
+  const crossPageSelection = Boolean(selectAllRun);
+
+  // Kept visible once a cross-page selection exists, not just while the page
+  // is fully ticked: paging past the selected range used to hide the banner
+  // and with it the only "Clear selection" the summary states offer.
+  const showSelectionBanner =
+    pageFullySelected ||
+    (crossPageSelection && (allMatchingSelected || selectionTruncated));
 
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
@@ -903,6 +957,10 @@ const DealsPage = () => {
     // filter, so keeping them would let a later bulk action be judged on
     // records that no longer match what is on screen.
     setOffPageRecords([]);
+    // The select-all it described is over too: its counts were taken against
+    // the old filter, so leaving it set would have the banner report a cap on
+    // a result set that no longer exists.
+    setSelectAllRun(null);
     setSelectedDeals((prev) => {
       if (prev.length) toast("Selection cleared", { icon: "\u2139\ufe0f" });
       return [];
@@ -1357,15 +1415,35 @@ const DealsPage = () => {
                 couldn't be used. Instead only the table is clipped (it's the
                 part whose square corners need rounding), and the footer rounds
                 its own bottom corners. */}
-            {/* CROSS-PAGE SELECT ALL.
-                Appears only once the whole page is ticked, which is the
-                moment the limit becomes visible — offering it before then
+            {/* CROSS-PAGE SELECT ALL — three states.
+                The OFFER appears once the whole page is ticked, which is the
+                moment the limit becomes visible; offering it before then
                 would be a second select-all control competing with the
-                header checkbox. Hidden entirely when the filter fits on one
-                page, where it would do nothing. */}
-            {pageFullySelected && (
+                header checkbox, and it stays hidden when the filter fits on
+                one page, where it would do nothing. The two SUMMARY states
+                (all selected / capped at the limit) also survive paging away
+                from the selected range, since they carry the only Clear
+                selection those states offer. */}
+            {showSelectionBanner && (
               <div className="mb-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-xl border border-[#AC2334]/20 bg-[#AC2334]/[0.06] px-4 py-2.5 text-sm text-foreground">
-                {allMatchingSelected ? (
+                {selectionTruncated ? (
+                  <>
+                    <span>
+                      <strong>{selectedDeals.length.toLocaleString()}</strong> of{" "}
+                      {total.toLocaleString()} leads selected
+                      {selectAllRun.fetched >= EXPORT_SELECTION_LIMIT
+                        ? " — the most that can be selected at once."
+                        : "."}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="font-semibold text-[#AC2334] underline underline-offset-2 hover:opacity-80"
+                    >
+                      Clear selection
+                    </button>
+                  </>
+                ) : allMatchingSelected ? (
                   <>
                     <span>
                       All <strong>{selectedDeals.length.toLocaleString()}</strong>{" "}
@@ -1384,6 +1462,18 @@ const DealsPage = () => {
                     <span>
                       All <strong>{leads.length}</strong> leads on this page are
                       selected.
+                      {/* Stated BEFORE the click, not as a toast after it. The
+                          cap is a property of the filter, so the user can act
+                          on it here — narrow the filter — while the old toast
+                          only told them the click had failed. */}
+                      {selectionCapped && (
+                        <>
+                          {" "}
+                          This filter matches{" "}
+                          <strong>{total.toLocaleString()}</strong>, and only{" "}
+                          {EXPORT_SELECTION_LIMIT} can be selected at once.
+                        </>
+                      )}
                     </span>
                     <button
                       type="button"
@@ -1393,7 +1483,13 @@ const DealsPage = () => {
                     >
                       {selectingAll
                         ? "Selecting…"
-                        : `Select all ${total.toLocaleString()} matching this filter`}
+                        : selectionCapped
+                          ? // "first", not "newest": the fetch follows the
+                            // CURRENT sort, so under Name A→Z these are the
+                            // first 500 alphabetically. Newest only by
+                            // default (createdAt desc).
+                            `Select the first ${EXPORT_SELECTION_LIMIT} of ${total.toLocaleString()}`
+                          : `Select all ${total.toLocaleString()} matching this filter`}
                     </button>
                   </>
                 )}

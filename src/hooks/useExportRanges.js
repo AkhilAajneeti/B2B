@@ -64,7 +64,10 @@ export const useExportRanges = ({ filters, enabled }) => {
         else if (overCap)
           // Stated plainly rather than silently truncated. This is the one
           // case where the label and the file would otherwise disagree.
-          hint = `${total.toLocaleString()} leads — exports the newest ${EXPORT_SELECTION_LIMIT}`;
+          // "first", not "newest": the collection follows the page's CURRENT
+          // sort, so these are the newest only under the default createdAt
+          // desc — under Name A→Z they are the first 500 alphabetically.
+          hint = `${total.toLocaleString()} leads — exports the first ${EXPORT_SELECTION_LIMIT}`;
         else hint = `${total.toLocaleString()} lead${total === 1 ? "" : "s"}`;
 
         return {

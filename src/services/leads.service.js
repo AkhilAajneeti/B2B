@@ -971,6 +971,24 @@ const EXPORT_ATTRIBUTE_LIST = [
 ];
 
 export const exportLeadsByIds = async (ids, { format = "xlsx" } = {}) => {
+  // THE CAP LIVES HERE, not only in the pages.
+  //
+  // Both page components check EXPORT_SELECTION_LIMIT before calling, but a
+  // guard that exists only in the UI is one new caller away from being gone —
+  // and the cap is the only thing keeping a 2,000-id array off a gateway that
+  // runs this export INLINE (`idle: false` below), where the failure mode is
+  // a timeout after the user has already verified a code.
+  //
+  // Checked BEFORE ensureStepUp so a doomed export never asks for an OTP
+  // first. `fetchLeadsByIds` — the parked browser-CSV path — has carried the
+  // same check for months; this one had none.
+  if (!ids?.length) throw new Error("No leads selected");
+  if (ids.length > EXPORT_SELECTION_LIMIT) {
+    throw new Error(
+      `Export up to ${EXPORT_SELECTION_LIMIT} leads at a time (${ids.length} selected)`,
+    );
+  }
+
   // Ask before firing. Resolves immediately when the session is already
   // elevated, and rejects with a cancellation if the user closes the dialog —
   // which the caller must not report as a failure.

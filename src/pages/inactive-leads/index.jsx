@@ -528,11 +528,25 @@ const InactiveLeadsPage = () => {
         toast.error("Export isn't available for your account");
         return;
       }
-      runExport(
-        selectedLeadRecords.map((lead) => lead?.id).filter(Boolean),
-        "selected_inactive_leads",
-        "csv",
-      );
+      if (selectedDeals.length > EXPORT_SELECTION_LIMIT) {
+        toast.error(
+          `Export up to ${EXPORT_SELECTION_LIMIT} leads at a time — ${selectedDeals.length} selected`,
+        );
+        return;
+      }
+      // `selectedDeals`, NOT `selectedLeadRecords`.
+      //
+      // This used to send selectedLeadRecords, which is `leads.filter(...)` —
+      // the VISIBLE PAGE only. Ticking 200 leads across 10 pages, verifying a
+      // code, and receiving a 20-row file with a success message was the
+      // result: a wrong export that reported itself as fine.
+      //
+      // Sending the ids is safe without the records, because /Export resolves
+      // them server-side and the gateway applies the user's own ACL to the
+      // contents. The records are only needed where the CLIENT must judge
+      // permission per record — mass-update and delete below, which is why
+      // those still read selectedLeadRecords.
+      runExport(selectedDeals, "selected_inactive_leads", "csv");
       return;
     }
     if (action === "delete") {
