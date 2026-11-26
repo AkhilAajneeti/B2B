@@ -1577,3 +1577,48 @@ export const createLeadTask = async (id) => {
   }
   return await res.json();
 };
+/**
+ * Every lead matching the current filter, as FULL records — the backing data
+ * for "select all N matching this filter".
+ *
+ * WHY NOT fetchLeadsForExport. That one selects EXPORT_SELECT, a field list
+ * built for the spreadsheet: it carries `assignedUserName` but NOT
+ * `assignedUserId`, and no `teamsIds` or `createdById`. Those three are
+ * exactly what canEditRecord / canDeleteRecord read, so records fetched that
+ * way evaluate as "not yours" no matter who you are — a selection that looks
+ * right and then refuses every bulk action on it.
+ *
+ * So this passes NO select and takes the gateway's default field set, which
+ * is what the table itself already runs its per-row permission checks against.
+ * The two therefore cannot disagree.
+ *
+ * CAPPED, and the caller is expected to have checked the total first. The cap
+ * is a backstop, not the gate: a selection that silently stops at 500 of 1,200
+ * is the failure mode this whole area keeps relearning.
+ */
+export const fetchAllMatchingLeads = async ({
+  filters = {},
+  orderBy = "createdAt",
+  order = "desc",
+  limit = EXPORT_SELECTION_LIMIT,
+  // (fetched, target) after each page, so the UI can show real progress.
+  onProgress = null,
+}) => {
+  const capped = Math.min(limit, EXPORT_SELECTION_LIMIT);
+  const PAGE = 200;
+  const all = [];
+
+  for (let page = 1; all.length < capped; page += 1) {
+    const res = await fetchNewLeads({ limit: PAGE, page, filters, orderBy, order });
+    const list = Array.isArray(res?.list) ? res.list : [];
+
+    all.push(...list);
+    onProgress?.(Math.min(all.length, capped), capped);
+
+    // Short page means the end of the result set. Without this the loop
+    // would keep asking for pages past the end until it hit the cap.
+    if (list.length < PAGE) break;
+  }
+
+  return all.slice(0, capped);
+};

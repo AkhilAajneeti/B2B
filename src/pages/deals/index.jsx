@@ -23,6 +23,7 @@ import {
   exportLeadsByIds,
   downloadBlob,
   fetchLeadsForExport,
+  fetchAllMatchingLeads,
   EXPORT_DATE_RANGES,
   EXPORT_SELECTION_LIMIT,
   // EXPORT_RANGE_OPTIONS — the parked First 100/250/500 picker. Kept
@@ -301,10 +302,29 @@ const DealsPage = () => {
     };
   };
 
-  const selectedLeadRecords = useMemo(
-    () => leads.filter((lead) => selectedDeals.includes(lead.id)),
-    [leads, selectedDeals],
-  );
+  /**
+   * Records for selections made OFF the current page, via "select all
+   * matching".
+   *
+   * Mass Update and Delete verify permission per record, so an id alone is
+   * not enough — without the record they cannot tell whose lead it is, and
+   * bulkBlockReason refuses the action rather than guess. Holding the records
+   * is what lets a cross-page selection be acted on at all.
+   *
+   * Export never needed this (it posts ids and the gateway applies the user's
+   * own ACL), which is why cross-page export already worked.
+   */
+  const [offPageRecords, setOffPageRecords] = useState([]);
+  const [selectingAll, setSelectingAll] = useState(false);
+
+  const selectedLeadRecords = useMemo(() => {
+    // Current page WINS over the cached copy: the page is the fresher read,
+    // so a lead reassigned since the select-all is judged on its new owner.
+    const byId = new Map();
+    offPageRecords.forEach((lead) => lead?.id && byId.set(lead.id, lead));
+    leads.forEach((lead) => lead?.id && byId.set(lead.id, lead));
+    return selectedDeals.map((id) => byId.get(id)).filter(Boolean);
+  }, [leads, offPageRecords, selectedDeals]);
   const source = metaData?.sources || [];
   const status = metaData?.status || [];
   const industry = metaData?.industries || [];
@@ -738,8 +758,31 @@ const DealsPage = () => {
     }
   };
 
+  /**
+   * Remember the records behind a selection, so they survive leaving the page.
+   *
+   * Ticking a lead on page 1 and then paging to 2 used to leave only an id:
+   * `leads` no longer holds that record, so Mass Update and Delete could not
+   * check whose lead it was and refused the whole selection. Keeping the
+   * record alongside the id is what makes a hand-built cross-page selection
+   * work the same as "select all matching".
+   *
+   * Nothing is pruned on deselect — selectedLeadRecords is driven by
+   * selectedDeals, so an unticked lead drops out regardless, and re-ticking it
+   * after paging away still finds its record here.
+   */
+  const rememberRecords = (records) => {
+    setOffPageRecords((prev) => {
+      const byId = new Map(prev.map((lead) => [lead.id, lead]));
+      records.forEach((lead) => lead?.id && byId.set(lead.id, lead));
+      return [...byId.values()];
+    });
+  };
+
   const handleSelectDeal = (dealId, isSelected) => {
     if (isSelected) {
+      const record = leads.find((lead) => lead.id === dealId);
+      if (record) rememberRecords([record]);
       setSelectedDeals([...selectedDeals, dealId]);
     } else {
       setSelectedDeals(selectedDeals?.filter((id) => id !== dealId));
@@ -750,6 +793,7 @@ const DealsPage = () => {
     const currentPageDeals = leads.map((deal) => deal.id);
 
     if (isSelected) {
+      rememberRecords(leads);
       setSelectedDeals([...new Set([...selectedDeals, ...currentPageDeals])]);
     } else {
       setSelectedDeals(
@@ -757,6 +801,83 @@ const DealsPage = () => {
       );
     }
   };
+
+  /**
+   * Select every lead matching the current filter, not just this page.
+   *
+   * REFUSES ABOVE THE CAP rather than taking the first 500. A selection
+   * labelled "all 1,200" that holds 500 is the same failure the page-bound
+   * export used to have: the number on screen is right, the thing it acts on
+   * is not, and nothing says so.
+   *
+   * The records are fetched, not just the ids, so Mass Update and Delete can
+   * still check permission per record — see offPageRecords above.
+   */
+  const handleSelectAllMatching = async () => {
+    if (total > EXPORT_SELECTION_LIMIT) {
+      toast.error(
+        `This filter matches ${total.toLocaleString()} leads — up to ${EXPORT_SELECTION_LIMIT} can be selected at once. Narrow the filter first.`,
+      );
+      return;
+    }
+    if (!total) return;
+
+    const toastId = "select-all-matching";
+    setSelectingAll(true);
+    toast.loading(`Selecting ${total.toLocaleString()} leads…`, { id: toastId });
+
+    try {
+      const records = await fetchAllMatchingLeads({
+        filters: filtersForBackend,
+        orderBy: sortConfig?.key,
+        order: sortConfig?.direction,
+        limit: EXPORT_SELECTION_LIMIT,
+      });
+
+      setOffPageRecords(records);
+      setSelectedDeals(records.map((lead) => lead.id).filter(Boolean));
+      toast.success(`${records.length.toLocaleString()} leads selected`, {
+        id: toastId,
+      });
+    } catch (err) {
+      toast.error(err?.message || "Could not select all leads", { id: toastId });
+    } finally {
+      setSelectingAll(false);
+    }
+  };
+
+  /**
+   * The selection restricted to THIS PAGE — what Delete acts on.
+   *
+   * Cross-page selection was built for Mass Update and Export. Delete is
+   * deliberately excluded: it is irreversible, and "select all 300, then
+   * delete" is one mis-click away from emptying a filter. Keeping it
+   * page-bound means the rows it destroys are the rows that were on screen
+   * when the button was pressed.
+   *
+   * Scoped here rather than by hiding the action, so the limit holds however
+   * the delete is reached.
+   */
+  const pageLeadRecords = useMemo(
+    () => leads.filter((lead) => selectedDeals.includes(lead.id)),
+    [leads, selectedDeals],
+  );
+
+  const clearSelection = () => {
+    setSelectedDeals([]);
+    setOffPageRecords([]);
+  };
+
+  // The whole visible page is ticked AND there is more beyond it. Both halves
+  // matter: without the second, the banner would offer to "select all 12" on
+  // a filter whose 12 results are already entirely on screen.
+  const pageFullySelected =
+    leads.length > 0 &&
+    leads.every((lead) => selectedDeals.includes(lead.id)) &&
+    total > leads.length;
+
+  const allMatchingSelected =
+    selectedDeals.length > 0 && selectedDeals.length >= total;
 
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
@@ -778,6 +899,10 @@ const DealsPage = () => {
   // Deliberately not done on sort: sorting reorders the same matching set, so
   // the selection stays both valid and visible.
   const clearSelectionForNewResultSet = () => {
+    // The cached off-page records go too: they were fetched against the OLD
+    // filter, so keeping them would let a later bulk action be judged on
+    // records that no longer match what is on screen.
+    setOffPageRecords([]);
     setSelectedDeals((prev) => {
       if (prev.length) toast("Selection cleared", { icon: "\u2139\ufe0f" });
       return [];
@@ -810,17 +935,44 @@ const DealsPage = () => {
   // Why a bulk action is being refused — distinguishing the two very
   // different causes that previously shared one message.
   //
-  // Mass Update and Delete verify permissions per record, and the only records
-  // this page holds are the current page (`selectedLeadRecords` filters
-  // `leads`). A selection spanning pages therefore can't be fully verified, so
-  // the action is refused. That part is deliberate: failing closed on a
-  // destructive action is the right default. What was wrong is that it said
-  // "you don't have permission", sending people to hunt through roles for a
-  // problem that didn't exist.
+  // THIS ONE IS MASS UPDATE'S. Delete has its own (deleteBlockReason below)
+  // because the two no longer follow the same rule.
   //
-  // Export is unaffected — it sends ids to the CRM and never needs the records
-  // locally, which is why it handles the full selection and does not call this
-  // helper at all.
+  // Mass Update verifies permission per record, so it needs the RECORD, not
+  // just the id. It used to be refused outright on any selection spanning
+  // pages, because `selectedLeadRecords` was `leads.filter(...)` and `leads`
+  // is only ever the current page. It now works across pages: every selection
+  // path keeps the records it selected (rememberRecords, and
+  // fetchAllMatchingLeads for "select all matching").
+  //
+  // The off-page branch below is KEPT as the fail-closed net rather than
+  // deleted. If a record is ever missing — a cache cleared mid-flow, a lead
+  // deleted underneath the selection — the action is refused instead of
+  // running on a partial set. What was wrong before was saying "you don't
+  // have permission", which sent people hunting through roles for a problem
+  // that did not exist.
+  //
+  // Export never needed any of this — it sends ids to the CRM and the gateway
+  // applies the user's own ACL, so it does not call this helper at all.
+  /**
+   * Delete's own refusal, because its rule is now different from Mass Update's.
+   *
+   * Mass Update follows a cross-page selection; Delete does not. So a
+   * selection spanning pages is not an error here — it is simply narrowed to
+   * the page, and the message says exactly how many that leaves rather than
+   * letting someone press Delete expecting 300 and get 25.
+   */
+  const deleteBlockReason = (allowedIds) => {
+    const offPage = selectedDeals.length - pageLeadRecords.length;
+    if (offPage > 0) {
+      return `${selectedDeals.length} leads are selected across pages, but Delete only ever acts on the page you are viewing (${pageLeadRecords.length} here). Open each page to delete, or narrow the filter.`;
+    }
+    if (!allowedIds.length || allowedIds.length !== selectedDeals.length) {
+      return "Select only leads you have permission to delete";
+    }
+    return null;
+  };
+
   const bulkBlockReason = (allowedIds, actionLabel, permissionVerb) => {
     const offPage = selectedDeals.length - selectedLeadRecords.length;
     if (offPage > 0) {
@@ -904,11 +1056,13 @@ const DealsPage = () => {
         return;
       }
 
-      const deletableIds = selectedLeadRecords
+      // PAGE-SCOPED ON PURPOSE — see pageLeadRecords. Delete does not follow
+      // a cross-page selection the way Mass Update and Export do.
+      const deletableIds = pageLeadRecords
         .filter((deal) => canDeleteRecord("Lead", getPermissionRecord(deal)))
         .map((deal) => deal.id);
 
-      const deleteBlock = bulkBlockReason(deletableIds, "Delete", "delete");
+      const deleteBlock = deleteBlockReason(deletableIds);
       if (deleteBlock) {
         toast.error(deleteBlock);
         return;
@@ -937,11 +1091,11 @@ const DealsPage = () => {
       return;
     }
 
-    const deletableIds = selectedLeadRecords
+    const deletableIds = pageLeadRecords
       .filter((deal) => canDeleteRecord("Lead", getPermissionRecord(deal)))
       .map((deal) => deal.id);
 
-    const confirmBlock = bulkBlockReason(deletableIds, "Delete", "delete");
+    const confirmBlock = deleteBlockReason(deletableIds);
     if (confirmBlock) {
       toast.error(confirmBlock);
       return;
@@ -952,7 +1106,7 @@ const DealsPage = () => {
     bulkDeleteMutation.mutate(deletableIds, {
       onSuccess: () => {
         toast.success("Selected leads deleted", { id: "bulk-delete" });
-        setSelectedDeals([]);
+        clearSelection();
         setShowDeleteConfirm(false);
       },
       onError: () => {
@@ -990,7 +1144,7 @@ const DealsPage = () => {
       // setLeads(data.list);
       queryClient.invalidateQueries({ queryKey: ["leads"] });
 
-      setSelectedDeals([]);
+      clearSelection();
       setIsDrawerOpen(false);
     } catch (err) {
       console.error(err);
@@ -1158,7 +1312,7 @@ const DealsPage = () => {
               dealCount={total}
               onBulkAction={handleBulkAction}
               selectedCount={selectedDeals?.length}
-              onClearSelection={() => setSelectedDeals([])}
+              onClearSelection={clearSelection}
               toggleAnalytics={() => setShowAnalytics((prev) => !prev)}
               total={total}
               limit={limit}
@@ -1203,6 +1357,49 @@ const DealsPage = () => {
                 couldn't be used. Instead only the table is clipped (it's the
                 part whose square corners need rounding), and the footer rounds
                 its own bottom corners. */}
+            {/* CROSS-PAGE SELECT ALL.
+                Appears only once the whole page is ticked, which is the
+                moment the limit becomes visible — offering it before then
+                would be a second select-all control competing with the
+                header checkbox. Hidden entirely when the filter fits on one
+                page, where it would do nothing. */}
+            {pageFullySelected && (
+              <div className="mb-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-xl border border-[#AC2334]/20 bg-[#AC2334]/[0.06] px-4 py-2.5 text-sm text-foreground">
+                {allMatchingSelected ? (
+                  <>
+                    <span>
+                      All <strong>{selectedDeals.length.toLocaleString()}</strong>{" "}
+                      leads matching this filter are selected.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="font-semibold text-[#AC2334] underline underline-offset-2 hover:opacity-80"
+                    >
+                      Clear selection
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      All <strong>{leads.length}</strong> leads on this page are
+                      selected.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllMatching}
+                      disabled={selectingAll}
+                      className="font-semibold text-[#AC2334] underline underline-offset-2 hover:opacity-80 disabled:opacity-50"
+                    >
+                      {selectingAll
+                        ? "Selecting…"
+                        : `Select all ${total.toLocaleString()} matching this filter`}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="rounded-2xl border border-[rgba(20,20,30,0.08)] shadow-[0_1px_2px_rgba(16,24,40,.04),0_4px_16px_rgba(16,24,40,.06)]">
               <div
                 className={`overflow-hidden ${
